@@ -40,6 +40,8 @@ const jetbrains = JetBrains_Mono({
   display: "swap",
 });
 
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://zirtuno.com";
+
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));
 }
@@ -51,9 +53,27 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: "meta" });
+  const title = t("title");
+  const description = t("description");
+
   return {
-    title: { default: t("title"), template: "%s · Zirtuno" },
-    description: t("description"),
+    metadataBase: new URL(SITE_URL),
+    title: { default: title, template: "%s · Zirtuno" },
+    description,
+    alternates: {
+      canonical: `/${locale}`,
+      languages: { "pt-BR": "/pt", en: "/en" },
+    },
+    openGraph: {
+      type: "website",
+      siteName: "Zirtuno",
+      locale: locale === "pt" ? "pt_BR" : "en_US",
+      url: `/${locale}`,
+      title,
+      description,
+    },
+    twitter: { card: "summary_large_image", title, description },
+    robots: { index: true, follow: true },
   };
 }
 
