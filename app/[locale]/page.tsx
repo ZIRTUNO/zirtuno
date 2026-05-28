@@ -1,5 +1,7 @@
 import { setRequestLocale } from "next-intl/server";
 import { Hero } from "@/components/hero/Hero";
+import { ChapterProblem } from "@/components/chapters/ChapterProblem";
+import { ChapterEcosystem } from "@/components/chapters/ChapterEcosystem";
 
 // Homepage — composes the 9 chapters in business-first order (S16).
 // Chapters are added incrementally; Hero (S2) first.
@@ -14,6 +16,8 @@ export default async function HomePage({
   return (
     <main id="content">
       <Hero />
+      <ChapterProblem />
+      <ChapterEcosystem />
     </main>
   );
 }

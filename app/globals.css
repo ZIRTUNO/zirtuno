@@ -501,6 +501,204 @@ section[id],
 }
 
 /* ===========================================================================
+   The Problem — symptom ledger (S3)
+   =========================================================================== */
+.symptom {
+  display: grid;
+  grid-template-columns: 2.5rem 1fr;
+  gap: 0 1.25rem;
+  align-items: baseline;
+  padding: 1.25rem 0;
+  border-top: 1px solid var(--color-paper-faint);
+}
+.symptom:last-child {
+  border-bottom: 1px solid var(--color-paper-faint);
+}
+.symptom-num {
+  font-family: var(--font-mono);
+  font-size: var(--text-mono);
+  color: var(--color-cyan);
+}
+.symptom-label {
+  font-size: 1.25rem;
+  font-weight: 500;
+  line-height: 1.2;
+  color: var(--color-paper);
+}
+.symptom-desc {
+  margin-top: 0.2rem;
+  font-size: var(--text-body);
+  color: var(--color-paper-mute);
+}
+
+/* ===========================================================================
+   The Ecosystem — radial diagram (S4)
+   =========================================================================== */
+.eco-radial {
+  position: relative;
+  width: 100%;
+  max-width: 680px;
+  margin-inline: auto;
+  aspect-ratio: 1 / 1;
+  overflow: visible;
+}
+.eco-lines {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+.eco-line {
+  stroke: var(--color-cyan);
+  stroke-width: 0.3;
+  opacity: 0.22;
+}
+.eco-core {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 30%;
+  transform: translate(-50%, -50%);
+  display: grid;
+  place-items: center;
+}
+.eco-core-label {
+  position: absolute;
+  top: calc(100% + 0.25rem);
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: var(--font-mono);
+  font-size: var(--text-mono-sm);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-cyan);
+  white-space: nowrap;
+}
+.eco-node {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  cursor: pointer;
+}
+.eco-node-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 9999px;
+  background: var(--color-cyan);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--color-cyan) 14%, transparent);
+  transition:
+    transform 200ms var(--ease-arrive),
+    box-shadow 200ms var(--ease-arrive);
+}
+.eco-node-name {
+  font-family: var(--font-mono);
+  font-size: var(--text-mono-sm);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--color-paper-mute);
+  transition: color 200ms var(--ease-arrive);
+}
+.eco-node:hover .eco-node-name,
+.eco-node:focus-visible .eco-node-name {
+  color: var(--color-paper);
+}
+.eco-node:hover .eco-node-dot,
+.eco-node:focus-visible .eco-node-dot {
+  transform: scale(1.25);
+  box-shadow: 0 0 0 6px color-mix(in srgb, var(--color-cyan) 22%, transparent);
+}
+.eco-node:focus-visible {
+  outline: none;
+}
+.eco-node-tip {
+  position: absolute;
+  top: calc(100% + 0.4rem);
+  left: 50%;
+  width: max-content;
+  max-width: 14rem;
+  padding: 0.5rem 0.7rem;
+  background: var(--color-surface);
+  border: 1px solid var(--color-paper-faint);
+  border-radius: 2px;
+  color: var(--color-paper-mute);
+  font-family: var(--font-sans);
+  font-size: var(--text-mono-sm);
+  line-height: 1.4;
+  letter-spacing: 0;
+  text-transform: none;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(-50%) translateY(4px);
+  transition:
+    opacity 200ms var(--ease-arrive),
+    transform 200ms var(--ease-arrive);
+  z-index: 5;
+}
+.eco-node:hover .eco-node-tip,
+.eco-node:focus-visible .eco-node-tip {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* Mobile — vertical connected stack */
+.eco-stack {
+  position: relative;
+  padding-left: 1.5rem;
+}
+.eco-stack::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.4rem;
+  bottom: 0.4rem;
+  width: 1px;
+  background: var(--color-cyan);
+  opacity: 0.3;
+}
+.eco-stack-center {
+  position: relative;
+  padding-bottom: 1rem;
+  font-family: var(--font-mono);
+  font-size: var(--text-mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-cyan);
+}
+.eco-stack-item {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 0.85rem 0;
+  border-top: 1px solid var(--color-paper-faint);
+}
+.eco-stack-center::before,
+.eco-stack-item::before {
+  content: "";
+  position: absolute;
+  left: -1.5rem;
+  top: 0.7rem;
+  width: 0.9rem;
+  height: 1px;
+  background: var(--color-cyan);
+  opacity: 0.5;
+}
+.eco-stack-name {
+  font-weight: 500;
+  color: var(--color-paper);
+}
+.eco-stack-cap {
+  font-size: var(--text-body);
+  color: var(--color-paper-mute);
+}
+
+/* ===========================================================================
    Reduced motion (S1.13/S1.14)
    NOTE: components must keep their RESTING state visible (never animate in
    from opacity:0 via CSS). JS reveals are gated by useReducedMotion().
