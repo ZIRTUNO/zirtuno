@@ -140,6 +140,367 @@
 }
 
 /* ===========================================================================
+   Lenis smooth scroll (S1.6) — recommended base styles
+   =========================================================================== */
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+.lenis.lenis-smooth [data-lenis-prevent] {
+  overscroll-behavior: contain;
+}
+.lenis.lenis-stopped {
+  overflow: hidden;
+}
+
+/* ===========================================================================
+   Custom cursor (S1.5) — two-layer cyan. Native cursor hidden only while the
+   custom cursor is active (fine pointer + motion allowed).
+   =========================================================================== */
+.cursor-none,
+.cursor-none * {
+  cursor: none !important;
+}
+
+.cursor-dot,
+.cursor-ring {
+  position: fixed;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  z-index: 9999;
+  border-radius: 9999px;
+  will-change: transform;
+  transform: translate3d(-100px, -100px, 0);
+}
+
+.cursor-dot {
+  width: 6px;
+  height: 6px;
+  margin: -3px 0 0 -3px;
+  background: var(--color-cyan);
+  transition: opacity 200ms var(--ease-arrive);
+}
+
+.cursor-ring {
+  width: 36px;
+  height: 36px;
+  margin: -18px 0 0 -18px;
+  border: 1px solid var(--color-cyan);
+  opacity: 0.6;
+  transition:
+    width 200ms var(--ease-arrive),
+    height 200ms var(--ease-arrive),
+    margin 200ms var(--ease-arrive),
+    opacity 200ms var(--ease-arrive),
+    background 200ms var(--ease-arrive);
+}
+
+.cursor-hovering .cursor-ring {
+  width: 56px;
+  height: 56px;
+  margin: -28px 0 0 -28px;
+  opacity: 1;
+  background: color-mix(in srgb, var(--color-cyan) 12%, transparent);
+}
+
+.cursor-hovering .cursor-dot {
+  opacity: 0;
+}
+
+/* ===========================================================================
+   CTA system (S1.15) — primary / secondary / ghost
+   =========================================================================== */
+.cta {
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  text-decoration: none;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.cta:focus-visible {
+  outline: 2px solid var(--color-cyan);
+  outline-offset: 3px;
+}
+
+/* Primary — cyan border, transparent fill; hover sweeps cyan L→R, text→ink. */
+.cta-primary {
+  position: relative;
+  overflow: hidden;
+  gap: 0.5rem;
+  padding: 1rem 2rem;
+  border: 1px solid var(--color-cyan);
+  color: var(--color-paper);
+  font-size: var(--text-mono);
+  letter-spacing: 0.08em;
+  transition: box-shadow 200ms var(--ease-arrive);
+}
+.cta-primary .cta-fill {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background: var(--color-cyan);
+  transform: translateX(-101%);
+  transition: transform 200ms var(--ease-arrive);
+}
+.cta-primary .cta-label {
+  position: relative;
+  z-index: 1;
+  transition: color 200ms var(--ease-arrive);
+}
+.cta-primary:hover .cta-fill,
+.cta-primary:focus-visible .cta-fill {
+  transform: translateX(0);
+}
+.cta-primary:hover .cta-label,
+.cta-primary:focus-visible .cta-label {
+  color: var(--color-ink);
+}
+.cta-primary:hover {
+  box-shadow: 0 0 28px -6px var(--color-cyan-glow);
+}
+
+/* Secondary — text + trailing arrow; hover nudges arrow, draws underline. */
+.cta-secondary {
+  position: relative;
+  gap: 0.5rem;
+  color: var(--color-paper);
+  font-size: var(--text-mono);
+  letter-spacing: 0.08em;
+}
+.cta-secondary::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -3px;
+  height: 1px;
+  width: 100%;
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 200ms var(--ease-arrive);
+}
+.cta-secondary:hover::after,
+.cta-secondary:focus-visible::after {
+  transform: scaleX(1);
+}
+
+/* Ghost — small muted mono link + arrow; hover → cyan. */
+.cta-ghost {
+  gap: 0.4rem;
+  color: var(--color-paper-mute);
+  font-size: var(--text-mono-sm);
+  letter-spacing: 0.1em;
+  transition: color 200ms var(--ease-arrive);
+}
+.cta-ghost:hover,
+.cta-ghost:focus-visible {
+  color: var(--color-cyan);
+}
+
+/* Shared arrow nudge */
+.cta-arrow {
+  display: inline-block;
+  transition: transform 200ms var(--ease-arrive);
+}
+.cta-secondary:hover .cta-arrow,
+.cta-secondary:focus-visible .cta-arrow {
+  transform: translateX(6px);
+}
+.cta-ghost:hover .cta-arrow,
+.cta-ghost:focus-visible .cta-arrow {
+  transform: translateX(4px);
+}
+
+/* ===========================================================================
+   Chapter label — reused by every chapter ([cyan line] NN — Title)
+   =========================================================================== */
+.chapter-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-family: var(--font-mono);
+  font-size: var(--text-mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-paper-mute);
+}
+.chapter-label::before {
+  content: "";
+  display: block;
+  flex: none;
+  width: 2rem;
+  height: 1px;
+  background: var(--color-cyan);
+}
+
+/* Anchor offset so #hash scroll clears the fixed TopBar */
+section[id],
+[data-chapter] {
+  scroll-margin-top: var(--topbar-h);
+}
+
+/* ===========================================================================
+   Type breathing (S1.8) — serif display ONLY, ~8s, very subtle
+   =========================================================================== */
+@keyframes type-breathe {
+  0%,
+  100% {
+    opacity: 0.45;
+  }
+  50% {
+    opacity: 0.72;
+  }
+}
+.type-breathe {
+  animation: type-breathe var(--dur-breath) var(--ease-breath) infinite;
+}
+
+/* ===========================================================================
+   WebGL placeholders (Phase 1) — static CSS stand-ins for the four signature
+   moments. Replaced by real Three.js canvases in Phase 2.
+   =========================================================================== */
+.webgl-ph {
+  position: relative;
+  width: 100%;
+  max-width: 640px;
+  margin-inline: auto;
+}
+.webgl-ph-stage {
+  position: relative;
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1 / 1;
+}
+.webgl-ph-stage::before {
+  content: "";
+  position: absolute;
+  inset: 6%;
+  border-radius: 9999px;
+  border: 1px solid var(--color-paper-faint);
+}
+.webgl-ph-fractured .webgl-ph-stage::before {
+  border-style: dashed;
+  opacity: 0.5;
+}
+.webgl-ph .blob {
+  position: absolute;
+  width: 44%;
+  height: 44%;
+  border-radius: 9999px;
+  filter: blur(14px);
+  mix-blend-mode: screen;
+  background: radial-gradient(
+    circle at 50% 40%,
+    var(--color-cyan-glow),
+    var(--color-cyan) 45%,
+    transparent 70%
+  );
+  opacity: 0.82;
+}
+.webgl-ph-unified .blob-1 {
+  transform: translate(-15%, -6%);
+}
+.webgl-ph-unified .blob-2 {
+  transform: translate(15%, -2%);
+}
+.webgl-ph-unified .blob-3 {
+  transform: translate(0%, 16%);
+}
+.webgl-ph-fractured .blob {
+  filter: blur(10px) saturate(0.35);
+  opacity: 0.5;
+}
+.webgl-ph-fractured .blob-1 {
+  transform: translate(-62%, -42%);
+}
+.webgl-ph-fractured .blob-2 {
+  transform: translate(60%, -22%);
+}
+.webgl-ph-fractured .blob-3 {
+  transform: translate(8%, 60%);
+}
+.webgl-ph-particles {
+  position: absolute;
+  inset: 12%;
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 6%;
+  place-items: center;
+}
+.webgl-ph-particles span {
+  width: 4px;
+  height: 4px;
+  border-radius: 9999px;
+  background: var(--color-cyan);
+  opacity: 0.45;
+}
+.webgl-ph-tag {
+  position: absolute;
+  bottom: 0.25rem;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: var(--font-mono);
+  font-size: var(--text-mono-sm);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-paper-dim);
+  white-space: nowrap;
+}
+
+/* ===========================================================================
+   Pillar indicator (S2.3)
+   =========================================================================== */
+.pillar-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 1.5rem;
+}
+.pillar-dot {
+  width: 1.25rem;
+  height: 2px;
+  background: var(--color-paper-faint);
+  transition:
+    width 200ms var(--ease-arrive),
+    background 200ms var(--ease-arrive);
+}
+.pillar-dot.is-active {
+  width: 2rem;
+  background: var(--color-cyan);
+}
+
+/* ===========================================================================
+   Breath layer (S1.7) — ≤4% fractal-noise field, slow 8s breathing
+   =========================================================================== */
+.breath-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  mix-blend-mode: screen;
+  opacity: 0.035;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 200px 200px;
+  animation: breath-pulse var(--dur-breath) var(--ease-breath) infinite;
+}
+@keyframes breath-pulse {
+  0%,
+  100% {
+    opacity: 0.02;
+  }
+  50% {
+    opacity: 0.04;
+  }
+}
+
+/* ===========================================================================
    Reduced motion (S1.13/S1.14)
    NOTE: components must keep their RESTING state visible (never animate in
    from opacity:0 via CSS). JS reveals are gated by useReducedMotion().

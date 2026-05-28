@@ -13,6 +13,9 @@ import {
   JetBrains_Mono,
 } from "next/font/google";
 import { routing } from "@/lib/i18n/config";
+import CustomCursor from "@/components/chrome/CustomCursor";
+import LenisProvider from "@/components/motion/LenisProvider";
+import { BreathLayer } from "@/components/ui/BreathLayer";
 import "../globals.css";
 
 // Self-hosted at build time by next/font (no runtime third-party requests).
@@ -71,8 +74,10 @@ export default async function LocaleLayout({
       className={`${bricolage.variable} ${instrument.variable} ${jetbrains.variable}`}
     >
       <body>
+        <BreathLayer />
         <NextIntlClientProvider locale={locale} messages={messages}>
-          {children}
+          <CustomCursor />
+          <LenisProvider>{children}</LenisProvider>
         </NextIntlClientProvider>
       </body>
     </html>
