@@ -227,6 +227,13 @@ html.lenis body {
   outline: 2px solid var(--color-cyan);
   outline-offset: 3px;
 }
+.cta:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+button.cta {
+  background: transparent;
+}
 
 /* Primary — cyan border, transparent fill; hover sweeps cyan L→R, text→ink. */
 .cta-primary {
@@ -1071,6 +1078,103 @@ section[id],
   .studio-roles {
     grid-template-columns: repeat(3, 1fr);
   }
+}
+
+/* ===========================================================================
+   Contact form (S10)
+   =========================================================================== */
+.contact-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+.contact-intent {
+  font-family: var(--font-mono);
+  font-size: var(--text-mono-sm);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-cyan);
+}
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.field label {
+  font-family: var(--font-mono);
+  font-size: var(--text-mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-paper-mute);
+}
+.field input,
+.field textarea {
+  padding: 0.85rem 1rem;
+  background: transparent;
+  border: 1px solid var(--color-paper-faint);
+  color: var(--color-paper);
+  font-family: var(--font-sans);
+  font-size: var(--text-body);
+  transition: border-color 200ms var(--ease-arrive);
+}
+.field textarea {
+  resize: vertical;
+  min-height: 7rem;
+}
+.field input::placeholder,
+.field textarea::placeholder {
+  color: var(--color-paper-dim);
+}
+.field input:focus,
+.field textarea:focus {
+  outline: none;
+  border-color: var(--color-cyan);
+}
+.field input[aria-invalid="true"],
+.field textarea[aria-invalid="true"] {
+  border-color: var(--color-warn);
+}
+.field-error,
+.contact-error {
+  font-family: var(--font-mono);
+  font-size: var(--text-mono-sm);
+  letter-spacing: 0.04em;
+  color: var(--color-warn);
+}
+.contact-form button[type="submit"] {
+  align-self: flex-start;
+  margin-top: 0.25rem;
+}
+.contact-success {
+  padding: 3rem 0;
+  text-align: center;
+}
+.contact-success-title {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: var(--text-display-m);
+  color: var(--color-cyan);
+}
+.contact-secondary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 1.25rem;
+  margin-top: 2.5rem;
+  font-family: var(--font-mono);
+  font-size: var(--text-mono-sm);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-paper-mute);
+}
+.contact-secondary a {
+  color: var(--color-paper);
+  text-decoration: none;
+  transition: color 200ms var(--ease-arrive);
+}
+.contact-secondary a:hover {
+  color: var(--color-cyan);
 }
 
 /* ===========================================================================
