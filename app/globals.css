@@ -857,6 +857,154 @@ section[id],
 }
 
 /* ===========================================================================
+   Selected Work — cards, filters, case study (S7)
+   =========================================================================== */
+.project-card {
+  display: flex;
+  flex-direction: column;
+  text-decoration: none;
+}
+.project-preview {
+  position: relative;
+  aspect-ratio: 16 / 10;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--color-paper-faint);
+  background: radial-gradient(
+    120% 120% at 30% 20%,
+    color-mix(in srgb, var(--color-cyan) 16%, var(--color-surface)),
+    var(--color-ink) 70%
+  );
+  transition: border-color 200ms var(--ease-arrive);
+}
+.project-card:hover .project-preview {
+  border-color: var(--color-cyan);
+}
+.project-preview-cat {
+  font-family: var(--font-mono);
+  font-size: var(--text-mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-paper-dim);
+}
+.project-body {
+  padding-top: 1.25rem;
+}
+.project-cats {
+  font-family: var(--font-mono);
+  font-size: var(--text-mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-cyan);
+}
+.project-name {
+  margin-top: 0.5rem;
+  font-weight: 500;
+  color: var(--color-paper);
+  transition: color 200ms var(--ease-arrive);
+}
+.project-card:hover .project-name {
+  color: var(--color-cyan-glow);
+}
+.project-line {
+  margin-top: 0.6rem;
+  color: var(--color-paper);
+}
+.project-built {
+  margin-top: 0.5rem;
+  color: var(--color-paper-mute);
+}
+.project-services {
+  margin-top: 0.75rem;
+  font-family: var(--font-mono);
+  font-size: var(--text-mono-sm);
+  letter-spacing: 0.06em;
+  color: var(--color-paper-mute);
+}
+.project-outcome {
+  margin-top: 1rem;
+}
+.project-arch {
+  display: inline-block;
+  padding: 0.3rem 0.6rem;
+  font-family: var(--font-mono);
+  font-size: var(--text-mono-sm);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-cyan);
+  border: 1px solid color-mix(in srgb, var(--color-cyan) 40%, transparent);
+}
+.project-cta {
+  margin-top: 1.25rem;
+}
+
+.work-filter {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.45rem 0.8rem;
+  font-family: var(--font-mono);
+  font-size: var(--text-mono-sm);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-decoration: none;
+  color: var(--color-paper-mute);
+  border: 1px solid var(--color-paper-faint);
+  transition:
+    color 200ms var(--ease-arrive),
+    background 200ms var(--ease-arrive),
+    border-color 200ms var(--ease-arrive);
+}
+.work-filter:hover {
+  color: var(--color-paper);
+  border-color: var(--color-paper-dim);
+}
+.work-filter.is-active {
+  color: var(--color-ink);
+  background: var(--color-cyan);
+  border-color: var(--color-cyan);
+}
+
+.case-hero {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--color-paper-faint);
+  background: radial-gradient(
+    120% 120% at 30% 20%,
+    color-mix(in srgb, var(--color-cyan) 14%, var(--color-surface)),
+    var(--color-ink) 70%
+  );
+}
+.case-label {
+  font-family: var(--font-mono);
+  font-size: var(--text-mono);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-cyan);
+}
+.case-next {
+  text-decoration: none;
+}
+.case-next-label {
+  font-family: var(--font-mono);
+  font-size: var(--text-mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-paper-mute);
+}
+.case-next-name {
+  font-weight: 500;
+  color: var(--color-paper);
+  transition: color 200ms var(--ease-arrive);
+}
+.case-next:hover .case-next-name {
+  color: var(--color-cyan);
+}
+
+/* ===========================================================================
    Reduced motion (S1.13/S1.14)
    NOTE: components must keep their RESTING state visible (never animate in
    from opacity:0 via CSS). JS reveals are gated by useReducedMotion().
