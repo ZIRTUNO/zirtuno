@@ -1,0 +1,39 @@
+import { useTranslations } from "next-intl";
+import { Link } from "@/lib/i18n/config";
+import { WebglPlaceholder } from "@/components/ui/WebglPlaceholder";
+
+/**
+ * Localized 404 (S1.11) — the lone, dispersed metaball. "This page has
+ * dispersed." Rendered within the locale layout, so it keeps the chrome.
+ */
+export default function NotFound() {
+  const t = useTranslations("notFound");
+
+  return (
+    <main
+      id="content"
+      className="page-x grid min-h-svh place-items-center pt-[var(--topbar-h)] text-center"
+    >
+      <div className="max-w-xl">
+        <div className="mx-auto max-w-[14rem]">
+          <WebglPlaceholder variant="fractured" label={t("code")} ariaLabel="404" />
+        </div>
+        <p className="mt-8 font-mono text-mono uppercase tracking-wide text-cyan">
+          {t("code")}
+        </p>
+        <h1 className="font-poetic mt-3 text-display-l text-paper">
+          {t("title")}
+        </h1>
+        <p className="mt-4 text-body-l text-paper-mute">{t("body")}</p>
+        <div className="mt-8 flex justify-center">
+          <Link href="/" data-cursor="hover" className="cta cta-secondary">
+            <span className="cta-label">{t("cta")}</span>
+            <span className="cta-arrow" aria-hidden="true">
+              →
+            </span>
+          </Link>
+        </div>
+      </div>
+    </main>
+  );
+}

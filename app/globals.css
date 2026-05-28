@@ -1436,6 +1436,43 @@ section[id],
 }
 
 /* ===========================================================================
+   Page transition + loading (S1.9–S1.10)
+   =========================================================================== */
+.page-wipe {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: var(--color-cyan);
+  transform-origin: top;
+  pointer-events: none;
+}
+.loading-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  display: grid;
+  place-items: center;
+  background: var(--color-ink);
+}
+.loading-word {
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: 2rem;
+  letter-spacing: 0.02em;
+  color: var(--color-paper);
+  animation: loading-pulse 1.4s var(--ease-breath) infinite;
+}
+@keyframes loading-pulse {
+  0%,
+  100% {
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* ===========================================================================
    Reduced motion (S1.13/S1.14)
    NOTE: components must keep their RESTING state visible (never animate in
    from opacity:0 via CSS). JS reveals are gated by useReducedMotion().
