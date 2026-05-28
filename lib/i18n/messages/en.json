@@ -1,0 +1,275 @@
+{
+  "meta": {
+    "title": "Zirtuno — Complete digital ecosystems",
+    "description": "Software, AI, automation, data, branding and marketing — connected into one structure, built for your business to grow."
+  },
+  "common": {
+    "skipToContent": "Skip to content",
+    "scrollHint": "Scroll",
+    "loading": "Zirtuno"
+  },
+  "nav": {
+    "location": "Curitiba, Brazil",
+    "menuOpen": "Open menu",
+    "menuClose": "Close menu",
+    "languageLabel": "Language",
+    "langPt": "Português",
+    "langEn": "English",
+    "chapters": {
+      "hero": "01 Zirtuno",
+      "problem": "02 Problem",
+      "ecosystem": "03 Ecosystem",
+      "services": "04 Services",
+      "method": "05 Method",
+      "work": "06 Work",
+      "name": "07 Name",
+      "studio": "08 Studio",
+      "contact": "09 Contact"
+    }
+  },
+  "cta": {
+    "analysis": "Request initial analysis",
+    "portfolio": "See portfolio",
+    "structure": "Structure my digital",
+    "talk": "Talk to Zirtuno"
+  },
+  "hero": {
+    "chapterLabel": "01 — Zirtuno",
+    "eyebrow": "Some forces don't need to be loud to transform.",
+    "headline": "We build complete digital ecosystems.",
+    "subline": "Software, AI, automation, data, branding and marketing — connected into one structure, built for your business to grow."
+  },
+  "problem": {
+    "chapterLabel": "02 — The Problem",
+    "headline": "Most companies don't have a marketing problem. They have a structure problem.",
+    "lead": "Each piece works alone — and none work together. The site on one side, data on another, support improvised, processes manual. The result is effort without scale.",
+    "symptoms": [
+      { "label": "Weak website", "desc": "Pretty, but it doesn't convert." },
+      { "label": "Manual processes", "desc": "Repetitive tasks drain the team." },
+      { "label": "Disconnected tools", "desc": "Systems that don't talk to each other." },
+      { "label": "Slow service", "desc": "Opportunities lost after hours." },
+      { "label": "Scattered data", "desc": "Decisions made in the dark." },
+      { "label": "Weak positioning", "desc": "A brand that isn't remembered." },
+      { "label": "No ecosystem", "desc": "Nothing grows in an integrated way." }
+    ]
+  },
+  "ecosystem": {
+    "chapterLabel": "03 — The Ecosystem",
+    "headline": "We build digital ecosystems, not loose pieces.",
+    "lead": "Everything connected around your business. Each part strengthens the others: the brand feeds the site, the site feeds traffic, traffic feeds the CRM, AI accelerates service, automation connects processes, and dashboards show it all in real time.",
+    "centerLabel": "Your business",
+    "nodes": [
+      { "name": "Brand", "tooltip": "The base of everything — how the business is perceived." },
+      { "name": "Website", "tooltip": "The center of the digital presence." },
+      { "name": "Traffic", "tooltip": "The flow of new opportunities." },
+      { "name": "CRM", "tooltip": "The memory of every relationship." },
+      { "name": "AI", "tooltip": "Intelligence that serves and accelerates." },
+      { "name": "Automation", "tooltip": "The work that happens on its own." },
+      { "name": "Dashboards", "tooltip": "The clear view of the numbers." },
+      { "name": "Internal systems", "tooltip": "The operation that sustains the business." },
+      { "name": "Service", "tooltip": "The experience in every contact." },
+      { "name": "Content", "tooltip": "The voice that keeps the brand present." }
+    ]
+  },
+  "services": {
+    "chapterLabel": "04 — Services",
+    "headline": "Seven pillars, connected.",
+    "lead": "Each service solves a real problem — and strengthens all the others.",
+    "labelIs": "What it is",
+    "labelSolves": "What it solves",
+    "labelCreates": "What it creates",
+    "counter": "{n} / 07",
+    "pillarCta": "See {category} projects",
+    "pillars": {
+      "web": {
+        "accent": "The surface where the breath lands.",
+        "name": "Web Design & Digital Experience",
+        "categoryLabel": "Web Design",
+        "is": "Institutional sites, landing pages, and interfaces focused on conversion.",
+        "solves": "Beautiful sites that don't convert and confusing structures that drive clients away.",
+        "creates": "A presence that communicates clearly, builds trust, and turns visitors into clients.",
+        "caps": ["Landing pages", "Institutional sites", "Interface design", "Usability", "Responsiveness", "Conversion"]
+      },
+      "software": {
+        "accent": "Form for the function.",
+        "name": "Software & App Development",
+        "categoryLabel": "Software",
+        "is": "Custom platforms, internal systems, dashboards, and apps.",
+        "solves": "Manual processes, loose spreadsheets, and tools that don't talk.",
+        "creates": "Faster, organized, scalable operations, with technology built for the business.",
+        "caps": ["Web platforms", "Internal systems", "Dashboards", "Mobile apps", "Cross-platform"]
+      },
+      "ai": {
+        "accent": "The intelligence that does not sleep.",
+        "name": "Artificial Intelligence",
+        "categoryLabel": "AI",
+        "is": "AI agents, chatbots, intelligent automations, and automated service.",
+        "solves": "Slow service, overloaded teams, and opportunities lost after hours.",
+        "creates": "Service and operations running 24/7, with intelligence that scales.",
+        "caps": ["AI agents", "Chatbots", "Intelligent automations", "24/7 service", "Models for business"]
+      },
+      "automation": {
+        "accent": "Movement that requires no presence.",
+        "name": "Automation & Integrations",
+        "categoryLabel": "Automation",
+        "is": "Process automation, CRM integrations, and tool connection.",
+        "solves": "Repetitive tasks, rework, and data lost between systems.",
+        "creates": "A connected flow where information moves on its own and nothing is lost.",
+        "caps": ["Process automation", "CRM integrations", "Tool connection", "Automatic flows", "APIs"]
+      },
+      "data": {
+        "accent": "Chaos read in silence.",
+        "name": "Data & Dashboards",
+        "categoryLabel": "Data",
+        "is": "Data organization, BI, reports, and decision dashboards.",
+        "solves": "Decisions in the dark, scattered data, and no view of the numbers.",
+        "creates": "A clear, real-time view to decide with data, not guesswork.",
+        "caps": ["Data organization", "Business intelligence", "Reports", "Dashboards", "Real-time metrics"]
+      },
+      "branding": {
+        "accent": "Presence recognized from afar.",
+        "name": "Branding & Positioning",
+        "categoryLabel": "Branding",
+        "is": "Visual identity, brand strategy, communication, and positioning.",
+        "solves": "A generic brand, undifferentiated, that isn't remembered.",
+        "creates": "A strong, coherent, memorable brand that builds authority.",
+        "caps": ["Visual identity", "Brand strategy", "Communication", "Storytelling", "Digital authority"]
+      },
+      "marketing": {
+        "accent": "Reach without noise.",
+        "name": "Marketing & Growth",
+        "categoryLabel": "Marketing",
+        "is": "Paid traffic, content strategy, campaigns, and performance.",
+        "solves": "Investment with no clear return and stagnant growth.",
+        "creates": "Predictable, measurable growth, connected to the whole structure.",
+        "caps": ["Paid traffic", "Content strategy", "Campaigns", "Digital strategy", "Performance"]
+      }
+    }
+  },
+  "method": {
+    "chapterLabel": "05 — Method",
+    "headline": "The Zirtuno Method.",
+    "lead": "We don't start with what's beautiful. We start with what's broken.",
+    "phases": [
+      { "name": "Diagnosis", "desc": "We understand the business, map the current structure, and identify what's fragmented, manual, or missing." },
+      { "name": "Structure", "desc": "We design the ecosystem architecture: what to build, in what order, and how it connects." },
+      { "name": "Construction", "desc": "We build each piece at a premium standard — site, software, brand, automations." },
+      { "name": "Integration", "desc": "We connect everything: CRM, AI, automations, data, and systems operating as one organism." },
+      { "name": "Evolution", "desc": "We measure, optimize, and expand. The ecosystem grows with the business." }
+    ]
+  },
+  "work": {
+    "chapterLabel": "06 — Work",
+    "headline": "Selected work.",
+    "lead": "Real structures, built piece by piece.",
+    "indexTitle": "Work",
+    "indexLead": "Digital ecosystems and architectures built by Zirtuno.",
+    "ctaCard": "See project",
+    "architectureLabel": "Selected architecture",
+    "labelChallenge": "The challenge",
+    "labelBuilt": "What we built",
+    "labelServices": "Services",
+    "labelOutcome": "Outcome",
+    "filterAll": "All",
+    "categories": {
+      "web-design": "Web Design",
+      "software": "Software",
+      "ai": "AI",
+      "automation": "Automation",
+      "data": "Data",
+      "branding": "Branding",
+      "marketing": "Marketing"
+    },
+    "case": {
+      "challenge": "The Challenge",
+      "architecture": "The Architecture Built",
+      "outcome": "The Outcome",
+      "credits": "Credits",
+      "next": "Next project",
+      "liveSite": "Visit site",
+      "back": "Back to work"
+    },
+    "empty": "No projects in this category yet."
+  },
+  "name": {
+    "chapterLabel": "07 — The Name",
+    "b1": "In Greek mythology, there lived a wind that did not destroy.",
+    "zefiroWord": "Zéfiro",
+    "zefiroText": "A gentle breath. It announced the spring. Change without violence.",
+    "venturaWord": "Ventura",
+    "venturaText": "Path. Destiny. The courage to follow a direction not yet drawn.",
+    "zirtunoWord": "Zirtuno",
+    "zirtunoText": "The breath that gives shape.",
+    "manifesto": [
+      "Movement without noise.",
+      "Form for what was dispersed.",
+      "Direction, not just execution.",
+      "Discreet. Precise. Transformative."
+    ]
+  },
+  "studio": {
+    "chapterLabel": "08 — Studio",
+    "whereLabel": "Where",
+    "city": "Curitiba, Brazil",
+    "coordinates": "25.4284° S · 49.2733° W",
+    "whoLabel": "Who",
+    "whoLead": "A small, multidisciplinary team, organized by function.",
+    "roles": [
+      "Strategy",
+      "Design",
+      "Engineering",
+      "AI & Automation",
+      "Branding",
+      "Content & Growth"
+    ],
+    "whyLabel": "Why",
+    "closingStatement": "We are not about appearing.",
+    "closingItalic": "We are about being felt, remembered, and carried forward."
+  },
+  "contact": {
+    "chapterLabel": "09 — Contact",
+    "prompt": "Shall we structure your digital?",
+    "subPrompt": "Tell us where you are today. We'll send back a first read of your digital structure.",
+    "fields": {
+      "name": "Name",
+      "namePlaceholder": "Your name",
+      "email": "Email",
+      "emailPlaceholder": "you@company.com",
+      "company": "Company (optional)",
+      "companyPlaceholder": "Company name",
+      "message": "Tell us what you want to structure or solve.",
+      "messagePlaceholder": "Where you are today and what you want to achieve."
+    },
+    "submit": "Request initial analysis",
+    "sending": "Sending…",
+    "successTitle": "Received.",
+    "successBody": "We'll send back a first read of your structure soon.",
+    "errorBody": "Something went wrong. Try again or reach us on WhatsApp.",
+    "validation": {
+      "name": "Tell us what to call you.",
+      "email": "Enter a valid email.",
+      "message": "Tell us a little about what you need."
+    },
+    "secondaryLead": "Or reach us directly:",
+    "whatsapp": "WhatsApp",
+    "email": "Email",
+    "instagram": "Instagram",
+    "intentLabel": "Interest",
+    "intents": {
+      "analysis": "Initial analysis",
+      "structure": "Structure the digital",
+      "talk": "Talk to Zirtuno",
+      "general": "Contact"
+    }
+  },
+  "footer": {
+    "copyright": "Zirtuno © 2026",
+    "tagline": "Discreet. Precise. Transformative."
+  },
+  "notFound": {
+    "code": "404",
+    "title": "This page has dispersed.",
+    "body": "The path you were looking for doesn't exist — or hasn't taken shape yet.",
+    "cta": "Back home"
+  }
+}

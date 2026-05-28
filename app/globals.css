@@ -1,26 +1,158 @@
 @import "tailwindcss";
 
+/* ===========================================================================
+   ZIRTUNO · Design tokens — build-spec S1.1–S1.4
+   Discipline: cyan on black only. sans = business/UI, serif italic = poetry.
+   =========================================================================== */
+
+@theme {
+  /* --- Color palette (S1.1) — this is the ENTIRE palette. No purples/greens. --- */
+  --color-ink: #000000;
+  --color-surface: #0a0a0c;
+  --color-cyan: #00d4ff;
+  --color-cyan-glow: #4de8ff;
+  --color-cyan-deep: #0099cc;
+  --color-paper: #f2f0eb;
+  --color-paper-mute: rgba(242, 240, 235, 0.5);
+  --color-paper-dim: rgba(242, 240, 235, 0.25);
+  --color-paper-faint: rgba(242, 240, 235, 0.1);
+  --color-warn: #ff6b5c; /* form errors only */
+
+  /* --- Fonts (S1.2). next/font sets --font-bricolage/-instrument/-jetbrains
+     on <html>. sans = Bricolage (business + UI), display = Instrument Serif
+     (poetry ONLY), mono = JetBrains (labels, numbers, CTAs). --- */
+  --font-sans: var(--font-bricolage), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-instrument), Georgia, "Times New Roman", serif;
+  --font-mono: var(--font-jetbrains), ui-monospace, "SFMono-Regular", monospace;
+
+  /* --- Type scale (S1.2) — fluid mobile→desktop via clamp --- */
+  --text-hero: clamp(2.25rem, 1.43rem + 3.5vw, 3.75rem);
+  --text-hero--line-height: 1.08;
+  --text-hero--letter-spacing: -0.02em;
+
+  --text-display-xl: clamp(3rem, 0.6rem + 9.6vw, 7rem);
+  --text-display-xl--line-height: 0.98;
+  --text-display-xl--letter-spacing: -0.02em;
+
+  --text-display-l: clamp(2rem, 1.33rem + 2.86vw, 3.25rem);
+  --text-display-l--line-height: 1.06;
+  --text-display-l--letter-spacing: -0.015em;
+
+  --text-display-m: clamp(1.5rem, 1.1rem + 1.7vw, 2.25rem);
+  --text-display-m--line-height: 1.14;
+  --text-display-m--letter-spacing: -0.01em;
+
+  --text-poetic: clamp(1.125rem, 0.93rem + 0.8vw, 1.5rem);
+  --text-poetic--line-height: 1.4;
+
+  --text-body-l: clamp(1.125rem, 1.05rem + 0.32vw, 1.25rem);
+  --text-body-l--line-height: 1.6;
+
+  --text-body: 1rem;
+  --text-body--line-height: 1.65;
+
+  --text-mono: 0.75rem;
+  --text-mono--line-height: 1.4;
+  --text-mono--letter-spacing: 0.08em;
+
+  --text-mono-sm: 0.6875rem;
+  --text-mono-sm--line-height: 1.45;
+  --text-mono-sm--letter-spacing: 0.1em;
+}
+
+/* Tokens consumed from CSS/JS but NOT turned into Tailwind utilities */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Easings (S1.4) */
+  --ease-calm: cubic-bezier(0.65, 0, 0.35, 1);
+  --ease-arrive: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-depart: cubic-bezier(0.64, 0, 0.78, 0);
+  --ease-breath: cubic-bezier(0.45, 0.05, 0.55, 0.95);
+
+  /* Durations (S1.4) */
+  --dur-micro: 200ms;
+  --dur-short: 400ms;
+  --dur-medium: 700ms;
+  --dur-long: 1200ms;
+  --dur-morph: 1400ms;
+  --dur-autocycle: 9000ms;
+  --dur-breath: 8000ms;
+
+  /* Spacing & layout (S1.3) */
+  --page-padding-mobile: 1.5rem;
+  --page-padding-desktop: 3rem;
+  --page-padding: var(--page-padding-mobile);
+  --section-gap: 8rem;
+  --chapter-min-h: 100svh;
+  --topbar-h: 4.5rem;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
+@media (min-width: 768px) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --page-padding: var(--page-padding-desktop);
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* ===========================================================================
+   Base
+   =========================================================================== */
+@layer base {
+  html {
+    background: var(--color-ink);
+    color: var(--color-paper);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background: var(--color-ink);
+    color: var(--color-paper);
+    font-family: var(--font-sans);
+    font-size: var(--text-body);
+    line-height: 1.65;
+    overflow-x: hidden;
+  }
+
+  ::selection {
+    background: var(--color-cyan);
+    color: var(--color-ink);
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-sans);
+    font-weight: 500;
+  }
+}
+
+@layer components {
+  /* The 70/30 mechanism, codified: serif italic is poetry ONLY (S1.2). */
+  .font-poetic {
+    font-family: var(--font-display);
+    font-style: italic;
+    font-weight: 400;
+  }
+
+  /* Page horizontal padding helper */
+  .page-x {
+    padding-left: var(--page-padding);
+    padding-right: var(--page-padding);
+  }
+}
+
+/* ===========================================================================
+   Reduced motion (S1.13/S1.14)
+   NOTE: components must keep their RESTING state visible (never animate in
+   from opacity:0 via CSS). JS reveals are gated by useReducedMotion().
+   =========================================================================== */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
 }
