@@ -16,6 +16,8 @@ import { routing } from "@/lib/i18n/config";
 import CustomCursor from "@/components/chrome/CustomCursor";
 import LenisProvider from "@/components/motion/LenisProvider";
 import { BreathLayer } from "@/components/ui/BreathLayer";
+import { TopBar } from "@/components/chrome/TopBar";
+import { Footer } from "@/components/chrome/Footer";
 import "../globals.css";
 
 // Self-hosted at build time by next/font (no runtime third-party requests).
@@ -67,6 +69,7 @@ export default async function LocaleLayout({
   setRequestLocale(locale);
 
   const messages = await getMessages();
+  const tCommon = await getTranslations({ locale, namespace: "common" });
 
   return (
     <html
@@ -76,8 +79,15 @@ export default async function LocaleLayout({
       <body>
         <BreathLayer />
         <NextIntlClientProvider locale={locale} messages={messages}>
+          <a href="#content" className="skip-link">
+            {tCommon("skipToContent")}
+          </a>
           <CustomCursor />
-          <LenisProvider>{children}</LenisProvider>
+          <LenisProvider>
+            <TopBar />
+            {children}
+            <Footer />
+          </LenisProvider>
         </NextIntlClientProvider>
       </body>
     </html>

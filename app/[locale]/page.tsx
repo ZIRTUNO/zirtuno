@@ -8,6 +8,7 @@ import { ChapterWork } from "@/components/chapters/ChapterWork";
 import { ChapterName } from "@/components/chapters/ChapterName";
 import { ChapterStudio } from "@/components/chapters/ChapterStudio";
 import { ChapterContact } from "@/components/chapters/ChapterContact";
+import { SideIndex } from "@/components/chrome/SideIndex";
 
 // Homepage — composes the 9 chapters in business-first order (S16).
 // Chapters are added incrementally; Hero (S2) first.
@@ -21,6 +22,7 @@ export default async function HomePage({
 
   return (
     <main id="content">
+      <SideIndex />
       <Hero />
       <ChapterProblem />
       <ChapterEcosystem />

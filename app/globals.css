@@ -1178,6 +1178,264 @@ section[id],
 }
 
 /* ===========================================================================
+   Chrome — TopBar, SideIndex, MobileMenu, Footer, language toggle (S11–S12)
+   =========================================================================== */
+.skip-link {
+  position: fixed;
+  top: -100px;
+  left: 1rem;
+  z-index: 100;
+  padding: 0.6rem 1rem;
+  background: var(--color-cyan);
+  color: var(--color-ink);
+  font-family: var(--font-mono);
+  font-size: var(--text-mono-sm);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  transition: top 200ms var(--ease-arrive);
+}
+.skip-link:focus {
+  top: 1rem;
+}
+
+.topbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: var(--topbar-h);
+  padding-inline: var(--page-padding);
+  background: color-mix(in srgb, var(--color-ink) 72%, transparent);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--color-paper-faint);
+}
+.wordmark {
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: 1.1rem;
+  letter-spacing: -0.01em;
+  color: var(--color-paper);
+  text-decoration: none;
+}
+.topbar-desktop {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+.topbar-location {
+  font-family: var(--font-mono);
+  font-size: var(--text-mono-sm);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-paper-mute);
+}
+.lang-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.lang-opt {
+  padding: 0.2rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: var(--text-mono-sm);
+  letter-spacing: 0.08em;
+  color: var(--color-paper-mute);
+  transition: color 200ms var(--ease-arrive);
+}
+.lang-opt:hover {
+  color: var(--color-paper);
+}
+.lang-opt.is-active {
+  color: var(--color-cyan);
+}
+
+@media (max-width: 767px) {
+  .topbar-desktop {
+    display: none;
+  }
+}
+
+/* SideIndex (desktop only) */
+.side-index {
+  position: fixed;
+  right: 1.25rem;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 40;
+  display: none;
+}
+@media (min-width: 1024px) {
+  .side-index {
+    display: block;
+  }
+}
+.side-index ul {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.95rem;
+}
+.side-index-link {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.6rem;
+  text-decoration: none;
+}
+.side-index-label {
+  font-family: var(--font-mono);
+  font-size: var(--text-mono-sm);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--color-paper-mute);
+  opacity: 0;
+  transform: translateX(6px);
+  transition:
+    opacity 200ms var(--ease-arrive),
+    transform 200ms var(--ease-arrive),
+    color 200ms var(--ease-arrive);
+}
+.side-index-dot {
+  flex: none;
+  width: 6px;
+  height: 6px;
+  border-radius: 9999px;
+  background: var(--color-paper-dim);
+  transition:
+    transform 200ms var(--ease-arrive),
+    background 200ms var(--ease-arrive);
+}
+.side-index-link:hover .side-index-label {
+  opacity: 1;
+  transform: translateX(0);
+  color: var(--color-paper);
+}
+.side-index-link.is-active .side-index-dot {
+  background: var(--color-cyan);
+  transform: scale(1.6);
+}
+.side-index-link.is-active .side-index-label {
+  opacity: 1;
+  transform: translateX(0);
+  color: var(--color-cyan);
+}
+
+/* MobileMenu */
+.burger {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 0.4rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  z-index: 51;
+}
+.burger span {
+  display: block;
+  width: 22px;
+  height: 1.5px;
+  background: var(--color-paper);
+  transition:
+    transform 200ms var(--ease-arrive),
+    opacity 200ms var(--ease-arrive);
+}
+.burger[aria-expanded="true"] span:first-child {
+  transform: translateY(3.25px) rotate(45deg);
+}
+.burger[aria-expanded="true"] span:last-child {
+  transform: translateY(-3.25px) rotate(-45deg);
+}
+.mobile-menu {
+  position: fixed;
+  inset: 0;
+  z-index: 45;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: var(--page-padding);
+  background: var(--color-ink);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 300ms var(--ease-arrive);
+}
+.mobile-menu.is-open {
+  opacity: 1;
+  pointer-events: auto;
+}
+.mobile-menu-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+}
+.mobile-menu-link {
+  font-family: var(--font-sans);
+  font-size: 1.6rem;
+  font-weight: 500;
+  color: var(--color-paper);
+  text-decoration: none;
+}
+.mobile-menu-link:hover {
+  color: var(--color-cyan);
+}
+.mobile-menu-footer {
+  position: absolute;
+  left: var(--page-padding);
+  right: var(--page-padding);
+  bottom: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* Footer */
+.footer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 2rem var(--page-padding);
+  border-top: 1px solid var(--color-paper-faint);
+}
+.footer-copy {
+  font-family: var(--font-mono);
+  font-size: var(--text-mono-sm);
+  letter-spacing: 0.08em;
+  color: var(--color-paper-mute);
+}
+.footer-right {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+.footer-link {
+  font-family: var(--font-mono);
+  font-size: var(--text-mono-sm);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-paper);
+  text-decoration: none;
+  transition: color 200ms var(--ease-arrive);
+}
+.footer-link:hover {
+  color: var(--color-cyan);
+}
+@media (min-width: 768px) {
+  .footer {
+    flex-direction: row;
+    justify-content: space-between;
+  }
+}
+
+/* ===========================================================================
    Reduced motion (S1.13/S1.14)
    NOTE: components must keep their RESTING state visible (never animate in
    from opacity:0 via CSS). JS reveals are gated by useReducedMotion().
