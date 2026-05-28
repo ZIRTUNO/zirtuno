@@ -17,7 +17,9 @@ export const contactSchema = z.object({
   email: z.email(),
   company: z.string().trim().max(160).optional(),
   message: z.string().trim().min(10).max(4000),
-  intent: z.enum(CONTACT_INTENTS).default("general"),
+  // Required (the form always supplies it; defaults to "general" client-side).
+  // Keeps z.infer input/output aligned for react-hook-form.
+  intent: z.enum(CONTACT_INTENTS),
 });
 
 export type ContactInput = z.infer<typeof contactSchema>;
