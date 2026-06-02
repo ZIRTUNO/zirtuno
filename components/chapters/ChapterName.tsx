@@ -1,7 +1,7 @@
 import { useTranslations } from "next-intl";
 import { Reveal } from "@/components/ui/Reveal";
-import { WebglPlaceholder } from "@/components/ui/WebglPlaceholder";
-import { LogoMark } from "@/components/hero/LogoMark";
+import { OriginMark } from "./OriginMark";
+import { OriginWordmark } from "./OriginWordmark";
 
 /**
  * S8 · Chapter 7 — A Origem / The Origin (+ manifesto coda). The emotional
@@ -38,10 +38,10 @@ export function ChapterName() {
           </p>
         </Reveal>
 
-        {/* Beat 2 — Three pillars, one mark (resolves to the SVG-traced mark) */}
+        {/* Beat 2 — Three pillars, one mark (fracture→converge forms the mark) */}
         <Reveal inView className="flex flex-col items-center">
           <div className="origin-mark">
-            <LogoMark />
+            <OriginMark />
           </div>
           <p className="founding-pillars">{pillars.join("   ·   ")}</p>
           <p className="font-poetic name-word-text">{t("b2")}</p>
@@ -61,17 +61,12 @@ export function ChapterName() {
           </p>
         </Reveal>
 
-        {/* Beat 5 — Resolution: particle convergence → wordmark + closing line */}
+        {/* Beat 5 — Resolution: CPU particle convergence → wordmark + closing line */}
         <Reveal inView className="flex flex-col items-center">
           <div className="w-full max-w-sm">
-            <WebglPlaceholder
-              variant="particles"
-              label="wordmark convergence · phase 2"
-              ariaLabel={t("wordmark")}
-            />
+            <OriginWordmark text={t("wordmark")} />
           </div>
-          <p className="name-word mt-10">{t("wordmark")}</p>
-          <p className="font-poetic origin-closing">{t("closing")}</p>
+          <p className="font-poetic origin-closing mt-10">{t("closing")}</p>
           {/* Zéfiro + Ventura kept ONLY as a single dim grace note (S8.5 default) */}
           <p className="font-poetic origin-grace">{t("graceNote")}</p>
         </Reveal>
