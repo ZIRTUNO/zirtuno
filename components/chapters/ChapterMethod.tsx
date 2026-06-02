@@ -1,6 +1,8 @@
 import { useTranslations } from "next-intl";
 import { Reveal } from "@/components/ui/Reveal";
 import { CtaAnalysis, CtaTalk } from "@/components/chrome/CtaButton";
+import { MethodLine } from "./MethodLine";
+import { MethodGesture } from "./MethodGesture";
 
 type Phase = { name: string; desc: string };
 
@@ -37,9 +39,11 @@ export function ChapterMethod() {
       </Reveal>
 
       <ol className="method">
+        <MethodLine />
         {phases.map((p, i) => (
           <Reveal inView as="li" key={p.name} delay={i * 0.08} className="method-phase">
             <span className="method-node" aria-hidden="true" />
+            <MethodGesture phase={i} />
             <span className="method-num">{String(i + 1).padStart(2, "0")}</span>
             <h3 className="method-name text-display-m">{p.name}</h3>
             <p className="method-desc">{p.desc}</p>

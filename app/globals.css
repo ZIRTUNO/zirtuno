@@ -971,6 +971,174 @@ section[id],
   }
 }
 
+/* S6 — connector line that draws on scroll (--method-draw 0→1) + per-phase gestures */
+.method-draw {
+  position: absolute;
+  left: 5px;
+  top: 1.6rem;
+  bottom: 1.6rem;
+  width: 2px;
+  margin: 0;
+  list-style: none;
+  background: var(--color-cyan);
+  box-shadow: 0 0 10px var(--color-cyan-glow);
+  transform-origin: top;
+  transform: scaleY(var(--method-draw, 0));
+  pointer-events: none;
+}
+.method-gesture {
+  width: 44px;
+  height: 44px;
+  margin-bottom: 0.9rem;
+}
+.method-gesture svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+.mg-grid,
+.mg-link {
+  stroke: var(--color-cyan);
+  stroke-width: 1.6;
+  fill: none;
+}
+.mg-frame {
+  stroke: var(--color-paper-dim);
+  stroke-width: 1.6;
+  fill: none;
+}
+.mg-node,
+.mg-core {
+  fill: var(--color-cyan);
+}
+.mg-pulse {
+  stroke: var(--color-cyan);
+  stroke-width: 1.4;
+  fill: none;
+  transform-origin: 20px 20px;
+  opacity: 0;
+}
+.mg-fill {
+  fill: var(--color-cyan);
+  transform-origin: 20px 32px;
+}
+.mg-scan {
+  stroke: var(--color-cyan-glow);
+  stroke-width: 1.7;
+}
+.mg-scan {
+  animation: mg-scan 2.6s var(--ease-calm) infinite;
+}
+.mg-grid {
+  animation: mg-grid 2.6s ease-in-out infinite;
+}
+.mg-grid:nth-of-type(2) {
+  animation-delay: 0.2s;
+}
+.mg-grid:nth-of-type(3) {
+  animation-delay: 0.35s;
+}
+.mg-grid:nth-of-type(4) {
+  animation-delay: 0.5s;
+}
+.mg-fill {
+  animation: mg-fill 3s var(--ease-calm) infinite;
+}
+.mg-link {
+  stroke-dasharray: 24;
+  stroke-dashoffset: 24;
+  animation: mg-link 2.8s ease-in-out infinite;
+}
+.mg-link:nth-of-type(2) {
+  animation-delay: 0.25s;
+}
+.mg-link:nth-of-type(3) {
+  animation-delay: 0.5s;
+}
+.mg-pulse {
+  animation: mg-pulse 2.8s ease-out infinite;
+}
+.mg-pulse:nth-of-type(2) {
+  animation-delay: 0.9s;
+}
+.mg-pulse:nth-of-type(3) {
+  animation-delay: 1.8s;
+}
+@keyframes mg-scan {
+  0%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.4;
+  }
+  50% {
+    transform: translateY(14px);
+    opacity: 1;
+  }
+}
+@keyframes mg-grid {
+  0%,
+  100% {
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+@keyframes mg-fill {
+  0% {
+    transform: scaleY(0.12);
+  }
+  60%,
+  100% {
+    transform: scaleY(1);
+  }
+}
+@keyframes mg-link {
+  0% {
+    stroke-dashoffset: 24;
+  }
+  55%,
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes mg-pulse {
+  0% {
+    transform: scale(0.45);
+    opacity: 0.9;
+  }
+  100% {
+    transform: scale(2.6);
+    opacity: 0;
+  }
+}
+@media (min-width: 768px) {
+  .method-draw {
+    left: 0;
+    right: 0;
+    top: 5px;
+    bottom: auto;
+    width: auto;
+    height: 2px;
+    transform-origin: left;
+    transform: scaleX(var(--method-draw, 0));
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .method-gesture * {
+    animation: none !important;
+  }
+  .mg-fill {
+    transform: scaleY(1);
+  }
+  .mg-pulse {
+    opacity: 0.45;
+  }
+  .mg-link {
+    stroke-dashoffset: 0;
+  }
+}
+
 /* ===========================================================================
    Selected Work — cards, filters, case study (S7)
    =========================================================================== */
