@@ -31,7 +31,7 @@ function supportsWebGL(): boolean {
  */
 export function FracturedMetaball({ ariaLabel = "Zirtuno" }: { ariaLabel?: string }) {
   const reduced = useReducedMotion();
-  const [stageRef, inView] = useInView<HTMLDivElement>();
+  const [stageRef, inView, seen] = useInView<HTMLDivElement>("250px");
   const [enabled, setEnabled] = useState(false);
   const [desktop, setDesktop] = useState(false);
   const [ready, setReady] = useState(false);
@@ -57,7 +57,7 @@ export function FracturedMetaball({ ariaLabel = "Zirtuno" }: { ariaLabel?: strin
         ariaLabel={ariaLabel}
         className={cn("fractured-fallback", hideFallback && "is-hidden")}
       />
-      {enabled && (
+      {enabled && seen && (
         <div className="fractured-canvas">
           <MetaballScene
             fracture={0.9}

@@ -35,7 +35,7 @@ function supportsWebGL(): boolean {
  */
 export function EcosystemCore({ ariaLabel = "Zirtuno" }: { ariaLabel?: string }) {
   const reduced = useReducedMotion();
-  const [stageRef, inView] = useInView<HTMLDivElement>("-8% 0px");
+  const [stageRef, inView, seen] = useInView<HTMLDivElement>("250px");
   const [enabled, setEnabled] = useState(false);
   const [desktop, setDesktop] = useState(false);
   const [ready, setReady] = useState(false);
@@ -93,7 +93,7 @@ export function EcosystemCore({ ariaLabel = "Zirtuno" }: { ariaLabel?: string })
         ariaLabel={ariaLabel}
         className={cn("eco-core-fallback", hideFallback && "is-hidden")}
       />
-      {enabled && (
+      {enabled && seen && (
         <div className="eco-core-canvas">
           <MetaballScene
             fracture={1}

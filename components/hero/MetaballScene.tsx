@@ -18,8 +18,8 @@ const ROUND = 0.04;
 const ERODE = 0.025;
 const IOR = 1.4;
 const VIEW = 1.05;
-const STEPS = 80;
-const TSTEPS = 22;
+const STEPS = 56; // raymarch steps — trimmed for GPU headroom (compact object)
+const TSTEPS = 12; // glass-thickness steps
 
 const BREATH = FIELD.breath;
 const BREATH_HZ = 1 / 8;
@@ -669,7 +669,7 @@ export default function MetaballScene({
   }
   return (
     <Canvas
-      dpr={[1, 2]}
+      dpr={1}
       frameloop={animate && play ? "always" : "demand"}
       gl={{ alpha: true, antialias: true, toneMapping: THREE.NoToneMapping }}
       style={{ width: "100%", height: "100%" }}

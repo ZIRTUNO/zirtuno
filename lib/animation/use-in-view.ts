@@ -9,17 +9,21 @@ import { useEffect, useRef, useState } from "react";
 export function useInView<T extends HTMLElement>(rootMargin = "200px") {
   const ref = useRef<T>(null);
   const [inView, setInView] = useState(false);
+  const [seen, setSeen] = useState(false); // latches true once first in view (lazy-mount)
 
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
     const io = new IntersectionObserver(
-      ([entry]) => setInView(entry.isIntersecting),
+      ([entry]) => {
+        setInView(entry.isIntersecting);
+        if (entry.isIntersecting) setSeen(true);
+      },
       { rootMargin },
     );
     io.observe(el);
     return () => io.disconnect();
   }, [rootMargin]);
 
-  return [ref, inView] as const;
+  return [ref, inView, seen] as const;
 }

@@ -36,7 +36,7 @@ function supportsWebGL(): boolean {
  */
 export function ContactMetaball() {
   const reduced = useReducedMotion();
-  const [stageRef, inView] = useInView<HTMLDivElement>("0px");
+  const [stageRef, inView, seen] = useInView<HTMLDivElement>("250px");
   const [enabled, setEnabled] = useState(false);
   const [desktop, setDesktop] = useState(false);
   const [ready, setReady] = useState(false);
@@ -80,7 +80,7 @@ export function ContactMetaball() {
         ariaLabel="Zirtuno"
         className={cn("contact-metaball-fallback", hideFallback && "is-hidden")}
       />
-      {enabled && (
+      {enabled && seen && (
         <div className="contact-metaball-canvas">
           <MetaballScene
             fracture={0}

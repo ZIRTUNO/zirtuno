@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import type { KeyboardEvent } from "react";
 import dynamic from "next/dynamic";
 import { useReducedMotion } from "@/lib/animation/reduced-motion";
+import { useInView } from "@/lib/animation/use-in-view";
 import { LogoMark } from "./LogoMark";
 import { PillarIndicator } from "./PillarIndicator";
 
@@ -35,6 +36,7 @@ function supportsWebGL(): boolean {
  */
 export function MetaballCanvas({ pillarNames }: { pillarNames: string[] }) {
   const reduced = useReducedMotion();
+  const [stageRef, heroInView] = useInView<HTMLDivElement>("150px"); // pause off-screen
   const [enabled, setEnabled] = useState(false);
   const [desktop, setDesktop] = useState(false);
   const [ready, setReady] = useState(false);
@@ -131,6 +133,7 @@ export function MetaballCanvas({ pillarNames }: { pillarNames: string[] }) {
   return (
     <>
       <div
+        ref={stageRef}
         className="metaball-stage"
         data-hero-metaball
         role="img"
@@ -151,6 +154,7 @@ export function MetaballCanvas({ pillarNames }: { pillarNames: string[] }) {
               previewState={preview}
               manualState={manual}
               morphPair={pair}
+              play={heroInView || capture !== null || preview !== null || pair !== null}
               onReady={() => setReady(true)}
               onActiveChange={setActive}
             />

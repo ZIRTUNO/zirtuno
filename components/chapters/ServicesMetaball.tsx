@@ -35,7 +35,7 @@ function supportsWebGL(): boolean {
  */
 export function ServicesMetaball({ ariaLabel = "Zirtuno" }: { ariaLabel?: string }) {
   const reduced = useReducedMotion();
-  const [stageRef, inView] = useInView<HTMLDivElement>("0px");
+  const [stageRef, inView, seen] = useInView<HTMLDivElement>("250px");
   const [enabled, setEnabled] = useState(false);
   const [desktop, setDesktop] = useState(false);
   const [ready, setReady] = useState(false);
@@ -84,7 +84,7 @@ export function ServicesMetaball({ ariaLabel = "Zirtuno" }: { ariaLabel?: string
           ariaLabel={ariaLabel}
           className={cn("services-metaball-fallback", hideFallback && "is-hidden")}
         />
-        {enabled && (
+        {enabled && seen && (
           <div className="services-metaball-canvas">
             <MetaballScene
               manualState={active + 1}
