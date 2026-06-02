@@ -1,11 +1,13 @@
 import { Suspense } from "react";
 import { useTranslations } from "next-intl";
 import { Reveal } from "@/components/ui/Reveal";
-import { WebglPlaceholder } from "@/components/ui/WebglPlaceholder";
 import { ContactForm } from "./ContactForm";
+import { ContactMetaball } from "./ContactMetaball";
 
-// Secondary contact paths (S10.5). Env overrides; sensible defaults so the
-// links always work even before .env.local is configured.
+// Secondary contact paths (S10.5). TODO(content): the defaults below are
+// PLACEHOLDERS until the real WhatsApp number, email, and social handles are
+// supplied — override via env (NEXT_PUBLIC_WHATSAPP_URL, CONTACT_EMAIL_TO,
+// NEXT_PUBLIC_INSTAGRAM_URL) or replace here once confirmed.
 const WHATSAPP_URL =
   process.env.NEXT_PUBLIC_WHATSAPP_URL ?? "https://wa.me/5532991641200";
 const INSTAGRAM_URL =
@@ -27,13 +29,7 @@ export function ChapterContact() {
       className="page-x relative border-t border-paper-faint py-24 md:py-32"
     >
       <div className="mx-auto max-w-2xl text-center">
-        <div className="mx-auto mb-10 max-w-[18rem]">
-          <WebglPlaceholder
-            variant="unified"
-            label="exhale · phase 2"
-            ariaLabel="Zirtuno"
-          />
-        </div>
+        <ContactMetaball />
 
         <div className="flex justify-center">
           <Reveal inView as="p" className="chapter-label">

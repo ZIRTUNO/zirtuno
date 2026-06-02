@@ -585,6 +585,30 @@ section[id],
 .services-metaball-canvas {
   pointer-events: none;
 }
+
+/* S10 — contact metaball (resting mark; exhales on submit). */
+.contact-metaball-stage {
+  position: relative;
+  width: 100%;
+  max-width: 300px;
+  margin: 0 auto 2.5rem;
+  aspect-ratio: 1 / 1;
+}
+.contact-metaball-stage > .contact-metaball-fallback,
+.contact-metaball-stage > .contact-metaball-canvas {
+  position: absolute;
+  inset: 0;
+}
+.contact-metaball-stage > .contact-metaball-fallback {
+  max-width: none;
+  transition: opacity var(--dur-long) var(--ease-arrive);
+}
+.contact-metaball-fallback.is-hidden {
+  opacity: 0;
+}
+.contact-metaball-canvas {
+  pointer-events: none;
+}
 .logo-mark {
   width: 100%;
   height: 100%;

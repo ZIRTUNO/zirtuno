@@ -47,6 +47,9 @@ export function ContactForm() {
 
   async function onSubmit(values: ContactInput) {
     setStatus("idle");
+    // additive exhale gesture on the contact metaball (the labeled button below
+    // is the canonical action). Event name mirrors ContactMetaball's EXHALE_EVENT.
+    window.dispatchEvent(new CustomEvent("zirtuno:exhale"));
     try {
       const res = await fetch("/api/contact", {
         method: "POST",
