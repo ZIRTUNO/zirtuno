@@ -1,6 +1,6 @@
 # CLAUDE.md — Zirtuno Website
 
-> Read this at the start of every session. It is the source of truth for how to build, what to never break, and how to behave. The full spec lives at `docs/build-spec.md`. When in doubt, that spec wins on detail; this file wins on rules and taste.
+> Read this at the start of every session. It is the source of truth for how to build, what to never break, and how to behave. The full spec lives at `build-spec.md`. When in doubt, that spec wins on detail; this file wins on rules and taste.
 
 ---
 
@@ -51,7 +51,7 @@ Tone in three words: **Discreto. Preciso. Transformador.** Plus, for v0.2: **Cle
 
 ```css
 --ink:#000000; --surface:#0A0A0C;
---cyan:#00D4FF; --cyan-glow:#4DE8FF; --cyan-deep:#0099CC;
+--cyan:#00E3FE; --cyan-glow:#4DECFF; --cyan-deep:#00B6CC; /* real brand cyan */
 --paper:#F2F0EB; --paper-mute:rgba(242,240,235,0.5);
 --paper-dim:rgba(242,240,235,0.25); --paper-faint:rgba(242,240,235,0.1);
 --warn:#FF6B5C; /* form errors only */
@@ -93,9 +93,9 @@ You cannot see what your shaders render. These four moments WILL require human s
 - **Ecosystem converge + diagram** (S4) — the fragments→organism transition
 - **Etymology particles** (S8) — text→particles→text legibility
 
-For these: build a first version from the spec + the references in `docs/references.md`, then STOP and ask the user to run it and share a screenshot before iterating. Do not assume your first shader looks right. For everything else (structure, layout, copy, forms, CMS, CTAs), proceed normally.
+For these: build a first version from the spec + the references in `references.md`, then STOP and ask the user to run it and share a screenshot before iterating. Do not assume your first shader looks right. For everything else (structure, layout, copy, forms, CMS, CTAs), proceed normally.
 
-When working on shaders, consult `docs/references.md` first — especially Three.js, Inigo Quilez SDF articles, and the mapped Codrops tutorials.
+When working on shaders, consult `references.md` first — especially Three.js, Inigo Quilez SDF articles, and the mapped Codrops tutorials.
 
 ---
 

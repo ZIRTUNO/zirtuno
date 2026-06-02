@@ -22,7 +22,7 @@
       "services": "04 Serviços",
       "method": "05 Método",
       "work": "06 Projetos",
-      "name": "07 Nome",
+      "name": "07 Origem",
       "studio": "08 Studio",
       "contact": "09 Contato"
     }
@@ -192,14 +192,15 @@
     "empty": "Nenhum projeto nesta categoria ainda."
   },
   "name": {
-    "chapterLabel": "07 — O Nome",
-    "b1": "Na mitologia grega, vivia um vento que não destruía.",
-    "zefiroWord": "Zéfiro",
-    "zefiroText": "Sopro suave. Anunciava a primavera. Mudança sem violência.",
-    "venturaWord": "Ventura",
-    "venturaText": "Caminho. Destino. Coragem de seguir uma direção ainda não desenhada.",
-    "zirtunoWord": "Zirtuno",
-    "zirtunoText": "O sopro que dá forma.",
+    "chapterLabel": "07 — A Origem",
+    "b1": "Tudo começou com dois irmãos e uma mesma inquietação: e se construíssemos o que ainda não existe?",
+    "b2": "De uma só visão nasceram três pilares — social, saúde e finanças. As forças que movem cada negócio e cada vida.",
+    "pillars": ["Social", "Saúde", "Finanças"],
+    "b3": "A Zirtuno nasceu para transformar ideias em estrutura. Para dar forma a sistemas, soluções e tecnologias que ainda esperavam para existir.",
+    "b4": "De dois irmãos a um estúdio digital completo. De uma ideia a um ecossistema — software, IA, automação, branding e estratégia.",
+    "wordmark": "Zirtuno",
+    "closing": "Construímos o que ainda não existe.",
+    "graceNote": "ZIRTUNO — o sopro que dá forma.",
     "manifesto": [
       "Movimento sem ruído.",
       "Forma para o que estava disperso.",

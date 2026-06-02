@@ -1,6 +1,6 @@
 import { useTranslations } from "next-intl";
 import { Reveal } from "@/components/ui/Reveal";
-import { WebglPlaceholder } from "@/components/ui/WebglPlaceholder";
+import { FracturedMetaball } from "@/components/hero/FracturedMetaball";
 import { CtaStructure } from "@/components/chrome/CtaButton";
 
 type Symptom = { label: string; desc: string };
@@ -38,11 +38,7 @@ export function ChapterProblem() {
         {/* Fractured visual — mobile first (simplified), desktop sticky right */}
         <div className="order-1 md:order-2 md:sticky md:top-[calc(var(--topbar-h)+1.5rem)]">
           <div className="mx-auto max-w-xs md:max-w-none">
-            <WebglPlaceholder
-              variant="fractured"
-              label="fractured · phase 2"
-              ariaLabel={t("chapterLabel")}
-            />
+            <FracturedMetaball ariaLabel={t("chapterLabel")} />
           </div>
         </div>
 

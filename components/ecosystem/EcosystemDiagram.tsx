@@ -1,5 +1,5 @@
 import { useTranslations } from "next-intl";
-import { WebglPlaceholder } from "@/components/ui/WebglPlaceholder";
+import { EcosystemCore } from "./EcosystemCore";
 import { EcosystemNode } from "./EcosystemNode";
 
 type Node = { name: string; tooltip: string };
@@ -52,7 +52,7 @@ export function EcosystemDiagram() {
         </svg>
 
         <div className="eco-core">
-          <WebglPlaceholder variant="unified" ariaLabel={t("centerLabel")} />
+          <EcosystemCore ariaLabel={t("centerLabel")} />
           <span className="eco-core-label">{t("centerLabel")}</span>
         </div>
 

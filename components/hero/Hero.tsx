@@ -2,15 +2,27 @@ import { useTranslations } from "next-intl";
 import { Reveal } from "@/components/ui/Reveal";
 import { CtaAnalysis, CtaPortfolio } from "@/components/chrome/CtaButton";
 import { MetaballCanvas } from "./MetaballCanvas";
-import { PillarIndicator } from "./PillarIndicator";
 
 /**
  * S2 · Hero (Overture). Business-first: positioning headline + subline state
  * the offer immediately; the poetic eyebrow (serif italic) is a supporting
  * accent only. Copy is server-rendered (RSC) for SEO. Reveal sequence per S2.4.
  */
+const PILLAR_KEYS = [
+  "web",
+  "software",
+  "ai",
+  "automation",
+  "data",
+  "branding",
+  "marketing",
+] as const;
+
 export function Hero() {
   const t = useTranslations("hero");
+  const tp = useTranslations("services.pillars");
+  // short pillar names for the metaball's keyboard a11y announcements (states 1-7)
+  const pillarNames = PILLAR_KEYS.map((k) => tp(`${k}.categoryLabel`));
 
   return (
     <section
@@ -45,12 +57,11 @@ export function Hero() {
         </Reveal>
       </div>
 
-      {/* Right — metaball (placeholder in Phase 1) + pillar index */}
+      {/* Right — raymarched glass metaball + pillar index (S2.3) */}
       <div className="order-2 flex flex-col items-center md:items-end">
         <Reveal y={0} delay={0.6} duration={1.4} className="w-full">
-          <MetaballCanvas />
+          <MetaballCanvas pillarNames={pillarNames} />
         </Reveal>
-        <PillarIndicator />
       </div>
     </section>
   );

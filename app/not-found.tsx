@@ -19,13 +19,13 @@ export default function RootNotFound() {
         }}
       >
         <div>
-          <p style={{ color: "#00D4FF", letterSpacing: "0.1em", margin: 0 }}>
+          <p style={{ color: "#00E3FE", letterSpacing: "0.1em", margin: 0 }}>
             404
           </p>
           <h1 style={{ fontWeight: 500, margin: "0.5rem 0 1.5rem" }}>
             Zirtuno
           </h1>
-          <Link href="/pt" style={{ color: "#00D4FF" }}>
+          <Link href="/pt" style={{ color: "#00E3FE" }}>
             → início
           </Link>
         </div>

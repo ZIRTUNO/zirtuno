@@ -22,7 +22,7 @@ export function PillarEntry({
   const categoryLabel = t(`${base}.categoryLabel`);
 
   return (
-    <article className="pillar">
+    <article className="pillar" data-pillar={index}>
       <span className="pillar-watermark" aria-hidden="true">
         {num}
       </span>

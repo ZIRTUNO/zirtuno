@@ -22,7 +22,7 @@
       "services": "04 Services",
       "method": "05 Method",
       "work": "06 Work",
-      "name": "07 Name",
+      "name": "07 Origin",
       "studio": "08 Studio",
       "contact": "09 Contact"
     }
@@ -192,14 +192,15 @@
     "empty": "No projects in this category yet."
   },
   "name": {
-    "chapterLabel": "07 — The Name",
-    "b1": "In Greek mythology, there lived a wind that did not destroy.",
-    "zefiroWord": "Zéfiro",
-    "zefiroText": "A gentle breath. It announced the spring. Change without violence.",
-    "venturaWord": "Ventura",
-    "venturaText": "Path. Destiny. The courage to follow a direction not yet drawn.",
-    "zirtunoWord": "Zirtuno",
-    "zirtunoText": "The breath that gives shape.",
+    "chapterLabel": "07 — The Origin",
+    "b1": "It began with two brothers and a single restlessness: what if we built what doesn't exist yet?",
+    "b2": "From one vision, three pillars were born — social, health, and finance. The forces that move every business and every life.",
+    "pillars": ["Social", "Health", "Finance"],
+    "b3": "Zirtuno was born to turn ideas into structure — to give form to the systems, solutions, and technologies still waiting to exist.",
+    "b4": "From two brothers to a complete digital studio. From an idea to an ecosystem — software, AI, automation, branding, and strategy.",
+    "wordmark": "Zirtuno",
+    "closing": "We build what doesn't exist yet.",
+    "graceNote": "ZIRTUNO — the breath that gives shape.",
     "manifesto": [
       "Movement without noise.",
       "Form for what was dispersed.",

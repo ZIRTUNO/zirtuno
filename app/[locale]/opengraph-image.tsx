@@ -42,7 +42,7 @@ export default async function OpengraphImage({
             height: 460,
             borderRadius: "9999px",
             background:
-              "radial-gradient(circle at 40% 40%, #4DE8FF, #00D4FF 45%, transparent 72%)",
+              "radial-gradient(circle at 40% 40%, #4DECFF, #00E3FE 45%, transparent 72%)",
             filter: "blur(8px)",
             opacity: 0.85,
           }}
@@ -52,7 +52,7 @@ export default async function OpengraphImage({
             fontSize: 28,
             letterSpacing: 6,
             textTransform: "uppercase",
-            color: "#00D4FF",
+            color: "#00E3FE",
           }}
         >
           Zirtuno
