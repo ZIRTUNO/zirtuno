@@ -119,7 +119,7 @@ NEXT_PUBLIC_WHATSAPP_URL=
 ```css
 :root {
   --ink:#000000; --surface:#0A0A0C;
-  --cyan:#00D4FF; --cyan-glow:#4DE8FF; --cyan-deep:#0099CC;
+  --cyan:#00E3FE; --cyan-glow:#4DECFF; --cyan-deep:#00B6CC; /* real brand cyan (from zirtuno-logo-mark.svg); glow=L65 deep=L40, hue 186° */
   --paper:#F2F0EB; --paper-mute:rgba(242,240,235,0.5);
   --paper-dim:rgba(242,240,235,0.25); --paper-faint:rgba(242,240,235,0.1);
   --warn:#FF6B5C; /* form errors only */
@@ -216,7 +216,19 @@ Desktop: 2-col grid (1fr 1fr), `100svh`, padding 8rem/4rem/3rem. Left: text stac
 5. **CTA row**: `cta.analysis` (primary) + `cta.portfolio` (secondary), gap 1.5rem.
 
 ### S2.3 MetaballCanvas
-Technically identical to v0.1 S2.4 (3D raymarched metaballs, 7 pillar states, hover physics, morphing, keyboard nav). The resting state is also the "unified ecosystem" state reused in S4 — export it as shareable. Pillar indicator (bottom) retained; doubles as a fast visual index of the seven services.
+3D-shaded metaball field with 7 pillar states, hover physics, morphing, keyboard nav. Pillar indicator (bottom) retained; doubles as a fast visual index of the seven services.
+
+**Resting state = the real logo, traced from `public/brand/zirtuno-logo-mark.svg` (NOT the old ~10-sphere approximation).** Build it so the fluid form resolves into an exact replica of the mark at rest:
+1. Rasterize the two cyan paths to an offscreen canvas at the mark's native aspect (2950×3200), via `Path2D` + the group transform `translate(-1050 -850)`.
+2. Sample interior points; weight each sphere's radius by a distance-transform of the silhouette (bigger spheres in thick regions) so few spheres reconstruct the ribbon cleanly.
+3. Center / normalize the points (preserve the 2950:3200 aspect, flip Y) and use them to place the metaball spheres. (Generating an SDF from the silhouette is an acceptable alternative.)
+4. Render the smooth-union of those spheres in brand cyan `#00E3FE`; it should read as the exact mark, breathing (~8s) at rest.
+
+This **traced resting state is the single shared "unified" state**: hero (here), the morph base for Services (S5), the ecosystem core (S4), **and S8 Beat 2** (the moment the three forms land as the Zirtuno mark). Export it from `lib/webgl/states.ts` so every chapter resolves to the *same* geometry.
+
+Trace pipeline is client-only; **`prefers-reduced-motion` / no-WebGL fallback is the static SVG mark itself** (`zirtuno-logo-mark.svg`), which is already the exact target image.
+
+> Build & ship the resting state first (breathing mark, correct cyan, static-SVG fallback) and get a screenshot sign-off **before** layering the 7 pillar states + morph + hover + keyboard on top.
 
 ### S2.4 Reveal sequence
 | Element | Delay | Animation | Dur | Easing |
@@ -511,30 +523,66 @@ Card: ghost "Ver projeto". Section end: `cta.portfolio`. `/work`: category filte
 
 ---
 
-## S8 · CHAPTER 7 · THE NAME (ETYMOLOGY) + MANIFESTO CODA
+## S8 · CHAPTER 7 · A ORIGEM / THE ORIGIN + MANIFESTO CODA
 
-> The emotional peak — now *after* the business case, where it deepens trust instead of delaying clarity. The concentrated 30% poetic.
+> The emotional peak — *after* the business case, where it deepens trust right before contact. The concentrated **30% poetic**, now in service of a true story: two brothers, three founding pillars (social, health, finance), and a purpose — to build what doesn't yet exist. (Replaces the former "The Name / Etymology" chapter.)
 
-### S8.1 Placement rationale
-The visitor now knows offer, problem, ecosystem, services, method, proof. They're ready to be moved. Zéfiro + Ventura answers "why does this company exist?" at the right moment.
+### S8.1 Placement & role
+Chapter 7, after Selected Work, before Studio. Answers "why does this company exist?" at the moment the visitor is ready to be moved. Chapter label: **A Origem / The Origin** (was "The Name"). The visual narrative is tied directly to the logo: **two brothers (two forms) → a shared vision crystallizes into three pillars (the three forms of the mark) → the mark expands into the full ecosystem.** The birth of the mark is the birth of the company.
 
-### S8.2 Sequence
-Six-beat scroll reveal (Wind → ZÉFIRO → VENTURA → Convergence → ZIRTUNO → Return to form), full particle spec as in v0.1 S3.3. Copy:
-- B1: *Na mitologia grega, vivia um vento que não destruía.* / *In Greek mythology, there lived a wind that did not destroy.*
-- B2 (ZÉFIRO): *Sopro suave. Anunciava a primavera. Mudança sem violência.* / *A gentle breath. It announced the spring. Change without violence.*
-- B3 (VENTURA): *Caminho. Destino. Coragem de seguir uma direção ainda não desenhada.* / *Path. Destiny. The courage to follow a direction not yet drawn.*
-- B5 (ZIRTUNO): *O sopro que dá forma.* / *The breath that gives shape.*
+### S8.2 Layout
+Pinned scroll section (~600vh scroll length, pinned to 100vh). Five beats on GSAP ScrollTrigger scrub, reusing the metaball + particle systems. Mobile: one beat per scroll-snap section, no scrub.
 
-### S8.3 Manifesto coda (folds in old Philosophy chapter)
-After the wordmark resolves, four principles in a tight scrolling sequence (not four viewports):
+### S8.3 The Five Beats
+**Beat 1 (0–18%) — Two brothers.** Two fluid forms enter from opposite sides and drift toward each other — drawn, not colliding. Quiet.
+- PT: *Tudo começou com dois irmãos e uma mesma inquietação: e se construíssemos o que ainda não existe?*
+- EN: *It began with two brothers and a single restlessness: what if we built what doesn't exist yet?*
+
+**Beat 2 (18–42%) — Three pillars, one mark.** From the meeting of the two forms a third emerges; the three settle into rotation — **this is the moment the Zirtuno logo forms on screen, and it must resolve to the SVG-traced resting geometry (S2.3).** Three quiet labels fade in, one per form: `Social · Saúde · Finanças` (EN `Social · Health · Finance`).
+- PT: *De uma só visão nasceram três pilares — social, saúde e finanças. As forças que movem cada negócio e cada vida.*
+- EN: *From one vision, three pillars were born — social, health, and finance. The forces that move every business and every life.*
+
+**Beat 3 (42–62%) — The purpose.** The logo holds, breathing. Text takes the foreground.
+- PT: *A Zirtuno nasceu para transformar ideias em estrutura. Para dar forma a sistemas, soluções e tecnologias que ainda esperavam para existir.*
+- EN: *Zirtuno was born to turn ideas into structure — to give form to the systems, solutions, and technologies still waiting to exist.*
+
+**Beat 4 (62–82%) — The evolution.** The three forms multiply and connect, echoing the Ecosystem chapter — the mark expanding into capability.
+- PT: *De dois irmãos a um estúdio digital completo. De uma ideia a um ecossistema — software, IA, automação, branding e estratégia.*
+- EN: *From two brothers to a complete digital studio. From an idea to an ecosystem — software, AI, automation, branding, and strategy.*
+
+**Beat 5 (82–100%) — Resolution.** The expanded forms condense back into the **ZIRTUNO wordmark** (particle convergence). Below it, the closing line:
+- PT: **Construímos o que ainda não existe.**
+- EN: **We build what doesn't exist yet.**
+
+Grace note (per S8.5 default): one dim line beneath the closing line — PT *"ZIRTUNO — o sopro que dá forma."* / EN *"ZIRTUNO — the breath that gives shape."*
+
+### S8.4 Manifesto coda
+After Beat 5, the four principles follow as a tight scrolling sequence (unchanged):
 *Movimento sem ruído.* · *Forma para o que estava disperso.* · *Direção, não apenas execução.* · *Discreto. Preciso. Transformador.*
 (EN: Movement without noise · Form for what was dispersed · Direction, not just execution · Discreet. Precise. Transformative.)
 
-### S8.4 Acceptance — S8 done when:
-- [ ] Six-beat reveal; words form legibly from particles
-- [ ] Manifesto coda follows as a tight sequence
-- [ ] Lands after the business case, not before
-- [ ] Mobile + reduced-motion stills in place
+### S8.5 Decisions (defaults applied — `TODO(decision)` to revisit)
+- **Zéfiro + Ventura etymology** — kept ONLY as the single dim grace note in Beat 5 (option b). `TODO(decision)`: drop entirely, or restore as a short opening layer before Beat 1?
+- **Brothers** — anonymous, consistent with the Studio chapter (no names, no portrait). `TODO(decision)`: name them + add a portrait moment in Beat 1?
+- **Meaning of the three pillars** — framed as "as forças que movem cada negócio e cada vida / the forces that move every business and every life" (works for any reading). `TODO(decision)`: confirm whether social/health/finance are impact sectors, founding values, or target markets, so the line can sharpen.
+
+### S8.6 Critical distinction — two different "pillars"
+The **three founding pillars (social · health · finance)** are the **WHY** (this chapter, the origin). The **seven service pillars** (S5, the metaball's 7 states) are the **HOW** (what Zirtuno builds). They must stay visually and verbally distinct — three understated mono labels beside the forms here, never styled or counted like the seven services. Do not blur them.
+
+### S8.7 Visual notes
+- Reuse the metaball for the two→three form transition (Beats 1–2) and the particle system for the wordmark convergence (Beat 5).
+- Beat 2 must visibly land as the Zirtuno mark — use the **exact SVG-traced resting geometry from S2.3** so it resolves precisely.
+- Keep the three pillar labels understated (small mono, fading in beside each form). The forms are the hero; the labels are annotation.
+
+### S8.8 Acceptance — revised S8 done when:
+- [ ] Reads as Zirtuno's true origin (two brothers, three founding pillars, the purpose), not borrowed mythology
+- [ ] Beat 2 visibly forms the Zirtuno mark from two→three forms (SVG-traced geometry), with pillar labels
+- [ ] Closing lands on *Construímos o que ainda não existe / We build what doesn't exist yet*
+- [ ] Grace note present as a single dim line (per S8.5)
+- [ ] Manifesto coda follows
+- [ ] Three founding pillars stay distinct from the seven service pillars (S8.6)
+- [ ] Chapter sits after Selected Work, before Studio
+- [ ] Both languages; mobile + reduced-motion stills of each beat
 
 ---
 

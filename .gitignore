@@ -20,6 +20,18 @@
 # production
 /build
 
+# local screenshot captures
+/captures
+
+# local working assets / references (not part of the deployed site)
+/MORPHS_Blender_Reference
+/Zirtuno ASSETS
+/Public Brand - Zirtuno SVG
+/public/hdri
+
+# local agent / preview config
+/.claude
+
 # misc
 .DS_Store
 *.pem

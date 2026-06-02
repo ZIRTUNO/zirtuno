@@ -6,7 +6,10 @@
     "dev": "next dev --turbopack",
     "build": "next build --turbopack",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "capture:hero": "node scripts/capture-hero.mjs",
+    "contact:sheet": "node scripts/contact-sheet.mjs",
+    "morphs:check": "node scripts/capture-pair.mjs"
   },
   "dependencies": {
     "@gsap/react": "^2.1.2",
@@ -38,6 +41,8 @@
     "@types/three": "^0.184.1",
     "eslint": "^9",
     "eslint-config-next": "15.5.18",
+    "playwright": "^1.60.0",
+    "pngjs": "^7.0.0",
     "tailwindcss": "^4",
     "typescript": "^5"
   }
