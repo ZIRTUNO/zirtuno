@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import { useReducedMotion } from "@/lib/animation/reduced-motion";
 import { useInView } from "@/lib/animation/use-in-view";
+import { canRunGlass } from "@/lib/webgl/can-run-glass";
 import { WebglPlaceholder } from "@/components/ui/WebglPlaceholder";
 import { PillarIndicator } from "@/components/hero/PillarIndicator";
 import { cn } from "@/lib/utils";
@@ -14,15 +15,7 @@ const MetaballScene = dynamic(() => import("@/components/hero/MetaballScene"), {
 });
 
 function supportsWebGL(): boolean {
-  try {
-    const c = document.createElement("canvas");
-    return !!(
-      window.WebGLRenderingContext &&
-      (c.getContext("webgl2") || c.getContext("webgl"))
-    );
-  } catch {
-    return false;
-  }
+  return canRunGlass();
 }
 
 /**

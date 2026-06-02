@@ -5,6 +5,7 @@ import type { KeyboardEvent } from "react";
 import dynamic from "next/dynamic";
 import { useReducedMotion } from "@/lib/animation/reduced-motion";
 import { useInView } from "@/lib/animation/use-in-view";
+import { canRunGlass } from "@/lib/webgl/can-run-glass";
 import { LogoMark } from "./LogoMark";
 import { PillarIndicator } from "./PillarIndicator";
 
@@ -13,16 +14,10 @@ const MetaballScene = dynamic(() => import("./MetaballScene"), { ssr: false });
 
 const STATES = 8; // 0 = mark, 1-7 = the service pillars
 
+// WebGL + GPU-capability gate — weak GPUs (Intel HD/UHD, software) fall back to
+// the static mark to avoid hanging the browser; see lib/webgl/can-run-glass.
 function supportsWebGL(): boolean {
-  try {
-    const c = document.createElement("canvas");
-    return !!(
-      window.WebGLRenderingContext &&
-      (c.getContext("webgl2") || c.getContext("webgl"))
-    );
-  } catch {
-    return false;
-  }
+  return canRunGlass();
 }
 
 /**

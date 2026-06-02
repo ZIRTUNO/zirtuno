@@ -20,9 +20,8 @@ const measure = () =>
         const t = performance.now();
         const k = () => {
           f++;
-          performance.now() - t < 2000
-            ? requestAnimationFrame(k)
-            : r(Math.round((f / 2000) * 1000));
+          if (performance.now() - t < 2000) requestAnimationFrame(k);
+          else r(Math.round((f / 2000) * 1000));
         };
         requestAnimationFrame(k);
       }),
