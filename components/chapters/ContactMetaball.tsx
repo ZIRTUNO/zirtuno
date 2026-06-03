@@ -78,6 +78,7 @@ export function ContactMetaball() {
             fractureRef={fractureRef}
             play={inView}
             onReady={() => setReady(true)}
+            onPerfFail={() => setEnabled(false)}
           />
         </div>
       )}

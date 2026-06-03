@@ -19,7 +19,7 @@ const ctx = await browser.newContext({
   reducedMotion: "no-preference",
 });
 const page = await ctx.newPage();
-await page.goto(`${BASE}/en?glass=force#problem`, { waitUntil: "domcontentloaded" });
+await page.goto(`${BASE}/en?glass=full#problem`, { waitUntil: "domcontentloaded" });
 const el = page.locator(SEL).first();
 await el.scrollIntoViewIfNeeded();
 await page.waitForTimeout(wait); // two WebGL canvases on software GL are heavy

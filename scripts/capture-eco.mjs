@@ -20,7 +20,7 @@ const ctx = await browser.newContext({
   reducedMotion: "no-preference",
 });
 const page = await ctx.newPage();
-await page.goto(`${BASE}/en?glass=force#ecosystem`, { waitUntil: "domcontentloaded" });
+await page.goto(`${BASE}/en?glass=full#ecosystem`, { waitUntil: "domcontentloaded" });
 const el = page.locator(SEL).first();
 await el.scrollIntoViewIfNeeded();
 await page.waitForTimeout(wait); // converge advances ~0.05/frame; slow on software GL

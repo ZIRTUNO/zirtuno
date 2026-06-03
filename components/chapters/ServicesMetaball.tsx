@@ -81,6 +81,7 @@ export function ServicesMetaball({ ariaLabel = "Zirtuno" }: { ariaLabel?: string
               manualState={active + 1}
               play={inView}
               onReady={() => setReady(true)}
+              onPerfFail={() => setEnabled(false)}
             />
           </div>
         )}

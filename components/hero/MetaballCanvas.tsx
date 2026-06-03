@@ -152,6 +152,7 @@ export function MetaballCanvas({ pillarNames }: { pillarNames: string[] }) {
               play={heroInView || capture !== null || preview !== null || pair !== null}
               onReady={() => setReady(true)}
               onActiveChange={setActive}
+              onPerfFail={() => setEnabled(false)}
             />
           </div>
         )}

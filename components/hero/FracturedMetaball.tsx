@@ -56,6 +56,7 @@ export function FracturedMetaball({ ariaLabel = "Zirtuno" }: { ariaLabel?: strin
             fracture={0.9}
             play={inView}
             onReady={() => setReady(true)}
+            onPerfFail={() => setEnabled(false)}
           />
         </div>
       )}

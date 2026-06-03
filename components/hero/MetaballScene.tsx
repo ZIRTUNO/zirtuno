@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 import { FIELD, getRestingState } from "@/lib/webgl/states";
+import { detectGpuTier, demoteToSvg, type GpuTier } from "@/lib/webgl/gpu-tier";
 import type { SdfResult } from "@/lib/webgl/trace-logo";
 
 /* ---------------------------------------------------------------------------
@@ -18,8 +19,16 @@ const ROUND = 0.04;
 const ERODE = 0.025;
 const IOR = 1.4;
 const VIEW = 1.05;
-const STEPS = 56; // raymarch steps — trimmed for GPU headroom (compact object)
-const TSTEPS = 12; // glass-thickness steps
+
+// Per-tier raymarch budget (backlog 5.0). "lite" runs on integrated GPUs (Intel
+// UHD etc.): fewer steps, a shorter thickness loop, a coarser normal epsilon, and
+// (set on the Canvas) a smaller internal resolution + no AA — light enough to hold
+// a stable framerate where the full shader froze.
+type TierCfg = { steps: number; tsteps: number; neps: number; dpr: number; aa: boolean };
+const TIER: Record<"full" | "lite", TierCfg> = {
+  full: { steps: 56, tsteps: 12, neps: 0.0035, dpr: 1, aa: true },
+  lite: { steps: 34, tsteps: 6, neps: 0.006, dpr: 0.65, aa: false },
+};
 
 const BREATH = FIELD.breath;
 const BREATH_HZ = 1 / 8;
@@ -43,7 +52,7 @@ const vertexShader = /* glsl */ `
   void main() { vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }
 `;
 
-const fragmentShader = /* glsl */ `
+const makeFragment = (STEPS: number, TSTEPS: number, NEPS: number) => /* glsl */ `
   precision highp float;
   varying vec2 vUv;
   uniform sampler2D uSDF;
@@ -325,7 +334,7 @@ const fragmentShader = /* glsl */ `
   }
 
   vec3 calcNormal(vec3 p, float br) {
-    vec2 e = vec2(0.0035, 0.0);
+    vec2 e = vec2(${f(NEPS)}, 0.0);
     return normalize(vec3(
       map(p + e.xyy, br) - map(p - e.xyy, br),
       map(p + e.yxy, br) - map(p - e.yxy, br),
@@ -392,6 +401,7 @@ const fragmentShader = /* glsl */ `
 
 function Glass({
   sdf,
+  tier,
   stateA,
   stateB,
   morph0,
@@ -403,8 +413,10 @@ function Glass({
   fractureRef,
   onReady,
   onActiveChange,
+  onPerfFail,
 }: {
   sdf: SdfResult;
+  tier: "full" | "lite";
   stateA: number;
   stateB: number;
   morph0: number;
@@ -416,6 +428,7 @@ function Glass({
   fractureRef: { current: number } | null;
   onReady: () => void;
   onActiveChange: (i: number) => void;
+  onPerfFail: () => void;
 }) {
   const texture = useMemo(() => {
     const t = new THREE.DataTexture(
@@ -437,7 +450,11 @@ function Glass({
     () =>
       new THREE.ShaderMaterial({
         vertexShader,
-        fragmentShader,
+        fragmentShader: makeFragment(
+          TIER[tier].steps,
+          TIER[tier].tsteps,
+          TIER[tier].neps,
+        ),
         transparent: true,
         depthTest: false,
         depthWrite: false,
@@ -451,7 +468,7 @@ function Glass({
           uFracture: { value: fracture ?? 0 },
         },
       }),
-    [texture, time0, morph0, stateA, stateB, fracture],
+    [texture, tier, time0, morph0, stateA, stateB, fracture],
   );
 
   const invalidate = useThree((s) => s.invalidate);
@@ -467,6 +484,10 @@ function Glass({
   const ptr = useRef({ x: 0, y: 0 });
   const hovering = useRef(false);
   const convClk = useRef(0); // S4 converge progress (seconds)
+  // FPS watchdog (5.0)
+  const perfFrames = useRef(0); // frames observed since mount (skip warm-up)
+  const badStreak = useRef(0); // consecutive janky frames
+  const perfFailed = useRef(false);
 
   // hover physics — track the cursor over the canvas, release to centre on leave
   useEffect(() => {
@@ -553,6 +574,28 @@ function Glass({
         onActiveChange(active);
       }
     }
+    // FPS watchdog (5.0) — sustained jank on the live glass bails to the SVG, so a
+    // device that slips through the tier probe never sits frozen/janky. Warm-up
+    // frames (shader compile, first paints) are skipped; transient melt spikes reset
+    // the streak; only a long run of slow frames trips it.
+    if ((animate || fracture != null) && !perfFailed.current) {
+      perfFrames.current++;
+      if (perfFrames.current > 45) {
+        if (delta > 0.05) {
+          // < ~20fps
+          badStreak.current += 1;
+          if (badStreak.current > 60) {
+            // ~3-4s sustained
+            perfFailed.current = true;
+            demoteToSvg();
+            onPerfFail();
+          }
+        } else {
+          badStreak.current = 0;
+        }
+      }
+    }
+
     if (!fired.current) {
       fired.current = true;
       onReady();
@@ -584,6 +627,7 @@ function Glass({
 }
 
 function RestingMark(props: {
+  tier: "full" | "lite";
   stateA: number;
   stateB: number;
   morph0: number;
@@ -595,6 +639,7 @@ function RestingMark(props: {
   fractureRef: { current: number } | null;
   onReady: () => void;
   onActiveChange: (i: number) => void;
+  onPerfFail: () => void;
 }) {
   const [sdf, setSdf] = useState<SdfResult | null>(null);
   useEffect(() => {
@@ -620,6 +665,7 @@ function RestingMark(props: {
 export default function MetaballScene({
   onReady = () => {},
   onActiveChange = () => {},
+  onPerfFail = () => {},
   capture = null,
   previewState = null,
   manualState = null,
@@ -631,6 +677,7 @@ export default function MetaballScene({
 }: {
   onReady?: () => void;
   onActiveChange?: (i: number) => void;
+  onPerfFail?: () => void;
   capture?: "rest" | "breath" | "morph" | "ai" | null;
   previewState?: number | null;
   manualState?: number | null;
@@ -640,6 +687,13 @@ export default function MetaballScene({
   fractureRef?: { current: number } | null;
   play?: boolean;
 }) {
+  // Device tier (backlog 5.0) — "full" or "lite"; this component only mounts when
+  // canRunGlass() (tier != none), so coerce defensively.
+  const tier = useMemo<"full" | "lite">(() => {
+    const t: GpuTier = detectGpuTier();
+    return t === "none" ? "lite" : t;
+  }, []);
+  const cfg = TIER[tier];
   let stateA = 0;
   let stateB = AI_STATE;
   let morph0 = 0;
@@ -669,12 +723,18 @@ export default function MetaballScene({
   }
   return (
     <Canvas
-      dpr={1}
+      dpr={cfg.dpr}
       frameloop={animate && play ? "always" : "demand"}
-      gl={{ alpha: true, antialias: true, toneMapping: THREE.NoToneMapping }}
+      gl={{
+        alpha: true,
+        antialias: cfg.aa,
+        toneMapping: THREE.NoToneMapping,
+        powerPreference: tier === "full" ? "high-performance" : "low-power",
+      }}
       style={{ width: "100%", height: "100%" }}
     >
       <RestingMark
+        tier={tier}
         stateA={stateA}
         stateB={stateB}
         morph0={morph0}
@@ -686,6 +746,7 @@ export default function MetaballScene({
         fractureRef={fractureRef}
         onReady={onReady}
         onActiveChange={onActiveChange}
+        onPerfFail={onPerfFail}
       />
     </Canvas>
   );
