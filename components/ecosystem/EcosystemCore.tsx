@@ -7,7 +7,7 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useReducedMotion } from "@/lib/animation/reduced-motion";
 import { useInView } from "@/lib/animation/use-in-view";
 import { canRunGlass } from "@/lib/webgl/can-run-glass";
-import { WebglPlaceholder } from "@/components/ui/WebglPlaceholder";
+import { LogoMark } from "@/components/hero/LogoMark";
 import { cn } from "@/lib/utils";
 
 // three.js is client-only and heavy → load the scene lazily, no SSR.
@@ -81,8 +81,7 @@ export function EcosystemCore({ ariaLabel = "Zirtuno" }: { ariaLabel?: string })
 
   return (
     <div className="eco-core-stage" data-ecosystem-core ref={stageRef}>
-      <WebglPlaceholder
-        variant="unified"
+      <LogoMark
         ariaLabel={ariaLabel}
         className={cn("eco-core-fallback", hideFallback && "is-hidden")}
       />

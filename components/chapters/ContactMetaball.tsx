@@ -5,7 +5,7 @@ import dynamic from "next/dynamic";
 import { useReducedMotion } from "@/lib/animation/reduced-motion";
 import { useInView } from "@/lib/animation/use-in-view";
 import { canRunGlass } from "@/lib/webgl/can-run-glass";
-import { WebglPlaceholder } from "@/components/ui/WebglPlaceholder";
+import { LogoMark } from "@/components/hero/LogoMark";
 import { cn } from "@/lib/utils";
 
 // three.js is client-only and heavy → load the scene lazily, no SSR.
@@ -68,9 +68,7 @@ export function ContactMetaball() {
 
   return (
     <div className="contact-metaball-stage" ref={stageRef} role="img" aria-label="Zirtuno">
-      <WebglPlaceholder
-        variant="unified"
-        ariaLabel="Zirtuno"
+      <LogoMark
         className={cn("contact-metaball-fallback", hideFallback && "is-hidden")}
       />
       {enabled && seen && (

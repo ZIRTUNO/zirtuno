@@ -1,6 +1,6 @@
 import { useTranslations } from "next-intl";
 import { Reveal } from "@/components/ui/Reveal";
-import { WebglPlaceholder } from "@/components/ui/WebglPlaceholder";
+import { LogoMark } from "@/components/hero/LogoMark";
 import { ServicesMetaball } from "./ServicesMetaball";
 import { CtaAnalysis } from "@/components/chrome/CtaButton";
 import { PillarEntry } from "./PillarEntry";
@@ -8,8 +8,9 @@ import { PILLARS } from "@/lib/content/services";
 
 /**
  * S5 · The Services. Seven pillars, each stating what it is / solves / creates.
- * Desktop: a sticky metaball (placeholder in Phase 1) holds while pillars scroll
- * past — Phase 2 morphs it per pillar and drives the indicator. RSC copy.
+ * Desktop: a sticky glass metaball morphs to each pillar's locked form as it
+ * scrolls past and drives the indicator (ServicesMetaball). On the no-glass path
+ * it falls back to the static brand mark. RSC copy.
  */
 export function ChapterServices() {
   const t = useTranslations("services");
@@ -43,9 +44,9 @@ export function ChapterServices() {
         </aside>
 
         <div>
-          {/* Mobile metaball — appears above the pillar list */}
-          <div className="mx-auto mb-10 max-w-[16rem] md:hidden">
-            <WebglPlaceholder variant="unified" />
+          {/* Mobile metaball — the static brand mark above the pillar list */}
+          <div className="mx-auto mb-10 aspect-square max-w-[16rem] md:hidden">
+            <LogoMark ariaLabel={t("headline")} />
           </div>
 
           {PILLARS.map((p, i) => (

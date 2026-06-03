@@ -1,6 +1,6 @@
 import { useTranslations } from "next-intl";
 import { Link } from "@/lib/i18n/config";
-import { WebglPlaceholder } from "@/components/ui/WebglPlaceholder";
+import { LogoMark } from "@/components/hero/LogoMark";
 
 /**
  * Localized 404 (S1.11) — the lone, dispersed metaball. "This page has
@@ -16,7 +16,7 @@ export default function NotFound() {
     >
       <div className="max-w-xl">
         <div className="mx-auto max-w-[14rem]">
-          <WebglPlaceholder variant="fractured" label={t("code")} ariaLabel="404" />
+          <LogoMark variant="fractured" ariaLabel="404" />
         </div>
         <p className="mt-8 font-mono text-mono uppercase tracking-wide text-cyan">
           {t("code")}

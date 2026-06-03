@@ -5,7 +5,7 @@ import dynamic from "next/dynamic";
 import { useReducedMotion } from "@/lib/animation/reduced-motion";
 import { useInView } from "@/lib/animation/use-in-view";
 import { canRunGlass } from "@/lib/webgl/can-run-glass";
-import { WebglPlaceholder } from "@/components/ui/WebglPlaceholder";
+import { LogoMark } from "@/components/hero/LogoMark";
 import { PillarIndicator } from "@/components/hero/PillarIndicator";
 import { cn } from "@/lib/utils";
 
@@ -72,9 +72,7 @@ export function ServicesMetaball({ ariaLabel = "Zirtuno" }: { ariaLabel?: string
   return (
     <div className="services-metaball" ref={stageRef}>
       <div className="services-metaball-stage" role="img" aria-label={ariaLabel}>
-        <WebglPlaceholder
-          variant="unified"
-          ariaLabel={ariaLabel}
+        <LogoMark
           className={cn("services-metaball-fallback", hideFallback && "is-hidden")}
         />
         {enabled && seen && (

@@ -369,98 +369,6 @@ section[id],
 }
 
 /* ===========================================================================
-   WebGL placeholders (Phase 1) — static CSS stand-ins for the four signature
-   moments. Replaced by real Three.js canvases in Phase 2.
-   =========================================================================== */
-.webgl-ph {
-  position: relative;
-  width: 100%;
-  max-width: 640px;
-  margin-inline: auto;
-}
-.webgl-ph-stage {
-  position: relative;
-  display: grid;
-  place-items: center;
-  aspect-ratio: 1 / 1;
-}
-.webgl-ph-stage::before {
-  content: "";
-  position: absolute;
-  inset: 6%;
-  border-radius: 9999px;
-  border: 1px solid var(--color-paper-faint);
-}
-.webgl-ph-fractured .webgl-ph-stage::before {
-  border-style: dashed;
-  opacity: 0.5;
-}
-.webgl-ph .blob {
-  position: absolute;
-  width: 44%;
-  height: 44%;
-  border-radius: 9999px;
-  filter: blur(14px);
-  mix-blend-mode: screen;
-  background: radial-gradient(
-    circle at 50% 40%,
-    var(--color-cyan-glow),
-    var(--color-cyan) 45%,
-    transparent 70%
-  );
-  opacity: 0.82;
-}
-.webgl-ph-unified .blob-1 {
-  transform: translate(-15%, -6%);
-}
-.webgl-ph-unified .blob-2 {
-  transform: translate(15%, -2%);
-}
-.webgl-ph-unified .blob-3 {
-  transform: translate(0%, 16%);
-}
-.webgl-ph-fractured .blob {
-  filter: blur(10px) saturate(0.35);
-  opacity: 0.5;
-}
-.webgl-ph-fractured .blob-1 {
-  transform: translate(-62%, -42%);
-}
-.webgl-ph-fractured .blob-2 {
-  transform: translate(60%, -22%);
-}
-.webgl-ph-fractured .blob-3 {
-  transform: translate(8%, 60%);
-}
-.webgl-ph-particles {
-  position: absolute;
-  inset: 12%;
-  display: grid;
-  grid-template-columns: repeat(8, 1fr);
-  gap: 6%;
-  place-items: center;
-}
-.webgl-ph-particles span {
-  width: 4px;
-  height: 4px;
-  border-radius: 9999px;
-  background: var(--color-cyan);
-  opacity: 0.45;
-}
-.webgl-ph-tag {
-  position: absolute;
-  bottom: 0.25rem;
-  left: 50%;
-  transform: translateX(-50%);
-  font-family: var(--font-mono);
-  font-size: var(--text-mono-sm);
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--color-paper-dim);
-  white-space: nowrap;
-}
-
-/* ===========================================================================
    Pillar indicator (S2.3)
    =========================================================================== */
 .pillar-indicator {
@@ -659,8 +567,39 @@ section[id],
 }
 .logo-mark {
   width: 100%;
-  height: 100%;
+  aspect-ratio: 1 / 1;
   background: url("/brand/zirtuno-logo-mark.svg") center / contain no-repeat;
+}
+
+/* Fractured mark (S3 The Problem · 404) — the real mark split into four shards,
+   each displaced from centre with a soft cyan glow so it reads as clearly
+   "disconnected" while staying the high-fidelity brand form (not a blurred blob).
+   Static → inherently reduced-motion safe. */
+.logo-mark-fractured {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+}
+.logo-mark-fractured .logo-shard {
+  position: absolute;
+  inset: 0;
+  background: url("/brand/zirtuno-logo-mark.svg") center / contain no-repeat;
+  filter: drop-shadow(0 0 18px rgba(0, 227, 254, 0.25)) saturate(0.78);
+  opacity: 0.88;
+}
+/* Three leaning slabs pulled apart — the mark split into dispersed pieces
+   (horizontal scatter echoes The Problem's fragmentation), not a radial burst. */
+.logo-mark-fractured .logo-shard-1 {
+  clip-path: polygon(0 0, 35% 0, 31% 100%, 0 100%);
+  transform: translate(-9%, -2%) rotate(-2.5deg);
+}
+.logo-mark-fractured .logo-shard-2 {
+  clip-path: polygon(35% 0, 66% 0, 62% 100%, 31% 100%);
+  transform: translate(0, 3%) rotate(1deg);
+}
+.logo-mark-fractured .logo-shard-3 {
+  clip-path: polygon(66% 0, 100% 0, 100% 100%, 62% 100%);
+  transform: translate(9%, -1%) rotate(2.5deg);
 }
 
 /* ===========================================================================
