@@ -6,13 +6,14 @@ import dynamic from "next/dynamic";
 import { useReducedMotion } from "@/lib/animation/reduced-motion";
 import { useInView } from "@/lib/animation/use-in-view";
 import { canRunGlass } from "@/lib/webgl/can-run-glass";
+import { STATE_COUNT } from "@/lib/webgl/states";
 import { LogoMark } from "./LogoMark";
 import { PillarIndicator } from "./PillarIndicator";
 
 // three.js is client-only and heavy → load the scene lazily, no SSR.
 const MetaballScene = dynamic(() => import("./MetaballScene"), { ssr: false });
 
-const STATES = 8; // 0 = mark, 1-7 = the service pillars
+const STATES = STATE_COUNT; // 0 = mark, 1-7 = the service pillars (lib/webgl/states)
 
 // WebGL + GPU-capability gate — weak GPUs (Intel HD/UHD, software) fall back to
 // the static mark to avoid hanging the browser; see lib/webgl/can-run-glass.

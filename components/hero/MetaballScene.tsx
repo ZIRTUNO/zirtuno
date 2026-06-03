@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
-import { FIELD, getRestingState } from "@/lib/webgl/states";
+import { FIELD, getRestingState, STATE_COUNT, AI_STATE } from "@/lib/webgl/states";
 import { detectGpuTier, demoteToSvg, type GpuTier } from "@/lib/webgl/gpu-tier";
 import { getEnvMapData, makeEnvTexture } from "@/lib/webgl/env-map";
 import type { SdfResult } from "@/lib/webgl/trace-logo";
@@ -46,8 +46,7 @@ const OMEGA = BREATH_HZ * Math.PI * 2;
 const HOLD = 9.0;
 const TRANS = 1.4;
 const CONV_DUR = 1.9; // S4 converge: shards reassemble (uFracture 1→0) over this many seconds
-const STATES = 8; // 0 = mark, 1-7 = the service pillars
-const AI_STATE = 3;
+const STATES = STATE_COUNT; // 0 = mark, 1-7 = the service pillars (registry: lib/webgl/states)
 const K_MORPH = 0.22; // union-bridge smin (base)
 const K_MID = 0.34; // extra smin smoothing at mid-morph → fewer holes (5.4)
 const BRIDGE = 0.8; // bridge strength (leaner = more mercury-like, still connected)
@@ -300,6 +299,8 @@ const makeFragment = (
     return d * br;
   }
 
+  // state index → geometry. Order matches METABALL_STATES (lib/webgl/states.ts):
+  // 0 mark · 1 web · 2 software · 3 ai · 4 automation · 5 data · 6 branding · 7 marketing.
   float sdfForState(vec3 p, float br, int s) {
     if (s == 0) return sdfLogo(p, br);
     if (s == 1) return sdfWeb(p, br);
