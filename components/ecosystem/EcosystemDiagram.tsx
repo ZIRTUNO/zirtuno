@@ -1,19 +1,25 @@
+"use client";
+
+import { useState } from "react";
 import { useTranslations } from "next-intl";
+import { cn } from "@/lib/utils";
 import { EcosystemCore } from "./EcosystemCore";
 import { EcosystemNode } from "./EcosystemNode";
 
 type Node = { name: string; tooltip: string };
 
 /**
- * S4.4 · Ecosystem Diagram. Center = the client's business (unified metaball
- * core — placeholder in Phase 1 — with the SEU NEGÓCIO label). 10 nodes orbit,
- * each joined to the center by a line. Phase 2 adds the S3→S4 converge
- * transition, traveling pulses, slow rotation, and live hover highlighting.
+ * S4.4 · Ecosystem Diagram. Center = the client's business (the unified metaball
+ * core, scroll-converged from the S3 shards) with the SEU NEGÓCIO label. Ten
+ * nodes orbit, each joined to the core by a line that carries a traveling
+ * data-flow pulse (the ecosystem is alive). Hovering a node brightens the node,
+ * its connector, and reveals its role. A faint orbit ring rotates slowly behind.
  * Desktop renders the radial diagram; mobile a vertical connected stack.
  */
 export function EcosystemDiagram() {
   const t = useTranslations("ecosystem");
   const nodes = t.raw("nodes") as Node[];
+  const [hovered, setHovered] = useState<number | null>(null);
   const radius = 40; // % of the square stage
 
   const positioned = nodes.map((n, i) => {
@@ -39,14 +45,31 @@ export function EcosystemDiagram() {
           preserveAspectRatio="none"
           aria-hidden="true"
         >
+          {/* slow-rotating orbit ring — a quiet sign of life behind the core */}
+          <circle className="eco-orbit" cx="50" cy="50" r={radius} />
+
+          {/* static connectors (brighten on hover of their node) */}
           {positioned.map((p, i) => (
             <line
-              key={i}
+              key={`line-${i}`}
               x1="50"
               y1="50"
               x2={p.x}
               y2={p.y}
-              className="eco-line"
+              className={cn("eco-line", hovered === i && "is-lit")}
+            />
+          ))}
+
+          {/* traveling data-flow pulses (node → core), staggered so they breathe */}
+          {positioned.map((p, i) => (
+            <line
+              key={`pulse-${i}`}
+              x1={p.x}
+              y1={p.y}
+              x2="50"
+              y2="50"
+              className={cn("eco-pulse", hovered === i && "is-lit")}
+              style={{ animationDelay: `${(i * 0.43).toFixed(2)}s` }}
             />
           ))}
         </svg>
@@ -63,6 +86,8 @@ export function EcosystemDiagram() {
             tooltip={p.tooltip}
             x={p.x}
             y={p.y}
+            onActivate={() => setHovered(i)}
+            onDeactivate={() => setHovered((h) => (h === i ? null : h))}
           />
         ))}
       </div>

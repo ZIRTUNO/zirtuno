@@ -677,8 +677,64 @@ section[id],
 }
 .eco-line {
   stroke: var(--color-cyan);
-  stroke-width: 0.3;
-  opacity: 0.22;
+  stroke-width: 0.45;
+  opacity: 0.3;
+  transition:
+    opacity 240ms var(--ease-arrive),
+    stroke-width 240ms var(--ease-arrive);
+}
+.eco-line.is-lit {
+  opacity: 0.9;
+  stroke-width: 0.8;
+}
+
+/* Traveling data-flow pulse — a short bright dash running node → core (the
+   ecosystem feeding the business). Hidden under reduced motion. */
+.eco-pulse {
+  stroke: var(--color-cyan-glow);
+  stroke-width: 0.7;
+  stroke-linecap: round;
+  opacity: 0;
+}
+.eco-pulse.is-lit {
+  stroke-width: 1;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .eco-pulse {
+    opacity: 0.9;
+    stroke-dasharray: 2.5 84;
+    animation: eco-flow 2.8s linear infinite;
+  }
+}
+@keyframes eco-flow {
+  from {
+    stroke-dashoffset: 86.5;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* Faint orbit ring rotating slowly behind the constellation — a quiet sign of
+   life that never disturbs label legibility or the scroll-pinned converge. */
+.eco-orbit {
+  fill: none;
+  stroke: var(--color-cyan);
+  stroke-width: 0.25;
+  stroke-dasharray: 1 3;
+  opacity: 0.16;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .eco-orbit {
+    animation: eco-orbit-spin 90s linear infinite;
+  }
+}
+@keyframes eco-orbit-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 .eco-core {
   position: absolute;
@@ -712,11 +768,13 @@ section[id],
   cursor: pointer;
 }
 .eco-node-dot {
-  width: 9px;
-  height: 9px;
+  width: 11px;
+  height: 11px;
   border-radius: 9999px;
   background: var(--color-cyan);
-  box-shadow: 0 0 0 4px color-mix(in srgb, var(--color-cyan) 14%, transparent);
+  box-shadow:
+    0 0 10px color-mix(in srgb, var(--color-cyan) 55%, transparent),
+    0 0 0 5px color-mix(in srgb, var(--color-cyan) 14%, transparent);
   transition:
     transform 200ms var(--ease-arrive),
     box-shadow 200ms var(--ease-arrive);
