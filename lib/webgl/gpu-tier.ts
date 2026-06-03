@@ -3,40 +3,43 @@
 /**
  * Device-tier selection for the raymarched glass (S2.3 · backlog 5.0).
  *
- * Replaces the old hard name-string blocklist with a graded decision:
+ * The glass is a HIGH-END ENHANCEMENT, not a baseline. A fullscreen SDF raymarch
+ * hard-freezes integrated GPUs (Intel HD/UHD/Iris, mobile) and software — it
+ * trips the GPU driver's timeout (TDR) and hangs the whole machine, which no JS
+ * watchdog can recover. A reduced raymarch trips it too. So the policy is
+ * deliberately conservative — when in doubt, serve the (high-fidelity) static
+ * SVG mark with zero WebGL:
  *
- *   - "full" → capable GPU: the full-quality raymarch (STEPS=56, thickness loop,
- *     dpr up to 2, HDRI env).
- *   - "lite" → weak/integrated GPU (Intel UHD, mobile): a *lighter* raymarch
- *     (fewer steps, smaller internal resolution, cheaper normals, no AA) that
- *     still shows real glass at a stable framerate instead of a flat SVG.
- *   - "none" → software rasterizer / no WebGL: stay on the static SVG mark.
+ *   - "full" → a recognized capable/discrete GPU that ALSO clears a runtime perf
+ *     probe: the full-quality raymarch (STEPS=56, thickness loop, dpr up to 2,
+ *     HDRI env).
+ *   - "none" → everything else (integrated, mobile, software, or any GPU we can't
+ *     positively identify): the static SVG mark, no WebGL, never a freeze.
  *
- * How the tier is chosen (cheap, runs once, cached in sessionStorage):
- *   1. The renderer string is a *cap*, not a block — known-weak GPUs are capped
- *      at "lite" (they can never be promoted to the heavy shader that froze the
- *      browser); software rasterizers map to "none".
- *   2. For unknown / capable GPUs we run a real runtime perf probe (time a heavy
- *      quad with a forced GPU sync) and pick full-vs-lite-vs-none from the
- *      measurement, not the GPU name.
- *   3. A live FPS watchdog (in MetaballScene) is the final net: sustained jank
- *      downshifts to the SVG, so we never sit in a frozen/janky state.
+ * ("lite" remains in the type for compatibility but is no longer selected — a
+ * lighter raymarch still froze integrated GPUs, so there is no middle tier.)
+ *
+ * The decision is cheap and cached per session (sessionStorage). A live FPS
+ * watchdog (in MetaballScene) is a secondary net for capable GPUs that turn out
+ * janky: sustained jank pins the session to the SVG.
  *
  * Overrides:
  *   - `?capture=` / `?state=` / `?pair=` / `?glass=full` → force "full" (the
  *     deterministic screenshot pipeline + a debug "show me full quality").
- *   - `?glass=1` / `on` / `force` → force *mount* at the honest probed tier,
- *     floored at "lite" (never "none"): "show me the glass safely". On a weak GPU
- *     this is lite, so it renders without ever freezing.
+ *   - `?glass=1` / `on` / `force` → force-mount full glass even if gated off — an
+ *     explicit debug opt-in (may freeze a weak GPU; normal visitors never hit it).
  */
 
 export type GpuTier = "full" | "lite" | "none";
 
-const CACHE_KEY = "zr-gpu-tier";
+// v2: the policy changed (no more "lite" raymarch on integrated GPUs). Bumping
+// the key discards any stale "lite" cached by a prior visit, which would
+// otherwise re-mount the freezing glass on reload.
+const CACHE_KEY = "zr-gpu-tier-v2";
 
 // CPU rasterizers — real-time raymarch is not viable; serve the SVG.
 const SOFTWARE = ["swiftshader", "llvmpipe", "software", "microsoft basic"];
-// Integrated / mobile GPUs — capped at "lite" (never the heavy full shader).
+// Integrated / mobile GPUs — a fullscreen raymarch freezes these; serve the SVG.
 const WEAK = [
   "intel(r) hd graphics",
   "intel hd graphics",
@@ -153,21 +156,18 @@ function decide(): GpuTier {
   const gl = getGL();
   if (!gl) return "none";
 
+  // The raymarched glass is a HIGH-END ENHANCEMENT, not a baseline. A fullscreen
+  // SDF raymarch hard-freezes integrated GPUs (Intel HD/UHD/Iris, mobile) and
+  // software rasterizers — it trips the GPU driver's timeout (TDR) and hangs the
+  // whole machine, which no JS watchdog can catch. A *reduced* raymarch trips it
+  // too. So anything we can't positively identify as a capable, non-integrated
+  // GPU gets the static SVG mark (zero WebGL). Glass is only for a recognized
+  // discrete/capable GPU that ALSO clears a runtime perf probe.
   const r = rendererString(gl);
-  let tier: GpuTier;
-  if (r && SOFTWARE.some((s) => r.includes(s))) {
-    tier = "none"; // CPU raster → SVG
-  } else if (r && WEAK.some((s) => r.includes(s))) {
-    tier = "lite"; // integrated/mobile → light glass, capped (never the heavy shader)
-  } else {
-    // unknown / capable → measure it
-    const ms = probeFrameMs(gl);
-    tier = ms < 2.2 ? "full" : ms < 11 ? "lite" : "none";
-  }
-
-  // Honest tier only — the mountForced floor is applied per-call (never cached),
-  // so opting in once with ?glass=force can't poison a software device's cache.
-  return tier;
+  if (!r) return "none"; // masked / unidentifiable → SVG (cannot risk a freeze)
+  if (SOFTWARE.some((s) => r.includes(s))) return "none"; // CPU raster → SVG
+  if (WEAK.some((s) => r.includes(s))) return "none"; // integrated / mobile → SVG
+  return probeFrameMs(gl) < 2.2 ? "full" : "none"; // capable + fast → glass
 }
 
 let cached: GpuTier | null = null;
@@ -191,7 +191,7 @@ export function detectGpuTier(): GpuTier {
   if (typeof window === "undefined") return "none";
   // Overrides must win every call (querystring can change between mounts).
   if (captureForced()) return "full";
-  if (cached) return mountForced() && cached === "none" ? "lite" : cached;
+  if (cached) return mountForced() && cached === "none" ? "full" : cached;
 
   let stored: string | null = null;
   try {
@@ -199,10 +199,9 @@ export function detectGpuTier(): GpuTier {
   } catch {
     /* private mode */
   }
+  // Only "full"/"none" are valid now; a stale "lite" (or anything else) re-decides.
   const tier: GpuTier =
-    stored === "full" || stored === "lite" || stored === "none"
-      ? (stored as GpuTier)
-      : decide();
+    stored === "full" || stored === "none" ? (stored as GpuTier) : decide();
 
   cached = tier;
   try {
@@ -210,5 +209,5 @@ export function detectGpuTier(): GpuTier {
   } catch {
     /* ignore */
   }
-  return mountForced() && tier === "none" ? "lite" : tier;
+  return mountForced() && tier === "none" ? "full" : tier;
 }
