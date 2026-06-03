@@ -1399,12 +1399,62 @@ section[id],
    finance) are the WHY — understated muted mono, deliberately distinct from
    the seven SERVICE pillars (the HOW): never numbered, never cyan-styled.
    --------------------------------------------------------------------------- */
+/* Deliberate beat rhythm (5.5): a quiet open, a large visual peak (the mark),
+   one dominant statement, a quieter coda, the resolution — varied scale/colour
+   so the beats never read as one identical centred-serif stack. */
+.origin-flow {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  margin-top: 3.5rem;
+}
+.origin-beat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+/* Beat 1 — a quiet opening */
+.origin-open {
+  max-width: 32rem;
+  font-size: var(--text-poetic);
+  line-height: 1.25;
+  color: var(--color-paper-mute);
+}
+/* Beat 2 — the mark: the visual peak, larger and given room */
+.origin-beat--mark {
+  margin-top: 5rem;
+}
 .origin-mark {
-  width: clamp(150px, 32vw, 230px);
+  width: clamp(220px, 40vw, 360px);
   aspect-ratio: 2950 / 3200;
 }
+/* Beat 3 — the purpose: the dominant line (bigger, brighter, breathing room) */
+.origin-statement {
+  margin-top: 6rem;
+  max-width: 24rem;
+  font-size: var(--text-display-m);
+  line-height: 1.16;
+  color: var(--color-paper);
+}
+/* Beat 4 — the evolution: a quieter summary, tight under the statement */
+.origin-coda {
+  margin-top: 2rem;
+  max-width: 36rem;
+  font-size: var(--text-body-l);
+  line-height: 1.5;
+  color: var(--color-paper-dim);
+}
+/* Beat 5 — the resolution */
+.origin-beat--resolve {
+  margin-top: 6.5rem;
+}
+.origin-wordmark-wrap {
+  width: 100%;
+  max-width: 28rem;
+}
 .founding-pillars {
-  margin-top: 1.5rem;
+  margin-top: 1.75rem;
   font-family: var(--font-mono);
   font-size: var(--text-mono-sm);
   letter-spacing: 0.14em;
@@ -1412,7 +1462,7 @@ section[id],
   color: var(--color-paper-mute);
 }
 .origin-closing {
-  margin-top: 1rem;
+  margin-top: 2.25rem;
   font-size: var(--text-display-m);
   color: var(--color-paper);
 }

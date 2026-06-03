@@ -30,16 +30,17 @@ export function ChapterName() {
         {t("chapterLabel")}
       </Reveal>
 
-      <div className="mt-20 flex flex-col items-center gap-24 text-center md:gap-36">
-        {/* Beat 1 — Two brothers */}
+      {/* Five beats with a deliberate rhythm — a soft open, a visual peak (the
+          mark), a dominant statement, a quiet coda, the resolution — rather than
+          a stack of identically-sized centred serif paragraphs (5.5). */}
+      <div className="origin-flow">
+        {/* Beat 1 — Two brothers: a quiet opening */}
         <Reveal inView>
-          <p className="font-poetic max-w-2xl text-poetic text-paper-mute md:text-display-m">
-            {t("b1")}
-          </p>
+          <p className="font-poetic origin-open">{t("b1")}</p>
         </Reveal>
 
         {/* Beat 2 — Three pillars, one mark (fracture→converge forms the mark) */}
-        <Reveal inView className="flex flex-col items-center">
+        <Reveal inView className="origin-beat origin-beat--mark">
           <div className="origin-mark">
             <OriginMark />
           </div>
@@ -47,26 +48,22 @@ export function ChapterName() {
           <p className="font-poetic name-word-text">{t("b2")}</p>
         </Reveal>
 
-        {/* Beat 3 — The purpose */}
+        {/* Beat 3 — The purpose: the dominant line */}
         <Reveal inView>
-          <p className="font-poetic max-w-2xl text-poetic text-paper-mute md:text-display-m">
-            {t("b3")}
-          </p>
+          <p className="font-poetic origin-statement">{t("b3")}</p>
         </Reveal>
 
-        {/* Beat 4 — The evolution */}
+        {/* Beat 4 — The evolution: a quiet coda, tight to the statement */}
         <Reveal inView>
-          <p className="font-poetic max-w-2xl text-poetic text-paper-mute md:text-display-m">
-            {t("b4")}
-          </p>
+          <p className="font-poetic origin-coda">{t("b4")}</p>
         </Reveal>
 
         {/* Beat 5 — Resolution: CPU particle convergence → wordmark + closing line */}
-        <Reveal inView className="flex flex-col items-center">
-          <div className="w-full max-w-sm">
+        <Reveal inView className="origin-beat origin-beat--resolve">
+          <div className="origin-wordmark-wrap">
             <OriginWordmark text={t("wordmark")} />
           </div>
-          <p className="font-poetic origin-closing mt-10">{t("closing")}</p>
+          <p className="font-poetic origin-closing">{t("closing")}</p>
           {/* Zéfiro + Ventura kept ONLY as a single dim grace note (S8.5 default) */}
           <p className="font-poetic origin-grace">{t("graceNote")}</p>
         </Reveal>
