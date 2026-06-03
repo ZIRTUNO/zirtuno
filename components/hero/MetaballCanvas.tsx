@@ -7,7 +7,7 @@ import { useReducedMotion } from "@/lib/animation/reduced-motion";
 import { useInView } from "@/lib/animation/use-in-view";
 import { canRunGlass } from "@/lib/webgl/can-run-glass";
 import { STATE_COUNT } from "@/lib/webgl/states";
-import { HeroFilm } from "./HeroFilm";
+import { LogoMark } from "./LogoMark";
 import { PillarIndicator } from "./PillarIndicator";
 
 // three.js is client-only and heavy → load the scene lazily, no SSR.
@@ -139,10 +139,9 @@ export function MetaballCanvas({ pillarNames }: { pillarNames: string[] }) {
         onKeyDown={interactive ? onKeyDown : undefined}
         onBlur={interactive ? () => setManual(null) : undefined}
       >
-        <HeroFilm
+        <LogoMark
           className="metaball-fallback"
           style={{ opacity: hideFallback ? 0 : 1 }}
-          play={!hideFallback && heroInView}
         />
         {enabled && (
           <div className="metaball-canvas">

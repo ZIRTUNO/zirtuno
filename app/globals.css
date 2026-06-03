@@ -423,18 +423,6 @@ section[id],
   pointer-events: auto; /* hover physics: the cursor leans the glass */
 }
 
-/* Pre-rendered morph loop (HeroFilm) — the real glass animation for every device
-   (integrated GPUs decode this instead of raymarching). Fills the square stage. */
-.hero-film {
-  display: block;
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-}
-.hero-film-poster {
-  background: url("/hero/morph-poster.jpg") center / contain no-repeat;
-}
-
 /* S3.2 — fractured metaball (The Problem). Square stage; CSS placeholder base
    layer + glass canvas overlay (desktop), placeholder fades out once glass paints. */
 .fractured-stage {
