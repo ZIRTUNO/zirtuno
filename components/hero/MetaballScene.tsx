@@ -48,8 +48,10 @@ const TRANS = 1.4;
 const CONV_DUR = 1.9; // S4 converge: shards reassemble (uFracture 1→0) over this many seconds
 const STATES = 8; // 0 = mark, 1-7 = the service pillars
 const AI_STATE = 3;
-const K_MORPH = 0.22; // union-bridge smin
+const K_MORPH = 0.22; // union-bridge smin (base)
+const K_MID = 0.34; // extra smin smoothing at mid-morph → fewer holes (5.4)
 const BRIDGE = 0.8; // bridge strength (leaner = more mercury-like, still connected)
+const INFLATE = 0.05; // mid-morph surface inflation → plump mercury neck (5.4)
 
 export const CAPTURE_TIME = { rest: 0, breath: Math.PI / 2 / OMEGA } as const;
 
@@ -343,11 +345,14 @@ const makeFragment = (
     if (uMorph <= 0.0005) return a;
     float b = sdfForState(p, br, uStateB);
     if (uMorph >= 0.9995) return b;
-    // connected liquid morph (lerp bridged through the fused union)
+    // connected liquid morph — bridges like mercury (5.4). At mid-morph (mid =
+    // sin 0→1→0) the union smin widens so the two forms fuse smoothly instead of
+    // overlapping into a holey lump, and the surface inflates slightly to plump
+    // the neck; both vanish at the endpoints so uMorph 0/1 stay exactly A/B.
     float lerp = mix(a, b, uMorph);
-    float uni = smin(a, b, ${f(K_MORPH)});
-    float bridge = sin(uMorph * 3.14159265) * ${f(BRIDGE)};
-    return mix(lerp, uni, bridge);
+    float mid = sin(uMorph * 3.14159265);
+    float uni = smin(a, b, ${f(K_MORPH)} + ${f(K_MID)} * mid);
+    return mix(lerp, uni, mid * ${f(BRIDGE)}) - ${f(INFLATE)} * mid;
   }
 
   vec3 calcNormal(vec3 p, float br) {
@@ -440,6 +445,18 @@ const makeFragment = (
     float cc = pow(max(dot(n, normalize(L1 + V)), 0.0), 210.0)
              + 0.55 * pow(max(dot(n, normalize(L2 + V)), 0.0), 120.0);
     col += vec3(1.0) * cc * 0.8;
+
+    // S3.2 — the fractured shards read lifeless: as uFracture 0→1 desaturate the
+    // cyan toward a muted grey-cyan and drop luminance/specular so dispersed
+    // pieces look dim and dead; as S4 converges (uFracture 1→0) the colour blooms
+    // back to full vivid #00E3FE — that contrast is the emotional payoff. At
+    // uFracture=0 (hero / resting / contact at rest) this is a no-op.
+    if (uFracture > 0.001) {
+      float lum = dot(col, vec3(0.299, 0.587, 0.114));
+      vec3 dead = vec3(lum) * vec3(0.52, 0.64, 0.70); // cool, desaturated grey-cyan
+      col = mix(col, dead, uFracture * 0.86);
+      col *= 1.0 - uFracture * 0.50; // dim toward lifeless
+    }
 
     gl_FragColor = vec4(col, 1.0);
   }
