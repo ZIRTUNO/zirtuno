@@ -155,32 +155,17 @@ const makeFragment = (
     return (outside + inside - ROUND + ERODE) * br;
   }
 
-  // 1 — Web Design: a clean dimensional BROWSER WINDOW (per reference). A glass
-  // slab with a raised header bar + traffic-light dots, a big sidebar block, three
-  // content lines, and three buttons. Bold plump blocks, molten (smin-joined).
+  // 1 — Web Design: a PORTAL (5.2) — a plump rounded glass frame, an open window
+  // to the built thing, with a fluid drop crossing the threshold. Abstract and
+  // brand-native, not a literal browser (no chrome/dots/buttons).
   float sdfWeb(vec3 p, float br) {
     vec3 q = p / br;
-    q = rotY(q, 0.13);
+    q = rotY(q, 0.14);
     q = rotX(q, -0.07);
-    float k = 0.02;                                        // crisper steps → blocks read as solid raised pads
-    float d = sdRoundBox(q, vec3(0.58, 0.46, 0.06), 0.05); // window slab
-    vec3 e = q - vec3(0.0, 0.0, 0.085);                    // UI stands well off the face
-    // header bar + traffic-light dots
-    d = smin(d, sdRoundBox(e - vec3(0.0, 0.345, 0.0), vec3(0.50, 0.058, 0.065), 0.02), k);
-    d = smin(d, length(e - vec3(-0.40, 0.345, 0.10)) - 0.048, 0.012); // dots proud of the bar
-    d = smin(d, length(e - vec3(-0.295, 0.345, 0.10)) - 0.048, 0.012);
-    d = smin(d, length(e - vec3(-0.19, 0.345, 0.10)) - 0.048, 0.012);
-    d = smin(d, sdRoundBox(e - vec3(0.33, 0.345, 0.10), vec3(0.10, 0.016, 0.04), 0.012), 0.02); // header control (right)
-    // big sidebar / hero block (left of body) — a solid filled pad
-    d = smin(d, sdRoundBox(e - vec3(-0.27, -0.06, 0.0), vec3(0.205, 0.225, 0.07), 0.03), k);
-    // three content lines (upper right)
-    d = smin(d, sdRoundBox(e - vec3(0.245, 0.135, 0.0), vec3(0.20, 0.034, 0.06), 0.02), k);
-    d = smin(d, sdRoundBox(e - vec3(0.245, 0.02, 0.0), vec3(0.20, 0.034, 0.06), 0.02), k);
-    d = smin(d, sdRoundBox(e - vec3(0.245, -0.095, 0.0), vec3(0.20, 0.034, 0.06), 0.02), k);
-    // three buttons (bottom right) — solid pads
-    d = smin(d, sdRoundBox(e - vec3(0.07, -0.33, 0.0), vec3(0.078, 0.055, 0.065), 0.025), k);
-    d = smin(d, sdRoundBox(e - vec3(0.255, -0.33, 0.0), vec3(0.078, 0.055, 0.065), 0.025), k);
-    d = smin(d, sdRoundBox(e - vec3(0.44, -0.33, 0.0), vec3(0.078, 0.055, 0.065), 0.025), k);
+    float outer = sdRoundBox(q, vec3(0.50, 0.42, 0.075), 0.12);
+    float inner = sdRoundBox(q, vec3(0.27, 0.21, 0.18), 0.10);
+    float d = max(outer, -inner);                       // the open frame
+    d = smin(d, length(q - vec3(0.04, -0.40, 0.02)) - 0.090, 0.07); // drop at the sill
     return d * br;
   }
 
@@ -220,7 +205,7 @@ const makeFragment = (
     vec3 n3 = vec3(0.0, -0.42, 0.0);
     vec3 n4 = vec3(0.364, -0.21, 0.0);
     vec3 n5 = vec3(0.364, 0.21, 0.0);
-    float strut = 0.040, rim = 0.034;
+    float strut = 0.052, rim = 0.044; // plumper struts (5.2) — connections, not wireframe
     // struts (clean): hub → each ring node, then the ring perimeter
     float d = sdCapsule(q, hub, n0, strut);
     d = min(d, sdCapsule(q, hub, n1, strut));
@@ -260,43 +245,58 @@ const makeFragment = (
     return min(ga, gb) * br;
   }
 
-  // 5 — Data: four ascending glassy bars rising from a base platform (per ref).
+  // 5 — Data: an ASCENDING STREAM (5.2) — four drops of growing size rising along
+  // a diagonal, threaded by a flowing tendril. Growth + flow, not a bar chart.
   float sdfData(vec3 p, float br) {
     vec3 q = p / br;
-    float w = 0.095, dp = 0.10, rb = 0.03, bt = -0.41; // bar width/depth/round, base top
-    float d = sdRoundBox(q - vec3(-0.33, bt + 0.17, 0.0), vec3(w, 0.17, dp), rb);
-    d = min(d, sdRoundBox(q - vec3(-0.11, bt + 0.25, 0.0), vec3(w, 0.25, dp), rb));
-    d = min(d, sdRoundBox(q - vec3(0.11, bt + 0.33, 0.0), vec3(w, 0.33, dp), rb));
-    d = min(d, sdRoundBox(q - vec3(0.33, bt + 0.43, 0.0), vec3(w, 0.43, dp), rb));
-    d = smin(d, sdRoundBox(q - vec3(0.0, -0.47, 0.0), vec3(0.52, 0.055, 0.12), 0.03), 0.05); // base
+    float k = 0.06;
+    vec3 a = vec3(-0.36, -0.32, 0.00);
+    vec3 b = vec3(-0.13, -0.10, 0.05);
+    vec3 c = vec3(0.13, 0.14, 0.00);
+    vec3 e = vec3(0.36, 0.36, 0.05);
+    float d = length(q - a) - 0.095;
+    d = smin(d, length(q - b) - 0.115, k);
+    d = smin(d, length(q - c) - 0.135, k);
+    d = smin(d, length(q - e) - 0.155, k);
+    // the stream threading the drops together
+    d = smin(d, sdCapsule(q, a, c, 0.045), k);
+    d = smin(d, sdCapsule(q, c, e, 0.05), k);
     return d * br;
   }
 
-  // 6 — Branding: a central identity orb encircled by eight evenly-spaced,
-  // equal satellites (per ref) — separate glass orbs (min, no tendrils → not AI),
-  // "one essence, many expressions."
+  // 6 — Branding: ONE ESSENCE, MANY EXPRESSIONS (5.2) — a dominant central
+  // identity orb with satellites of varied size at organic (not clock-evenly-
+  // spaced) positions. Separate orbs (min, no struts) → reads as a living cluster,
+  // distinct from the AI network.
   float sdfBranding(vec3 p, float br) {
     vec3 q = p / br;
-    float R = 0.40, r = 0.075;
-    float d = length(q) - 0.18; // central identity
-    d = min(d, length(q - vec3(0.000, R, 0.0)) - r);
-    d = min(d, length(q - vec3(0.283, 0.283, 0.0)) - r);
-    d = min(d, length(q - vec3(R, 0.000, 0.0)) - r);
-    d = min(d, length(q - vec3(0.283, -0.283, 0.0)) - r);
-    d = min(d, length(q - vec3(0.000, -R, 0.0)) - r);
-    d = min(d, length(q - vec3(-0.283, -0.283, 0.0)) - r);
-    d = min(d, length(q - vec3(-R, 0.000, 0.0)) - r);
-    d = min(d, length(q - vec3(-0.283, 0.283, 0.0)) - r);
+    float d = length(q) - 0.205;                            // dominant identity
+    d = min(d, length(q - vec3(0.02, 0.41, 0.02)) - 0.090);
+    d = min(d, length(q - vec3(0.36, 0.20, 0.0)) - 0.062);
+    d = min(d, length(q - vec3(0.40, -0.18, 0.03)) - 0.078);
+    d = min(d, length(q - vec3(0.12, -0.41, 0.0)) - 0.052);
+    d = min(d, length(q - vec3(-0.31, -0.31, 0.02)) - 0.082);
+    d = min(d, length(q - vec3(-0.43, 0.11, 0.0)) - 0.060);
+    d = min(d, length(q - vec3(-0.17, 0.30, 0.04)) - 0.045);
     return d * br;
   }
 
-  // 7 — Marketing: expanding concentric PULSES (reach spreading outward).
+  // 7 — Marketing: a BROADCAST BLOOM (5.2) — a source with tapering rays fanning
+  // upward/outward, each tipped with a drop (reach spreading). Directional fan,
+  // not a target: distinct from AI's symmetric ring and Branding's orbit.
   float sdfMarketing(vec3 p, float br) {
     vec3 q = p / br;
-    float d = length(q) - 0.10; // central core
-    d = min(d, sdTorusZ(q, 0.26, 0.052));
-    d = min(d, sdTorusZ(q, 0.42, 0.040));
-    d = min(d, sdTorusZ(q, 0.56, 0.030));
+    q = rotY(q, 0.10);
+    vec3 core = vec3(0.0, -0.34, 0.0);
+    float d = length(q - core) - 0.135;        // the source
+    float k = 0.05;
+    for (int i = 0; i < 5; i++) {
+      float a = 0.6108652 + float(i) * 0.4487990; // ~35°..138° fan
+      vec2 dir = vec2(cos(a), sin(a));
+      vec3 tip = core + vec3(dir * 0.62, 0.02);
+      d = smin(d, sdCapsule(q, core, tip, 0.038), k); // the ray
+      d = smin(d, length(q - tip) - 0.058, k);        // tip drop (the reach)
+    }
     return d * br;
   }
 
