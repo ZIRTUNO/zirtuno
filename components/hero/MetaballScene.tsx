@@ -5,6 +5,7 @@ import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 import { FIELD, getRestingState } from "@/lib/webgl/states";
 import { detectGpuTier, demoteToSvg, type GpuTier } from "@/lib/webgl/gpu-tier";
+import { getEnvMapData, makeEnvTexture } from "@/lib/webgl/env-map";
 import type { SdfResult } from "@/lib/webgl/trace-logo";
 
 /* ---------------------------------------------------------------------------
@@ -17,17 +18,25 @@ const THICK = 0.46;
 const DOME = 0.28;
 const ROUND = 0.04;
 const ERODE = 0.025;
-const IOR = 1.4;
+const IOR = 1.34; // spec S1: liquid-glass refraction (was 1.4)
 const VIEW = 1.05;
 
 // Per-tier raymarch budget (backlog 5.0). "lite" runs on integrated GPUs (Intel
 // UHD etc.): fewer steps, a shorter thickness loop, a coarser normal epsilon, and
 // (set on the Canvas) a smaller internal resolution + no AA — light enough to hold
-// a stable framerate where the full shader froze.
-type TierCfg = { steps: number; tsteps: number; neps: number; dpr: number; aa: boolean };
+// a stable framerate where the full shader froze. `env` = sample the real HDRI
+// (5.1); lite keeps the cheap procedural lighting. `dpr` may be a [min,max] range.
+type TierCfg = {
+  steps: number;
+  tsteps: number;
+  neps: number;
+  dpr: number | [number, number];
+  aa: boolean;
+  env: boolean;
+};
 const TIER: Record<"full" | "lite", TierCfg> = {
-  full: { steps: 56, tsteps: 12, neps: 0.0035, dpr: 1, aa: true },
-  lite: { steps: 34, tsteps: 6, neps: 0.006, dpr: 0.65, aa: false },
+  full: { steps: 56, tsteps: 12, neps: 0.0035, dpr: [1, 2], aa: true, env: true },
+  lite: { steps: 34, tsteps: 6, neps: 0.006, dpr: 0.65, aa: false, env: false },
 };
 
 const BREATH = FIELD.breath;
@@ -52,8 +61,14 @@ const vertexShader = /* glsl */ `
   void main() { vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }
 `;
 
-const makeFragment = (STEPS: number, TSTEPS: number, NEPS: number) => /* glsl */ `
+const makeFragment = (
+  STEPS: number,
+  TSTEPS: number,
+  NEPS: number,
+  USE_ENV: boolean,
+) => /* glsl */ `
   precision highp float;
+  ${USE_ENV ? "#define USE_ENV" : ""}
   varying vec2 vUv;
   uniform sampler2D uSDF;
   uniform float uTime;
@@ -62,6 +77,8 @@ const makeFragment = (STEPS: number, TSTEPS: number, NEPS: number) => /* glsl */
   uniform int uStateB;
   uniform vec2 uPointer;
   uniform float uFracture;
+  uniform sampler2D uEnv;   // studio HDRI (full tier); folded to luminance
+  uniform float uHasEnv;    // 0 until the HDRI has loaded
 
   #define THICK ${f(THICK)}
   #define DOME ${f(DOME)}
@@ -342,12 +359,33 @@ const makeFragment = (STEPS: number, TSTEPS: number, NEPS: number) => /* glsl */
     ));
   }
 
-  vec3 envColor(vec3 d) {
+  // Procedural 3-light fallback (lite tier, or until the HDRI loads).
+  float envProc(vec3 d) {
     float s = 0.0;
     s += smoothstep(0.60, 0.96, dot(d, normalize(vec3(0.35, 0.85, 0.55))));
     s += 0.85 * smoothstep(0.74, 0.99, dot(d, normalize(vec3(-0.85, 0.10, 0.45))));
     s += 0.70 * smoothstep(0.82, 0.995, dot(d, normalize(vec3(0.75, 0.40, -0.25))));
-    return vec3(s);
+    return s;
+  }
+
+  // Reflection environment, returned as grayscale luminance (mixed onto cyan
+  // glass downstream) so highlights stay white-on-cyan — never an off-brand hue.
+  vec3 envColor(vec3 d) {
+#ifdef USE_ENV
+    if (uHasEnv > 0.5) {
+      // direction → equirectangular UV (1/2pi, 1/pi)
+      vec2 uv = vec2(atan(d.z, d.x) * 0.15915494 + 0.5,
+                     acos(clamp(d.y, -1.0, 1.0)) * 0.31830989);
+      vec3 e = texture2D(uEnv, uv).rgb;
+      float lum = dot(e, vec3(0.299, 0.587, 0.114));
+      // tone the real environment into crisp speculars: a steep curve crushes the
+      // dim room to near-black (so the deep cyan body stays rich) and keeps the
+      // bright light sources as structured, believable highlights.
+      float hi = pow(clamp(lum, 0.0, 6.0), 2.4) * 0.55;
+      return vec3(hi);
+    }
+#endif
+    return vec3(envProc(d));
   }
 
   void main() {
@@ -394,6 +432,14 @@ const makeFragment = (STEPS: number, TSTEPS: number, NEPS: number) => /* glsl */
     vec3 col = mix(body, reflCol, fres);
     col += reflCol * 0.55;
     col += CY_GLOW * pow(1.0 - max(dot(n, V), 0.0), 3.0) * 0.18;
+
+    // clearcoat — two sharp, high-frequency specular lobes on top of the body
+    // reflection so the surface reads wet and glossy (liquid glass), not matte.
+    vec3 L1 = normalize(vec3(0.42, 0.78, 0.55));
+    vec3 L2 = normalize(vec3(-0.62, 0.34, 0.42));
+    float cc = pow(max(dot(n, normalize(L1 + V)), 0.0), 210.0)
+             + 0.55 * pow(max(dot(n, normalize(L2 + V)), 0.0), 120.0);
+    col += vec3(1.0) * cc * 0.8;
 
     gl_FragColor = vec4(col, 1.0);
   }
@@ -454,6 +500,7 @@ function Glass({
           TIER[tier].steps,
           TIER[tier].tsteps,
           TIER[tier].neps,
+          TIER[tier].env,
         ),
         transparent: true,
         depthTest: false,
@@ -466,6 +513,8 @@ function Glass({
           uStateB: { value: stateB },
           uPointer: { value: new THREE.Vector2(0, 0) },
           uFracture: { value: fracture ?? 0 },
+          uEnv: { value: null as THREE.Texture | null },
+          uHasEnv: { value: 0 },
         },
       }),
     [texture, tier, time0, morph0, stateA, stateB, fracture],
@@ -488,6 +537,27 @@ function Glass({
   const perfFrames = useRef(0); // frames observed since mount (skip warm-up)
   const badStreak = useRef(0); // consecutive janky frames
   const perfFailed = useRef(false);
+
+  // Load the studio HDRI for the full tier and feed it as the reflection env (5.1).
+  // Lazy + cached (decoded once); failure silently keeps the procedural lighting.
+  useEffect(() => {
+    if (!TIER[tier].env) return;
+    let env: THREE.DataTexture | null = null;
+    let alive = true;
+    getEnvMapData()
+      .then((data) => {
+        if (!alive) return;
+        env = makeEnvTexture(data);
+        material.uniforms.uEnv.value = env;
+        material.uniforms.uHasEnv.value = 1;
+        invalidate();
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+      env?.dispose();
+    };
+  }, [tier, material, invalidate]);
 
   // hover physics — track the cursor over the canvas, release to centre on leave
   useEffect(() => {
