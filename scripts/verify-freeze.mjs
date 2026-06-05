@@ -95,14 +95,19 @@ const masked = await run("Masked / unknown", { renderer: "" });
 const software = await run("Software (SwiftShader)", {}); // no mock = real swiftshader
 const forced = await run("?glass=full (capable path)", { url: "/en?glass=full" });
 
+// New policy: real GPUs (incl. Intel UHD / masked) now run the OPTIMIZED live
+// glass (≥1 WebGL canvas) and must stay responsive; only a pure software
+// rasterizer keeps the SVG (0 canvases). NB: a real-GPU TDR freeze can't be
+// reproduced here (Playwright uses software GL) — fps/no-freeze on actual
+// integrated hardware must be confirmed on-device with ?perf=1.
 const pass =
-  intel.maxCanvas === 0 &&
+  intel.maxCanvas >= 1 &&
   intel.responsive &&
-  intelHd.maxCanvas === 0 &&
-  masked.maxCanvas === 0 &&
+  intelHd.maxCanvas >= 1 &&
+  masked.maxCanvas >= 1 &&
   software.maxCanvas === 0 &&
   forced.maxCanvas >= 1;
 
-console.log("\nFREEZE-FIX " + (pass ? "PASS ✓" : "FAIL ✗"));
+console.log("\nGLASS-POLICY " + (pass ? "PASS ✓" : "FAIL ✗"));
 await browser.close();
 process.exit(pass ? 0 : 1);

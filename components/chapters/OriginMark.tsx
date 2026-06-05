@@ -59,7 +59,6 @@ export function OriginMark() {
             converge={inView}
             play={inView}
             onReady={() => setReady(true)}
-            onPerfFail={() => setEnabled(false)}
           />
         </div>
       )}

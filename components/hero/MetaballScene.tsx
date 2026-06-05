@@ -2,9 +2,10 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
+import { PerformanceMonitor } from "@react-three/drei";
 import * as THREE from "three";
 import { FIELD, getRestingState, STATE_COUNT, AI_STATE } from "@/lib/webgl/states";
-import { detectGpuTier, demoteToSvg, type GpuTier } from "@/lib/webgl/gpu-tier";
+import { detectGpuTier, type GpuTier } from "@/lib/webgl/gpu-tier";
 import { getEnvMapData, makeEnvTexture } from "@/lib/webgl/env-map";
 import type { SdfResult } from "@/lib/webgl/trace-logo";
 
@@ -21,22 +22,30 @@ const ERODE = 0.025;
 const IOR = 1.34; // spec S1: liquid-glass refraction (was 1.4)
 const VIEW = 1.05;
 
-// Per-tier raymarch budget (backlog 5.0). "lite" runs on integrated GPUs (Intel
-// UHD etc.): fewer steps, a shorter thickness loop, a coarser normal epsilon, and
-// (set on the Canvas) a smaller internal resolution + no AA — light enough to hold
-// a stable framerate where the full shader froze. `env` = sample the real HDRI
-// (5.1); lite keeps the cheap procedural lighting. `dpr` may be a [min,max] range.
-type TierCfg = {
-  steps: number;
-  tsteps: number;
-  neps: number;
-  dpr: number | [number, number];
-  aa: boolean;
-  env: boolean;
-};
+// Perf #2 — BOUNDING QUAD. Every form fits within ~0.8 of view space, so the
+// raymarch runs on a quad covering only that bound, not the whole canvas: the
+// corner/edge fragments (which always missed and discarded) are never rasterized
+// at all → a fill-rate cut for free. The blob projects IDENTICALLY (QUAD =
+// 2·BOUND/VIEW keeps view→NDC the same), so there is zero visual change.
+const BOUND = 0.9;
+const QUAD = (2 * BOUND) / VIEW;
+
+// THE SHADER IS IDENTICAL ON EVERY DEVICE (perf rule: never change the look,
+// degrade only resolution). These are the full-quality params used everywhere.
+const STEPS = 56; // raymarch steps
+const TSTEPS = 12; // glass-thickness steps
+const NEPS = 0.0035; // normal epsilon
+
+// Per-tier RESOLUTION ONLY (perf #1 + #5). Same shader; weak devices render the
+// WebGL buffer smaller (barely perceptible on smooth glass) and the live
+// PerformanceMonitor tunes it within [minDpr, maxDpr]. Capable caps at 1.5 — no
+// 2–3× retina, invisible on glass but a big fill-rate save. "lite" (integrated /
+// mobile) starts low and conservative so the first frame can never trip the GPU
+// watchdog (the freeze), then nudges within a safe band.
+type TierCfg = { startDpr: number; minDpr: number; maxDpr: number };
 const TIER: Record<"full" | "lite", TierCfg> = {
-  full: { steps: 56, tsteps: 12, neps: 0.0035, dpr: [1, 2], aa: true, env: true },
-  lite: { steps: 34, tsteps: 6, neps: 0.006, dpr: 0.65, aa: false, env: false },
+  full: { startDpr: 1.5, minDpr: 1.0, maxDpr: 1.5 },
+  lite: { startDpr: 0.45, minDpr: 0.35, maxDpr: 0.6 },
 };
 
 const BREATH = FIELD.breath;
@@ -87,6 +96,7 @@ const makeFragment = (
   #define ERODE ${f(ERODE)}
   #define IOR ${f(IOR)}
   #define VIEW ${f(VIEW)}
+  #define BOUND ${f(BOUND)}
   #define BREATH ${f(BREATH)}
   #define OMEGA ${f(OMEGA)}
 
@@ -396,18 +406,24 @@ const makeFragment = (
 
   void main() {
     float br = 1.0 + BREATH * sin(uTime * OMEGA);
+    // Perf #2 — the quad maps to view ∈ [-BOUND, BOUND] (the blob's bound), which
+    // projects the SAME as the old full VIEW mapping (QUAD = 2·BOUND/VIEW), so the
+    // blob is pixel-identical; only the never-hit margin is gone.
     vec2 uv = vUv * 2.0 - 1.0;
-    vec3 ro = vec3(uv * VIEW, 2.0);
+    vec3 ro = vec3(uv * BOUND, 2.0);
     vec3 rd = vec3(0.0, 0.0, -1.0);
 
-    float t = 0.0, d = 0.0;
+    // Perf #3 — sphere-trace from the bounding sphere (the blob lives in z∈~±0.8,
+    // so start at z=1.0; everything before is empty) and early-out the moment the
+    // ray passes the far side without a hit. Same hits → no visual change.
+    float t = 1.0, d = 0.0;
     bool hit = false;
     for (int i = 0; i < ${STEPS}; i++) {
       vec3 p = ro + rd * t;
+      if (p.z < -1.0) break;            // past the blob (incl. fractured shards) → bail
       d = map(p, br);
       if (d < 0.0006) { hit = true; break; }
       t += max(d * 0.85, 0.0025);
-      if (t > 4.0) break;
     }
     if (!hit) discard;
 
@@ -463,9 +479,12 @@ const makeFragment = (
   }
 `;
 
+// ONE shader for every device — full quality, HDRI env, identical look. Weak
+// devices differ only in render resolution (Canvas dpr), never in the shader.
+const fragmentShader = makeFragment(STEPS, TSTEPS, NEPS, true);
+
 function Glass({
   sdf,
-  tier,
   stateA,
   stateB,
   morph0,
@@ -477,10 +496,8 @@ function Glass({
   fractureRef,
   onReady,
   onActiveChange,
-  onPerfFail,
 }: {
   sdf: SdfResult;
-  tier: "full" | "lite";
   stateA: number;
   stateB: number;
   morph0: number;
@@ -492,7 +509,6 @@ function Glass({
   fractureRef: { current: number } | null;
   onReady: () => void;
   onActiveChange: (i: number) => void;
-  onPerfFail: () => void;
 }) {
   const texture = useMemo(() => {
     const t = new THREE.DataTexture(
@@ -514,12 +530,7 @@ function Glass({
     () =>
       new THREE.ShaderMaterial({
         vertexShader,
-        fragmentShader: makeFragment(
-          TIER[tier].steps,
-          TIER[tier].tsteps,
-          TIER[tier].neps,
-          TIER[tier].env,
-        ),
+        fragmentShader,
         transparent: true,
         depthTest: false,
         depthWrite: false,
@@ -535,7 +546,7 @@ function Glass({
           uHasEnv: { value: 0 },
         },
       }),
-    [texture, tier, time0, morph0, stateA, stateB, fracture],
+    [texture, time0, morph0, stateA, stateB, fracture],
   );
 
   const invalidate = useThree((s) => s.invalidate);
@@ -551,15 +562,10 @@ function Glass({
   const ptr = useRef({ x: 0, y: 0 });
   const hovering = useRef(false);
   const convClk = useRef(0); // S4 converge progress (seconds)
-  // FPS watchdog (5.0)
-  const perfFrames = useRef(0); // frames observed since mount (skip warm-up)
-  const badStreak = useRef(0); // consecutive janky frames
-  const perfFailed = useRef(false);
 
-  // Load the studio HDRI for the full tier and feed it as the reflection env (5.1).
-  // Lazy + cached (decoded once); failure silently keeps the procedural lighting.
+  // Load the studio HDRI as the reflection env (5.1) — on EVERY device now (same
+  // look everywhere). Lazy + cached (decoded once); failure keeps procedural light.
   useEffect(() => {
-    if (!TIER[tier].env) return;
     let env: THREE.DataTexture | null = null;
     let alive = true;
     getEnvMapData()
@@ -575,7 +581,7 @@ function Glass({
       alive = false;
       env?.dispose();
     };
-  }, [tier, material, invalidate]);
+  }, [material, invalidate]);
 
   // hover physics — track the cursor over the canvas, release to centre on leave
   useEffect(() => {
@@ -662,27 +668,6 @@ function Glass({
         onActiveChange(active);
       }
     }
-    // FPS watchdog (5.0) — sustained jank on the live glass bails to the SVG, so a
-    // device that slips through the tier probe never sits frozen/janky. Warm-up
-    // frames (shader compile, first paints) are skipped; transient melt spikes reset
-    // the streak; only a long run of slow frames trips it.
-    if ((animate || fracture != null) && !perfFailed.current) {
-      perfFrames.current++;
-      if (perfFrames.current > 45) {
-        if (delta > 0.05) {
-          // < ~20fps
-          badStreak.current += 1;
-          if (badStreak.current > 60) {
-            // ~3-4s sustained
-            perfFailed.current = true;
-            demoteToSvg();
-            onPerfFail();
-          }
-        } else {
-          badStreak.current = 0;
-        }
-      }
-    }
 
     if (!fired.current) {
       fired.current = true;
@@ -708,14 +693,15 @@ function Glass({
 
   return (
     <mesh frustumCulled={false}>
-      <planeGeometry args={[2, 2]} />
+      {/* Perf #2 — bounding quad (covers only the blob's view bound, not the
+          full canvas). The view→NDC mapping is preserved so the blob is identical. */}
+      <planeGeometry args={[QUAD, QUAD]} />
       <primitive object={material} attach="material" />
     </mesh>
   );
 }
 
 function RestingMark(props: {
-  tier: "full" | "lite";
   stateA: number;
   stateB: number;
   morph0: number;
@@ -727,7 +713,6 @@ function RestingMark(props: {
   fractureRef: { current: number } | null;
   onReady: () => void;
   onActiveChange: (i: number) => void;
-  onPerfFail: () => void;
 }) {
   const [sdf, setSdf] = useState<SdfResult | null>(null);
   useEffect(() => {
@@ -746,6 +731,45 @@ function RestingMark(props: {
 }
 
 /**
+ * Perf #5 — ADAPTIVE RESOLUTION. Default to the tier's start DPR; only if fps
+ * dips does drei's PerformanceMonitor walk the glass resolution down (and back up
+ * within the safe band). High-end stays pristine; weak devices get a slightly
+ * softer but still-live, still-interactive, still-morphing glass — the effect is
+ * NEVER dropped. Also publishes live fps/dpr for the ?perf overlay.
+ */
+function AdaptiveDpr({ min, max }: { min: number; max: number }) {
+  const setDpr = useThree((s) => s.setDpr);
+  const acc = useRef({ frames: 0, t: 0 });
+  useFrame((_, delta) => {
+    const a = acc.current;
+    a.frames += 1;
+    a.t += delta;
+    if (a.t >= 0.5) {
+      (window as unknown as { __zglassFps?: number }).__zglassFps = Math.round(
+        a.frames / a.t,
+      );
+      a.frames = 0;
+      a.t = 0;
+    }
+  });
+  return (
+    <PerformanceMonitor
+      bounds={() => [48, 58]}
+      flipflops={4}
+      onChange={({ factor }) => {
+        const d = Math.round((min + factor * (max - min)) * 20) / 20; // 0.05 steps
+        setDpr(d);
+        (window as unknown as { __zglassDpr?: number }).__zglassDpr = d;
+      }}
+      onFallback={() => {
+        setDpr(min);
+        (window as unknown as { __zglassDpr?: number }).__zglassDpr = min;
+      }}
+    />
+  );
+}
+
+/**
  * Hero metaball (S2.3): raymarched glass mark that morphs to the pillar states.
  * `capture` freezes the rest / mid-morph / AI phases; `previewState` freezes a
  * single static form for the contact sheet.
@@ -753,7 +777,6 @@ function RestingMark(props: {
 export default function MetaballScene({
   onReady = () => {},
   onActiveChange = () => {},
-  onPerfFail = () => {},
   capture = null,
   previewState = null,
   manualState = null,
@@ -765,7 +788,6 @@ export default function MetaballScene({
 }: {
   onReady?: () => void;
   onActiveChange?: (i: number) => void;
-  onPerfFail?: () => void;
   capture?: "rest" | "breath" | "morph" | "ai" | null;
   previewState?: number | null;
   manualState?: number | null;
@@ -775,13 +797,17 @@ export default function MetaballScene({
   fractureRef?: { current: number } | null;
   play?: boolean;
 }) {
-  // Device tier (backlog 5.0) — "full" or "lite"; this component only mounts when
-  // canRunGlass() (tier != none), so coerce defensively.
+  // Device tier — "full" (capable) or "lite" (integrated/mobile). Only mounts when
+  // canRunGlass() (tier != none), so coerce defensively. Same SHADER either way;
+  // the tier only sets the starting render resolution + the adaptive band.
   const tier = useMemo<"full" | "lite">(() => {
     const t: GpuTier = detectGpuTier();
     return t === "none" ? "lite" : t;
   }, []);
   const cfg = TIER[tier];
+  // Live render resolution (perf #1) — starts at the tier's start DPR; AdaptiveDpr
+  // tunes it while animating. Deterministic captures keep the start value.
+  const [dpr] = useState(cfg.startDpr);
   let stateA = 0;
   let stateB = AI_STATE;
   let morph0 = 0;
@@ -811,18 +837,18 @@ export default function MetaballScene({
   }
   return (
     <Canvas
-      dpr={cfg.dpr}
+      dpr={dpr}
       frameloop={animate && play ? "always" : "demand"}
       gl={{
         alpha: true,
-        antialias: cfg.aa,
+        antialias: true,
         toneMapping: THREE.NoToneMapping,
-        powerPreference: tier === "full" ? "high-performance" : "low-power",
+        powerPreference: "high-performance",
       }}
       style={{ width: "100%", height: "100%" }}
     >
+      {animate && <AdaptiveDpr min={cfg.minDpr} max={cfg.maxDpr} />}
       <RestingMark
-        tier={tier}
         stateA={stateA}
         stateB={stateB}
         morph0={morph0}
@@ -834,7 +860,6 @@ export default function MetaballScene({
         fractureRef={fractureRef}
         onReady={onReady}
         onActiveChange={onActiveChange}
-        onPerfFail={onPerfFail}
       />
     </Canvas>
   );

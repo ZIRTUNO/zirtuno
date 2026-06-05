@@ -9,6 +9,7 @@ import { canRunGlass } from "@/lib/webgl/can-run-glass";
 import { STATE_COUNT } from "@/lib/webgl/states";
 import { LogoMark } from "./LogoMark";
 import { PillarIndicator } from "./PillarIndicator";
+import { PerfOverlay } from "./PerfOverlay";
 
 // three.js is client-only and heavy → load the scene lazily, no SSR.
 const MetaballScene = dynamic(() => import("./MetaballScene"), { ssr: false });
@@ -153,7 +154,6 @@ export function MetaballCanvas({ pillarNames }: { pillarNames: string[] }) {
               play={heroInView || capture !== null || preview !== null || pair !== null}
               onReady={() => setReady(true)}
               onActiveChange={setActive}
-              onPerfFail={() => setEnabled(false)}
             />
           </div>
         )}
@@ -162,6 +162,7 @@ export function MetaballCanvas({ pillarNames }: { pillarNames: string[] }) {
         {liveText}
       </span>
       <PillarIndicator active={active} />
+      <PerfOverlay />
     </>
   );
 }

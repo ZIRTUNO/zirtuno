@@ -1,33 +1,28 @@
 "use client";
 
 /**
- * Device-tier selection for the raymarched glass (S2.3 · backlog 5.0).
+ * Device-tier selection for the raymarched glass (S2.3).
  *
- * The glass is a HIGH-END ENHANCEMENT, not a baseline. A fullscreen SDF raymarch
- * hard-freezes integrated GPUs (Intel HD/UHD/Iris, mobile) and software — it
- * trips the GPU driver's timeout (TDR) and hangs the whole machine, which no JS
- * watchdog can recover. A reduced raymarch trips it too. So the policy is
- * deliberately conservative — when in doubt, serve the (high-fidelity) static
- * SVG mark with zero WebGL:
+ * The glass is now OPTIMIZED to stay LIVE on weak GPUs (MetaballScene renders it
+ * inside a bounding quad at a low, adaptive resolution — drei PerformanceMonitor
+ * walks the resolution to fps). So every real GPU gets the live, interactive,
+ * morphing glass; the tier only decides the starting resolution / adaptive band:
  *
- *   - "full" → a recognized capable/discrete GPU that ALSO clears a runtime perf
- *     probe: the full-quality raymarch (STEPS=56, thickness loop, dpr up to 2,
- *     HDRI env).
- *   - "none" → everything else (integrated, mobile, software, or any GPU we can't
- *     positively identify): the static SVG mark, no WebGL, never a freeze.
+ *   - "full" → capable/discrete GPU (passes a runtime perf probe): same shader at
+ *     a high (capped ~1.5×) resolution.
+ *   - "lite" → integrated / mobile / unidentified GPU: the SAME shader/effect at a
+ *     low, conservative starting resolution (so the first frame can never trip the
+ *     driver watchdog) that adapts up/down. Softer, never less alive.
+ *   - "none" → SOFTWARE rasterizer / no WebGL only: no real GPU, so keep the
+ *     static SVG mark.
  *
- * ("lite" remains in the type for compatibility but is no longer selected — a
- * lighter raymarch still froze integrated GPUs, so there is no middle tier.)
- *
- * The decision is cheap and cached per session (sessionStorage). A live FPS
- * watchdog (in MetaballScene) is a secondary net for capable GPUs that turn out
- * janky: sustained jank pins the session to the SVG.
+ * The decision is cheap and cached per session (sessionStorage).
  *
  * Overrides:
  *   - `?capture=` / `?state=` / `?pair=` / `?glass=full` → force "full" (the
- *     deterministic screenshot pipeline + a debug "show me full quality").
- *   - `?glass=1` / `on` / `force` → force-mount full glass even if gated off — an
- *     explicit debug opt-in (may freeze a weak GPU; normal visitors never hit it).
+ *     screenshot pipeline + "show me full quality").
+ *   - `?glass=lite` / `tuned` → force "lite" (test the optimized weak path).
+ *   - `?glass=1` / `on` / `force` → force-mount glass even if gated off.
  */
 
 export type GpuTier = "full" | "lite" | "none";
@@ -35,11 +30,14 @@ export type GpuTier = "full" | "lite" | "none";
 // v2: the policy changed (no more "lite" raymarch on integrated GPUs). Bumping
 // the key discards any stale "lite" cached by a prior visit, which would
 // otherwise re-mount the freezing glass on reload.
-const CACHE_KEY = "zr-gpu-tier-v2";
+// v3: policy changed again — integrated/mobile now get the optimized "lite" glass
+// (not SVG). Bumping the key discards a prior visit's cached "none", which would
+// otherwise keep those devices on the static mark.
+const CACHE_KEY = "zr-gpu-tier-v3";
 
-// CPU rasterizers — real-time raymarch is not viable; serve the SVG.
+// CPU rasterizers — no real GPU, real-time raymarch is not viable; serve the SVG.
 const SOFTWARE = ["swiftshader", "llvmpipe", "software", "microsoft basic"];
-// Integrated / mobile GPUs — a fullscreen raymarch freezes these; serve the SVG.
+// Integrated / mobile GPUs — run the optimized glass at the conservative "lite" tier.
 const WEAK = [
   "intel(r) hd graphics",
   "intel hd graphics",
@@ -63,7 +61,12 @@ export function captureForced(): boolean {
   return /[?&](?:capture=|state=|pair=|glass=full)/i.test(search());
 }
 
-/** "Show me glass" opt-in: mount at the honest tier (floored at lite, never none). */
+/** Force the "lite" (tuned, low-res) tier — for testing the optimized weak path. */
+export function liteForced(): boolean {
+  return /[?&]glass=(?:lite|tuned)/i.test(search());
+}
+
+/** "Show me glass" opt-in: force-mount the full tier even if gated off. */
 export function mountForced(): boolean {
   return /[?&]glass=(?:1|on|force)/i.test(search());
 }
@@ -152,22 +155,23 @@ function probeFrameMs(gl: WebGLRenderingContext): number {
 function decide(): GpuTier {
   if (typeof window === "undefined") return "none";
   if (captureForced()) return "full";
+  if (liteForced()) return "lite";
 
   const gl = getGL();
   if (!gl) return "none";
 
-  // The raymarched glass is a HIGH-END ENHANCEMENT, not a baseline. A fullscreen
-  // SDF raymarch hard-freezes integrated GPUs (Intel HD/UHD/Iris, mobile) and
-  // software rasterizers — it trips the GPU driver's timeout (TDR) and hangs the
-  // whole machine, which no JS watchdog can catch. A *reduced* raymarch trips it
-  // too. So anything we can't positively identify as a capable, non-integrated
-  // GPU gets the static SVG mark (zero WebGL). Glass is only for a recognized
-  // discrete/capable GPU that ALSO clears a runtime perf probe.
+  // The live glass is now OPTIMIZED to run on real GPUs at a reduced, adaptive
+  // resolution (MetaballScene: bounding-quad raymarch + low start DPR + drei
+  // PerformanceMonitor). So every real GPU gets live glass — full quality on
+  // capable hardware, a softer-but-identical-effect "lite" (low-res, conservative
+  // start so the first frame can't trip the driver watchdog) on integrated/mobile.
+  // Only a SOFTWARE rasterizer (no real GPU) genuinely can't raymarch in real time
+  // → it keeps the static SVG.
   const r = rendererString(gl);
-  if (!r) return "none"; // masked / unidentifiable → SVG (cannot risk a freeze)
-  if (SOFTWARE.some((s) => r.includes(s))) return "none"; // CPU raster → SVG
-  if (WEAK.some((s) => r.includes(s))) return "none"; // integrated / mobile → SVG
-  return probeFrameMs(gl) < 2.2 ? "full" : "none"; // capable + fast → glass
+  if (r && SOFTWARE.some((s) => r.includes(s))) return "none"; // CPU raster → SVG
+  if (!r) return "lite"; // masked → tuned glass (low-res start is safe)
+  if (WEAK.some((s) => r.includes(s))) return "lite"; // integrated / mobile → tuned
+  return probeFrameMs(gl) < 2.5 ? "full" : "lite"; // capable+fast → full, else tuned
 }
 
 let cached: GpuTier | null = null;
@@ -191,6 +195,7 @@ export function detectGpuTier(): GpuTier {
   if (typeof window === "undefined") return "none";
   // Overrides must win every call (querystring can change between mounts).
   if (captureForced()) return "full";
+  if (liteForced()) return "lite";
   if (cached) return mountForced() && cached === "none" ? "full" : cached;
 
   let stored: string | null = null;
@@ -199,9 +204,10 @@ export function detectGpuTier(): GpuTier {
   } catch {
     /* private mode */
   }
-  // Only "full"/"none" are valid now; a stale "lite" (or anything else) re-decides.
   const tier: GpuTier =
-    stored === "full" || stored === "none" ? (stored as GpuTier) : decide();
+    stored === "full" || stored === "lite" || stored === "none"
+      ? (stored as GpuTier)
+      : decide();
 
   cached = tier;
   try {

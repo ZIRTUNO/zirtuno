@@ -92,7 +92,6 @@ export function EcosystemCore({ ariaLabel = "Zirtuno" }: { ariaLabel?: string })
             fractureRef={fractureRef}
             play={inView}
             onReady={() => setReady(true)}
-            onPerfFail={() => setEnabled(false)}
           />
         </div>
       )}

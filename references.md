@@ -46,6 +46,13 @@ Integration rule: Lenis drives scroll, ScrollTrigger reads it. Wire `lenis.on('s
 
 - **Motion (motion.dev)** — https://motion.dev/docs — the renamed Framer Motion. Use for component-level enter/exit, hover/tap states, `AnimatePresence` for page transitions. **Scope:** DOM only. GSAP handles all scroll-bound work; don't duplicate.
 
+Implementation note: install/use the modern `motion` package and import React APIs
+from `motion/react`. Do not add direct `framer-motion` imports unless a future
+Motion release explicitly changes the import path. In this project, Motion owns
+declarative UI micro-interactions, route/page transitions, hover/tap/focus states,
+and small layout transitions. Scroll-pinned chapters and shader choreography stay
+with GSAP + ScrollTrigger.
+
 ---
 
 ## EFFECT TUTORIALS  (closest thing to giving the agent "eyes")
@@ -72,6 +79,22 @@ Integration rule: Lenis drives scroll, ScrollTrigger reads it. Wire `lenis.on('s
 
 - **21st.dev** — https://21st.dev — community registry of shadcn/ui-based React + Tailwind + Radix components, installable via `npx shadcn`, with an MCP for AI IDEs. **Allowed uses:** form inputs, dropdown/mobile menu, toast/notification, accordion, tooltip primitives — the plumbing. **Forbidden uses:** hero, ecosystem diagram, etymology reveal, metaball, any pillar visual, the contact metaball. Those are bespoke. A marketplace component in a signature section reintroduces exactly the generic look we're avoiding. Always restyle anything pulled from 21st.dev to the Zirtuno tokens (cyan/black, the two fonts) before shipping.
 - **shadcn/ui** — https://ui.shadcn.com — base primitives 21st.dev builds on, if pulling directly.
+
+## INTERACTION INSPIRATION ONLY  (study, don't paste)
+
+- **Design Spells** — https://designspells.com — a catalog of polished product
+  details, interaction moments, transitions, 404 ideas, buttons, and delightful
+  motion. Use it as a taste benchmark for small moments: loading, page transition,
+  empty/error states, form feedback, cursor behavior, and contact success. Do not
+  copy a recognizable effect; translate the underlying interaction principle into
+  the Zirtuno language: discreet, precise, cyan-on-black, business-first.
+- **React Bits** — https://reactbits.dev — animated React components and effects.
+  Use only as a code/interaction reference for secondary UI polish, such as text
+  reveal patterns, button feedback, menus, or small background treatments. Never
+  import a React Bits component wholesale into the hero, ecosystem, metaball,
+  services pillar visual, Origin, or contact exhale. If a pattern is borrowed,
+  re-implement it with the locked stack (`motion/react`, GSAP, R3F, Lenis) and
+  Zirtuno tokens.
 
 ---
 

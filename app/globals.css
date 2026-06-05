@@ -423,6 +423,23 @@ section[id],
   pointer-events: auto; /* hover physics: the cursor leans the glass */
 }
 
+/* Perf HUD (?perf=1) — measure the live glass fps/dpr/resolution on real devices. */
+.perf-overlay {
+  position: fixed;
+  top: calc(var(--topbar-h) + 0.5rem);
+  left: 0.75rem;
+  z-index: 9998;
+  padding: 0.35rem 0.6rem;
+  background: color-mix(in srgb, var(--color-ink) 80%, transparent);
+  border: 1px solid var(--color-cyan);
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: var(--text-mono-sm);
+  letter-spacing: 0.04em;
+  color: var(--color-cyan);
+  pointer-events: none;
+}
+
 /* S3.2 — fractured metaball (The Problem). Square stage; CSS placeholder base
    layer + glass canvas overlay (desktop), placeholder fades out once glass paints. */
 .fractured-stage {
