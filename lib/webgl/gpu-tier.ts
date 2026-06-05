@@ -30,10 +30,10 @@ export type GpuTier = "full" | "lite" | "none";
 // v2: the policy changed (no more "lite" raymarch on integrated GPUs). Bumping
 // the key discards any stale "lite" cached by a prior visit, which would
 // otherwise re-mount the freezing glass on reload.
-// v3: policy changed again — integrated/mobile now get the optimized "lite" glass
-// (not SVG). Bumping the key discards a prior visit's cached "none", which would
-// otherwise keep those devices on the static mark.
-const CACHE_KEY = "zr-gpu-tier-v3";
+// v4: the optimized "lite" raymarch STILL froze integrated GPUs, so it's gated
+// back off (integrated → SVG). Bumping the key discards a prior visit's cached
+// "lite", which would otherwise re-mount the freezing glass on reload.
+const CACHE_KEY = "zr-gpu-tier-v4";
 
 // CPU rasterizers — no real GPU, real-time raymarch is not viable; serve the SVG.
 const SOFTWARE = ["swiftshader", "llvmpipe", "software", "microsoft basic"];
@@ -160,18 +160,18 @@ function decide(): GpuTier {
   const gl = getGL();
   if (!gl) return "none";
 
-  // The live glass is now OPTIMIZED to run on real GPUs at a reduced, adaptive
-  // resolution (MetaballScene: bounding-quad raymarch + low start DPR + drei
-  // PerformanceMonitor). So every real GPU gets live glass — full quality on
-  // capable hardware, a softer-but-identical-effect "lite" (low-res, conservative
-  // start so the first frame can't trip the driver watchdog) on integrated/mobile.
-  // Only a SOFTWARE rasterizer (no real GPU) genuinely can't raymarch in real time
-  // → it keeps the static SVG.
+  // HARD REALITY: a per-pixel SDF raymarch is too heavy for integrated GPUs even
+  // at low resolution — the per-pixel cost (≈80 SDF evals/pixel for march +
+  // normals + thickness) trips the driver timeout (TDR) and freezes the whole
+  // machine regardless of pixel count. Resolution-only optimization could NOT
+  // stop it. So the raymarch stays a capable/discrete-GPU enhancement; integrated/
+  // mobile/software/unidentified keep the static SVG until the mesh-based metaball
+  // (morph-target mesh + matcap glass — a fundamentally lighter technique) lands.
   const r = rendererString(gl);
   if (r && SOFTWARE.some((s) => r.includes(s))) return "none"; // CPU raster → SVG
-  if (!r) return "lite"; // masked → tuned glass (low-res start is safe)
-  if (WEAK.some((s) => r.includes(s))) return "lite"; // integrated / mobile → tuned
-  return probeFrameMs(gl) < 2.5 ? "full" : "lite"; // capable+fast → full, else tuned
+  if (!r) return "none"; // masked / unidentified → SVG (cannot risk a freeze)
+  if (WEAK.some((s) => r.includes(s))) return "none"; // integrated / mobile → SVG
+  return probeFrameMs(gl) < 2.5 ? "full" : "none"; // capable + fast → glass, else SVG
 }
 
 let cached: GpuTier | null = null;
