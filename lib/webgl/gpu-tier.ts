@@ -1,43 +1,51 @@
 "use client";
 
 /**
- * Device-tier selection for the raymarched glass (S2.3).
+ * Device-tier + glass-technique selection for the hero metaball (S2.3).
  *
- * The glass is now OPTIMIZED to stay LIVE on weak GPUs (MetaballScene renders it
- * inside a bounding quad at a low, adaptive resolution — drei PerformanceMonitor
- * walks the resolution to fps). So every real GPU gets the live, interactive,
- * morphing glass; the tier only decides the starting resolution / adaptive band:
+ * We ship TWO glass techniques, picked by GPU capability:
  *
- *   - "full" → capable/discrete GPU (passes a runtime perf probe): same shader at
- *     a high (capped ~1.5×) resolution.
- *   - "lite" → integrated / mobile / unidentified GPU: the SAME shader/effect at a
- *     low, conservative starting resolution (so the first frame can never trip the
- *     driver watchdog) that adapts up/down. Softer, never less alive.
- *   - "none" → SOFTWARE rasterizer / no WebGL only: no real GPU, so keep the
- *     static SVG mark.
+ *   - "full"  → RAYMARCHED SDF glass (MetaballScene). Per-pixel sphere-tracing —
+ *     gorgeous, but a hundreds-of-iterations-per-pixel workload that TDR-freezes
+ *     weak GPUs regardless of resolution. Capable/discrete GPUs only (a runtime
+ *     perf probe must pass).
+ *   - "lite"  → MESH glass (MeshMetaballScene): a morph-target mesh shaded with a
+ *     baked cyan-glass MATCAP + fresnel rim + a refraction approximation. The GPU
+ *     rasterises a low-poly mesh + runs a trivial fragment shader → 60fps on an
+ *     integrated GPU with NO long per-pixel loop, so it CANNOT trip the driver
+ *     watchdog. Integrated / mobile / unidentified GPUs get this — fully live,
+ *     interactive, hover-responsive, morphing.
+ *   - "none"  → SOFTWARE rasteriser / no WebGL: no real GPU at all → static SVG.
+ *
+ * History: the raymarch was tried at the "lite" tier (low resolution, bounding
+ * quad, march early-out) and STILL froze integrated GPUs — the per-pixel cost is
+ * intrinsic, not a resolution problem. So "lite" now means the mesh technique,
+ * the fundamentally lighter path. See glassTech() for the raymarch↔mesh mapping.
  *
  * The decision is cheap and cached per session (sessionStorage).
  *
  * Overrides:
- *   - `?capture=` / `?state=` / `?pair=` / `?glass=full` → force "full" (the
- *     screenshot pipeline + "show me full quality").
- *   - `?glass=lite` / `tuned` → force "lite" (test the optimized weak path).
- *   - `?glass=1` / `on` / `force` → force-mount glass even if gated off.
+ *   - `?glass=mesh`              → force the MESH technique (lite) anywhere, incl.
+ *                                  capture/state/pair stills (mesh contact sheet).
+ *   - `?capture=` / `?state=` /
+ *     `?pair=` / `?glass=full`   → force "full" (the raymarch screenshot pipeline).
+ *   - `?glass=lite` / `tuned`    → force "lite" (test the mesh path on any GPU).
+ *   - `?glass=1` / `on` / `force`→ force-mount glass even if gated off ("none").
  */
 
 export type GpuTier = "full" | "lite" | "none";
+export type GlassTech = "raymarch" | "mesh" | "none";
 
-// v2: the policy changed (no more "lite" raymarch on integrated GPUs). Bumping
-// the key discards any stale "lite" cached by a prior visit, which would
-// otherwise re-mount the freezing glass on reload.
-// v4: the optimized "lite" raymarch STILL froze integrated GPUs, so it's gated
-// back off (integrated → SVG). Bumping the key discards a prior visit's cached
-// "lite", which would otherwise re-mount the freezing glass on reload.
-const CACHE_KEY = "zr-gpu-tier-v4";
+// v5: "lite" now means the MESH technique (was a low-res raymarch that still
+// froze). Bumping the key discards any stale tier a prior visit cached, so
+// integrated GPUs re-evaluate and pick up the new, safe mesh path on reload.
+const CACHE_KEY = "zr-gpu-tier-v5";
 
-// CPU rasterizers — no real GPU, real-time raymarch is not viable; serve the SVG.
+// CPU rasterisers — no real GPU at all; even a trivial mesh shader is slow, so
+// serve the static SVG.
 const SOFTWARE = ["swiftshader", "llvmpipe", "software", "microsoft basic"];
-// Integrated / mobile GPUs — run the optimized glass at the conservative "lite" tier.
+// Integrated / mobile GPUs — too weak for the per-pixel raymarch, but they
+// rasterise a mesh + matcap at 60fps easily → the "lite" MESH technique.
 const WEAK = [
   "intel(r) hd graphics",
   "intel hd graphics",
@@ -56,14 +64,19 @@ function search(): string {
   return typeof window === "undefined" ? "" : window.location.search;
 }
 
-/** Deterministic full-quality contexts: the capture pipeline + an explicit debug. */
+/** Force the MESH technique (lite) — incl. deterministic capture/state/pair stills. */
+export function meshForced(): boolean {
+  return /[?&]glass=mesh/i.test(search());
+}
+
+/** Deterministic full-quality RAYMARCH contexts: the capture pipeline + an explicit debug. */
 export function captureForced(): boolean {
   return /[?&](?:capture=|state=|pair=|glass=full)/i.test(search());
 }
 
-/** Force the "lite" (tuned, low-res) tier — for testing the optimized weak path. */
+/** Force the "lite" (mesh) tier — for testing the mesh path on any GPU. */
 export function liteForced(): boolean {
-  return /[?&]glass=(?:lite|tuned)/i.test(search());
+  return /[?&]glass=(?:lite|tuned|mesh)/i.test(search());
 }
 
 /** "Show me glass" opt-in: force-mount the full tier even if gated off. */
@@ -73,7 +86,7 @@ export function mountForced(): boolean {
 
 /** Back-compat: any override that should bypass the "none" gate. */
 export function glassForced(): boolean {
-  return captureForced() || mountForced();
+  return captureForced() || mountForced() || meshForced();
 }
 
 function getGL(): WebGLRenderingContext | null {
@@ -96,7 +109,8 @@ function rendererString(gl: WebGLRenderingContext): string {
 /**
  * Time a deliberately heavy fragment quad with a forced GPU sync (readPixels), so
  * we measure GPU throughput, not just CPU submit. Returns median ms/frame, or a
- * large number on failure (→ treated as slow).
+ * large number on failure (→ treated as slow). Only capable GPUs clear the bar to
+ * earn the raymarch; everyone else gets the (always-safe) mesh.
  */
 function probeFrameMs(gl: WebGLRenderingContext): number {
   const SIZE = 192;
@@ -154,32 +168,28 @@ function probeFrameMs(gl: WebGLRenderingContext): number {
 
 function decide(): GpuTier {
   if (typeof window === "undefined") return "none";
+  if (meshForced()) return "lite";
   if (captureForced()) return "full";
   if (liteForced()) return "lite";
 
   const gl = getGL();
   if (!gl) return "none";
 
-  // HARD REALITY: a per-pixel SDF raymarch is too heavy for integrated GPUs even
-  // at low resolution — the per-pixel cost (≈80 SDF evals/pixel for march +
-  // normals + thickness) trips the driver timeout (TDR) and freezes the whole
-  // machine regardless of pixel count. Resolution-only optimization could NOT
-  // stop it. So the raymarch stays a capable/discrete-GPU enhancement; integrated/
-  // mobile/software/unidentified keep the static SVG until the mesh-based metaball
-  // (morph-target mesh + matcap glass — a fundamentally lighter technique) lands.
+  // CPU rasteriser → SVG (no GPU). Everything else has a real GPU: capable ones
+  // that clear the perf probe get the raymarch ("full"); integrated / mobile /
+  // unidentified get the always-safe MESH ("lite").
   const r = rendererString(gl);
-  if (r && SOFTWARE.some((s) => r.includes(s))) return "none"; // CPU raster → SVG
-  if (!r) return "none"; // masked / unidentified → SVG (cannot risk a freeze)
-  if (WEAK.some((s) => r.includes(s))) return "none"; // integrated / mobile → SVG
-  return probeFrameMs(gl) < 2.5 ? "full" : "none"; // capable + fast → glass, else SVG
+  if (r && SOFTWARE.some((s) => r.includes(s))) return "none";
+  if (!r) return "lite"; // masked / unidentified → mesh (safe; never risk a freeze)
+  if (WEAK.some((s) => r.includes(s))) return "lite"; // integrated / mobile → mesh
+  return probeFrameMs(gl) < 2.5 ? "full" : "lite"; // capable+fast → raymarch, else mesh
 }
 
 let cached: GpuTier | null = null;
 
 /**
- * Runtime safety net: the FPS watchdog calls this when the live glass stays janky,
- * pinning the whole session to the SVG so we never sit in a frozen/janky state and
- * other sections don't re-attempt the heavy shader. Survives reloads (sessionStorage).
+ * Runtime safety net: pin the whole session to the SVG (used only if a path is
+ * found unrecoverable). Survives reloads (sessionStorage).
  */
 export function demoteToSvg(): void {
   cached = "none";
@@ -194,6 +204,7 @@ export function demoteToSvg(): void {
 export function detectGpuTier(): GpuTier {
   if (typeof window === "undefined") return "none";
   // Overrides must win every call (querystring can change between mounts).
+  if (meshForced()) return "lite";
   if (captureForced()) return "full";
   if (liteForced()) return "lite";
   if (cached) return mountForced() && cached === "none" ? "full" : cached;
@@ -216,4 +227,18 @@ export function detectGpuTier(): GpuTier {
     /* ignore */
   }
   return mountForced() && tier === "none" ? "full" : tier;
+}
+
+/**
+ * Which glass technique to mount: "raymarch" (capable/discrete), "mesh"
+ * (integrated/mobile — the safe morph-target path) or "none" (software → SVG).
+ */
+export function glassTech(): GlassTech {
+  const t = detectGpuTier();
+  return t === "full" ? "raymarch" : t === "lite" ? "mesh" : "none";
+}
+
+/** True only on GPUs cleared for the per-pixel raymarch (the freeze risk). */
+export function canRaymarch(): boolean {
+  return detectGpuTier() === "full";
 }

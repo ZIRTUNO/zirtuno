@@ -1,20 +1,24 @@
 "use client";
 
 /**
- * Whether this device should mount the raymarched glass (S2.3) at all. Thin
- * wrapper over the device-tier system (lib/webgl/gpu-tier) so existing call
- * sites keep working: glass mounts for the "full" and "lite" tiers and falls
- * back to the static SVG mark only for "none" (software / no WebGL).
+ * Whether this device should mount the RAYMARCHED glass (S2.3). Thin wrapper over
+ * the device-tier system (lib/webgl/gpu-tier): true only for the "full" tier
+ * (capable/discrete GPUs that clear the perf probe). Integrated / mobile / masked
+ * ("lite") and software ("none") fall back to the static SVG mark here — the
+ * raymarch is a per-pixel workload that TDR-freezes weak GPUs, so it must never
+ * mount on them.
  *
- * The tier itself (full vs lite — step count, internal resolution, env) is read
- * directly from detectGpuTier() inside MetaballScene.
+ * The hero metaball is the exception: it serves the lighter MESH technique to the
+ * "lite" tier (see lib/webgl/gpu-tier → glassTech, and MetaballCanvas). The other
+ * sections (fracture / ecosystem / services / contact / origin) keep the static
+ * fallback on "lite" until the mesh technique is extended to them.
  */
 
-import { detectGpuTier } from "./gpu-tier";
+import { canRaymarch } from "./gpu-tier";
 
 export { glassForced } from "./gpu-tier";
 
 export function canRunGlass(): boolean {
   if (typeof window === "undefined") return false;
-  return detectGpuTier() !== "none";
+  return canRaymarch();
 }

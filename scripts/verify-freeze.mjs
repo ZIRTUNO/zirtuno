@@ -1,8 +1,12 @@
-// Back-test the freeze fix: with a real integrated-GPU renderer string (the
-// owner's "Intel(R) UHD Graphics"), the site must mount ZERO WebGL canvases
-// through a full scroll — the raymarch never runs, so the GPU driver never
-// hangs. Also checks software + masked GPUs (→ SVG) and that forced glass still
-// mounts for capable users.
+// Back-test the freeze fix. The per-pixel RAYMARCH (the TDR-freeze risk) must
+// NEVER mount on a weak GPU. With a real integrated-GPU renderer string (the
+// owner's "Intel(R) UHD Graphics") the hero serves the lighter MESH glass instead
+// (geometry + a matcap lookup — safe), and every other section stays static SVG.
+//
+// We tag the hero's live wrapper data-glass-tech="mesh" | "raymarch". A WebGL
+// canvas that is NOT inside a [data-glass-tech="mesh"] ancestor is a raymarch
+// canvas (hero or any chapter) = the freeze risk. On weak GPUs that count must be
+// ZERO, while the safe mesh hero is present and the page stays responsive.
 //   BASE_URL=http://localhost:PORT node scripts/verify-freeze.mjs
 
 import { chromium } from "playwright";
@@ -47,28 +51,33 @@ async function run(label, { renderer, url = "/en" }) {
   await page.waitForFunction(() => !!document.querySelector("h1"), { timeout: 40000 });
 
   // Scroll the whole page in steps; lazy metaballs mount on approach IF enabled.
-  let maxCanvas = 0;
+  let mesh = 0; // safe mesh canvases (data-glass-tech="mesh")
+  let raymarch = 0; // raymarch canvases (everything else WebGL) = the freeze risk
   const steps = 14;
   for (let i = 0; i <= steps; i++) {
     await page.evaluate(
-      (f) => window.scrollTo(0, document.body.scrollHeight * f),
+      (fr) => window.scrollTo(0, document.body.scrollHeight * fr),
       i / steps,
     );
     await page.waitForTimeout(450);
-    // Count only WebGL canvases (the raymarch = the freeze risk). The S8 wordmark
-    // is a benign CPU Canvas-2D and is correctly excluded.
-    const n = await page.evaluate(() => {
-      let webgl = 0;
-      for (const c of document.querySelectorAll("canvas")) {
+    const c = await page.evaluate(() => {
+      let total = 0;
+      let mesh = 0;
+      for (const cv of document.querySelectorAll("canvas")) {
+        let gl = null;
         try {
-          if (c.getContext("webgl2") || c.getContext("webgl")) webgl++;
+          gl = cv.getContext("webgl2") || cv.getContext("webgl");
         } catch {
           /* ignore */
         }
+        if (!gl) continue; // skip the CPU Canvas-2D wordmark
+        total++;
+        if (cv.closest('[data-glass-tech="mesh"]')) mesh++;
       }
-      return webgl;
+      return { mesh, raymarch: total - mesh };
     });
-    if (n > maxCanvas) maxCanvas = n;
+    if (c.mesh > mesh) mesh = c.mesh;
+    if (c.raymarch > raymarch) raymarch = c.raymarch;
   }
   // still responsive? (a frozen page can't service rAF)
   const responsive = await page.evaluate(
@@ -80,9 +89,9 @@ async function run(label, { renderer, url = "/en" }) {
   );
   await ctx.close();
   console.log(
-    `${label.padEnd(28)} maxCanvasesDuringScroll=${maxCanvas}  responsive=${responsive}`,
+    `${label.padEnd(30)} mesh=${mesh}  raymarch=${raymarch}  responsive=${responsive}`,
   );
-  return { maxCanvas, responsive };
+  return { mesh, raymarch, responsive };
 }
 
 const intel = await run("Intel UHD (owner's GPU)", {
@@ -93,18 +102,26 @@ const intelHd = await run("Intel HD Graphics", {
 });
 const masked = await run("Masked / unknown", { renderer: "" });
 const software = await run("Software (SwiftShader)", {}); // no mock = real swiftshader
-const forced = await run("?glass=full (capable path)", { url: "/en?glass=full" });
+const forcedMesh = await run("?glass=mesh (mesh path)", { url: "/en?glass=mesh" });
+const forcedFull = await run("?glass=full (raymarch path)", { url: "/en?glass=full" });
 
-// Policy: the per-pixel raymarch is a capable/discrete-GPU enhancement only.
-// Integrated/mobile/masked/software mount ZERO WebGL canvases (static SVG, no
-// freeze); only a forced/capable path mounts glass.
+// Policy:
+//  - integrated / mobile / masked → MESH hero only, ZERO raymarch (no freeze), live.
+//  - software → static SVG (no WebGL at all).
+//  - forced mesh → the mesh hero mounts; forced full → the raymarch mounts.
 const pass =
-  intel.maxCanvas === 0 &&
+  intel.raymarch === 0 &&
+  intel.mesh >= 1 &&
   intel.responsive &&
-  intelHd.maxCanvas === 0 &&
-  masked.maxCanvas === 0 &&
-  software.maxCanvas === 0 &&
-  forced.maxCanvas >= 1;
+  intelHd.raymarch === 0 &&
+  intelHd.mesh >= 1 &&
+  masked.raymarch === 0 &&
+  masked.mesh >= 1 &&
+  software.raymarch === 0 &&
+  software.mesh === 0 &&
+  software.responsive &&
+  forcedMesh.mesh >= 1 &&
+  forcedFull.raymarch >= 1;
 
 console.log("\nFREEZE-GUARD " + (pass ? "PASS ✓" : "FAIL ✗"));
 await browser.close();

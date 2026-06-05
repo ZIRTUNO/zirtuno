@@ -5,36 +5,34 @@ import type { KeyboardEvent } from "react";
 import dynamic from "next/dynamic";
 import { useReducedMotion } from "@/lib/animation/reduced-motion";
 import { useInView } from "@/lib/animation/use-in-view";
-import { canRunGlass } from "@/lib/webgl/can-run-glass";
+import { glassTech, type GlassTech } from "@/lib/webgl/gpu-tier";
 import { STATE_COUNT } from "@/lib/webgl/states";
 import { LogoMark } from "./LogoMark";
 import { PillarIndicator } from "./PillarIndicator";
 import { PerfOverlay } from "./PerfOverlay";
 
-// three.js is client-only and heavy → load the scene lazily, no SSR.
+// three.js is client-only and heavy → load both scenes lazily, no SSR.
 const MetaballScene = dynamic(() => import("./MetaballScene"), { ssr: false });
+const MeshMetaballScene = dynamic(() => import("./MeshMetaballScene"), { ssr: false });
 
 const STATES = STATE_COUNT; // 0 = mark, 1-7 = the service pillars (lib/webgl/states)
 
-// WebGL + GPU-capability gate — weak GPUs (Intel HD/UHD, software) fall back to
-// the static mark to avoid hanging the browser; see lib/webgl/can-run-glass.
-function supportsWebGL(): boolean {
-  return canRunGlass();
-}
-
 /**
- * Hero metaball (S2.3). Raymarched glass mark that breathes, auto-cycles the
- * seven pillar states, and leans toward the pointer (hover physics). The static
- * SVG mark is the base layer (ships server-side, stays for reduced-motion /
- * no-WebGL, crossfades out once the glass paints). When focused, arrow keys step
- * the pillars (auto-cycle pauses) and the change is announced politely; the
- * PillarIndicator tracks the active state. `?capture=` / `?state=N` freeze a
- * phase for the screenshot pipeline.
+ * Hero metaball (S2.3). Two glass techniques, chosen per GPU (lib/webgl/gpu-tier):
+ * capable/discrete GPUs get the RAYMARCHED glass (MetaballScene); integrated /
+ * mobile GPUs get the lighter morph-target MESH glass (MeshMetaballScene), which
+ * rasterises a mesh + a matcap lookup at 60fps with no per-pixel loop (so it can't
+ * TDR-freeze a weak GPU); software / no-WebGL keeps the static SVG mark. Both live
+ * paths breathe, auto-cycle the seven pillar states, lean toward the pointer, and
+ * honour arrow-key stepping (auto-cycle pauses, change announced; the
+ * PillarIndicator tracks the active state). `?capture=` / `?state=N` / `?pair=`
+ * freeze phases for the screenshot pipeline; `?glass=mesh` forces the mesh tech.
  */
 export function MetaballCanvas({ pillarNames }: { pillarNames: string[] }) {
   const reduced = useReducedMotion();
   const [stageRef, heroInView] = useInView<HTMLDivElement>("150px"); // pause off-screen
   const [enabled, setEnabled] = useState(false);
+  const [tech, setTech] = useState<GlassTech>("none");
   const [desktop, setDesktop] = useState(false);
   const [ready, setReady] = useState(false);
   const [active, setActive] = useState(-1); // pillar index: -1 = mark, 0-6 = pillars
@@ -58,6 +56,7 @@ export function MetaballCanvas({ pillarNames }: { pillarNames: string[] }) {
       const [a, b, m] = pr.split("-").map(Number);
       setPair([a, b, m]);
     }
+    setTech(glassTech()); // raymarch (capable) · mesh (integrated/mobile) · none (software)
   }, []);
 
   // Track the desktop breakpoint reactively, so the glass upgrades if the viewport
@@ -71,13 +70,13 @@ export function MetaballCanvas({ pillarNames }: { pillarNames: string[] }) {
   }, []);
 
   useEffect(() => {
-    // Glass is desktop-only — too heavy for low-end/mobile, which keep the static
-    // SVG mark. Capture / preview / pair force it on for deterministic stills.
-    setEnabled(
-      (!!capture || preview !== null || pair !== null || (!reduced && desktop)) &&
-        supportsWebGL(),
-    );
-  }, [reduced, desktop, capture, preview, pair]);
+    // Deterministic stills force the scene on. Live: the raymarch is desktop-only
+    // (heavy); the mesh is light enough to also run on mobile. Never on a "none"
+    // tier (software / no WebGL → static SVG) or under reduced-motion.
+    const forced = !!capture || preview !== null || pair !== null;
+    const live = !reduced && (desktop || tech === "mesh");
+    setEnabled((forced || live) && tech !== "none");
+  }, [reduced, desktop, capture, preview, pair, tech]);
 
   // keyboard control is live-only (off during deterministic captures/previews)
   const interactive =
@@ -127,6 +126,17 @@ export function MetaballCanvas({ pillarNames }: { pillarNames: string[] }) {
   const liveText =
     manual == null ? "" : manual === 0 ? "Zirtuno" : (pillarNames[manual - 1] ?? "");
 
+  const play = heroInView || capture !== null || preview !== null || pair !== null;
+  const sceneProps = {
+    capture,
+    previewState: preview,
+    manualState: manual,
+    morphPair: pair,
+    play,
+    onReady: () => setReady(true),
+    onActiveChange: setActive,
+  };
+
   return (
     <>
       <div
@@ -145,16 +155,12 @@ export function MetaballCanvas({ pillarNames }: { pillarNames: string[] }) {
           style={{ opacity: hideFallback ? 0 : 1 }}
         />
         {enabled && (
-          <div className="metaball-canvas">
-            <MetaballScene
-              capture={capture}
-              previewState={preview}
-              manualState={manual}
-              morphPair={pair}
-              play={heroInView || capture !== null || preview !== null || pair !== null}
-              onReady={() => setReady(true)}
-              onActiveChange={setActive}
-            />
+          <div className="metaball-canvas" data-glass-tech={tech}>
+            {tech === "mesh" ? (
+              <MeshMetaballScene {...sceneProps} />
+            ) : (
+              <MetaballScene {...sceneProps} />
+            )}
           </div>
         )}
       </div>
