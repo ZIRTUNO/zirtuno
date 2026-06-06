@@ -133,16 +133,40 @@ uniform vec4 iSeg[96]; uniform float iRad[96];
 in vec2 vUv; out vec4 o;
 float smin(float a,float b,float k){float h=clamp(0.5+0.5*(b-a)/k,0.,1.);return mix(b,a,h)-k*h*(1.-h);}
 float sdCap(vec2 p,vec2 a,vec2 b,float r){vec2 pa=p-a,ba=b-a;float h=clamp(dot(pa,ba)/max(dot(ba,ba),1e-6),0.,1.);return length(pa-ba*h)-r;}
+float field(vec2 q){ float d=1e9; for(int i=0;i<96;i++){ if(i>=iCount)break; vec4 s=iSeg[i]; d=smin(d,sdCap(q,s.xy,s.zw,iRad[i]),iK);} return d; }
 void main(){
   vec2 q=(gl_FragCoord.xy - iRes*0.5)*(iFrame/iRes.y);
-  float d=1e9;
-  for(int i=0;i<96;i++){ if(i>=iCount)break; vec4 s=iSeg[i]; d=smin(d,sdCap(q,s.xy,s.zw,iRad[i]),iK); }
-  float aa=fwidth(d)+1e-4; float f=smoothstep(aa,-aa,d);
-  if(iGlass<0.5){o=vec4(vec3(0.0,0.890,0.996)*f,1.0);return;}
-  float rim=1.0-smoothstep(0.0,0.07,-d);
-  vec3 col=mix(vec3(0.0,0.89,0.996),vec3(0.62,0.98,1.0),clamp(rim,0.,1.)*0.4);
-  col+=vec3(0.0,0.05,0.035)*smoothstep(0.4,0.92,vUv.y);
-  o=vec4(col*f,1.0);
+  float px=iFrame/iRes.y;            // world units per pixel
+  float d=field(q);
+  float aa=fwidth(d)+1e-4; float fill=smoothstep(aa,-aa,d);
+  if(iGlass<0.5){o=vec4(vec3(0.0,0.890,0.996)*fill,1.0);return;}
+  // outer glow halo (bloom around the liquid)
+  float glow=exp(-max(d,0.0)*7.0);
+  vec3 col=vec3(0.0,0.66,0.92)*glow*0.7;
+  if(fill>0.001){
+    float inside=max(-d,0.0);
+    // rounded DOME profile across the whole cross-section → voluminous glass tube
+    float THICK=0.135;
+    float t=clamp(inside/THICK,0.0,1.0);
+    float curv=sqrt(max(1.0-(1.0-t)*(1.0-t),0.0));      // 0 at edge → 1 at top
+    float slope=(1.0-t)/max(curv,0.05);                  // dH/dt: steep rim, flat top
+    vec2 e=vec2(px*1.5,0.0);
+    vec2 g=vec2(field(q+e.xy)-field(q-e.xy), field(q+e.yx)-field(q-e.yx));
+    vec2 gdir=length(g)>1e-7?normalize(g):vec2(0.0,1.0);
+    vec3 n=normalize(vec3(gdir*slope, 1.0));             // true rounded normal
+    vec3 V=vec3(0.0,0.0,1.0);
+    vec3 L1=normalize(vec3(-0.42,0.72,0.55));
+    float diff=clamp(dot(n,L1)*0.5+0.5,0.0,1.0);         // wrapped diffuse
+    vec3 Rfl=reflect(-L1,n); float sp=max(dot(Rfl,V),0.0);
+    float spec=pow(sp,26.0);                             // tight glossy highlight
+    float sheen=pow(sp,4.0)*0.22;                        // broad wet sheen
+    float fres=pow(1.0-max(n.z,0.0),2.6);                // rim light
+    vec3 base=mix(vec3(0.0,0.72,0.92), vec3(0.45,0.97,1.0), diff); // bright cyan body
+    base+=vec3(1.0)*spec + vec3(0.6,0.92,1.0)*sheen;
+    base+=vec3(0.5,0.95,1.0)*fres*0.5;
+    col=mix(col,base,fill);
+  }
+  o=vec4(col,1.0);
 }\`;
 function sh(t,src){const o=gl.createShader(t);gl.shaderSource(o,src);gl.compileShader(o);if(!gl.getShaderParameter(o,gl.COMPILE_STATUS))throw new Error(gl.getShaderInfoLog(o));return o;}
 const prog=gl.createProgram(); gl.attachShader(prog,sh(gl.VERTEX_SHADER,VS)); gl.attachShader(prog,sh(gl.FRAGMENT_SHADER,FS)); gl.linkProgram(prog);
@@ -152,9 +176,10 @@ const buf=gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER,buf); gl.bufferData(g
 const loc=gl.getAttribLocation(prog,'p'); gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc,2,gl.FLOAT,false,0,0);
 const U=(n)=>gl.getUniformLocation(prog,n);
 gl.uniform2f(U('iRes'),mc.width,mc.height); gl.uniform1f(U('iFrame'),${FRAME}); gl.uniform1f(U('iK'),${K}); gl.uniform1f(U('iGlass'),${GLASS});
+const RS=${Number(process.env.RS) || 1.18};
 window.__render=(caps)=>{
   const seg=new Float32Array(96*4), rad=new Float32Array(96);
-  for(let i=0;i<caps.length&&i<96;i++){ seg[i*4]=caps[i][0]; seg[i*4+1]=caps[i][1]; seg[i*4+2]=caps[i][2]; seg[i*4+3]=caps[i][3]; rad[i]=caps[i][4]; }
+  for(let i=0;i<caps.length&&i<96;i++){ seg[i*4]=caps[i][0]; seg[i*4+1]=caps[i][1]; seg[i*4+2]=caps[i][2]; seg[i*4+3]=caps[i][3]; rad[i]=caps[i][4]*RS; }
   gl.uniform4fv(U('iSeg'),seg); gl.uniform1fv(U('iRad'),rad); gl.uniform1i(U('iCount'),Math.min(caps.length,96));
   gl.viewport(0,0,mc.width,mc.height); gl.clearColor(0.02,0.027,0.039,1); gl.clear(gl.COLOR_BUFFER_BIT); gl.drawArrays(gl.TRIANGLES,0,3); gl.finish();
   return mc.toDataURL('image/png');
