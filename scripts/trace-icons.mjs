@@ -52,14 +52,30 @@ function arcChain(cx, cy, R, a0, a1, n, r, neckR) {
   return chain(pts, neckR);
 }
 const onArc = (cx, cy, R, deg, r) => circ(cx + Math.cos(RAD(deg)) * R, cy + Math.sin(RAD(deg)) * R, r);
+/** a closed ring of node-bulbs joined by necks (network / orbit) */
+function ringNodes(cx, cy, R, count, nodeR, neckR, phase = 0) {
+  const pts = [];
+  for (let i = 0; i < count; i++) {
+    const a = RAD(phase) + (i / count) * Math.PI * 2;
+    pts.push([cx + Math.cos(a) * R, cy + Math.sin(a) * R]);
+  }
+  const out = pts.map((p) => circ(p[0], p[1], nodeR));
+  for (let i = 0; i < count; i++) {
+    const j = (i + 1) % count;
+    out.push(cap(pts[i][0], pts[i][1], pts[j][0], pts[j][1], neckR));
+  }
+  return out;
+}
 
 const SYMBOLS = {
-  // mark — a flowing organic N: two fat lobes + a diagonal neck + a free drop
+  // mark — a flowing organic glyph: a loop (with counter dot) opening into a lobe
   mark: [
-    ...chain([[-0.55, -0.58, 0.17], [-0.5, 0.0, 0.2], [-0.44, 0.56, 0.16]], 0.1),
-    ...chain([[0.5, 0.6, 0.2], [0.53, 0.0, 0.18], [0.48, -0.56, 0.16]], 0.1),
-    cap(-0.42, 0.46, 0.44, -0.42, 0.08),
-    circ(-0.05, 0.12, 0.09),
+    ...arcChain(-0.16, -0.04, 0.32, 55, 330, 6, 0.12, 0.085), // the loop (open right)
+    circ(-0.16, -0.04, 0.08), // counter dot inside
+    cap(-0.02, 0.22, 0.16, 0.36, 0.1), // neck → upper lobe
+    ...chain([[0.16, 0.36, 0.15], [0.42, 0.56, 0.19], [0.54, 0.3, 0.15]], 0.1), // upper lobe
+    cap(0.12, -0.18, 0.36, -0.05, 0.1), // neck → tail
+    ...chain([[0.36, -0.05, 0.14], [0.52, -0.38, 0.14], [0.34, -0.58, 0.11]], 0.09), // tail
   ],
   // web — a browser window: thin fluid frame + 3 control bulbs + thumbnail + lines
   web: [
@@ -72,24 +88,23 @@ const SYMBOLS = {
     cap(-0.46, -0.12, -0.16, -0.12, 0.18), // content thumbnail (fat capsule)
     cap(0.1, 0.06, 0.5, 0.06, 0.04), cap(0.1, -0.16, 0.44, -0.16, 0.04), // text lines
   ],
-  // software — two modules bridged (bulbs + necks) + a </> glyph
+  // software — a node NETWORK ring around a centered </> glyph
   software: [
-    circ(-0.5, 0.42, 0.2), circ(0.22, 0.46, 0.16),
-    cap(-0.5, 0.42, 0.22, 0.46, 0.07), // bridge
-    circ(-0.5, -0.2, 0.17),
-    cap(-0.5, 0.42, -0.5, -0.2, 0.07), // neck down
-    cap(0.16, 0.02, -0.06, -0.24, 0.05), cap(-0.06, -0.24, 0.16, -0.5, 0.05), // <
-    cap(0.5, 0.02, 0.72, -0.24, 0.05), cap(0.72, -0.24, 0.5, -0.5, 0.05), // >
+    ...ringNodes(0, 0.03, 0.55, 6, 0.12, 0.055, 0),
+    cap(-0.02, 0.2, -0.22, -0.04, 0.05), cap(-0.22, -0.04, -0.02, -0.28, 0.05), // <
+    cap(0.14, 0.2, 0.34, -0.04, 0.05), cap(0.34, -0.04, 0.14, -0.28, 0.05), // >
   ],
-  // ai — a brain: fluid gyri tubes with rounded ends + sulci gaps + neurons
+  // ai — a full brain: domed outline, central fissure, dense gyri tubes, neurons
   ai: [
-    ...arcChain(0, 0.05, 0.6, 16, 164, 7, 0.09, 0.08), // dome
-    ...chain([[-0.58, 0.18, 0.09], [-0.64, -0.12, 0.085], [-0.46, -0.42, 0.08]], 0.07), // left wall
-    ...chain([[0.58, 0.2, 0.09], [0.64, -0.1, 0.085], [0.46, -0.4, 0.08]], 0.07), // right wall
-    ...chain([[-0.1, 0.46, 0.07], [-0.14, 0.16, 0.065], [-0.05, -0.12, 0.06]], 0.05), // gyrus L
-    ...chain([[0.1, 0.46, 0.07], [0.14, 0.16, 0.065], [0.05, -0.12, 0.06]], 0.05), // gyrus R
-    circ(0.0, -0.5, 0.08), // stem
-    circ(-0.4, -0.52, 0.06), circ(-0.27, -0.62, 0.05), // neurons
+    ...arcChain(-0.23, 0.12, 0.34, 35, 172, 4, 0.1, 0.085), // left hemisphere crown
+    ...arcChain(0.23, 0.12, 0.34, 8, 145, 4, 0.1, 0.085), // right hemisphere crown
+    ...chain([[-0.55, 0.04, 0.1], [-0.52, -0.28, 0.095], [-0.28, -0.46, 0.09]], 0.075), // left wall
+    ...chain([[0.55, 0.08, 0.1], [0.52, -0.26, 0.095], [0.28, -0.44, 0.09]], 0.075), // right wall
+    ...chain([[0.0, 0.42, 0.075], [0.0, 0.12, 0.07], [0.0, -0.2, 0.07]], 0.05), // central fissure
+    ...chain([[-0.28, 0.3, 0.07], [-0.31, 0.02, 0.065], [-0.18, -0.26, 0.06]], 0.05), // gyrus L
+    ...chain([[0.28, 0.32, 0.07], [0.31, 0.04, 0.065], [0.18, -0.24, 0.06]], 0.05), // gyrus R
+    circ(0.0, -0.5, 0.085), // brain-stem
+    circ(-0.42, -0.5, 0.06), circ(-0.3, -0.61, 0.05), circ(-0.5, -0.62, 0.042), // neurons
   ],
   // automation — a fluid cycle loop (necked ring) with arrow + tail bulbs
   automation: [
@@ -104,12 +119,11 @@ const SYMBOLS = {
     ...chain([[0.2, -0.5, 0.1], [0.2, -0.2, 0.11], [0.2, 0.12, 0.1]], 0.06),
     ...chain([[0.6, -0.5, 0.1], [0.6, -0.12, 0.11], [0.6, 0.28, 0.12]], 0.06),
   ],
-  // branding — a bulbous core + a necked orbit + satellite bulbs
+  // branding — a bulbous core + a necked node orbit (ring) + outer satellites
   branding: [
-    circ(0, 0, 0.27),
-    ...arcChain(0, 0, 0.62, 24, 156, 6, 0.055, 0.05),
-    ...arcChain(0, 0, 0.62, 204, 336, 6, 0.055, 0.05),
-    circ(0, 0.8, 0.1), circ(-0.8, 0.0, 0.09), circ(0.8, 0.08, 0.08),
+    circ(0, 0, 0.26),
+    ...ringNodes(0, 0, 0.56, 7, 0.07, 0.05, 12),
+    circ(0, 0.85, 0.1), circ(-0.86, 0.06, 0.085), circ(0.86, 0.08, 0.078),
   ],
   // marketing — a fluid megaphone (growing horn) + necked signal waves + drops
   marketing: [
