@@ -1,10 +1,10 @@
-// MAX-FIDELITY symbol engine. Each symbol is DRAWN precisely as a vector shape
-// (folds / window interiors are real negative space), then rendered from its TRUE
-// signed distance field (SDF) — seamless, exact contours, crisp + buttery (a
-// circle-pack metaball is either lumpy or melty; the SDF is neither). The SDF also
-// gives fluid morphs later (lerp two fields). Outputs a glass contact sheet
-// (captures/trace-sheet.png), per-symbol PNGs, and packed circles as a fallback
-// (lib/webgl/symbols.generated.json).  node scripts/trace-icons.mjs
+// FLUID symbol engine. Each symbol is composed of fat BULBS (circles) + thin
+// NECKS (capsules) and fused with SMOOTH-MIN — which fillets the joins into the
+// liquid mercury look of the brand reference (droplets running + connecting),
+// while staying seamless: few large analytic primitives → no scallops, no lumps,
+// gaps preserved. The hero renders the same smin-union and morphs by lerping the
+// primitives. Outputs lib/webgl/symbols.generated.json + captures/trace-sheet.png.
+//   node scripts/trace-icons.mjs   (FLAT=1 for flat cyan, K=… to tune fillet)
 
 import { chromium } from "playwright";
 import fs from "node:fs";
@@ -15,8 +15,10 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const OUT = path.join(__dirname, "..", "captures");
 const DATA = path.join(__dirname, "..", "lib", "webgl", "symbols.generated.json");
 const HEADLESS = process.env.HEADLESS !== "false";
-const SIZE = 512;
 const GLASS = process.env.FLAT ? 0 : 1;
+const K = Number(process.env.K) || 0.05;
+const FRAME = 1.9; // visible vertical extent (symbols live in ~±0.85)
+const SIZE = 480;
 
 const chromeCandidates = [
   process.env.CHROME_PATH,
@@ -26,148 +28,136 @@ const chromeCandidates = [
   "C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe",
 ].filter(Boolean);
 const executablePath = chromeCandidates.find((c) => fs.existsSync(c));
-
 fs.mkdirSync(OUT, { recursive: true });
 
-const KEYS = ["mark","web","software","ai","automation","data","branding","marketing"];
+// ── primitive helpers (every primitive is a capsule [x1,y1,x2,y2,r]; a circle is
+//    a zero-length capsule) ────────────────────────────────────────────────────
+const circ = (x, y, r) => [x, y, x, y, r];
+const cap = (x1, y1, x2, y2, r) => [x1, y1, x2, y2, r];
+/** bulbs at each point [x,y,r] + thin necks between consecutive points */
+function chain(pts, neckR) {
+  const out = pts.map((p) => circ(p[0], p[1], p[2]));
+  for (let i = 0; i < pts.length - 1; i++)
+    out.push(cap(pts[i][0], pts[i][1], pts[i + 1][0], pts[i + 1][1], neckR));
+  return out;
+}
+const RAD = (d) => (d * Math.PI) / 180;
+/** bulbs along an arc + necks (a fluid arc) */
+function arcChain(cx, cy, R, a0, a1, n, r, neckR) {
+  const pts = [];
+  for (let i = 0; i < n; i++) {
+    const a = RAD(a0 + ((a1 - a0) * i) / (n - 1));
+    pts.push([cx + Math.cos(a) * R, cy + Math.sin(a) * R, r]);
+  }
+  return chain(pts, neckR);
+}
+const onArc = (cx, cy, R, deg, r) => circ(cx + Math.cos(RAD(deg)) * R, cy + Math.sin(RAD(deg)) * R, r);
+
+const SYMBOLS = {
+  // mark — a flowing organic N: two fat lobes + a diagonal neck + a free drop
+  mark: [
+    ...chain([[-0.55, -0.58, 0.17], [-0.5, 0.0, 0.2], [-0.44, 0.56, 0.16]], 0.1),
+    ...chain([[0.5, 0.6, 0.2], [0.53, 0.0, 0.18], [0.48, -0.56, 0.16]], 0.1),
+    cap(-0.42, 0.46, 0.44, -0.42, 0.08),
+    circ(-0.05, 0.12, 0.09),
+  ],
+  // web — a browser window: thin fluid frame + 3 control bulbs + thumbnail + lines
+  web: [
+    cap(-0.6, 0.58, 0.6, 0.58, 0.055), // top
+    cap(0.64, 0.52, 0.64, -0.52, 0.055), // right
+    cap(0.6, -0.58, -0.6, -0.58, 0.055), // bottom
+    cap(-0.64, -0.52, -0.64, 0.52, 0.055), // left
+    cap(-0.5, 0.3, 0.5, 0.3, 0.04), // title divider
+    circ(-0.46, 0.45, 0.05), circ(-0.3, 0.45, 0.05), circ(-0.14, 0.45, 0.05), // controls
+    cap(-0.46, -0.12, -0.16, -0.12, 0.18), // content thumbnail (fat capsule)
+    cap(0.1, 0.06, 0.5, 0.06, 0.04), cap(0.1, -0.16, 0.44, -0.16, 0.04), // text lines
+  ],
+  // software — two modules bridged (bulbs + necks) + a </> glyph
+  software: [
+    circ(-0.5, 0.42, 0.2), circ(0.22, 0.46, 0.16),
+    cap(-0.5, 0.42, 0.22, 0.46, 0.07), // bridge
+    circ(-0.5, -0.2, 0.17),
+    cap(-0.5, 0.42, -0.5, -0.2, 0.07), // neck down
+    cap(0.16, 0.02, -0.06, -0.24, 0.05), cap(-0.06, -0.24, 0.16, -0.5, 0.05), // <
+    cap(0.5, 0.02, 0.72, -0.24, 0.05), cap(0.72, -0.24, 0.5, -0.5, 0.05), // >
+  ],
+  // ai — a brain: fluid gyri tubes with rounded ends + sulci gaps + neurons
+  ai: [
+    ...arcChain(0, 0.05, 0.6, 16, 164, 7, 0.09, 0.08), // dome
+    ...chain([[-0.58, 0.18, 0.09], [-0.64, -0.12, 0.085], [-0.46, -0.42, 0.08]], 0.07), // left wall
+    ...chain([[0.58, 0.2, 0.09], [0.64, -0.1, 0.085], [0.46, -0.4, 0.08]], 0.07), // right wall
+    ...chain([[-0.1, 0.46, 0.07], [-0.14, 0.16, 0.065], [-0.05, -0.12, 0.06]], 0.05), // gyrus L
+    ...chain([[0.1, 0.46, 0.07], [0.14, 0.16, 0.065], [0.05, -0.12, 0.06]], 0.05), // gyrus R
+    circ(0.0, -0.5, 0.08), // stem
+    circ(-0.4, -0.52, 0.06), circ(-0.27, -0.62, 0.05), // neurons
+  ],
+  // automation — a fluid cycle loop (necked ring) with arrow + tail bulbs
+  automation: [
+    ...arcChain(0, 0, 0.6, 120, 402, 11, 0.075, 0.065),
+    onArc(0, 0, 0.6, 120, 0.13), // tail bulb
+    onArc(0, 0, 0.6, 46, 0.16), // arrow head bulb
+  ],
+  // data — strings of pearls: four columns of bulb-neck-bulb, growing
+  data: [
+    ...chain([[-0.6, -0.5, 0.1], [-0.6, -0.18, 0.11], [-0.6, 0.12, 0.1]], 0.06),
+    ...chain([[-0.2, -0.5, 0.1], [-0.2, -0.16, 0.11], [-0.2, 0.18, 0.12], [-0.2, 0.5, 0.11]], 0.06),
+    ...chain([[0.2, -0.5, 0.1], [0.2, -0.2, 0.11], [0.2, 0.12, 0.1]], 0.06),
+    ...chain([[0.6, -0.5, 0.1], [0.6, -0.12, 0.11], [0.6, 0.28, 0.12]], 0.06),
+  ],
+  // branding — a bulbous core + a necked orbit + satellite bulbs
+  branding: [
+    circ(0, 0, 0.27),
+    ...arcChain(0, 0, 0.62, 24, 156, 6, 0.055, 0.05),
+    ...arcChain(0, 0, 0.62, 204, 336, 6, 0.055, 0.05),
+    circ(0, 0.8, 0.1), circ(-0.8, 0.0, 0.09), circ(0.8, 0.08, 0.08),
+  ],
+  // marketing — a fluid megaphone (growing horn) + necked signal waves + drops
+  marketing: [
+    ...chain([[-0.6, 0.0, 0.1], [-0.36, 0.02, 0.18], [-0.12, 0.03, 0.28]], 0.13),
+    ...arcChain(-0.04, 0.0, 0.56, -50, 50, 6, 0.055, 0.05),
+    ...arcChain(-0.04, 0.0, 0.84, -46, 46, 7, 0.06, 0.05),
+    circ(0.52, 0.74, 0.08), circ(0.64, -0.68, 0.09),
+  ],
+};
+const KEYS = Object.keys(SYMBOLS);
 
 const PAGE = `<!doctype html><html><body style="margin:0;background:#000">
-<canvas id="d" width="${SIZE}" height="${SIZE}"></canvas>
 <canvas id="m" width="${SIZE}" height="${SIZE}"></canvas>
 <script>
-const S = ${SIZE};
-const SC = S * 0.40;
-const dc = document.getElementById('d');
-const dx = dc.getContext('2d');
-
-function begin(){ dx.setTransform(1,0,0,1,0,0); dx.clearRect(0,0,S,S); dx.fillStyle='#000'; dx.fillRect(0,0,S,S);
-  dx.setTransform(SC,0,0,-SC,S/2,S/2); dx.fillStyle='#fff'; dx.strokeStyle='#fff';
-  dx.lineCap='round'; dx.lineJoin='round'; }
-function lw(w){ dx.lineWidth = w; }
-function line(x1,y1,x2,y2){ dx.beginPath(); dx.moveTo(x1,y1); dx.lineTo(x2,y2); dx.stroke(); }
-function poly(pts){ dx.beginPath(); pts.forEach((p,i)=> i?dx.lineTo(p[0],p[1]):dx.moveTo(p[0],p[1])); dx.stroke(); }
-function dot(x,y,r){ dx.beginPath(); dx.arc(x,y,r,0,7); dx.fill(); }
-function rrect(x,y,w,h,r,fill){ const k=Math.min(r,w/2,h/2); dx.beginPath();
-  dx.moveTo(x+k,y); dx.arcTo(x+w,y,x+w,y+h,k); dx.arcTo(x+w,y+h,x,y+h,k);
-  dx.arcTo(x,y+h,x,y,k); dx.arcTo(x,y,x+w,y,k); dx.closePath(); fill?dx.fill():dx.stroke(); }
-function arcStroke(cx,cy,R,a0,a1){ dx.beginPath(); dx.arc(cx,cy,R,a0,a1); dx.stroke(); }
-function curve(pts){ dx.beginPath(); dx.moveTo(pts[0][0],pts[0][1]);
-  for(let i=1;i<pts.length-1;i++){ const xc=(pts[i][0]+pts[i+1][0])/2, yc=(pts[i][1]+pts[i+1][1])/2;
-    dx.quadraticCurveTo(pts[i][0],pts[i][1],xc,yc);} dx.stroke(); }
-const D=(d)=> d*Math.PI/180;
-
-function draw(key){
-  begin();
-  if(key==='mark'){
-    lw(0.22);
-    curve([[-0.62,-0.7],[-0.6,0.4],[-0.5,0.78]]);
-    curve([[0.6,0.78],[0.62,-0.3],[0.56,-0.72]]);
-    lw(0.16); curve([[-0.52,0.62],[0.0,0.0],[0.54,-0.6]]);
-    dot(-0.06,0.16,0.12);
-  } else if(key==='web'){
-    lw(0.12); rrect(-0.72,-0.64,1.44,1.28,0.22,false);
-    lw(0.07); line(-0.6,0.32,0.6,0.32);
-    dot(-0.5,0.48,0.06); dot(-0.34,0.48,0.06); dot(-0.18,0.48,0.06);
-    rrect(-0.56,-0.46,0.56,0.6,0.12,true);
-    lw(0.085); line(0.16,0.06,0.56,0.06); line(0.16,-0.18,0.5,-0.18);
-  } else if(key==='software'){
-    dot(-0.56,0.42,0.2); dot(0.18,0.5,0.17);
-    lw(0.13); line(-0.42,0.44,0.04,0.49);
-    dot(-0.56,-0.18,0.18);
-    lw(0.13); line(-0.56,0.24,-0.56,-0.02);
-    lw(0.1); poly([[0.18,0.0],[-0.04,-0.26],[0.18,-0.52]]);
-    poly([[0.46,0.0],[0.68,-0.26],[0.46,-0.52]]);
-  } else if(key==='ai'){
-    lw(0.17);
-    arcStroke(0,0.06,0.6,D(15),D(165));
-    curve([[-0.58,0.2],[-0.66,-0.1],[-0.5,-0.4],[-0.2,-0.46]]);
-    curve([[0.58,0.24],[0.66,-0.06],[0.5,-0.38],[0.22,-0.44]]);
-    lw(0.13);
-    curve([[-0.12,0.5],[-0.16,0.2],[-0.06,-0.06],[-0.16,-0.34]]);
-    curve([[0.12,0.5],[0.16,0.2],[0.06,-0.06],[0.16,-0.34]]);
-    curve([[-0.42,0.34],[-0.28,0.12],[-0.4,-0.1]]);
-    curve([[0.42,0.36],[0.3,0.14],[0.42,-0.08]]);
-    lw(0.16); line(0.0,-0.44,0.02,-0.62);
-    dot(-0.42,-0.5,0.07); dot(-0.28,-0.62,0.055); dot(-0.14,-0.56,0.045);
-  } else if(key==='automation'){
-    lw(0.16); arcStroke(0,0,0.6,D(118),D(404));
-    dot(Math.cos(D(118))*0.6,Math.sin(D(118))*0.6,0.14);
-    const a=D(44); dot(Math.cos(a)*0.6,Math.sin(a)*0.6,0.17);
-  } else if(key==='data'){
-    rrect(-0.74,-0.62,0.26,0.46,0.12,true);
-    rrect(-0.34,-0.62,0.26,0.92,0.12,true);
-    rrect(0.06,-0.62,0.26,0.66,0.12,true);
-    rrect(0.46,-0.62,0.26,1.12,0.12,true);
-  } else if(key==='branding'){
-    dot(0,0,0.3);
-    lw(0.1); arcStroke(0,0,0.66,D(24),D(156));
-    arcStroke(0,0,0.66,D(204),D(336));
-    dot(0,0.82,0.09); dot(-0.82,0.0,0.08); dot(0.82,0.1,0.075);
-  } else if(key==='marketing'){
-    dx.beginPath(); dx.moveTo(-0.68,0.0); dx.lineTo(-0.18,0.34); dx.lineTo(-0.18,-0.34); dx.closePath(); dx.fill();
-    dot(-0.18,0.0,0.34); dot(-0.68,0.0,0.1);
-    lw(0.11); arcStroke(-0.08,0.0,0.56,D(-50),D(50));
-    arcStroke(-0.08,0.0,0.86,D(-46),D(46));
-    dot(0.52,0.74,0.08); dot(0.64,-0.68,0.09);
-  }
-  return dx.getImageData(0,0,S,S);
-}
-
-// ---- distance transforms ----------------------------------------------------
-function dt(inside){
-  const N=S*S, dist=new Float32Array(N);
-  for(let i=0;i<N;i++) dist[i]= inside[i]?1e9:0;
-  const d1=1,d2=Math.SQRT2;
-  for(let y=0;y<S;y++)for(let x=0;x<S;x++){ const i=y*S+x; if(!inside[i])continue; let v=dist[i];
-    if(x>0)v=Math.min(v,dist[i-1]+d1); if(y>0)v=Math.min(v,dist[i-S]+d1);
-    if(x>0&&y>0)v=Math.min(v,dist[i-S-1]+d2); if(x<S-1&&y>0)v=Math.min(v,dist[i-S+1]+d2); dist[i]=v; }
-  for(let y=S-1;y>=0;y--)for(let x=S-1;x>=0;x--){ const i=y*S+x; if(!inside[i])continue; let v=dist[i];
-    if(x<S-1)v=Math.min(v,dist[i+1]+d1); if(y<S-1)v=Math.min(v,dist[i+S]+d1);
-    if(x<S-1&&y<S-1)v=Math.min(v,dist[i+S+1]+d2); if(x>0&&y<S-1)v=Math.min(v,dist[i+S-1]+d2); dist[i]=v; }
-  return dist;
-}
-function insideOf(img){ const N=S*S, ins=new Uint8Array(N); for(let i=0;i<N;i++) ins[i]=img.data[i*4]>100?1:0; return ins; }
-function signed(ins, di){ const N=S*S, out=new Uint8Array(N); for(let i=0;i<N;i++) out[i]=1-ins[i];
-  const dox=dt(out), sdf=new Float32Array(N); for(let i=0;i<N;i++) sdf[i]= ins[i]? di[i] : -dox[i]; return sdf; }
-
-// ---- circle packing (fallback metaball data) --------------------------------
-function pack(di, {maxC=240, minR=3, clear=0.72, maxR=22}={}){
-  const work=di.slice(); const circles=[];
-  for(let c=0;c<maxC;c++){ let bi=-1,bv=minR; for(let i=0;i<work.length;i++) if(work[i]>bv){bv=work[i];bi=i;}
-    if(bi<0)break; const cx=bi%S, cy=(bi/S)|0, r=Math.min(bv,maxR); circles.push([cx,cy,r]);
-    const cr=r*clear, rr=Math.ceil(cr); for(let y=Math.max(0,cy-rr);y<Math.min(S,cy+rr);y++)
-      for(let x=Math.max(0,cx-rr);x<Math.min(S,cx+rr);x++){ if(Math.hypot(x-cx,y-cy)<cr) work[y*S+x]=0; } }
-  return circles;
-}
-function norm(circles){ const O=S*0.86;
-  return circles.map(([cx,cy,r])=>[ +((cx-S/2)/O).toFixed(4), +(-(cy-S/2)/O).toFixed(4), +((r/O)).toFixed(4) ]); }
-
-// ---- SDF glass render -------------------------------------------------------
 const mc=document.getElementById('m'); const gl=mc.getContext('webgl2',{antialias:false,alpha:false});
 const VS='#version 300 es\\nprecision highp float;in vec2 p;out vec2 vUv;void main(){vUv=p*0.5+0.5;gl_Position=vec4(p,0.,1.);}';
-const FS='#version 300 es\\nprecision highp float;uniform sampler2D iSdf;uniform float iRange;uniform float iGlass;in vec2 vUv;out vec4 o;void main(){float s=texture(iSdf,vec2(vUv.x,1.0-vUv.y)).r;float sdf=(s*2.0-1.0)*iRange;float aa=fwidth(sdf)+1e-4;float f=smoothstep(-aa,aa,sdf);if(iGlass<0.5){o=vec4(vec3(0.0,0.890,0.996)*f,1.0);return;}float rim=1.0-smoothstep(0.0,9.0,sdf);vec3 col=mix(vec3(0.0,0.89,0.996),vec3(0.62,0.98,1.0),rim*0.4);col+=vec3(0.0,0.05,0.035)*smoothstep(0.4,0.92,vUv.y);o=vec4(col*f,1.0);}';
+const FS=\`#version 300 es
+precision highp float;
+uniform vec2 iRes; uniform int iCount; uniform float iFrame; uniform float iK; uniform float iGlass;
+uniform vec4 iSeg[96]; uniform float iRad[96];
+in vec2 vUv; out vec4 o;
+float smin(float a,float b,float k){float h=clamp(0.5+0.5*(b-a)/k,0.,1.);return mix(b,a,h)-k*h*(1.-h);}
+float sdCap(vec2 p,vec2 a,vec2 b,float r){vec2 pa=p-a,ba=b-a;float h=clamp(dot(pa,ba)/max(dot(ba,ba),1e-6),0.,1.);return length(pa-ba*h)-r;}
+void main(){
+  vec2 q=(gl_FragCoord.xy - iRes*0.5)*(iFrame/iRes.y);
+  float d=1e9;
+  for(int i=0;i<96;i++){ if(i>=iCount)break; vec4 s=iSeg[i]; d=smin(d,sdCap(q,s.xy,s.zw,iRad[i]),iK); }
+  float aa=fwidth(d)+1e-4; float f=smoothstep(aa,-aa,d);
+  if(iGlass<0.5){o=vec4(vec3(0.0,0.890,0.996)*f,1.0);return;}
+  float rim=1.0-smoothstep(0.0,0.07,-d);
+  vec3 col=mix(vec3(0.0,0.89,0.996),vec3(0.62,0.98,1.0),clamp(rim,0.,1.)*0.4);
+  col+=vec3(0.0,0.05,0.035)*smoothstep(0.4,0.92,vUv.y);
+  o=vec4(col*f,1.0);
+}\`;
 function sh(t,src){const o=gl.createShader(t);gl.shaderSource(o,src);gl.compileShader(o);if(!gl.getShaderParameter(o,gl.COMPILE_STATUS))throw new Error(gl.getShaderInfoLog(o));return o;}
-const prog=gl.createProgram(); gl.attachShader(prog,sh(gl.VERTEX_SHADER,VS)); gl.attachShader(prog,sh(gl.FRAGMENT_SHADER,FS)); gl.linkProgram(prog); gl.useProgram(prog);
+const prog=gl.createProgram(); gl.attachShader(prog,sh(gl.VERTEX_SHADER,VS)); gl.attachShader(prog,sh(gl.FRAGMENT_SHADER,FS)); gl.linkProgram(prog);
+if(!gl.getProgramParameter(prog,gl.LINK_STATUS))throw new Error(gl.getProgramInfoLog(prog));
+gl.useProgram(prog);
 const buf=gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER,buf); gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,3,-1,-1,3]),gl.STATIC_DRAW);
 const loc=gl.getAttribLocation(prog,'p'); gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc,2,gl.FLOAT,false,0,0);
 const U=(n)=>gl.getUniformLocation(prog,n);
-gl.pixelStorei(gl.UNPACK_ALIGNMENT,1);
-const tex=gl.createTexture(); gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D,tex);
-gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR); gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);
-gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
-const RANGE=64;
-function renderSDF(sdf){ const u8=new Uint8Array(S*S);
-  for(let i=0;i<sdf.length;i++) u8[i]=Math.max(0,Math.min(255,Math.round((sdf[i]/RANGE*0.5+0.5)*255)));
-  gl.bindTexture(gl.TEXTURE_2D,tex); gl.texImage2D(gl.TEXTURE_2D,0,gl.R8,S,S,0,gl.RED,gl.UNSIGNED_BYTE,u8);
-  gl.viewport(0,0,mc.width,mc.height); gl.clearColor(0.02,0.027,0.039,1); gl.clear(gl.COLOR_BUFFER_BIT);
-  gl.uniform1i(U('iSdf'),0); gl.uniform1f(U('iRange'),RANGE); gl.uniform1f(U('iGlass'),${GLASS});
-  gl.drawArrays(gl.TRIANGLES,0,3); gl.finish(); }
-
-window.__trace=(key)=>{
-  const img=draw(key); const drawn=dc.toDataURL('image/png');
-  const ins=insideOf(img); const di=dt(ins);
-  renderSDF(signed(ins,di));
-  return { balls: norm(pack(di)), drawn, mb: mc.toDataURL('image/png') };
+gl.uniform2f(U('iRes'),mc.width,mc.height); gl.uniform1f(U('iFrame'),${FRAME}); gl.uniform1f(U('iK'),${K}); gl.uniform1f(U('iGlass'),${GLASS});
+window.__render=(caps)=>{
+  const seg=new Float32Array(96*4), rad=new Float32Array(96);
+  for(let i=0;i<caps.length&&i<96;i++){ seg[i*4]=caps[i][0]; seg[i*4+1]=caps[i][1]; seg[i*4+2]=caps[i][2]; seg[i*4+3]=caps[i][3]; rad[i]=caps[i][4]; }
+  gl.uniform4fv(U('iSeg'),seg); gl.uniform1fv(U('iRad'),rad); gl.uniform1i(U('iCount'),Math.min(caps.length,96));
+  gl.viewport(0,0,mc.width,mc.height); gl.clearColor(0.02,0.027,0.039,1); gl.clear(gl.COLOR_BUFFER_BIT); gl.drawArrays(gl.TRIANGLES,0,3); gl.finish();
+  return mc.toDataURL('image/png');
 };
 window.__ready=true;
 </script></body></html>`;
@@ -177,25 +167,21 @@ const browser = await chromium.launch({
   chromiumSandbox: false,
   ...(executablePath ? { executablePath } : {}),
 });
-const ctx = await browser.newContext({ deviceScaleFactor: 1 });
+const ctx = await browser.newContext({ deviceScaleFactor: 2 });
 const page = await ctx.newPage();
 page.on("pageerror", (e) => console.error("PAGE ERROR:", e.message));
 await page.setContent(PAGE, { waitUntil: "domcontentloaded" });
 await page.waitForFunction(() => window.__ready === true, { timeout: 15000 });
 
-const out = {};
 const cells = [];
 for (const key of KEYS) {
-  const res = await page.evaluate((k) => window.__trace(k), key);
-  out[key] = res.balls;
-  const b64 = (d) => Buffer.from(d.split(",")[1], "base64");
-  fs.writeFileSync(path.join(OUT, `trace-mb-${key}.png`), b64(res.mb));
-  fs.writeFileSync(path.join(OUT, `trace-draw-${key}.png`), b64(res.drawn));
-  cells.push({ key, mb: res.mb });
-  console.log(`${key.padEnd(11)} ${res.balls.length} balls`);
+  const mb = await page.evaluate((caps) => window.__render(caps), SYMBOLS[key]);
+  fs.writeFileSync(path.join(OUT, `trace-mb-${key}.png`), Buffer.from(mb.split(",")[1], "base64"));
+  cells.push({ key, mb });
+  console.log(`${key.padEnd(11)} ${SYMBOLS[key].length} primitives`);
 }
 
-fs.writeFileSync(DATA, JSON.stringify(out));
+fs.writeFileSync(DATA, JSON.stringify(SYMBOLS));
 console.log(`→ ${path.relative(process.cwd(), DATA)}`);
 
 const sheet = await ctx.newPage();
