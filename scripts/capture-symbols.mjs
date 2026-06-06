@@ -37,7 +37,7 @@ precision highp float;
 in vec2 p; void main(){ gl_Position = vec4(p,0.,1.); }\`;
 const FS = \`#version 300 es
 precision highp float;
-uniform vec2 iRes; uniform vec3 iColor; uniform int iCount; uniform float iFrame;
+uniform vec2 iRes; uniform vec3 iColor; uniform int iCount; uniform float iFrame; uniform float iThreshold;
 uniform vec3 iBalls[160];
 out vec4 o;
 void main(){
@@ -46,7 +46,7 @@ void main(){
   vec2 q = (fc - iRes*0.5) * scale;
   float total = 0.0;
   for(int i=0;i<160;i++){ if(i>=iCount) break; vec3 b=iBalls[i]; vec2 d=q-b.xy; total += (b.z*b.z)/max(dot(d,d),1e-6); }
-  float f = smoothstep(-1.0, 1.0, (total - 1.3)/min(1.0, fwidth(total)));
+  float f = smoothstep(-1.0, 1.0, (total - iThreshold)/min(1.0, fwidth(total)));
   o = vec4(iColor*f, 1.0);
 }\`;
 function sh(t,s){const o=gl.createShader(t);gl.shaderSource(o,s);gl.compileShader(o);
@@ -64,6 +64,7 @@ const U = (n)=>gl.getUniformLocation(prog,n);
 gl.uniform2f(U('iRes'), cv.width, cv.height);
 gl.uniform3f(U('iColor'), 0.0, 0.890, 0.996);
 gl.uniform1f(U('iFrame'), ${FRAME});
+gl.uniform1f(U('iThreshold'), ${Number(process.env.THRESH) || 2.2});
 window.__render = (balls) => {
   const flat = new Float32Array(160*3);
   for (let i=0;i<balls.length && i<160;i++){ flat[i*3]=balls[i][0]; flat[i*3+1]=balls[i][1]; flat[i*3+2]=balls[i][2]; }
