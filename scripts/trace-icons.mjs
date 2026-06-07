@@ -15,7 +15,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const OUT = path.join(__dirname, "..", "captures");
 const DATA = path.join(__dirname, "..", "lib", "webgl", "symbols.generated.json");
 const HEADLESS = process.env.HEADLESS !== "false";
-const GLASS = process.env.FLAT ? 0 : 1;
+const GLASS = process.env.GLOW ? 1 : 0; // flat silhouettes by default; GLOW=1 for glass
 const K = Number(process.env.K) || 0.05;
 const FRAME = 1.9; // visible vertical extent (symbols live in ~±0.85)
 const SIZE = 480;
@@ -94,17 +94,17 @@ const SYMBOLS = {
     cap(-0.02, 0.2, -0.22, -0.04, 0.05), cap(-0.22, -0.04, -0.02, -0.28, 0.05), // <
     cap(0.14, 0.2, 0.34, -0.04, 0.05), cap(0.34, -0.04, 0.14, -0.28, 0.05), // >
   ],
-  // ai — a full brain: domed outline, central fissure, dense gyri tubes, neurons
+  // ai — a brain: bilobed crown + rounded base outline, 3 internal fold tubes
   ai: [
-    ...arcChain(-0.23, 0.12, 0.34, 35, 172, 4, 0.1, 0.085), // left hemisphere crown
-    ...arcChain(0.23, 0.12, 0.34, 8, 145, 4, 0.1, 0.085), // right hemisphere crown
-    ...chain([[-0.55, 0.04, 0.1], [-0.52, -0.28, 0.095], [-0.28, -0.46, 0.09]], 0.075), // left wall
-    ...chain([[0.55, 0.08, 0.1], [0.52, -0.26, 0.095], [0.28, -0.44, 0.09]], 0.075), // right wall
-    ...chain([[0.0, 0.42, 0.075], [0.0, 0.12, 0.07], [0.0, -0.2, 0.07]], 0.05), // central fissure
-    ...chain([[-0.28, 0.3, 0.07], [-0.31, 0.02, 0.065], [-0.18, -0.26, 0.06]], 0.05), // gyrus L
-    ...chain([[0.28, 0.32, 0.07], [0.31, 0.04, 0.065], [0.18, -0.24, 0.06]], 0.05), // gyrus R
-    circ(0.0, -0.5, 0.085), // brain-stem
-    circ(-0.42, -0.5, 0.06), circ(-0.3, -0.61, 0.05), circ(-0.5, -0.62, 0.042), // neurons
+    ...arcChain(-0.2, 0.12, 0.33, 32, 168, 4, 0.1, 0.082), // left hemisphere crown
+    ...arcChain(0.2, 0.12, 0.33, 12, 148, 4, 0.1, 0.082), // right hemisphere crown
+    ...chain([[-0.5, 0.06, 0.1], [-0.46, -0.3, 0.092], [-0.16, -0.47, 0.088],
+      [0.16, -0.47, 0.088], [0.46, -0.3, 0.092], [0.5, 0.08, 0.1]], 0.072), // base sweep
+    ...chain([[0.0, 0.34, 0.06], [0.0, -0.26, 0.058]], 0.045), // central fissure
+    ...chain([[-0.22, 0.22, 0.06], [-0.24, -0.2, 0.055]], 0.045), // left fold
+    ...chain([[0.22, 0.22, 0.06], [0.24, -0.2, 0.055]], 0.045), // right fold
+    circ(0.0, -0.52, 0.07), // brain-stem
+    circ(-0.4, -0.54, 0.05), circ(-0.28, -0.62, 0.04), // neurons
   ],
   // automation — a fluid cycle loop (necked ring) with arrow + tail bulbs
   automation: [
