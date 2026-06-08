@@ -82,6 +82,7 @@ function Blob({
   }, [matcap]);
 
   const meshRef = useRef<THREE.Mesh>(null);
+  const meshArgs = useMemo(() => [geometry, material] as const, [geometry, material]);
   const fired = useRef(false);
   const lastActive = useRef(-2);
   // auto/manual state machine (mirrors MetaballScene): cur = settled, nxt = target.
@@ -94,12 +95,6 @@ function Blob({
   const hovering = useRef(false);
   const gl = useThree((s) => s.gl);
   const invalidate = useThree((s) => s.invalidate);
-
-  // ensure morphTargetInfluences/dictionary exist (geometry carries 8 targets)
-  useEffect(() => {
-    const mesh = meshRef.current;
-    if (mesh && !mesh.morphTargetInfluences) mesh.updateMorphTargets();
-  }, []);
 
   // static modes (capture / preview / pair): set the blend once + re-render (the
   // frameloop is "demand", so we must invalidate after applying the influences —
@@ -203,7 +198,17 @@ function Blob({
   );
 
   return (
-    <mesh ref={meshRef} geometry={geometry} material={material} frustumCulled={false} />
+    <mesh
+      ref={meshRef}
+      args={meshArgs}
+      frustumCulled={false}
+      onUpdate={(mesh) => {
+        mesh.updateMorphTargets();
+        const infl = mesh.morphTargetInfluences;
+        if (infl) applyInfluences(infl, stateA, stateB, morph0);
+        mesh.scale.setScalar(breathScale(time0));
+      }}
+    />
   );
 }
 

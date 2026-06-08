@@ -21,6 +21,7 @@
 import * as THREE from "three";
 import { mergeVertices } from "three/addons/utils/BufferGeometryUtils.js";
 import { STATE_COUNT } from "./states";
+import { METABALL_SYMBOLS, type SymbolBall } from "./symbols";
 
 // Each form is a list of spheres [cx, cy, cz, r, k] in the same q-space the
 // raymarch SDFs use (~[-0.55, 0.55]). k = smooth-union blend with the running
@@ -89,6 +90,20 @@ const STATES: readonly Sphere[][] = [
   ],
 ];
 
+const MARK_STATE: readonly Sphere[] = STATES[0];
+
+function symbolBallToSphere(ball: SymbolBall, index: number): Sphere {
+  const [x, y, radius] = ball;
+  const z = ((index % 3) - 1) * 0.018;
+  const k = index === 0 ? 0 : Math.max(0.08, radius * 0.85);
+  return [x, y, z, radius, k];
+}
+
+const SYMBOL_STATES: readonly (readonly Sphere[])[] = [
+  MARK_STATE,
+  ...METABALL_SYMBOLS.map((symbol) => symbol.balls.map(symbolBallToSphere)),
+];
+
 const R0 = 1.1; // start radius — safely outside every form
 const ITERS = 18; // shrinkwrap steps
 const RELAX = 0.8; // step damping (smooth-min underestimates distance near joins)
@@ -100,7 +115,7 @@ function smin(a: number, b: number, k: number): number {
   return b * (1 - h) + a * h - k * h * (1 - h);
 }
 
-function field(prims: Sphere[], x: number, y: number, z: number): number {
+function field(prims: readonly Sphere[], x: number, y: number, z: number): number {
   let d = 0;
   for (let i = 0; i < prims.length; i++) {
     const p = prims[i];
@@ -141,7 +156,7 @@ export function buildMetaballGeometry(detail = 4): THREE.BufferGeometry {
   const morphNor: THREE.BufferAttribute[] = [];
 
   for (let s = 0; s < STATE_COUNT; s++) {
-    const prims = STATES[s] as Sphere[];
+    const prims = SYMBOL_STATES[s];
     const P = new Float32Array(N * 3);
     const Nr = new Float32Array(N * 3);
 

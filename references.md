@@ -65,7 +65,7 @@ with GSAP + ScrollTrigger.
 
 ## FRAMEWORK / i18n / CMS / EMAIL  (structural — Claude Code handles these well, docs prevent stale APIs)
 
-- **Next.js 15 docs** — https://nextjs.org/docs — App Router, RSC, server actions, metadata, `generateMetadata`, dynamic OG.
+- **Next.js 16 docs** — https://nextjs.org/docs — App Router, RSC, server actions, metadata, `generateMetadata`, dynamic OG, proxy convention, Turbopack defaults.
 - **next-intl** — https://next-intl.dev — locale routing (`/pt`, `/en`), message files, server + client usage.
 - **Sanity docs** — https://www.sanity.io/docs — schema types, GROQ queries, localized fields, `@sanity/client`, image URL builder.
 - **Resend** — https://resend.com/docs — transactional email from the contact server action.

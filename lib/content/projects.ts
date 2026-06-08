@@ -1,7 +1,7 @@
 import type { Project } from "@/lib/sanity/types";
 
 // TODO(decision): These are 6 PROTOTYPE projects for layout/launch. Replace
-// with real verified content via Sanity. Per CLAUDE.md rule #3 no metrics are
+// with real verified content via Sanity. Per AGENTS.md rule #3 no metrics are
 // invented — every outcome is "architecture" (Arquitetura selecionada) or an
 // honest non-numeric "narrative". No project uses outcomeType "metric" until
 // real, verified numbers exist.

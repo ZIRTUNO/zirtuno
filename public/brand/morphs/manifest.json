@@ -1,0 +1,153 @@
+{
+  "sourceDir": "C:\\Users\\pedro\\Desktop\\02_Clientes\\Zirtuno ASSETS\\Morphs DEFINITIVE",
+  "outputDir": "public/brand/morphs",
+  "runtimeDir": "public/brand/forms",
+  "trace": {
+    "threshold": 34,
+    "simplifyTolerance": 1.15,
+    "minContourArea": 36,
+    "fill": "#00E3FE"
+  },
+  "morphs": [
+    {
+      "order": "01",
+      "key": "web",
+      "slug": "web-design",
+      "labelPt": "Web Design & Experiencia Digital",
+      "labelEn": "Web Design & Digital Experience",
+      "represents": "Browser/interface form for sites, landing pages, ecommerce, portals, and digital product experiences.",
+      "sourceFile": "WebDESIGN.png",
+      "categoryDir": "01-web-design",
+      "original": "public/brand/morphs/01-web-design/original/web-design.png",
+      "svg": "public/brand/morphs/01-web-design/svg/web-design.svg",
+      "runtimeSvg": "public/brand/forms/web.svg",
+      "originalRelative": "01-web-design/original/web-design.png",
+      "svgRelative": "01-web-design/svg/web-design.svg",
+      "dimensions": {
+        "width": 1254,
+        "height": 1254
+      },
+      "contours": 4
+    },
+    {
+      "order": "02",
+      "key": "software",
+      "slug": "software-development",
+      "labelPt": "Desenvolvimento de Software & Apps",
+      "labelEn": "Software & App Development",
+      "represents": "Code/network form for systems, apps, platforms, internal tools, and custom software.",
+      "sourceFile": "Software Development.png",
+      "categoryDir": "02-software-development",
+      "original": "public/brand/morphs/02-software-development/original/software-development.png",
+      "svg": "public/brand/morphs/02-software-development/svg/software-development.svg",
+      "runtimeSvg": "public/brand/forms/software.svg",
+      "originalRelative": "02-software-development/original/software-development.png",
+      "svgRelative": "02-software-development/svg/software-development.svg",
+      "dimensions": {
+        "width": 1254,
+        "height": 1254
+      },
+      "contours": 7
+    },
+    {
+      "order": "03",
+      "key": "ai",
+      "slug": "ai",
+      "labelPt": "Inteligencia Artificial",
+      "labelEn": "Artificial Intelligence",
+      "represents": "AI-brain form for agents, chatbots, intelligent automation, and assisted decision systems.",
+      "sourceFile": "AI.png",
+      "categoryDir": "03-ai",
+      "original": "public/brand/morphs/03-ai/original/ai.png",
+      "svg": "public/brand/morphs/03-ai/svg/ai.svg",
+      "runtimeSvg": "public/brand/forms/ai.svg",
+      "originalRelative": "03-ai/original/ai.png",
+      "svgRelative": "03-ai/svg/ai.svg",
+      "dimensions": {
+        "width": 1254,
+        "height": 1254
+      },
+      "contours": 9
+    },
+    {
+      "order": "04",
+      "key": "automation",
+      "slug": "automation",
+      "labelPt": "Automacao & Integracoes",
+      "labelEn": "Automation & Integrations",
+      "represents": "Cycle/loop form for process automation, integrations, CRM flows, and connected operations.",
+      "sourceFile": "Automation.png",
+      "categoryDir": "04-automation",
+      "original": "public/brand/morphs/04-automation/original/automation.png",
+      "svg": "public/brand/morphs/04-automation/svg/automation.svg",
+      "runtimeSvg": "public/brand/forms/automation.svg",
+      "originalRelative": "04-automation/original/automation.png",
+      "svgRelative": "04-automation/svg/automation.svg",
+      "dimensions": {
+        "width": 1254,
+        "height": 1254
+      },
+      "contours": 5
+    },
+    {
+      "order": "05",
+      "key": "data",
+      "slug": "data",
+      "labelPt": "Dados & Dashboards",
+      "labelEn": "Data & Dashboards",
+      "represents": "Structured columns form for data organization, BI, reports, dashboards, and decision visibility.",
+      "sourceFile": "Data.png",
+      "categoryDir": "05-data",
+      "original": "public/brand/morphs/05-data/original/data.png",
+      "svg": "public/brand/morphs/05-data/svg/data.svg",
+      "runtimeSvg": "public/brand/forms/data.svg",
+      "originalRelative": "05-data/original/data.png",
+      "svgRelative": "05-data/svg/data.svg",
+      "dimensions": {
+        "width": 1254,
+        "height": 1254
+      },
+      "contours": 4
+    },
+    {
+      "order": "06",
+      "key": "branding",
+      "slug": "branding",
+      "labelPt": "Branding & Posicionamento",
+      "labelEn": "Branding & Positioning",
+      "represents": "Orbit/core form for brand identity, positioning, design systems, and visual language.",
+      "sourceFile": "Branding.png",
+      "categoryDir": "06-branding",
+      "original": "public/brand/morphs/06-branding/original/branding.png",
+      "svg": "public/brand/morphs/06-branding/svg/branding.svg",
+      "runtimeSvg": "public/brand/forms/branding.svg",
+      "originalRelative": "06-branding/original/branding.png",
+      "svgRelative": "06-branding/svg/branding.svg",
+      "dimensions": {
+        "width": 1254,
+        "height": 1254
+      },
+      "contours": 11
+    },
+    {
+      "order": "07",
+      "key": "marketing",
+      "slug": "marketing",
+      "labelPt": "Marketing & Crescimento",
+      "labelEn": "Marketing & Growth",
+      "represents": "Signal/megaphone form for paid media, content, launch systems, funnels, and growth loops.",
+      "sourceFile": "Marketing.png",
+      "categoryDir": "07-marketing",
+      "original": "public/brand/morphs/07-marketing/original/marketing.png",
+      "svg": "public/brand/morphs/07-marketing/svg/marketing.svg",
+      "runtimeSvg": "public/brand/forms/marketing.svg",
+      "originalRelative": "07-marketing/original/marketing.png",
+      "svgRelative": "07-marketing/svg/marketing.svg",
+      "dimensions": {
+        "width": 1254,
+        "height": 1254
+      },
+      "contours": 9
+    }
+  ]
+}

@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { useReducedMotion } from "@/lib/animation/reduced-motion";
 import { useInView } from "@/lib/animation/use-in-view";
-import { canRunGlass } from "@/lib/webgl/can-run-glass";
+import { glassTech, type GlassTech } from "@/lib/webgl/gpu-tier";
 import { LogoMark } from "@/components/hero/LogoMark";
 import { cn } from "@/lib/utils";
 
@@ -12,12 +12,12 @@ import { cn } from "@/lib/utils";
 const MetaballScene = dynamic(() => import("@/components/hero/MetaballScene"), {
   ssr: false,
 });
+const MeshMetaballScene = dynamic(
+  () => import("@/components/hero/MeshMetaballScene"),
+  { ssr: false },
+);
 
 export const EXHALE_EVENT = "zirtuno:exhale";
-
-function supportsWebGL(): boolean {
-  return canRunGlass();
-}
 
 /**
  * S10 — the contact metaball: the resting connected mark, breathing. Additive
@@ -32,8 +32,13 @@ export function ContactMetaball() {
   const [stageRef, inView, seen] = useInView<HTMLDivElement>("250px");
   const [enabled, setEnabled] = useState(false);
   const [desktop, setDesktop] = useState(false);
+  const [tech, setTech] = useState<GlassTech>("none");
   const [ready, setReady] = useState(false);
   const fractureRef = useRef(0);
+
+  useEffect(() => {
+    setTech(glassTech());
+  }, []);
 
   useEffect(() => {
     const mq = window.matchMedia("(min-width: 768px) and (pointer: fine)");
@@ -44,8 +49,8 @@ export function ContactMetaball() {
   }, []);
 
   useEffect(() => {
-    setEnabled(!reduced && desktop && supportsWebGL());
-  }, [reduced, desktop]);
+    setEnabled(!reduced && desktop && tech !== "none");
+  }, [reduced, desktop, tech]);
 
   // the exhale gesture — a one-shot fracture pulse on submit
   useEffect(() => {
@@ -73,12 +78,20 @@ export function ContactMetaball() {
       />
       {enabled && seen && (
         <div className="contact-metaball-canvas">
-          <MetaballScene
-            fracture={0}
-            fractureRef={fractureRef}
-            play={inView}
-            onReady={() => setReady(true)}
-          />
+          {tech === "mesh" ? (
+            <MeshMetaballScene
+              manualState={0}
+              play={inView}
+              onReady={() => setReady(true)}
+            />
+          ) : (
+            <MetaballScene
+              fracture={0}
+              fractureRef={fractureRef}
+              play={inView}
+              onReady={() => setReady(true)}
+            />
+          )}
         </div>
       )}
     </div>

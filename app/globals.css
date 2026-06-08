@@ -423,6 +423,21 @@ section[id],
   pointer-events: auto; /* hover physics: the cursor leans the glass */
 }
 
+/* SDF-glass rest (v1.2 §6.1) — subtle ~8s breathing as a cheap CSS transform, so
+   the static glass is alive at rest without any per-frame GPU work. */
+.sdf-glass-breath {
+  animation: sdf-glass-breath 8s ease-in-out infinite;
+  transform-origin: center;
+  will-change: transform;
+}
+@keyframes sdf-glass-breath {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.02); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sdf-glass-breath { animation: none; }
+}
+
 /* Perf HUD (?perf=1) — measure the live glass fps/dpr/resolution on real devices. */
 .perf-overlay {
   position: fixed;

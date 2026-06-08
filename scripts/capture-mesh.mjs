@@ -26,7 +26,24 @@ const SHOTS = [
 
 fs.mkdirSync(OUT, { recursive: true });
 
-const browser = await chromium.launch({ headless: HEADLESS, chromiumSandbox: false });
+const chromeCandidates = [
+  process.env.CHROME_PATH,
+  "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+  "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe",
+  `${process.env.LOCALAPPDATA}\\Google\\Chrome\\Application\\chrome.exe`,
+  "C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe",
+  "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",
+].filter(Boolean);
+
+const executablePath = chromeCandidates.find((candidate) =>
+  fs.existsSync(candidate),
+);
+
+const browser = await chromium.launch({
+  headless: HEADLESS,
+  chromiumSandbox: false,
+  ...(executablePath ? { executablePath } : {}),
+});
 const ctx = await browser.newContext({
   viewport: { width: 1280, height: 900 },
   deviceScaleFactor: 2,

@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import { useReducedMotion } from "@/lib/animation/reduced-motion";
 import { useInView } from "@/lib/animation/use-in-view";
-import { canRunGlass } from "@/lib/webgl/can-run-glass";
+import { glassTech, type GlassTech } from "@/lib/webgl/gpu-tier";
 import { LogoMark } from "@/components/hero/LogoMark";
 import { PillarIndicator } from "@/components/hero/PillarIndicator";
 import { cn } from "@/lib/utils";
@@ -13,10 +13,10 @@ import { cn } from "@/lib/utils";
 const MetaballScene = dynamic(() => import("@/components/hero/MetaballScene"), {
   ssr: false,
 });
-
-function supportsWebGL(): boolean {
-  return canRunGlass();
-}
+const MeshMetaballScene = dynamic(
+  () => import("@/components/hero/MeshMetaballScene"),
+  { ssr: false },
+);
 
 /**
  * S5 · Services metaball — the sticky glass that morphs to each pillar's locked
@@ -31,8 +31,13 @@ export function ServicesMetaball({ ariaLabel = "Zirtuno" }: { ariaLabel?: string
   const [stageRef, inView, seen] = useInView<HTMLDivElement>("250px");
   const [enabled, setEnabled] = useState(false);
   const [desktop, setDesktop] = useState(false);
+  const [tech, setTech] = useState<GlassTech>("none");
   const [ready, setReady] = useState(false);
   const [active, setActive] = useState(0); // active pillar index 0-6
+
+  useEffect(() => {
+    setTech(glassTech());
+  }, []);
 
   useEffect(() => {
     const mq = window.matchMedia("(min-width: 768px) and (pointer: fine)");
@@ -43,8 +48,8 @@ export function ServicesMetaball({ ariaLabel = "Zirtuno" }: { ariaLabel?: string
   }, []);
 
   useEffect(() => {
-    setEnabled(!reduced && desktop && supportsWebGL());
-  }, [reduced, desktop]);
+    setEnabled(!reduced && desktop && tech !== "none");
+  }, [reduced, desktop, tech]);
 
   // Active pillar = whichever article is crossing the viewport centre band.
   useEffect(() => {
@@ -77,11 +82,19 @@ export function ServicesMetaball({ ariaLabel = "Zirtuno" }: { ariaLabel?: string
         />
         {enabled && seen && (
           <div className="services-metaball-canvas">
-            <MetaballScene
-              manualState={active + 1}
-              play={inView}
-              onReady={() => setReady(true)}
-            />
+            {tech === "mesh" ? (
+              <MeshMetaballScene
+                manualState={active + 1}
+                play={inView}
+                onReady={() => setReady(true)}
+              />
+            ) : (
+              <MetaballScene
+                manualState={active + 1}
+                play={inView}
+                onReady={() => setReady(true)}
+              />
+            )}
           </div>
         )}
       </div>

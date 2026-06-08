@@ -11,7 +11,7 @@ export type ProjectCategory =
   | "marketing";
 
 /**
- * Outcome rule (S7.2 / CLAUDE.md rule #3): only "metric" carries a verified
+ * Outcome rule (S7.2 / AGENTS.md rule #3): only "metric" carries a verified
  * number. "narrative" is an honest non-numeric result. "architecture" renders
  * the "Arquitetura selecionada / Selected architecture" label. NEVER fabricate.
  */

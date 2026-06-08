@@ -35,7 +35,7 @@ Tone in three words: **Discreto. Preciso. Transformador.** Plus, for v0.2: **Cle
 
 ## TECH STACK (locked — do not substitute without asking)
 
-- **Next.js 15** (App Router, RSC), **TypeScript**
+- **Next.js 16** (App Router, RSC, Turbopack default), **TypeScript**
 - **Tailwind CSS v4** + CSS variables for theming
 - **Three.js** + **@react-three/fiber** + **@react-three/drei** (metaballs, particles, ecosystem)
 - **GSAP** + **ScrollTrigger** (scroll choreography) · **Motion** (DOM micro-interactions)

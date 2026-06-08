@@ -7,6 +7,7 @@ import * as THREE from "three";
 import { FIELD, getRestingState, STATE_COUNT, AI_STATE } from "@/lib/webgl/states";
 import { detectGpuTier, type GpuTier } from "@/lib/webgl/gpu-tier";
 import { getEnvMapData, makeEnvTexture } from "@/lib/webgl/env-map";
+import { makeSymbolSdfGlsl } from "@/lib/webgl/symbols";
 import type { SdfResult } from "@/lib/webgl/trace-logo";
 
 /* ---------------------------------------------------------------------------
@@ -311,15 +312,17 @@ const makeFragment = (
 
   // state index → geometry. Order matches METABALL_STATES (lib/webgl/states.ts):
   // 0 mark · 1 web · 2 software · 3 ai · 4 automation · 5 data · 6 branding · 7 marketing.
+${makeSymbolSdfGlsl()}
+
   float sdfForState(vec3 p, float br, int s) {
     if (s == 0) return sdfLogo(p, br);
-    if (s == 1) return sdfWeb(p, br);
-    if (s == 2) return sdfSoftware(p, br);
-    if (s == 3) return sdfAI(p, br);
-    if (s == 4) return sdfAutomation(p, br);
-    if (s == 5) return sdfData(p, br);
-    if (s == 6) return sdfBranding(p, br);
-    return sdfMarketing(p, br);
+    if (s == 1) return sdfSymbolWeb(p, br);
+    if (s == 2) return sdfSymbolSoftware(p, br);
+    if (s == 3) return sdfSymbolAI(p, br);
+    if (s == 4) return sdfSymbolAutomation(p, br);
+    if (s == 5) return sdfSymbolData(p, br);
+    if (s == 6) return sdfSymbolBranding(p, br);
+    return sdfSymbolMarketing(p, br);
   }
 
   // Fracture the mark into disconnected shards pulled outward (S3 → S4 converge).

@@ -41,7 +41,7 @@ This supersedes v0.1 and the IA in `zirtuno-roadmap.md`. The roadmap's brand int
 
 | Layer | Choice | Reason |
 |---|---|---|
-| Framework | **Next.js 15** (App Router) | SSR for SEO, RSC, image optimization |
+| Framework | **Next.js 16** (App Router) | SSR for SEO, RSC, image optimization, Turbopack default |
 | Language | TypeScript | type safety across a motion-heavy codebase |
 | Styling | **Tailwind CSS v4** + CSS variables | utility-first + theming |
 | 3D / WebGL | **Three.js** + **@react-three/fiber** + **@react-three/drei** | metaballs, particles, ecosystem diagram |

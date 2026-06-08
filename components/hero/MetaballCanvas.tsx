@@ -14,6 +14,12 @@ import { PerfOverlay } from "./PerfOverlay";
 // three.js is client-only and heavy → load both scenes lazily, no SSR.
 const MetaballScene = dynamic(() => import("./MetaballScene"), { ssr: false });
 const MeshMetaballScene = dynamic(() => import("./MeshMetaballScene"), { ssr: false });
+// NEW field hero (metaball-morph-spec, behind ?hero=field):
+//   SdfGlassField = the crisp form SVG shaded as glass via its SDF (the REST look,
+//   v1.2 §6.1); MetaballField = the metaball field (kept for the Phase-3 morph /
+//   ?hero=fieldflat debug). MetaballScene/MeshMetaballScene stay the default.
+const SdfGlassField = dynamic(() => import("./SdfGlassField"), { ssr: false });
+const MetaballField = dynamic(() => import("./MetaballField"), { ssr: false });
 
 const STATES = STATE_COUNT; // 0 = mark, 1-7 = the service pillars (lib/webgl/states)
 
@@ -42,6 +48,8 @@ export function MetaballCanvas({ pillarNames }: { pillarNames: string[] }) {
   const [preview, setPreview] = useState<number | null>(null);
   const [pair, setPair] = useState<[number, number, number] | null>(null); // QA still: A→B at morph m
   const [manual, setManual] = useState<number | null>(null); // state index 0-7, or null = auto
+  const [field, setField] = useState(false); // ?hero=field → new 2D metaball field
+  const [fieldFlat, setFieldFlat] = useState(false); // ?hero=fieldflat / &flat=1 → flat cyan
 
   useEffect(() => {
     const sp = new URLSearchParams(window.location.search);
@@ -56,6 +64,9 @@ export function MetaballCanvas({ pillarNames }: { pillarNames: string[] }) {
       const [a, b, m] = pr.split("-").map(Number);
       setPair([a, b, m]);
     }
+    const hero = sp.get("hero"); // ?hero=field (glass) · ?hero=fieldflat (flat cyan)
+    setField(hero === "field" || hero === "fieldflat");
+    setFieldFlat(hero === "fieldflat" || sp.get("flat") === "1");
     setTech(glassTech()); // raymarch (capable) · mesh (integrated/mobile) · none (software)
   }, []);
 
@@ -75,8 +86,10 @@ export function MetaballCanvas({ pillarNames }: { pillarNames: string[] }) {
     // tier (software / no WebGL → static SVG) or under reduced-motion.
     const forced = !!capture || preview !== null || pair !== null;
     const live = !reduced && (desktop || tech === "mesh");
-    setEnabled((forced || live) && tech !== "none");
-  }, [reduced, desktop, capture, preview, pair, tech]);
+    // ?hero=field is a deliberate preview flag → always mounts (the 2D field is
+    // cheap enough to run on any tier; that's the whole point of the new engine).
+    setEnabled(field ? true : (forced || live) && tech !== "none");
+  }, [reduced, desktop, capture, preview, pair, tech, field]);
 
   // keyboard control is live-only (off during deterministic captures/previews)
   const interactive =
@@ -155,8 +168,21 @@ export function MetaballCanvas({ pillarNames }: { pillarNames: string[] }) {
           style={{ opacity: hideFallback ? 0 : 1 }}
         />
         {enabled && (
-          <div className="metaball-canvas" data-glass-tech={tech}>
-            {tech === "mesh" ? (
+          <div className="metaball-canvas" data-glass-tech={field ? "field" : tech}>
+            {field ? (
+              // v1.2 §6.1: REST = the crisp mark SVG shaded as liquid glass via its
+              // SDF (exact silhouette + holes; metaball material). The metaball field
+              // is for the Phase-3 morph only — `?hero=fieldflat` shows it for debug.
+              fieldFlat ? (
+                <MetaballField {...sceneProps} glass={false} />
+              ) : (
+                <SdfGlassField
+                  {...sceneProps}
+                  svgUrl="/brand/zirtuno-logo-mark.svg"
+                  breathing={!reduced}
+                />
+              )
+            ) : tech === "mesh" ? (
               <MeshMetaballScene {...sceneProps} />
             ) : (
               <MetaballScene {...sceneProps} />
