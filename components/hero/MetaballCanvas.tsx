@@ -92,10 +92,15 @@ export function MetaballCanvas({ pillarNames }: { pillarNames: string[] }) {
     // tier (software / no WebGL → static SVG) or under reduced-motion.
     const forced = !!capture || preview !== null || pair !== null;
     const live = !reduced && (desktop || tech === "mesh");
-    // ?hero=field is a deliberate preview flag → always mounts (the SDF-glass rest
-    // is cheap enough for any tier; on no-WebGL it degrades to the SVG fallback).
-    setEnabled(fieldActive ? true : (forced || live) && tech !== "none");
-  }, [reduced, desktop, capture, preview, pair, tech, fieldActive]);
+    // Field mode (gpu-tier integration, spec v1.3): the SDF-GLASS rest mounts on
+    // EVERY tier — it's a single static draw (no per-frame loop → no TDR risk)
+    // and degrades to the SVG fallback when WebGL2 is missing. The METABALL layer
+    // (?hero=fieldflat — the future per-frame morph) follows the same rule as the
+    // other live paths: never on the software "none" tier.
+    setEnabled(
+      fieldActive ? !fieldFlat || tech !== "none" : (forced || live) && tech !== "none",
+    );
+  }, [reduced, desktop, capture, preview, pair, tech, fieldActive, fieldFlat]);
 
   // keyboard control is live-only (off during deterministic captures/previews).
   // Also off in field mode for now: the SDF-glass rest doesn't respond to state

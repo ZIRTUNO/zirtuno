@@ -27,7 +27,7 @@ import {
   SDF_DRAW,
   SDF_BLUR,
 } from "@/lib/webgl/sdf-glass-shader.mjs";
-import { buildSdf } from "@/lib/webgl/sdf";
+import { buildSdfAsync } from "@/lib/webgl/sdf";
 
 type SdfGlassProps = {
   svgUrl: string;
@@ -176,15 +176,16 @@ export default function SdfGlassField({
       img.src = svgUrl;
       img
         .decode()
-        .then(() => {
+        // EDT+blur run in a worker (lib/webgl/sdf) → no main-thread jank at mount
+        .then(() => buildSdfAsync(img, SDF_RES, SDF_DRAW, SDF_BLUR))
+        .then((data) => {
           if (disposed) return;
-          const data = buildSdf(img, SDF_RES, SDF_DRAW, SDF_BLUR);
           sdfCache.current = { url: svgUrl, data };
           applySdf(data);
         })
         .catch((err) => {
           if (process.env.NODE_ENV !== "production")
-            console.warn("SdfGlassField: failed to load form SVG", svgUrl, err);
+            console.warn("SdfGlassField: failed to build form SDF", svgUrl, err);
         });
     }
 
