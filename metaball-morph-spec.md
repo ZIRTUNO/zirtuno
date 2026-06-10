@@ -31,6 +31,13 @@
 > - **Legacy decoupled:** the retiring raymarch/mesh paths now read a FROZEN snapshot (`lib/webgl/symbols-legacy.data.mjs` via `symbols.ts`); `symbols.data.mjs` is free to evolve as the field morph endpoints. Retired/removed: `trace-icons.mjs`, `capture-symbols.mjs`, `author-mark/forms.mjs`, `symbols.generated.json`.
 > **Phase 3 prep (pending owner go-ahead):** regenerate the morph ball-clouds FROM the form SDFs so endpoints register with the rest SVGs (the current clouds predate the owner SVGs and will pop at the crossfade); move SDF building off the main thread (worker or build-time bake — 8 forms × ~100 ms EDT); integrate field-hero gating with `gpu-tier` when it becomes the default.
 
+> ### Update v1.4 (2026-06-10) — Phase 3 built (the morph)
+> `components/hero/FieldMorphHero.tsx` — the morphing field hero behind `?hero=field`:
+> - **Rest** = the current form's SDF-glass (one static draw, CSS breath ±2 %); **morph** = the metaball melt (§3.3: min-travel greedy matching cached per transition, left-to-right stagger 0.25, radius-leads 1.18, `arrive` ease, `DURATIONS.morph` 1.4 s); **crossfades** (`DURATIONS.micro` 200 ms) at the melt edges per v1.2 — two stacked WebGL2 canvases sharing one breathing/leaning wrapper so registration holds through the breath.
+> - **State machine** (§4): autocycle `DURATIONS.autocycle` dwell, pauses off-screen (`play`) + on hover; pointer lean ≤4 %; keyboard via the shell's `manualState` (retargets mid-melt from live droplet positions); `onActiveChange` drives the PillarIndicator; reduced-motion gets the static SDF mark (no autocycle, §8).
+> - **Determinism for QA:** `?fstate=N` (one rest form) · `?fpair=a-b-m` (one frozen melt frame) · `?fcycle=1` (short dwell). Harness: `scripts/capture-morph-frames.mjs` (mid-frame grid of all 8 transitions + melt-fps + keyboard smoke test; pre-seeds the gpu-tier cache so the probe can't pollute readings — note headless Chrome rasterises WebGL in software, run `HEADLESS=false` for real-GPU numbers).
+> - **Checkpoint measured:** all 24 mid-frames read as connected liquid (no pops); melt ≈ **101 fps on the Intel UHD**; keyboard announces + melts. Remaining for the hero milestone: owner motion sign-off, then Phase 4 (probe/tiers/watchdog) and the default-hero flip.
+
 ---
 
 ## 0. Why the last attempt didn't land (diagnosis)

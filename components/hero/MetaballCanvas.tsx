@@ -6,7 +6,7 @@ import dynamic from "next/dynamic";
 import { useReducedMotion } from "@/lib/animation/reduced-motion";
 import { useInView } from "@/lib/animation/use-in-view";
 import { glassTech, type GlassTech } from "@/lib/webgl/gpu-tier";
-import { STATE_COUNT } from "@/lib/webgl/states";
+import { METABALL_STATES, STATE_COUNT } from "@/lib/webgl/states";
 import { LogoMark } from "./LogoMark";
 import { PillarIndicator } from "./PillarIndicator";
 import { PerfOverlay } from "./PerfOverlay";
@@ -15,9 +15,11 @@ import { PerfOverlay } from "./PerfOverlay";
 const MetaballScene = dynamic(() => import("./MetaballScene"), { ssr: false });
 const MeshMetaballScene = dynamic(() => import("./MeshMetaballScene"), { ssr: false });
 // NEW field hero (metaball-morph-spec, behind ?hero=field):
-//   SdfGlassField = the crisp form SVG shaded as glass via its SDF (the REST look,
-//   v1.2 §6.1); MetaballField = the metaball field (kept for the Phase-3 morph /
-//   ?hero=fieldflat debug). MetaballScene/MeshMetaballScene stay the default.
+//   FieldMorphHero = the full Phase-3 hero (SDF-glass rest + metaball melt morphs,
+//   autocycle/hover/keyboard); SdfGlassField = a single static SDF-glass form
+//   (reduced-motion rest + ?fstate=N stills); MetaballField = the bare metaball
+//   layer (?hero=fieldflat debug). MetaballScene/MeshMetaballScene stay the default.
+const FieldMorphHero = dynamic(() => import("./FieldMorphHero"), { ssr: false });
 const SdfGlassField = dynamic(() => import("./SdfGlassField"), { ssr: false });
 const MetaballField = dynamic(() => import("./MetaballField"), { ssr: false });
 
@@ -50,6 +52,9 @@ export function MetaballCanvas({ pillarNames }: { pillarNames: string[] }) {
   const [manual, setManual] = useState<number | null>(null); // state index 0-7, or null = auto
   const [field, setField] = useState(false); // ?hero=field → new 2D metaball field
   const [fieldFlat, setFieldFlat] = useState(false); // ?hero=fieldflat / &flat=1 → flat cyan
+  const [fState, setFState] = useState<number | null>(null); // ?fstate=N → static SDF-glass still
+  const [fPair, setFPair] = useState<[number, number, number] | null>(null); // ?fpair=a-b-m → frozen melt frame
+  const [fastCycle, setFastCycle] = useState(false); // ?fcycle=1 → short dwell (QA)
 
   useEffect(() => {
     const sp = new URLSearchParams(window.location.search);
@@ -67,6 +72,14 @@ export function MetaballCanvas({ pillarNames }: { pillarNames: string[] }) {
     const hero = sp.get("hero"); // ?hero=field (glass) · ?hero=fieldflat (flat cyan)
     setField(hero === "field" || hero === "fieldflat");
     setFieldFlat(hero === "fieldflat" || sp.get("flat") === "1");
+    const fs = sp.get("fstate"); // field mode: a single static SDF-glass form
+    setFState(fs !== null && /^[0-7]$/.test(fs) ? Number(fs) : null);
+    const fp = sp.get("fpair"); // field mode: freeze the A→B melt at m (QA)
+    if (fp && /^[0-7]-[0-7]-(0(\.\d+)?|1(\.0+)?)$/.test(fp)) {
+      const [a, b, m] = fp.split("-").map(Number);
+      setFPair([a, b, m]);
+    }
+    setFastCycle(sp.get("fcycle") === "1"); // short dwell for QA captures
     setTech(glassTech()); // raymarch (capable) · mesh (integrated/mobile) · none (software)
   }, []);
 
@@ -102,15 +115,20 @@ export function MetaballCanvas({ pillarNames }: { pillarNames: string[] }) {
     );
   }, [reduced, desktop, capture, preview, pair, tech, fieldActive, fieldFlat]);
 
-  // keyboard control is live-only (off during deterministic captures/previews).
-  // Also off in field mode for now: the SDF-glass rest doesn't respond to state
-  // stepping yet (Phase 3 wires it), so don't advertise inert shortcuts to AT.
+  // The LIVE field hero (Phase 3): the morphing FieldMorphHero, unless this is a
+  // deterministic still (?fstate/?fpair), the flat debug layer, or reduced motion
+  // (spec §8: reduced-motion rests on the static mark — no autocycle).
+  const fieldLive =
+    fieldActive && !fieldFlat && !reduced && fState === null && fPair === null;
+
+  // keyboard control is live-only (off during deterministic captures/previews and
+  // for the non-stepping field variants — never advertise inert shortcuts to AT).
   const interactive =
     enabled &&
     capture === null &&
     preview === null &&
     pair === null &&
-    !fieldActive;
+    (!fieldActive || fieldLive);
 
   const step = useCallback(
     (delta: number) =>
@@ -190,21 +208,38 @@ export function MetaballCanvas({ pillarNames }: { pillarNames: string[] }) {
             data-glass-tech={fieldActive ? "field" : tech}
           >
             {fieldActive ? (
-              // v1.2 §6.1: REST = the crisp mark SVG shaded as liquid glass via its
-              // SDF (exact silhouette + holes; metaball material). The metaball field
-              // is for the Phase-3 morph only — `?hero=fieldflat` shows it for debug.
-              // On context loss the fallback logo fades back in until restore.
+              // Phase 3: FieldMorphHero rests on each form's crisp SDF-glass and
+              // melts between them through the metaball field (v1.2 §6.1). The
+              // static SdfGlassField serves reduced-motion + ?fstate stills;
+              // ?fpair freezes one melt frame; ?hero=fieldflat is the bare debug
+              // layer. On context loss the fallback logo returns until restore.
               fieldFlat ? (
                 <MetaballField
                   {...sceneProps}
                   glass={false}
                   onContextLost={() => setReady(false)}
                 />
-              ) : (
+              ) : fPair ? (
+                <FieldMorphHero
+                  {...sceneProps}
+                  frozenPair={fPair}
+                  onContextLost={() => setReady(false)}
+                />
+              ) : reduced || fState !== null ? (
                 <SdfGlassField
                   {...sceneProps}
-                  svgUrl="/brand/zirtuno-logo-mark.svg"
-                  breathing={!reduced}
+                  svgUrl={
+                    fState != null && fState > 0
+                      ? `/brand/forms/${METABALL_STATES[fState].key}.svg`
+                      : "/brand/zirtuno-logo-mark.svg"
+                  }
+                  breathing={false}
+                  onContextLost={() => setReady(false)}
+                />
+              ) : (
+                <FieldMorphHero
+                  {...sceneProps}
+                  dwellMs={fastCycle ? 2000 : undefined}
                   onContextLost={() => setReady(false)}
                 />
               )
