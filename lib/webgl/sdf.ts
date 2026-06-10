@@ -3,81 +3,12 @@
 /**
  * Build a signed-distance field from a form SVG, for the SDF-glass rest renderer
  * (metaball-morph-spec v1.2 §6.1). Rasterises the image to an alpha mask normalised
- * to its content bbox, computes an EXACT signed Euclidean distance (Felzenszwalb &
- * Huttenlocher), lightly blurs it (removes the medial-axis crease so the glass dome
- * reads smooth), and returns a Float32Array (Y-flipped, symbol units) ready to
- * upload as an R32F texture. Mirrors scripts/capture-sdf.mjs exactly.
+ * to its content bbox (so every form fills the frame consistently), then runs the
+ * shared exact-EDT pipeline (lib/webgl/sdf-core — the same code the capture harness
+ * injects, so the sign-off sheet and the live hero are bit-identical in math).
  */
 
-// exact 1-D squared EDT — lower envelope of parabolas
-function edt1d(f: Float64Array, n: number): Float64Array {
-  const d = new Float64Array(n);
-  const v = new Int32Array(n);
-  const z = new Float64Array(n + 1);
-  let k = 0;
-  v[0] = 0;
-  z[0] = -1e20;
-  z[1] = 1e20;
-  for (let q = 1; q < n; q++) {
-    let s = (f[q] + q * q - (f[v[k]] + v[k] * v[k])) / (2 * q - 2 * v[k]);
-    while (s <= z[k]) {
-      k--;
-      s = (f[q] + q * q - (f[v[k]] + v[k] * v[k])) / (2 * q - 2 * v[k]);
-    }
-    k++;
-    v[k] = q;
-    z[k] = s;
-    z[k + 1] = 1e20;
-  }
-  k = 0;
-  for (let q = 0; q < n; q++) {
-    while (z[k + 1] < q) k++;
-    const dx = q - v[k];
-    d[q] = dx * dx + f[v[k]];
-  }
-  return d;
-}
-
-// squared distance (px²) to the nearest seed pixel (seed[i] = 1)
-function edt2d(seed: Uint8Array, W: number, H: number): Float64Array {
-  const f = new Float64Array(W * H);
-  for (let i = 0; i < W * H; i++) f[i] = seed[i] ? 0 : 1e20;
-  const col = new Float64Array(H);
-  for (let x = 0; x < W; x++) {
-    for (let y = 0; y < H; y++) col[y] = f[y * W + x];
-    const r = edt1d(col, H);
-    for (let y = 0; y < H; y++) f[y * W + x] = r[y];
-  }
-  const row = new Float64Array(W);
-  for (let y = 0; y < H; y++) {
-    for (let x = 0; x < W; x++) row[x] = f[y * W + x];
-    const r = edt1d(row, W);
-    for (let x = 0; x < W; x++) f[y * W + x] = r[x];
-  }
-  return f;
-}
-
-function boxBlur(arr: Float32Array, W: number, H: number, r: number) {
-  const tmp = new Float32Array(W * H);
-  for (let y = 0; y < H; y++)
-    for (let x = 0; x < W; x++) {
-      let s = 0, c = 0;
-      for (let dx = -r; dx <= r; dx++) {
-        const xx = x + dx;
-        if (xx >= 0 && xx < W) { s += arr[y * W + xx]; c++; }
-      }
-      tmp[y * W + x] = s / c;
-    }
-  for (let y = 0; y < H; y++)
-    for (let x = 0; x < W; x++) {
-      let s = 0, c = 0;
-      for (let dy = -r; dy <= r; dy++) {
-        const yy = y + dy;
-        if (yy >= 0 && yy < H) { s += tmp[yy * W + x]; c++; }
-      }
-      arr[y * W + x] = s / c;
-    }
-}
+import { maskToSdf } from "./sdf-core.mjs";
 
 /**
  * @param img decoded image (the form SVG)
@@ -126,24 +57,8 @@ export function buildSdf(
   g.drawImage(img, fx, fy, fw, fh);
   const a = g.getImageData(0, 0, RES, RES).data;
 
-  const inside = new Uint8Array(RES * RES), outside = new Uint8Array(RES * RES);
-  for (let i = 0; i < RES * RES; i++) {
-    const f = a[i * 4 + 3] > 40 ? 1 : 0;
-    inside[i] = f;
-    outside[i] = f ? 0 : 1;
-  }
-  const dOut = edt2d(outside, RES, RES); // inside pixels → dist to boundary
-  const dIn = edt2d(inside, RES, RES); // outside pixels → dist to boundary
-  const k = 1 / RES; // px → symbol units (frame = 1)
-  const sdf = new Float32Array(RES * RES);
-  for (let i = 0; i < RES * RES; i++) {
-    sdf[i] = (inside[i] ? -Math.sqrt(dOut[i]) : Math.sqrt(dIn[i])) * k;
-  }
-  if (blur > 0) { boxBlur(sdf, RES, RES, blur); boxBlur(sdf, RES, RES, blur); }
+  const inside = new Uint8Array(RES * RES);
+  for (let i = 0; i < RES * RES; i++) inside[i] = a[i * 4 + 3] > 40 ? 1 : 0;
 
-  // flip Y so texture v=0 = screen bottom (uploaded with no UNPACK_FLIP_Y)
-  const flip = new Float32Array(RES * RES);
-  for (let y = 0; y < RES; y++)
-    for (let x = 0; x < RES; x++) flip[(RES - 1 - y) * RES + x] = sdf[y * RES + x];
-  return flip;
+  return maskToSdf(inside, RES, RES, blur, 1 / RES) as Float32Array;
 }

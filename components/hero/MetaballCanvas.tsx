@@ -80,20 +80,32 @@ export function MetaballCanvas({ pillarNames }: { pillarNames: string[] }) {
     return () => mq.removeEventListener("change", update);
   }, []);
 
+  // The deterministic-capture params (?state/?capture/?pair) target the legacy
+  // scenes and take PRECEDENCE over the field flag, so the existing screenshot
+  // pipelines keep working even when combined with ?hero=field.
+  const fieldActive =
+    field && capture === null && preview === null && pair === null;
+
   useEffect(() => {
     // Deterministic stills force the scene on. Live: the raymarch is desktop-only
     // (heavy); the mesh is light enough to also run on mobile. Never on a "none"
     // tier (software / no WebGL → static SVG) or under reduced-motion.
     const forced = !!capture || preview !== null || pair !== null;
     const live = !reduced && (desktop || tech === "mesh");
-    // ?hero=field is a deliberate preview flag → always mounts (the 2D field is
-    // cheap enough to run on any tier; that's the whole point of the new engine).
-    setEnabled(field ? true : (forced || live) && tech !== "none");
-  }, [reduced, desktop, capture, preview, pair, tech, field]);
+    // ?hero=field is a deliberate preview flag → always mounts (the SDF-glass rest
+    // is cheap enough for any tier; on no-WebGL it degrades to the SVG fallback).
+    setEnabled(fieldActive ? true : (forced || live) && tech !== "none");
+  }, [reduced, desktop, capture, preview, pair, tech, fieldActive]);
 
-  // keyboard control is live-only (off during deterministic captures/previews)
+  // keyboard control is live-only (off during deterministic captures/previews).
+  // Also off in field mode for now: the SDF-glass rest doesn't respond to state
+  // stepping yet (Phase 3 wires it), so don't advertise inert shortcuts to AT.
   const interactive =
-    enabled && capture === null && preview === null && pair === null;
+    enabled &&
+    capture === null &&
+    preview === null &&
+    pair === null &&
+    !fieldActive;
 
   const step = useCallback(
     (delta: number) =>
@@ -168,18 +180,27 @@ export function MetaballCanvas({ pillarNames }: { pillarNames: string[] }) {
           style={{ opacity: hideFallback ? 0 : 1 }}
         />
         {enabled && (
-          <div className="metaball-canvas" data-glass-tech={field ? "field" : tech}>
-            {field ? (
+          <div
+            className="metaball-canvas"
+            data-glass-tech={fieldActive ? "field" : tech}
+          >
+            {fieldActive ? (
               // v1.2 §6.1: REST = the crisp mark SVG shaded as liquid glass via its
               // SDF (exact silhouette + holes; metaball material). The metaball field
               // is for the Phase-3 morph only — `?hero=fieldflat` shows it for debug.
+              // On context loss the fallback logo fades back in until restore.
               fieldFlat ? (
-                <MetaballField {...sceneProps} glass={false} />
+                <MetaballField
+                  {...sceneProps}
+                  glass={false}
+                  onContextLost={() => setReady(false)}
+                />
               ) : (
                 <SdfGlassField
                   {...sceneProps}
                   svgUrl="/brand/zirtuno-logo-mark.svg"
                   breathing={!reduced}
+                  onContextLost={() => setReady(false)}
                 />
               )
             ) : tech === "mesh" ? (

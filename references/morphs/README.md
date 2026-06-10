@@ -6,7 +6,8 @@ Each category folder keeps the original PNG and its traced SVG endpoint together
 
 - `original/` keeps the owner-provided source image.
 - `svg/` keeps the transparent cyan vector silhouette.
-- `public/brand/forms/{key}.svg` mirrors the final SVGs for runtime SDF/glass rendering.
+- `public/brand/forms/{key}.svg` mirrors the final SVGs for runtime SDF/glass
+  rendering (this references/ folder itself is never deployed).
 
 Trace settings:
 

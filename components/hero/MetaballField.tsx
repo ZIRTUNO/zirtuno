@@ -16,7 +16,7 @@
  * `onReady` + `glass` are honoured this phase; the rest are accepted and ignored.
  */
 
-import { useEffect, useRef } from "react";
+import { useEffect, useReducer, useRef } from "react";
 import { Renderer, Program, Mesh, Triangle } from "ogl";
 import { MARK_RAW } from "@/lib/webgl/symbols.data.mjs";
 import {
@@ -34,6 +34,8 @@ const MARK = MARK_RAW as { balls: number[][] };
 type FieldProps = {
   onReady?: () => void;
   glass?: boolean; // true = liquid glass (Phase 1), false = flat cyan (Phase 0)
+  /** Called when the WebGL context is lost (shell should re-show the fallback). */
+  onContextLost?: () => void;
   // accepted for drop-in parity with MetaballScene; unused this phase:
   capture?: "rest" | "breath" | "morph" | "ai" | null;
   previewState?: number | null;
@@ -65,13 +67,18 @@ function packBalls(balls: readonly (readonly number[])[]): {
 export default function MetaballField({
   onReady = () => {},
   glass = true,
+  onContextLost = () => {},
 }: FieldProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const readyRef = useRef(onReady);
-  // keep the latest onReady without re-creating the WebGL context each render
+  const lostRef = useRef(onContextLost);
+  // keep the latest callbacks without re-creating the WebGL context each render
   useEffect(() => {
     readyRef.current = onReady;
-  }, [onReady]);
+    lostRef.current = onContextLost;
+  }, [onReady, onContextLost]);
+  // bumping the epoch re-runs the GL setup with a fresh context (after a loss)
+  const [epoch, rebuild] = useReducer((x: number) => x + 1, 0);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -91,6 +98,14 @@ export default function MetaballField({
     canvas.style.height = "100%";
     canvas.style.display = "block";
     container.appendChild(canvas);
+
+    const onLost = (e: Event) => {
+      e.preventDefault(); // allow the context to be restored
+      lostRef.current();
+    };
+    const onRestored = () => rebuild();
+    canvas.addEventListener("webglcontextlost", onLost);
+    canvas.addEventListener("webglcontextrestored", onRestored);
 
     const { data: ballData, count } = packBalls(MARK.balls);
 
@@ -136,10 +151,12 @@ export default function MetaballField({
 
     return () => {
       ro.disconnect();
+      canvas.removeEventListener("webglcontextlost", onLost);
+      canvas.removeEventListener("webglcontextrestored", onRestored);
       gl.getExtension("WEBGL_lose_context")?.loseContext();
       if (canvas.parentNode) canvas.parentNode.removeChild(canvas);
     };
-  }, [glass]);
+  }, [glass, epoch]);
 
   return <div ref={containerRef} style={{ width: "100%", height: "100%" }} />;
 }

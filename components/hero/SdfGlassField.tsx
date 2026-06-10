@@ -5,28 +5,37 @@
  * form SVG as liquid GLASS by feeding its signed-distance field into the locked
  * glass-shading math (lib/webgl/sdf-glass-shader). Exact silhouette + exact holes
  * from the SVG; material identical to the metaball glass. Cheap: one static draw of
- * a full-screen triangle sampling an R32F SDF texture (built once at mount); subtle
- * breathing is a CSS transform, so there's no per-frame GPU cost. Raw WebGL2 (mirrors
- * scripts/capture-sdf.mjs); the metaball field stays for the Phase-3 morph only.
+ * a full-screen triangle sampling an R32F SDF texture (built once per SVG and
+ * cached); subtle breathing is a CSS transform, so there's no per-frame GPU cost.
+ * Raw WebGL2 (mirrors scripts/capture-sdf.mjs — same shared constants + sdf-core
+ * math, so the sign-off sheet is exactly what ships). The metaball field stays for
+ * the Phase-3 morph only.
+ *
+ * Hardening:
+ *  - R32F + LINEAR needs OES_texture_float_linear; without it (some mobile GPUs)
+ *    an incomplete texture samples as 0 → a half-fill wash. Falls back to NEAREST.
+ *  - On webglcontextlost we notify the shell (fallback logo fades back in) and
+ *    rebuild on webglcontextrestored, reusing the cached SDF (no EDT re-run).
  */
 
-import { useEffect, useRef } from "react";
+import { useEffect, useReducer, useRef } from "react";
 import {
   SDF_GLASS_VERT,
   SDF_GLASS_FRAG,
   SDF_THICK,
+  SDF_RES,
+  SDF_DRAW,
+  SDF_BLUR,
 } from "@/lib/webgl/sdf-glass-shader.mjs";
 import { buildSdf } from "@/lib/webgl/sdf";
-
-const RES = 768; // SDF texture resolution
-const DRAW = 0.82; // content fills this fraction (margin for the glass rim)
-const BLUR = 3; // SDF smoothing radius (px)
 
 type SdfGlassProps = {
   svgUrl: string;
   thick?: number;
   breathing?: boolean;
   onReady?: () => void;
+  /** Called when the WebGL context is lost (shell should re-show the fallback). */
+  onContextLost?: () => void;
   // accepted for drop-in parity with the other scenes; unused here:
   capture?: unknown;
   previewState?: number | null;
@@ -50,12 +59,20 @@ export default function SdfGlassField({
   thick = SDF_THICK,
   breathing = true,
   onReady = () => {},
+  onContextLost = () => {},
 }: SdfGlassProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const readyRef = useRef(onReady);
+  const lostRef = useRef(onContextLost);
   useEffect(() => {
     readyRef.current = onReady;
-  }, [onReady]);
+    lostRef.current = onContextLost;
+  }, [onReady, onContextLost]);
+
+  // cache the built SDF per URL so a context restore skips the EDT (~100ms)
+  const sdfCache = useRef<{ url: string; data: Float32Array } | null>(null);
+  // bumping the epoch re-runs the GL setup with a fresh context (after a loss)
+  const [epoch, rebuild] = useReducer((x: number) => x + 1, 0);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -71,9 +88,21 @@ export default function SdfGlassField({
       premultipliedAlpha: false,
       antialias: false,
     });
-    if (!gl) return;
+    if (!gl) return; // no WebGL2 → the shell's SVG fallback stays visible
     container.appendChild(canvas);
-    gl.getExtension("OES_texture_float_linear");
+
+    const onLost = (e: Event) => {
+      e.preventDefault(); // allow the context to be restored
+      lostRef.current();
+    };
+    const onRestored = () => rebuild();
+    canvas.addEventListener("webglcontextlost", onLost);
+    canvas.addEventListener("webglcontextrestored", onRestored);
+
+    // LINEAR on float textures requires this extension; NEAREST still renders
+    // correctly (the shader samples at ~1-texel offsets), just slightly less smooth.
+    const floatLinear = !!gl.getExtension("OES_texture_float_linear");
+    const filter = floatLinear ? gl.LINEAR : gl.NEAREST;
 
     const prog = gl.createProgram()!;
     gl.attachShader(prog, compile(gl, gl.VERTEX_SHADER, SDF_GLASS_VERT));
@@ -91,8 +120,8 @@ export default function SdfGlassField({
 
     const tex = gl.createTexture();
     gl.bindTexture(gl.TEXTURE_2D, tex);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, filter);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, filter);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
 
@@ -101,7 +130,7 @@ export default function SdfGlassField({
     gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
     gl.uniform1i(U("iSDF"), 0);
     gl.uniform1f(U("iThick"), thick);
-    gl.uniform2f(U("iTexel"), 1 / RES, 1 / RES);
+    gl.uniform2f(U("iTexel"), 1 / SDF_RES, 1 / SDF_RES);
 
     let sdfReady = false;
     let announced = false;
@@ -131,29 +160,43 @@ export default function SdfGlassField({
     ro.observe(container);
     resize();
 
-    // build the SDF from the SVG, then upload + draw
-    const img = new Image();
-    img.decoding = "async";
-    img.src = svgUrl;
-    img
-      .decode()
-      .then(() => {
-        if (disposed) return;
-        const data = buildSdf(img, RES, DRAW, BLUR);
-        gl.bindTexture(gl.TEXTURE_2D, tex);
-        gl.texImage2D(gl.TEXTURE_2D, 0, gl.R32F, RES, RES, 0, gl.RED, gl.FLOAT, data);
-        sdfReady = true;
-        draw();
-      })
-      .catch(() => {});
+    const applySdf = (data: Float32Array) => {
+      if (disposed) return;
+      gl.bindTexture(gl.TEXTURE_2D, tex);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.R32F, SDF_RES, SDF_RES, 0, gl.RED, gl.FLOAT, data);
+      sdfReady = true;
+      draw();
+    };
+
+    if (sdfCache.current?.url === svgUrl) {
+      applySdf(sdfCache.current.data);
+    } else {
+      const img = new Image();
+      img.decoding = "async";
+      img.src = svgUrl;
+      img
+        .decode()
+        .then(() => {
+          if (disposed) return;
+          const data = buildSdf(img, SDF_RES, SDF_DRAW, SDF_BLUR);
+          sdfCache.current = { url: svgUrl, data };
+          applySdf(data);
+        })
+        .catch((err) => {
+          if (process.env.NODE_ENV !== "production")
+            console.warn("SdfGlassField: failed to load form SVG", svgUrl, err);
+        });
+    }
 
     return () => {
       disposed = true;
       ro.disconnect();
+      canvas.removeEventListener("webglcontextlost", onLost);
+      canvas.removeEventListener("webglcontextrestored", onRestored);
       gl.getExtension("WEBGL_lose_context")?.loseContext();
       if (canvas.parentNode) canvas.parentNode.removeChild(canvas);
     };
-  }, [svgUrl, thick]);
+  }, [svgUrl, thick, epoch]);
 
   return (
     <div

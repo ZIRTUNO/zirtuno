@@ -20,6 +20,17 @@
 > **NEW CRITICAL-PATH DEPENDENCY:** 8 clean **SVGs** of the images-2/3 forms, with real holes (counter, fissure, brackets, window interior, rings, column gaps). Source = owner-provided vectors if they exist, else vectorize images 2/3 (trace the flat silhouettes, clean up). Nothing downstream can start without these.
 > **Supersedes below:** §10 (forms are SVG sources, not hand-packed metaballs), §5 (shader fed metaball OR SDF), §6.1 (now all 8 forms), §3 (morph = crossfade-through-bridge). Engine + glass shading stay locked.
 
+> ### Update v1.3 (2026-06-10) — v1.2 implemented + hardening pass (what actually shipped)
+> **SDF-glass rest is built and verified** (sheet + live, all 8 forms). The as-built file map (supersedes §9's plan):
+> - `public/brand/forms/{key}.svg` — the 7 owner-traced form SVGs (runtime); mark = `public/brand/zirtuno-logo-mark.svg`. Reference originals + per-category SVGs + previews live in **`references/morphs/`** (NOT in `public/` — never deployed). Regenerate via `scripts/prepare-morph-assets.mjs`.
+> - `lib/webgl/sdf-glass-shader.mjs` — SDF-fed glass fragment shader; the lighting mirrors the LOCKED `field-shader.mjs` glass branch byte-for-byte (keep in sync). Also exports the shared rest constants `SDF_RES / SDF_DRAW / SDF_BLUR / SDF_THICK` so the capture sheet renders exactly what ships.
+> - `lib/webgl/sdf-core.mjs` — the single exact-EDT + blur implementation (pure functions; the harness injects this source). `lib/webgl/sdf.ts` — browser rasterise/bbox-normalise → `buildSdf()`.
+> - `components/hero/SdfGlassField.tsx` — the live rest renderer (one static draw; CSS breathing; SDF cached per URL). Hardened: `OES_texture_float_linear` fallback to NEAREST, and `webglcontextlost/restored` recovery (fallback logo re-shows via `onContextLost`, rebuild on restore). `components/hero/MetaballField.tsx` gets the same context-loss recovery.
+> - `scripts/capture-sdf.mjs` (8-form glass sheet) + `scripts/capture-field-live.mjs` (live in-app shots).
+> - Gating: `?hero=field` previews the new hero; the deterministic capture params (`?state/?capture/?pair`) take precedence over it, and keyboard/aria stepping is suppressed in field mode until Phase 3 wires states.
+> - **Legacy decoupled:** the retiring raymarch/mesh paths now read a FROZEN snapshot (`lib/webgl/symbols-legacy.data.mjs` via `symbols.ts`); `symbols.data.mjs` is free to evolve as the field morph endpoints. Retired/removed: `trace-icons.mjs`, `capture-symbols.mjs`, `author-mark/forms.mjs`, `symbols.generated.json`.
+> **Phase 3 prep (pending owner go-ahead):** regenerate the morph ball-clouds FROM the form SDFs so endpoints register with the rest SVGs (the current clouds predate the owner SVGs and will pop at the crossfade); move SDF building off the main thread (worker or build-time bake — 8 forms × ~100 ms EDT); integrate field-hero gating with `gpu-tier` when it becomes the default.
+
 ---
 
 ## 0. Why the last attempt didn't land (diagnosis)

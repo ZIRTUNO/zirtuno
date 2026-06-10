@@ -1,9 +1,9 @@
-// Screenshot the LIVE hero metaball (the real OGL MetaballField in Next), to
-// confirm the new field engine renders in the app. Usage (dev server running):
+// Screenshot the LIVE field hero in the real Next app (dev server running):
 //   node scripts/capture-field-live.mjs
-// Hits /en?hero=field (glass) and /en?hero=fieldflat (flat); writes
-// captures/field-live-glass.png + field-live-flat.png (the [data-hero-metaball]
-// stage only). Also samples requestAnimationFrame timing for a rough fps read.
+// ?hero=field      → the SDF-GLASS resting mark (SdfGlassField, v1.2 §6.1)
+// ?hero=fieldflat  → the flat metaball field (MetaballField, morph-layer debug)
+// Writes captures/field-live-glass.png + field-live-flat.png (the
+// [data-hero-metaball] stage only) + a rough requestAnimationFrame fps read.
 
 import { chromium } from "playwright";
 import fs from "node:fs";

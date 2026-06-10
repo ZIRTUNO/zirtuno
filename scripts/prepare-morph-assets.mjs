@@ -7,7 +7,9 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.join(__dirname, "..");
 const SOURCE_DIR =
   process.argv[2] ?? "C:/Users/pedro/Desktop/02_Clientes/Zirtuno ASSETS/Morphs DEFINITIVE";
-const OUT_ROOT = path.join(ROOT, "public", "brand", "morphs");
+// Reference set (originals + per-category SVGs + previews) lives OUTSIDE public/
+// so it isn't deployed; only the runtime mirrors in public/brand/forms ship.
+const OUT_ROOT = path.join(ROOT, "references", "morphs");
 const FORMS_DIR = path.join(ROOT, "public", "brand", "forms");
 const PREVIEW_DIR = path.join(OUT_ROOT, "_previews");
 
@@ -22,7 +24,7 @@ const MORPHS = [
     key: "web",
     slug: "web-design",
     source: "WebDESIGN.png",
-    labelPt: "Web Design & Experiencia Digital",
+    labelPt: "Web Design & Experiência Digital",
     labelEn: "Web Design & Digital Experience",
     represents:
       "Browser/interface form for sites, landing pages, ecommerce, portals, and digital product experiences.",
@@ -42,7 +44,7 @@ const MORPHS = [
     key: "ai",
     slug: "ai",
     source: "AI.png",
-    labelPt: "Inteligencia Artificial",
+    labelPt: "Inteligência Artificial",
     labelEn: "Artificial Intelligence",
     represents:
       "AI-brain form for agents, chatbots, intelligent automation, and assisted decision systems.",
@@ -52,7 +54,7 @@ const MORPHS = [
     key: "automation",
     slug: "automation",
     source: "Automation.png",
-    labelPt: "Automacao & Integracoes",
+    labelPt: "Automação & Integrações",
     labelEn: "Automation & Integrations",
     represents:
       "Cycle/loop form for process automation, integrations, CRM flows, and connected operations.",
@@ -399,7 +401,8 @@ Each category folder keeps the original PNG and its traced SVG endpoint together
 
 - \`original/\` keeps the owner-provided source image.
 - \`svg/\` keeps the transparent cyan vector silhouette.
-- \`public/brand/forms/{key}.svg\` mirrors the final SVGs for runtime SDF/glass rendering.
+- \`public/brand/forms/{key}.svg\` mirrors the final SVGs for runtime SDF/glass
+  rendering (this references/ folder itself is never deployed).
 
 Trace settings:
 
@@ -500,7 +503,7 @@ async function main() {
 
   const manifest = {
     sourceDir: SOURCE_DIR,
-    outputDir: "public/brand/morphs",
+    outputDir: "references/morphs",
     runtimeDir: "public/brand/forms",
     trace: {
       threshold: TRACE_THRESHOLD,
@@ -538,8 +541,8 @@ async function main() {
       represents: morph.represents,
       sourceFile: morph.source,
       categoryDir: categoryName,
-      original: `public/brand/morphs/${originalRelative}`,
-      svg: `public/brand/morphs/${svgRelative}`,
+      original: `references/morphs/${originalRelative}`,
+      svg: `references/morphs/${svgRelative}`,
       runtimeSvg: `public/brand/forms/${morph.key}.svg`,
       originalRelative,
       svgRelative,

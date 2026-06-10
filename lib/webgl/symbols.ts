@@ -1,12 +1,13 @@
-// Circle-field symbol targets for the seven service morph states.
-// These are intentionally metaball-native: each silhouette is built from soft
-// circular field contributors, matching the OGL reference style.
+// Circle-field symbol targets for the LEGACY hero paths (the raymarched
+// MetaballScene + the morph-target mesh in mesh-states) — typed loader + GLSL
+// generator over the FROZEN snapshot in ./symbols-legacy.data.mjs.
 //
-// The raw circle data lives in plain ESM (./symbols.data.mjs) so the Next app and
-// the capture harness (scripts/capture-symbols.mjs) share ONE source of truth;
-// this module attaches types and generates the GLSL the glass shader consumes.
+// Frozen on purpose: the legacy scenes were visually verified against that exact
+// data, while ./symbols.data.mjs now evolves as the NEW field hero's morph
+// endpoints (metaball-morph-spec v1.2). This whole module retires with
+// MetaballScene in Phase 5.
 
-import { MARK_RAW, PILLARS_RAW, ALL_RAW } from "./symbols.data.mjs";
+import { MARK_RAW, PILLARS_RAW, ALL_RAW } from "./symbols-legacy.data.mjs";
 
 export type MetaballSymbolKey =
   | "web"
