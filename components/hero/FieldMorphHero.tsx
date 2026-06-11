@@ -1,27 +1,24 @@
 "use client";
 
 /**
- * FieldMorphHero — the morphing field hero (metaball-morph-spec Phase 3, §3/§4 +
- * v1.2 §6.1). Two stacked WebGL2 layers inside one breathing/leaning wrapper:
+ * FieldMorphHero — the living metaball hero (morph-spec v1.5 direction). ONE
+ * always-visible field layer (the LOCKED 48-ball inverse-square glass shader):
  *
- *   - SDF layer (top): the current form's crisp SVG shaded as liquid glass via its
- *     signed-distance field (LOCKED sdf-glass-shader). Visible at REST.
- *   - FIELD layer (bottom): the 48-ball inverse-square metaball field (LOCKED
- *     field-shader). Visible only during the MORPH — the liquid melt.
- *
- * A transition A→B (spec v1.2 mechanics): the SDF(A) fades out (~200 ms) while the
- * field fades in already melting from A's ball-cloud toward B's; the balls lerp
- * for DURATIONS.morph with min-travel matching (§3.2, greedy nearest-neighbour,
- * cached per transition), regional left-to-right stagger and radius-leads-position
- * (§3.3); on arrival the SDF(B) fades in on top, sharpening the liquid into the
- * crisp form. Both layers share the same content-bbox fit, so endpoints register.
+ *   - REST: the field holds the current form's ball-cloud, alive — per-droplet
+ *     low-frequency micro-jitter (§4, ≤0.006), the CSS breath (±2 %), and the
+ *     pointer lean (≤4 %). It never freezes into a vector — the owner's form
+ *     SVGs are the FIDELITY REFERENCE the clouds are generated from
+ *     (scripts/generate-morph-endpoints.mjs), not a rest renderer.
+ *   - MORPH: the same droplets lerp to the next form (min-travel matching,
+ *     left-to-right stagger, radius-leads-position, arrive ease) — and because
+ *     melts start from the droplets' LIVE positions, rest → melt → rest is one
+ *     continuous liquid with no crossfade and no snap.
  *
  * State machine (§4): rest (dwell DURATIONS.autocycle) → morph → rest…; pauses
  * off-screen (`play`) and while hovered; `manualState` (keyboard) retargets even
- * mid-morph. The wrapper breathes (CSS, ±2 %) and leans ≤4 % toward the pointer.
- * No rAF at rest — the only continuous animation is the CSS breath.
- *
- * `frozenPair` renders one deterministic mid-morph frame (QA: ?fpair=a-b-m).
+ * mid-melt. FPS watchdog: full → lite (flat-cyan, smaller buffer) → stop — it
+ * degrades, it never freezes. `frozenPair` renders one deterministic frame
+ * (QA: ?fpair=a-b-m; ?fstate=N maps to [N,N,1] in the shell).
  */
 
 import { useEffect, useReducer, useRef } from "react";
@@ -32,15 +29,6 @@ import {
   FIELD_ISO,
   FIELD_FRAME,
 } from "@/lib/webgl/field-shader.mjs";
-import {
-  SDF_GLASS_VERT,
-  SDF_GLASS_FRAG,
-  SDF_THICK,
-  SDF_RES,
-  SDF_DRAW,
-  SDF_BLUR,
-} from "@/lib/webgl/sdf-glass-shader.mjs";
-import { buildSdfAsync } from "@/lib/webgl/sdf";
 import { ALL_RAW } from "@/lib/webgl/symbols.data.mjs";
 import { STATE_COUNT } from "@/lib/webgl/states";
 import { DURATIONS } from "@/lib/animation/durations";
@@ -49,10 +37,11 @@ import { EASINGS, EASE_POINTS } from "@/lib/animation/easings";
 const N = FIELD_N;
 const HOLD = DURATIONS.autocycle; // rest dwell (ms)
 const TRANS = DURATIONS.morph; // melt duration (ms)
-const FADE = DURATIONS.micro; // layer crossfade (ms)
 const STAGGER = 0.25; // fraction of the timeline spent sweeping the stagger
 const RADIUS_LEAD = 1.18; // radius finishes ~18% ahead of position (§3.3)
 const LEAN = 0.04; // pointer lean, fraction of the stage (§4)
+const JITTER = 0.005; // idle per-droplet micro-jitter amplitude (§4, ≤0.006)
+const JITTER_RAMP = 1500; // ms to fade the jitter in after arriving at rest
 
 type Ball = readonly [number, number, number];
 type Cloud = readonly Ball[];
@@ -60,9 +49,20 @@ type Cloud = readonly Ball[];
 const CLOUDS: Cloud[] = ALL_RAW.map(
   (s: { balls: number[][] }) => s.balls as unknown as Cloud,
 );
-const SVG_URLS: string[] = ALL_RAW.map((s: { key: string }) =>
-  s.key === "mark" ? "/brand/zirtuno-logo-mark.svg" : `/brand/forms/${s.key}.svg`,
-);
+
+// deterministic per-droplet jitter parameters (slow, organic, no allocation/frame)
+const JIT = Array.from({ length: N }, (_, i) => {
+  const h = (n: number) => {
+    const x = Math.sin(i * 12.9898 + n * 78.233) * 43758.5453;
+    return x - Math.floor(x);
+  };
+  return {
+    fx: 0.4 + 0.5 * h(1), // rad/s
+    fy: 0.4 + 0.5 * h(2),
+    px: h(3) * Math.PI * 2,
+    py: h(4) * Math.PI * 2,
+  };
+});
 
 // ── small math helpers ─────────────────────────────────────────────────────────
 const clamp01 = (x: number) => (x < 0 ? 0 : x > 1 ? 1 : x);
@@ -97,11 +97,12 @@ function cubicBezier(p1x: number, p1y: number, p2x: number, p2y: number) {
 const arrive = cubicBezier(...(EASE_POINTS.arrive as readonly number[] as [number, number, number, number]));
 
 /** Min-travel droplet matching (§3.2): greedy nearest-neighbour, O(N² log N). */
-function matchClouds(A: Cloud, B: Cloud): number[] {
+function matchClouds(A: ArrayLike<number>[] | Cloud, B: Cloud): number[] {
   const pairs: [number, number, number][] = [];
   for (let i = 0; i < N; i++)
     for (let j = 0; j < N; j++) {
-      const dx = A[i][0] - B[j][0], dy = A[i][1] - B[j][1];
+      const dx = (A[i] as ArrayLike<number>)[0] - B[j][0];
+      const dy = (A[i] as ArrayLike<number>)[1] - B[j][1];
       pairs.push([dx * dx + dy * dy, i, j]);
     }
   pairs.sort((a, b) => a[0] - b[0]);
@@ -117,7 +118,7 @@ function matchClouds(A: Cloud, B: Cloud): number[] {
   return perm;
 }
 
-// ── minimal GL plumbing (one fullscreen triangle per layer) ────────────────────
+// ── minimal GL plumbing (one fullscreen triangle) ──────────────────────────────
 type Layer = {
   canvas: HTMLCanvasElement;
   gl: WebGL2RenderingContext;
@@ -128,8 +129,7 @@ type Layer = {
 function makeLayer(container: HTMLElement, vert: string, frag: string): Layer | null {
   const canvas = document.createElement("canvas");
   canvas.style.cssText =
-    "position:absolute;inset:0;width:100%;height:100%;display:block;" +
-    `opacity:0;transition:opacity ${FADE}ms ${EASINGS.calm};`;
+    "position:absolute;inset:0;width:100%;height:100%;display:block;";
   const gl = canvas.getContext("webgl2", {
     alpha: true,
     premultipliedAlpha: false,
@@ -199,8 +199,7 @@ export default function FieldMorphHero({
     cb.current = { onReady, onActiveChange, onContextLost, onTierChange };
   }, [onReady, onActiveChange, onContextLost, onTierChange]);
 
-  // survives context-loss rebuilds and re-mounts of the effect:
-  const sdfDataCache = useRef<(Float32Array | null)[]>(new Array(STATE_COUNT).fill(null));
+  // stable rest→target droplet correspondences (jitter is ≪ ball spacing)
   const permCache = useRef(new Map<string, number[]>());
 
   // external props, readable from inside the machine without re-running the effect
@@ -209,8 +208,7 @@ export default function FieldMorphHero({
 
   // machine command surface — (re)created each effect run; prop-effects call into it
   const api = useRef<{ morphTo: (s: number) => void; setPlay: (p: boolean) => void } | null>(null);
-  // bumping the epoch re-runs the machine with fresh GL contexts (after a loss);
-  // the SDF data cache survives, so the rebuild skips the expensive EDT work
+  // bumping the epoch re-runs the machine with fresh GL contexts (after a loss)
   const [epoch, rebuild] = useReducer((x: number) => x + 1, 0);
 
   useEffect(() => {
@@ -220,73 +218,34 @@ export default function FieldMorphHero({
     let disposed = false;
     const dwell = dwellMs ?? HOLD;
 
-    // ── layers ──────────────────────────────────────────────────────────────
+    // ── the one liquid layer ─────────────────────────────────────────────────
     const field = makeLayer(container, FIELD_VERT, FIELD_FRAG);
-    const sdf = makeLayer(container, SDF_GLASS_VERT, SDF_GLASS_FRAG);
-    if (!field || !sdf) return; // no WebGL2 → shell's SVG fallback stays
-    sdf.canvas.style.zIndex = "1";
+    if (!field) return; // no WebGL2 → shell's SVG fallback stays
 
     const onLost = (e: Event) => {
       e.preventDefault(); // allow the context to be restored
       cb.current.onContextLost();
     };
-    const onRestored = () => rebuild(); // fresh contexts; machine restarts at rest
-    for (const l of [field, sdf]) {
-      l.canvas.addEventListener("webglcontextlost", onLost);
-      l.canvas.addEventListener("webglcontextrestored", onRestored);
-    }
+    const onRestored = () => rebuild(); // fresh context; machine restarts at rest
+    field.canvas.addEventListener("webglcontextlost", onLost);
+    field.canvas.addEventListener("webglcontextrestored", onRestored);
 
-    // ── tier (§7): "full" = glass melt at dpr ≤2 · "lite" = the locked shader's
-    // flat-cyan branch at dpr 1 × 0.75 render scale. Only the per-frame FIELD
-    // layer pays the lite cut; the SDF rest is a single static draw and stays
-    // glass on both. The watchdog below downshifts at runtime — never freezes.
+    // ── tier (§7): "full" = glass at dpr ≤2 · "lite" = the locked shader's
+    // flat-cyan branch at dpr 1 × 0.75 render scale. The watchdog downshifts at
+    // runtime — never freezes.
     let liveTier: "full" | "lite" = tier;
-    let stopped = false; // "none" downshift: melts stop; the crisp rest remains
+    let stopped = false; // "none" downshift: the liquid holds its last frame
 
-    // static uniforms
-    field.gl.useProgram(field.prog);
     field.gl.uniform1f(field.U("iFrame"), FIELD_FRAME);
     field.gl.uniform1f(field.U("iIso"), FIELD_ISO);
     const applyShading = () =>
       field.gl.uniform1f(field.U("iGlass"), liveTier === "full" ? 1 : 0);
     applyShading();
     field.gl.uniform1i(field.U("iCount"), N);
-    sdf.gl.useProgram(sdf.prog);
-    const sdfFloatLinear = !!sdf.gl.getExtension("OES_texture_float_linear");
-    sdf.gl.uniform1i(sdf.U("iSDF"), 0);
-    sdf.gl.uniform1f(sdf.U("iThick"), SDF_THICK);
-    sdf.gl.uniform2f(sdf.U("iTexel"), 1 / SDF_RES, 1 / SDF_RES);
 
-    // ── SDF textures (one per form, uploaded from the persistent data cache) ──
-    const textures: (WebGLTexture | null)[] = new Array(STATE_COUNT).fill(null);
-    const uploadSdf = (i: number, data: Float32Array) => {
-      const gl = sdf.gl;
-      const t = gl.createTexture();
-      gl.bindTexture(gl.TEXTURE_2D, t);
-      const f = sdfFloatLinear ? gl.LINEAR : gl.NEAREST;
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, f);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, f);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-      gl.texImage2D(gl.TEXTURE_2D, 0, gl.R32F, SDF_RES, SDF_RES, 0, gl.RED, gl.FLOAT, data);
-      textures[i] = t;
-    };
-
-    // ── draws ────────────────────────────────────────────────────────────────
-    const sdfDpr = Math.min(window.devicePixelRatio || 1, 2);
-    const fieldScale = () => (liveTier === "full" ? sdfDpr : 0.75); // px per css px
-    const drawSdf = (state: number) => {
-      const gl = sdf.gl;
-      gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
-      gl.uniform2f(sdf.U("iRes"), gl.drawingBufferWidth, gl.drawingBufferHeight);
-      gl.clearColor(0, 0, 0, 0);
-      gl.clear(gl.COLOR_BUFFER_BIT);
-      const t = textures[state];
-      if (t) {
-        gl.bindTexture(gl.TEXTURE_2D, t);
-        gl.drawArrays(gl.TRIANGLES, 0, 3);
-      }
-    };
+    // ── draw ─────────────────────────────────────────────────────────────────
+    const maxDpr = Math.min(window.devicePixelRatio || 1, 2);
+    const fieldScale = () => (liveTier === "full" ? maxDpr : 0.75); // px per css px
     const ballBuf = new Float32Array(N * 3);
     const drawField = () => {
       const gl = field.gl;
@@ -299,29 +258,26 @@ export default function FieldMorphHero({
     };
 
     // ── the machine ──────────────────────────────────────────────────────────
-    // current = the state whose cloud the field currently holds / is leaving;
-    // during a morph, `from` is a snapshot (supports mid-morph retargeting).
     let state = 0; // resting state
     // (cast launders the literal so flow analysis keeps the union inside closures)
     let phase = "rest" as "rest" | "morph";
-    let from: Ball[] = CLOUDS[0].map((b) => [...b] as unknown as Ball);
+    let from: number[][] = CLOUDS[0].map((b) => [...b]);
     let target = 0;
     let perm: number[] = [];
     let stagKey: number[] = [];
     let morphT = 0; // elapsed ms within the melt
+    let restT = 0; // elapsed ms at rest (ramps the jitter in)
     let lastTick = 0;
     let raf = 0;
     let timer: ReturnType<typeof setTimeout> | null = null;
-    let pendingSharpen = -1; // arrived, waiting for the target's SDF texture
     let hovering = false;
     let announcedReady = false;
-    let wdWarm = 0; // watchdog: frames seen this melt (skip the warm-up)
-    let wdSlow = 0; // watchdog: slow frames this melt
+    let wdWarm = 0; // watchdog: frames seen (skip the warm-up)
+    let wdSlow = 0; // watchdog: slow frames
 
     // FPS watchdog (§7) — downshift instead of freezing. full → lite swaps the
-    // melt to the flat-cyan branch at a smaller buffer mid-flight; lite → "none"
-    // lets the current melt finish, then stops the autocycle for the session
-    // (the crisp SDF rest remains — the hero never goes blank, never janks).
+    // liquid to the flat-cyan branch at a smaller buffer mid-flight; lite → the
+    // loop stops on the current frame (a still liquid, never a blank or a jank).
     const downshift = () => {
       wdSlow = 0;
       wdWarm = 0;
@@ -332,11 +288,27 @@ export default function FieldMorphHero({
         cb.current.onTierChange("lite");
       } else if (!stopped) {
         stopped = true;
+        if (timer) clearTimeout(timer);
+        timer = null;
         cb.current.onTierChange("none");
       }
     };
 
-    const setCloud = (p: number) => {
+    // rest cloud = the form + slow per-droplet drift (ramped in after arrival)
+    const setRestCloud = (nowMs: number) => {
+      const C = CLOUDS[state];
+      const ramp = clamp01(restT / JITTER_RAMP);
+      const amp = JITTER * ramp;
+      const t = nowMs / 1000;
+      for (let i = 0; i < N; i++) {
+        const j = JIT[i];
+        ballBuf[i * 3] = C[i][0] + amp * Math.sin(t * j.fx + j.px);
+        ballBuf[i * 3 + 1] = C[i][1] + amp * Math.sin(t * j.fy + j.py);
+        ballBuf[i * 3 + 2] = C[i][2];
+      }
+    };
+
+    const setMorphCloud = (p: number) => {
       // §3.3 — per-droplet stagger (left-to-right) + arrive ease + radius-leads
       const B = CLOUDS[target];
       for (let i = 0; i < N; i++) {
@@ -358,51 +330,57 @@ export default function FieldMorphHero({
       timer = setTimeout(() => morphTo((state + 1) % STATE_COUNT), dwell);
     };
 
-    const sharpen = () => {
-      // arrival: the SDF of the target fades in on top, the field fades out
-      state = target;
-      phase = "rest";
-      drawSdf(state);
-      sdf.canvas.style.opacity = "1";
-      field.canvas.style.opacity = "0";
-      scheduleNext();
-    };
-
     const tick = (now: number) => {
       raf = 0;
-      if (disposed || phase !== "morph") return;
-      if (!playRef.current) return; // paused mid-morph; resumed by setPlay
+      if (disposed || stopped || !playRef.current) return;
       const dt = now - lastTick;
-      morphT += dt;
       lastTick = now;
-      // watchdog sampling: only mid-melt, after a short warm-up
+      // watchdog sampling (continuous — rest and melt cost the same draw)
       if (++wdWarm > 5 && dt > 25 && ++wdSlow >= 12) downshift();
-      const p = clamp01(morphT / TRANS);
-      setCloud(p);
-      drawField();
-      if (p >= 1) {
-        if (textures[target]) sharpen();
-        else pendingSharpen = target; // SDF still building → hold the melt at B
-        return;
+      if (stopped) return; // downshifted to a still just now
+      if (phase === "morph") {
+        morphT += dt;
+        const p = clamp01(morphT / TRANS);
+        setMorphCloud(p);
+        drawField();
+        if (p >= 1) {
+          // arrival IS the rest — same droplets, same field, no handoff
+          state = target;
+          phase = "rest";
+          restT = 0;
+          cb.current.onActiveChange(state - 1);
+          scheduleNext();
+        }
+      } else {
+        restT += dt;
+        setRestCloud(now);
+        drawField();
+        if (!announcedReady) {
+          announcedReady = true;
+          cb.current.onReady();
+          scheduleNext();
+        }
       }
       raf = requestAnimationFrame(tick);
     };
 
+    const startLoop = () => {
+      if (raf || disposed || stopped || !playRef.current) return;
+      lastTick = performance.now();
+      raf = requestAnimationFrame(tick);
+    };
+
     const morphTo = (s: number) => {
-      if (disposed || s === target || s < 0 || s >= STATE_COUNT) return;
+      if (disposed || stopped || s < 0 || s >= STATE_COUNT) return;
+      if (phase === "rest" && s === state) return;
+      if (phase === "morph" && s === target) return;
       if (timer) clearTimeout(timer);
       timer = null;
-      pendingSharpen = -1;
-      if (phase === "morph") {
-        // retarget mid-melt: continue from the droplets' CURRENT positions
-        from = [];
-        for (let i = 0; i < N; i++)
-          from.push([ballBuf[i * 3], ballBuf[i * 3 + 1], ballBuf[i * 3 + 2]] as unknown as Ball);
-      } else {
-        from = CLOUDS[state].map((b) => [...b] as unknown as Ball);
-      }
-      // rest→target correspondences are stable → cache them (§3.2); a mid-melt
-      // retarget starts from live positions, so it's matched fresh every time.
+      // melts always start from the droplets' LIVE positions (jittered rest or
+      // mid-melt) → one continuous liquid, no snap.
+      from = [];
+      for (let i = 0; i < N; i++)
+        from.push([ballBuf[i * 3], ballBuf[i * 3 + 1], ballBuf[i * 3 + 2]]);
       const fromRest = phase === "rest";
       const cacheKey = `${state}->${s}`;
       let p = fromRest ? permCache.current.get(cacheKey) : undefined;
@@ -418,23 +396,15 @@ export default function FieldMorphHero({
       wdSlow = 0;
       phase = "morph";
       cb.current.onActiveChange(s - 1);
-      // melt out: field appears already moving; the crisp SDF dissolves
-      setCloud(0);
-      drawField();
-      field.canvas.style.opacity = "1";
-      sdf.canvas.style.opacity = "0";
-      lastTick = performance.now();
-      raf = requestAnimationFrame(tick);
+      startLoop();
     };
 
     api.current = {
       morphTo,
       setPlay: (p: boolean) => {
         if (p) {
-          if (phase === "morph" && !raf) {
-            lastTick = performance.now();
-            raf = requestAnimationFrame(tick);
-          } else if (phase === "rest") scheduleNext();
+          startLoop();
+          if (phase === "rest") scheduleNext();
         } else if (timer) {
           clearTimeout(timer);
           timer = null;
@@ -466,58 +436,23 @@ export default function FieldMorphHero({
     container.addEventListener("pointerleave", onLeave);
 
     // ── sizing ───────────────────────────────────────────────────────────────
-    const sizeCanvas = (l: Layer, scale: number) => {
+    const resize = () => {
+      const scale = fieldScale();
       const w = Math.max(1, Math.round((container.clientWidth || 1) * scale));
       const h = Math.max(1, Math.round((container.clientHeight || 1) * scale));
-      if (l.canvas.width !== w || l.canvas.height !== h) {
-        l.canvas.width = w;
-        l.canvas.height = h;
+      if (field.canvas.width !== w || field.canvas.height !== h) {
+        field.canvas.width = w;
+        field.canvas.height = h;
       }
-    };
-    const resize = () => {
-      sizeCanvas(sdf, sdfDpr);
-      sizeCanvas(field, fieldScale());
-      if (textures[state]) drawSdf(state);
-      if (phase === "morph") drawField();
+      // repaint immediately so resizes never flash an empty canvas
+      if (phase === "morph") setMorphCloud(clamp01(morphT / TRANS));
+      else setRestCloud(performance.now());
+      drawField();
     };
     const ro = new ResizeObserver(resize);
     ro.observe(container);
     resize();
-
-    // ── prefetch all 8 SDFs (worker-built; mark first → first paint) ─────────
-    (async () => {
-      for (let i = 0; i < STATE_COUNT; i++) {
-        if (disposed) return;
-        let data = sdfDataCache.current[i];
-        if (!data) {
-          try {
-            const img = new Image();
-            img.decoding = "async";
-            img.src = SVG_URLS[i];
-            await img.decode();
-            data = await buildSdfAsync(img, SDF_RES, SDF_DRAW, SDF_BLUR);
-            sdfDataCache.current[i] = data;
-          } catch {
-            continue; // missing form: melts still run; sharpen waits are skipped
-          }
-        }
-        if (disposed) return;
-        uploadSdf(i, data);
-        if (i === state && phase === "rest") {
-          drawSdf(state);
-          sdf.canvas.style.opacity = "1";
-          if (!announcedReady) {
-            announcedReady = true;
-            cb.current.onReady();
-            scheduleNext();
-          }
-        }
-        if (pendingSharpen === i && phase === "morph") {
-          pendingSharpen = -1;
-          sharpen();
-        }
-      }
-    })();
+    startLoop();
 
     return () => {
       disposed = true;
@@ -527,12 +462,10 @@ export default function FieldMorphHero({
       container.removeEventListener("pointerenter", onEnter);
       container.removeEventListener("pointermove", onMove);
       container.removeEventListener("pointerleave", onLeave);
-      for (const l of [field, sdf]) {
-        l.canvas.removeEventListener("webglcontextlost", onLost);
-        l.canvas.removeEventListener("webglcontextrestored", onRestored);
-        l.gl.getExtension("WEBGL_lose_context")?.loseContext();
-        l.canvas.remove();
-      }
+      field.canvas.removeEventListener("webglcontextlost", onLost);
+      field.canvas.removeEventListener("webglcontextrestored", onRestored);
+      field.gl.getExtension("WEBGL_lose_context")?.loseContext();
+      field.canvas.remove();
       api.current = null;
     };
   }, [frozenPair, dwellMs, tier, epoch]);
@@ -548,7 +481,7 @@ export default function FieldMorphHero({
     else api.current?.setPlay(playRef.current); // blur → resume the autocycle
   }, [manualState]);
 
-  // ── deterministic frozen mid-morph frame (?fpair=a-b-m) ────────────────────
+  // ── deterministic frozen frame (?fpair=a-b-m · ?fstate=N → [N,N,1]) ────────
   useEffect(() => {
     const container = containerRef.current;
     if (!container || !frozenPair) return;
@@ -560,8 +493,6 @@ export default function FieldMorphHero({
     gl.uniform1f(field.U("iIso"), FIELD_ISO);
     gl.uniform1f(field.U("iGlass"), 1);
     gl.uniform1i(field.U("iCount"), N);
-    field.canvas.style.transition = "none";
-    field.canvas.style.opacity = "1";
 
     const A = CLOUDS[a], B = CLOUDS[b];
     const perm = matchClouds(A, B);

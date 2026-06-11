@@ -80,57 +80,40 @@ await sheet.setContent(
 await sheet.waitForTimeout(300);
 await sheet.locator("body").screenshot({ path: path.join(OUT, "morph-frames-sheet.png") });
 
-// ── 2. fps during a LIVE melt (?fcycle=1 → dwell 2 s, melt 1.4 s) ─────────────
-// Wait until the FIELD layer is actually visible (a melt is running), then sample.
+// ── 2. fps of the LIVE liquid (rest renders per-frame too since v1.5 — the
+// rest jitter and the melt cost the same draw, so sample once the loop runs).
 // NOTE: headless Chrome rasterises WebGL in software here — run HEADLESS=false on
 // the target machine for a real-GPU number.
 await page.goto(`${BASE}/${LOCALE}?fcycle=1&ftier=full`, { waitUntil: "networkidle" });
-let fps = null;
-const tEnd = Date.now() + 15000;
-while (Date.now() < tEnd && fps == null) {
-  const melting = await page.evaluate(() => {
-    const cs = [...document.querySelectorAll("[data-hero-metaball] canvas")];
-    return cs.length === 2 && cs[0].style.opacity === "1";
-  });
-  if (melting) {
-    fps = await page.evaluate(
-      () =>
-        new Promise((resolve) => {
-          let frames = 0;
-          const t0 = performance.now();
-          const tick = () => {
-            frames++;
-            if (performance.now() - t0 < 800) requestAnimationFrame(tick);
-            else resolve(Math.round((frames * 1000) / (performance.now() - t0)));
-          };
-          requestAnimationFrame(tick);
-        }),
-    );
-  } else await page.waitForTimeout(120);
-}
-console.log(`fps during live melt: ${fps == null ? "no melt observed!" : `~${fps}`}`);
-
-// ── 3. keyboard smoke test: focus → ArrowRight announces + starts a melt ──────
-await page.goto(`${BASE}/${LOCALE}?ftier=full`, { waitUntil: "networkidle" });
-await page.waitForFunction(
-  () => {
-    const cs = [...document.querySelectorAll("[data-hero-metaball] canvas")];
-    return cs.length === 2 && cs[1].style.opacity === "1"; // resting SDF visible
-  },
-  { timeout: 20000 },
+await page.waitForSelector("[data-hero-metaball] canvas", { timeout: 20000 });
+await page.waitForTimeout(1200); // let the machine start its loop
+const fps = await page.evaluate(
+  () =>
+    new Promise((resolve) => {
+      let frames = 0;
+      const t0 = performance.now();
+      const tick = () => {
+        frames++;
+        if (performance.now() - t0 < 1200) requestAnimationFrame(tick);
+        else resolve(Math.round((frames * 1000) / (performance.now() - t0)));
+      };
+      requestAnimationFrame(tick);
+    }),
 );
+console.log(`fps of the live liquid: ~${fps}`);
+
+// ── 3. keyboard smoke test: focus → ArrowRight announces the next pillar ──────
+await page.goto(`${BASE}/${LOCALE}?ftier=full`, { waitUntil: "networkidle" });
+await page.waitForSelector("[data-hero-metaball] canvas", { timeout: 20000 });
+await page.waitForTimeout(800);
 await page.focus("[data-hero-metaball]");
 await page.keyboard.press("ArrowRight");
 await page.waitForTimeout(500);
 const kb = await page.evaluate(() => {
   const live = document.querySelector("span.sr-only[aria-live]");
-  const canvases = document.querySelectorAll("[data-hero-metaball] canvas");
-  const opacities = [...canvases].map((c) => c.style.opacity);
-  return { announced: live?.textContent ?? "", canvasOpacities: opacities };
+  return { announced: live?.textContent ?? "" };
 });
-console.log(
-  `keyboard: announced "${kb.announced}" · [field,sdf] opacities [${kb.canvasOpacities}] (expect 1,0 = melting)`,
-);
+console.log(`keyboard: announced "${kb.announced}" (expect the first pillar name)`);
 
 await browser.close();
 console.log("→ captures/morph-frames-sheet.png");

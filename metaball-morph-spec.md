@@ -38,6 +38,13 @@
 > - **Determinism for QA:** `?fstate=N` (one rest form) · `?fpair=a-b-m` (one frozen melt frame) · `?fcycle=1` (short dwell). Harness: `scripts/capture-morph-frames.mjs` (mid-frame grid of all 8 transitions + melt-fps + keyboard smoke test; pre-seeds the gpu-tier cache so the probe can't pollute readings — note headless Chrome rasterises WebGL in software, run `HEADLESS=false` for real-GPU numbers).
 > - **Checkpoint measured:** all 24 mid-frames read as connected liquid (no pops); melt ≈ **101 fps on the Intel UHD**; keyboard announces + melts. Remaining for the hero milestone: owner motion sign-off, then Phase 4 (probe/tiers/watchdog) and the default-hero flip.
 
+> ### Update v1.5 (2026-06-11) — the liquid never freezes (owner correction at the R0 sign-off run)
+> Seeing v1.2's SVG-at-rest hybrid live, the owner rejected the handoff: *"the animation just suddenly becomes the SVG image — the SVGs are a reference so you can match the metaballs."* **Supersedes v1.2's rest mechanics:**
+> - **The metaball field IS the hero at all times.** One always-visible field layer; REST holds the current form's ball-cloud **alive** — per-droplet low-frequency micro-jitter (§4, amp 0.005, ramped in over ~1.5 s after arrival), the CSS breath, the pointer lean. Melts start from the droplets' LIVE positions → rest → melt → rest is one continuous liquid with **no crossfade, no sharpening handoff, no SDF layer**.
+> - **The owner form SVGs are the FIDELITY REFERENCE** the 48-ball clouds are generated from (`generate-morph-endpoints.mjs`) and iterated against (`capture-rest-forms.mjs` renders every resting metaball form beside its reference SVG). Form fidelity is the active art-direction workstream — screenshot rounds per AGENTS.
+> - **SDF-glass survives only as the reduced-motion static mark** in the hero (AGENTS rule 7) and remains available to R1 chapter work. `?fstate=N` now freezes the **metaball** rest form (was the SVG-glass still).
+> - Rest now renders per-frame (same draw cost as the melt — ~101 fps measured on the Intel UHD); the §7 watchdog samples continuously and downshifts full → lite → still-frame. The v1.4 crossfade double-exposure item is **obsolete** (no crossfade exists).
+
 ---
 
 ## 0. Why the last attempt didn't land (diagnosis)

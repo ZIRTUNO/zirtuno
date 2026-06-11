@@ -6,7 +6,7 @@ import dynamic from "next/dynamic";
 import { useReducedMotion } from "@/lib/animation/reduced-motion";
 import { useInView } from "@/lib/animation/use-in-view";
 import { detectFieldTier, setFieldTier, type FieldTier } from "@/lib/webgl/field-tier";
-import { METABALL_STATES, STATE_COUNT } from "@/lib/webgl/states";
+import { STATE_COUNT } from "@/lib/webgl/states";
 import { LogoMark } from "./LogoMark";
 import { PillarIndicator } from "./PillarIndicator";
 import { PerfOverlay } from "./PerfOverlay";
@@ -148,16 +148,20 @@ export function MetaballCanvas({ pillarNames }: { pillarNames: string[] }) {
           <div className="metaball-canvas" data-glass-tech={tier ?? "none"}>
             {fFlat ? (
               <MetaballField {...sharedProps} glass={false} />
-            ) : fPair ? (
-              <FieldMorphHero {...sharedProps} frozenPair={fPair} />
-            ) : reduced || fState !== null ? (
+            ) : fPair !== null || fState !== null ? (
+              // deterministic stills: a frozen melt frame (?fpair) or a frozen
+              // REST form (?fstate=N → the metaball cloud at rest, m=1) — the
+              // fidelity-iteration tool against the reference SVGs
+              <FieldMorphHero
+                {...sharedProps}
+                frozenPair={fPair ?? [fState!, fState!, 1]}
+              />
+            ) : reduced ? (
+              // reduced motion: a static crisp mark (AGENTS rule 7) — the only
+              // place the SVG-glass renderer remains in the hero
               <SdfGlassField
                 {...sharedProps}
-                svgUrl={
-                  fState != null && fState > 0
-                    ? `/brand/forms/${METABALL_STATES[fState].key}.svg`
-                    : "/brand/zirtuno-logo-mark.svg"
-                }
+                svgUrl="/brand/zirtuno-logo-mark.svg"
                 breathing={false}
               />
             ) : (
