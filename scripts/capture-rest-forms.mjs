@@ -1,9 +1,8 @@
-// Rest-form fidelity sheet (morph-spec v1.5): the hero now RESTS as live
-// metaballs — the owner SVGs are the fidelity REFERENCE the ball-clouds must
-// match, not a rest renderer. This captures every resting metaball form
-// (?fstate=N, the frozen rest frame) next to its reference SVG so the form
-// fidelity can be iterated round-by-round (AGENTS: signature moments need
-// screenshot feedback). Dev server must be running:
+// Rest-form fidelity sheet (morph-spec v1.6): the hero rests as the EXACT
+// vector forms rendered as living liquid glass (warped SDF). This captures
+// every resting form (?fstate=N, the frozen rest frame — zero warp, pixel-
+// exact) next to its reference SVG to prove the match and catch regressions.
+// Dev server must be running:
 //   node scripts/capture-rest-forms.mjs
 // Writes captures/rest-forms-sheet.png (+ per-form rest-<key>.png).
 
@@ -82,7 +81,7 @@ await sheet.setContent(
          <div style="width:118px">${svg}</div>
        </div>
      </div>
-     <div style="font:12px ui-monospace,monospace;color:#00e3fe">${key} · metaball vs reference</div>
+     <div style="font:12px ui-monospace,monospace;color:#00e3fe">${key} · rest vs reference</div>
    </div>`,
      )
      .join("")}

@@ -59,16 +59,18 @@ node scripts/capture-mesh.mjs
 ## Current State
 
 - The site builds on Next.js 16.2.7 with Turbopack.
-- **The FIELD system is the default hero** (R0 of `improvement-plan.md`, per
-  `metaball-morph-spec.md` v1.5): the hero is ONE always-live metaball field —
-  it rests as each form's 48-ball cloud (alive: micro-jitter, breath, pointer
-  lean) and melts between forms (`FieldMorphHero`). The owner form SVGs in
-  `public/brand/forms/` are the fidelity REFERENCE the clouds are generated
-  from, not a rest renderer; `SdfGlassField` remains only as the reduced-motion
-  static mark. Tiers come from a runtime probe (`lib/webgl/field-tier.ts` —
-  full glass / flat-cyan lite / static-SVG none) with an FPS watchdog that
-  downshifts instead of freezing. Hero QA params: `?fstate=N` ·
-  `?fpair=a-b-m` · `?fcycle=1` · `?fflat=1` · `?ftier=`.
+- **The hero is the owner's EXACT vector forms as living liquid glass**
+  (`metaball-morph-spec.md` v1.6, default since R0): each form's SVG
+  (`public/brand/forms/` + the mark) is rendered via its signed-distance field
+  through the locked glass shading — alive at rest (slow domain warp, breath,
+  pointer lean) and melting between forms by blending the distance fields with
+  a mid-melt droplet pinch (`FieldMorphHero`). Rest fidelity is pixel-exact by
+  construction (`captures/rest-forms-sheet.png`). Tiers come from a runtime
+  probe (`lib/webgl/field-tier.ts`) with an FPS watchdog that downshifts
+  instead of freezing; reduced motion gets the static mark. The 48-ball
+  metaball system remains for the R1 chapter drivers (scatter/converge),
+  not for the hero forms. Hero QA params: `?fstate=N` · `?fpair=a-b-m` ·
+  `?fcycle=1` · `?fflat=1` · `?ftier=`.
 - Intent CTAs on the homepage smooth-scroll to `#contact` via Lenis and set the
   intent with `history.replaceState` (no router navigation); cross-page CTAs
   keep the routed path. The labeled contact submit is canonical; the metaball

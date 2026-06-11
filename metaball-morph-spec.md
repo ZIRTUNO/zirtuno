@@ -45,6 +45,13 @@
 > - **SDF-glass survives only as the reduced-motion static mark** in the hero (AGENTS rule 7) and remains available to R1 chapter work. `?fstate=N` now freezes the **metaball** rest form (was the SVG-glass still).
 > - Rest now renders per-frame (same draw cost as the melt — ~101 fps measured on the Intel UHD); the §7 watchdog samples continuously and downshifts full → lite → still-frame. The v1.4 crossfade double-exposure item is **obsolete** (no crossfade exists).
 
+> ### Update v1.6 (2026-06-11) — EXACT forms, living liquid (owner: "needs to be exact like the symbols I sent")
+> v1.5's metaball rest registered with the references but read blobbier; the owner requires the forms **exact**. A 48-ball additive field cannot be pixel-exact (three generations of evidence) — so the hero's liquid is now the **vector forms themselves**:
+> - **Field source = the owner SVGs' signed-distance fields** (the existing worker-built R32F pipeline), rendered through the LOCKED glass lighting. `sdf-glass-shader.mjs` gained field-source-only uniforms (lighting byte-identical): a second SDF sampler + `iMix` (the melt blends the two distance fields), a slow procedural **domain warp** (`iTime`/`iWarp` — the liquid is alive at rest, agitated mid-melt), and a mid-melt **pinch** (`iPinch` — thin connections snap into droplets and reform). All default to 0 → the v1.2 static renderer and its harnesses are unchanged.
+> - **Rest is pixel-exact by construction** (warp ≈2 px of living wobble; `?fstate` stills render at zero warp — see `captures/rest-forms-sheet.png`, every form beside its reference). **Melts are exact-to-exact**: organic level-set dissolves with droplet pinch-off (`captures/morph-frames-sheet.png`). The form-fidelity workstream is CLOSED — there is nothing left to approximate.
+> - `FieldMorphHero` machine: same state machine/keyboard/hover/watchdog; mid-melt retargets are QUEUED to arrival (no snaps). Lite tier = resolution only (the SDF renderer is ~10× cheaper than the 48-ball loop). Mid-frames m∈{0.25,0.5,0.75} verified for all 8 transitions.
+> - The 48-ball metaball system (`field-shader.mjs`, `MetaballField`, `symbols.data.mjs`) is **no longer in the hero's live path** — it remains for `?fflat=1` debug and the R1 chapter drivers (scatter/converge/exhale), which are its native strength and don't need exact forms.
+
 ---
 
 ## 0. Why the last attempt didn't land (diagnosis)
