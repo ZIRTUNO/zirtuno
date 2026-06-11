@@ -34,25 +34,32 @@ const ctx = await browser.newContext({
   viewport: { width: 1280, height: 900 },
   deviceScaleFactor: 2,
 });
+// pre-seed the legacy gpu-tier cache (the OTHER chapters still probe it until R1)
+// so its readPixels stall can't pollute these captures; the hero's own tier is
+// forced via ?ftier=full (headless Chrome rasterises WebGL in software).
+await ctx.addInitScript(() => {
+  try { sessionStorage.setItem("zr-gpu-tier-v5", "lite"); } catch { /* ignore */ }
+});
 const page = await ctx.newPage();
 page.on("pageerror", (e) => console.error("PAGE ERROR:", e.message));
 page.on("console", (m) => {
   if (m.type() === "error") console.error("CONSOLE:", m.text());
 });
 
-for (const [mode, label] of [["field", "glass"], ["fieldflat", "flat"]]) {
-  await page.goto(`${BASE}/${LOCALE}?hero=${mode}`, { waitUntil: "networkidle" });
+// the field hero is the DEFAULT path since R0 — no ?hero gate
+for (const [params, label] of [["?ftier=full", "glass"], ["?fflat=1&ftier=full", "flat"]]) {
+  await page.goto(`${BASE}/${LOCALE}${params}`, { waitUntil: "networkidle" });
   const stage = page.locator("[data-hero-metaball]");
   await stage.waitFor({ state: "visible", timeout: 15000 });
   // give the canvas a beat to mount + draw
   await page.waitForTimeout(900);
   await stage.screenshot({ path: path.join(OUT, `field-live-${label}.png`) });
-  console.log(`captured field-live-${label}.png  (/${LOCALE}?hero=${mode})`);
+  console.log(`captured field-live-${label}.png  (/${LOCALE}${params})`);
 }
 
-// rough fps probe on the glass route (the field re-renders only on resize this
-// phase, so this mostly confirms the page isn't pinned/janky)
-await page.goto(`${BASE}/${LOCALE}?hero=field`, { waitUntil: "networkidle" });
+// rough fps probe on the default route (rest is a static draw; this mostly
+// confirms the page isn't pinned/janky)
+await page.goto(`${BASE}/${LOCALE}?ftier=full`, { waitUntil: "networkidle" });
 const fps = await page.evaluate(
   () =>
     new Promise((resolve) => {

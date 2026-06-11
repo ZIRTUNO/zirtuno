@@ -51,7 +51,7 @@ const rows = [];
 for (const [a, b] of TRANSITIONS) {
   const cells = [];
   for (const m of MIDS) {
-    await page.goto(`${BASE}/${LOCALE}?hero=field&fpair=${a}-${b}-${m}`, {
+    await page.goto(`${BASE}/${LOCALE}?fpair=${a}-${b}-${m}&ftier=full`, {
       waitUntil: "networkidle",
     });
     const stage = page.locator("[data-hero-metaball]");
@@ -84,7 +84,7 @@ await sheet.locator("body").screenshot({ path: path.join(OUT, "morph-frames-shee
 // Wait until the FIELD layer is actually visible (a melt is running), then sample.
 // NOTE: headless Chrome rasterises WebGL in software here — run HEADLESS=false on
 // the target machine for a real-GPU number.
-await page.goto(`${BASE}/${LOCALE}?hero=field&fcycle=1`, { waitUntil: "networkidle" });
+await page.goto(`${BASE}/${LOCALE}?fcycle=1&ftier=full`, { waitUntil: "networkidle" });
 let fps = null;
 const tEnd = Date.now() + 15000;
 while (Date.now() < tEnd && fps == null) {
@@ -111,7 +111,7 @@ while (Date.now() < tEnd && fps == null) {
 console.log(`fps during live melt: ${fps == null ? "no melt observed!" : `~${fps}`}`);
 
 // ── 3. keyboard smoke test: focus → ArrowRight announces + starts a melt ──────
-await page.goto(`${BASE}/${LOCALE}?hero=field`, { waitUntil: "networkidle" });
+await page.goto(`${BASE}/${LOCALE}?ftier=full`, { waitUntil: "networkidle" });
 await page.waitForFunction(
   () => {
     const cs = [...document.querySelectorAll("[data-hero-metaball] canvas")];

@@ -167,6 +167,11 @@ type HeroProps = {
   manualState?: number | null;
   frozenPair?: [number, number, number] | null; // [a, b, m] — one deterministic frame
   dwellMs?: number; // override the rest dwell (QA fast cycle)
+  /** Initial render tier from the probe (§7). Must not change after mount — the
+   *  in-component FPS watchdog handles runtime downshifts. */
+  tier?: "full" | "lite";
+  /** A runtime watchdog downshift happened — persist it (lib/webgl/field-tier). */
+  onTierChange?: (tier: "lite" | "none") => void;
   onReady?: () => void;
   onActiveChange?: (i: number) => void; // -1 = mark, 0-6 = pillars (shell convention)
   onContextLost?: () => void;
@@ -181,16 +186,18 @@ export default function FieldMorphHero({
   manualState = null,
   frozenPair = null,
   dwellMs,
+  tier = "full",
+  onTierChange = () => {},
   onReady = () => {},
   onActiveChange = () => {},
   onContextLost = () => {},
 }: HeroProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const leanRef = useRef<HTMLDivElement>(null);
-  const cb = useRef({ onReady, onActiveChange, onContextLost });
+  const cb = useRef({ onReady, onActiveChange, onContextLost, onTierChange });
   useEffect(() => {
-    cb.current = { onReady, onActiveChange, onContextLost };
-  }, [onReady, onActiveChange, onContextLost]);
+    cb.current = { onReady, onActiveChange, onContextLost, onTierChange };
+  }, [onReady, onActiveChange, onContextLost, onTierChange]);
 
   // survives context-loss rebuilds and re-mounts of the effect:
   const sdfDataCache = useRef<(Float32Array | null)[]>(new Array(STATE_COUNT).fill(null));
@@ -229,11 +236,20 @@ export default function FieldMorphHero({
       l.canvas.addEventListener("webglcontextrestored", onRestored);
     }
 
+    // ── tier (§7): "full" = glass melt at dpr ≤2 · "lite" = the locked shader's
+    // flat-cyan branch at dpr 1 × 0.75 render scale. Only the per-frame FIELD
+    // layer pays the lite cut; the SDF rest is a single static draw and stays
+    // glass on both. The watchdog below downshifts at runtime — never freezes.
+    let liveTier: "full" | "lite" = tier;
+    let stopped = false; // "none" downshift: melts stop; the crisp rest remains
+
     // static uniforms
     field.gl.useProgram(field.prog);
     field.gl.uniform1f(field.U("iFrame"), FIELD_FRAME);
     field.gl.uniform1f(field.U("iIso"), FIELD_ISO);
-    field.gl.uniform1f(field.U("iGlass"), 1);
+    const applyShading = () =>
+      field.gl.uniform1f(field.U("iGlass"), liveTier === "full" ? 1 : 0);
+    applyShading();
     field.gl.uniform1i(field.U("iCount"), N);
     sdf.gl.useProgram(sdf.prog);
     const sdfFloatLinear = !!sdf.gl.getExtension("OES_texture_float_linear");
@@ -257,7 +273,8 @@ export default function FieldMorphHero({
     };
 
     // ── draws ────────────────────────────────────────────────────────────────
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const sdfDpr = Math.min(window.devicePixelRatio || 1, 2);
+    const fieldScale = () => (liveTier === "full" ? sdfDpr : 0.75); // px per css px
     const drawSdf = (state: number) => {
       const gl = sdf.gl;
       gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
@@ -298,6 +315,26 @@ export default function FieldMorphHero({
     let pendingSharpen = -1; // arrived, waiting for the target's SDF texture
     let hovering = false;
     let announcedReady = false;
+    let wdWarm = 0; // watchdog: frames seen this melt (skip the warm-up)
+    let wdSlow = 0; // watchdog: slow frames this melt
+
+    // FPS watchdog (§7) — downshift instead of freezing. full → lite swaps the
+    // melt to the flat-cyan branch at a smaller buffer mid-flight; lite → "none"
+    // lets the current melt finish, then stops the autocycle for the session
+    // (the crisp SDF rest remains — the hero never goes blank, never janks).
+    const downshift = () => {
+      wdSlow = 0;
+      wdWarm = 0;
+      if (liveTier === "full") {
+        liveTier = "lite";
+        applyShading();
+        resize();
+        cb.current.onTierChange("lite");
+      } else if (!stopped) {
+        stopped = true;
+        cb.current.onTierChange("none");
+      }
+    };
 
     const setCloud = (p: number) => {
       // §3.3 — per-droplet stagger (left-to-right) + arrive ease + radius-leads
@@ -316,7 +353,8 @@ export default function FieldMorphHero({
     const scheduleNext = () => {
       if (timer) clearTimeout(timer);
       timer = null;
-      if (!playRef.current || hovering || manualRef.current != null) return;
+      if (stopped || !playRef.current || hovering || manualRef.current != null)
+        return;
       timer = setTimeout(() => morphTo((state + 1) % STATE_COUNT), dwell);
     };
 
@@ -334,8 +372,11 @@ export default function FieldMorphHero({
       raf = 0;
       if (disposed || phase !== "morph") return;
       if (!playRef.current) return; // paused mid-morph; resumed by setPlay
-      morphT += now - lastTick;
+      const dt = now - lastTick;
+      morphT += dt;
       lastTick = now;
+      // watchdog sampling: only mid-melt, after a short warm-up
+      if (++wdWarm > 5 && dt > 25 && ++wdSlow >= 12) downshift();
       const p = clamp01(morphT / TRANS);
       setCloud(p);
       drawField();
@@ -373,6 +414,8 @@ export default function FieldMorphHero({
       perm = p;
       stagKey = from.map((b) => clamp01(b[0] + 0.5));
       morphT = 0;
+      wdWarm = 0;
+      wdSlow = 0;
       phase = "morph";
       cb.current.onActiveChange(s - 1);
       // melt out: field appears already moving; the crisp SDF dissolves
@@ -423,15 +466,17 @@ export default function FieldMorphHero({
     container.addEventListener("pointerleave", onLeave);
 
     // ── sizing ───────────────────────────────────────────────────────────────
-    const resize = () => {
-      const w = Math.max(1, Math.round((container.clientWidth || 1) * dpr));
-      const h = Math.max(1, Math.round((container.clientHeight || 1) * dpr));
-      for (const l of [field, sdf]) {
-        if (l.canvas.width !== w || l.canvas.height !== h) {
-          l.canvas.width = w;
-          l.canvas.height = h;
-        }
+    const sizeCanvas = (l: Layer, scale: number) => {
+      const w = Math.max(1, Math.round((container.clientWidth || 1) * scale));
+      const h = Math.max(1, Math.round((container.clientHeight || 1) * scale));
+      if (l.canvas.width !== w || l.canvas.height !== h) {
+        l.canvas.width = w;
+        l.canvas.height = h;
       }
+    };
+    const resize = () => {
+      sizeCanvas(sdf, sdfDpr);
+      sizeCanvas(field, fieldScale());
       if (textures[state]) drawSdf(state);
       if (phase === "morph") drawField();
     };
@@ -490,7 +535,7 @@ export default function FieldMorphHero({
       }
       api.current = null;
     };
-  }, [frozenPair, dwellMs, epoch]);
+  }, [frozenPair, dwellMs, tier, epoch]);
 
   // push prop changes into the running machine
   useEffect(() => {

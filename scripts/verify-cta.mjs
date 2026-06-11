@@ -34,6 +34,13 @@ for (const intent of intents) {
     state: "attached",
     timeout: 20000,
   });
+  // react-hook-form fills the hidden input after hydration — wait for a value
+  await page
+    .waitForFunction(
+      () => (document.querySelector('input[name="intent"]')?.value ?? "") !== "",
+      { timeout: 10000 },
+    )
+    .catch(() => {});
   const field = await page.inputValue('input[name="intent"]');
   const label = await page.evaluate(() => {
     const el = document.querySelector(".contact-intent");
@@ -65,5 +72,36 @@ await page.fill("#contact-message", "Conversion-path QA test message.");
 await page.click('button[type="submit"]');
 await page.waitForTimeout(1800);
 
-console.log("CTA " + JSON.stringify({ ctas, results, submittedIntent: submitted?.intent }, null, 2));
+// 4) same-page path (R0): clicking an intent CTA on the homepage must NOT
+// navigate — it sets the intent via history.replaceState and Lenis-scrolls to
+// #contact. A window marker survives only if no reload happened.
+await page.goto(`${BASE}/en`, { waitUntil: "domcontentloaded" });
+await page.waitForFunction(() => !!document.querySelector("h1"), { timeout: 40000 });
+await page.evaluate(() => {
+  window.__noReload = true;
+});
+await page.click('a.cta[href*="intent=structure"]');
+await page.waitForTimeout(2500); // let the smooth scroll settle
+const samePage = await page.evaluate(() => {
+  const contact = document.getElementById("contact");
+  const rect = contact ? contact.getBoundingClientRect() : null;
+  return {
+    noReload: window.__noReload === true,
+    url: location.pathname + location.search + location.hash,
+    intentField:
+      document.querySelector('input[name="intent"]')?.value ?? null,
+    intentLabel:
+      document.querySelector(".contact-intent")?.textContent.trim() ?? null,
+    contactInView: rect ? rect.top < window.innerHeight && rect.bottom > 0 : false,
+  };
+});
+
+console.log(
+  "CTA " +
+    JSON.stringify(
+      { ctas, results, submittedIntent: submitted?.intent, samePage },
+      null,
+      2,
+    ),
+);
 await browser.close();

@@ -59,13 +59,22 @@ node scripts/capture-mesh.mjs
 ## Current State
 
 - The site builds on Next.js 16.2.7 with Turbopack.
-- The labeled contact submit is canonical; the metaball exhale is decorative.
+- **The FIELD system is the default hero** (R0 of `improvement-plan.md`, per
+  `metaball-morph-spec.md` v1.2–v1.4): each form rests as its crisp SVG shaded
+  as liquid glass (`SdfGlassField`) and melts between forms through the 48-ball
+  metaball field (`FieldMorphHero`). Tiers come from a runtime probe
+  (`lib/webgl/field-tier.ts` — full glass / flat-cyan lite / static-SVG none)
+  with an FPS watchdog that downshifts instead of freezing. Hero QA params:
+  `?fstate=N` · `?fpair=a-b-m` · `?fcycle=1` · `?fflat=1` · `?ftier=`.
+- Intent CTAs on the homepage smooth-scroll to `#contact` via Lenis and set the
+  intent with `history.replaceState` (no router navigation); cross-page CTAs
+  keep the routed path. The labeled contact submit is canonical; the metaball
+  exhale is decorative.
+- The legacy raymarch (`MetaballScene`) and mesh (`MeshMetaballScene`) engines
+  no longer mount in the hero but still back the other chapter visuals
+  (fracture / ecosystem / services / origin / contact) until R1 replaces them
+  with field drivers and deletes them.
 - Portfolio seed projects are prototypes only. Do not add fabricated metrics.
-- The mesh metaball path now avoids the Three morph-target crash and is mounted
-  for Hero, Services, and Contact on mesh-tier devices.
-- The mesh forms still need art-direction work. They currently read too much like
-  generic blobs/faceted shells; fixing that is a form-system task, not only an
-  easing tweak.
 
 ## Open Decisions
 

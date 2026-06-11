@@ -5,6 +5,7 @@ import Lenis from "lenis";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useReducedMotion } from "@/lib/animation/reduced-motion";
+import { setLenis } from "@/lib/animation/lenis-store";
 
 /**
  * Smooth scroll (S1.6). Lenis drives scroll; ScrollTrigger reads it.
@@ -26,6 +27,7 @@ export default function LenisProvider({ children }: { children: ReactNode }) {
     });
 
     lenis.on("scroll", ScrollTrigger.update);
+    setLenis(lenis); // imperative scrolls (same-page CTA path) go through this
 
     const onTick = (time: number) => lenis.raf(time * 1000);
     gsap.ticker.add(onTick);
@@ -33,6 +35,7 @@ export default function LenisProvider({ children }: { children: ReactNode }) {
 
     return () => {
       gsap.ticker.remove(onTick);
+      setLenis(null);
       lenis.destroy();
     };
   }, [reduced]);
