@@ -31,12 +31,13 @@ const STATES = STATE_COUNT; // 0 = mark, 1-7 = the service pillars (lib/webgl/st
  * flat-cyan melts at a smaller buffer, "none" = the static SVG mark. An FPS
  * watchdog inside FieldMorphHero downshifts at runtime instead of freezing.
  *
- * Reduced motion rests on the static SDF-glass mark (no autocycle). Keyboard
- * (←/→/Home/End) steps the pillars with aria-live announcements; the
- * PillarIndicator tracks the active state; the autocycle pauses off-screen.
+ * Reduced motion rests on the static SDF-glass mark (no autocycle, no cursor
+ * goo). Keyboard (←/→/Home/End) steps the pillars with aria-live announcements;
+ * the PillarIndicator tracks the active state; the autocycle pauses off-screen.
  *
- * QA params: ?fstate=N (one rest form) · ?fpair=a-b-m (one frozen melt frame) ·
- * ?fcycle=1 (short dwell) · ?fflat=1 (bare flat field) · ?ftier=full|lite|none.
+ * QA params: ?fstate=N (one rest form) · ?fpair=a-b-m (one frozen bridge frame)
+ * · ?fcursor=x,y (a merged cursor droplet on the still) · ?fcycle=1 (short
+ * dwell) · ?fflat=1 (bare flat field) · ?ftier=full|lite|none.
  */
 export function MetaballCanvas({ pillarNames }: { pillarNames: string[] }) {
   const reduced = useReducedMotion();
@@ -47,6 +48,7 @@ export function MetaballCanvas({ pillarNames }: { pillarNames: string[] }) {
   const [manual, setManual] = useState<number | null>(null); // state index 0-7, or null = auto
   const [fState, setFState] = useState<number | null>(null); // ?fstate=N → static SDF-glass still
   const [fPair, setFPair] = useState<[number, number, number] | null>(null); // ?fpair=a-b-m
+  const [fCursor, setFCursor] = useState<[number, number] | null>(null); // ?fcursor=x,y
   const [fastCycle, setFastCycle] = useState(false); // ?fcycle=1 → short dwell (QA)
   const [fFlat, setFFlat] = useState(false); // ?fflat=1 → bare flat field (QA)
 
@@ -59,6 +61,13 @@ export function MetaballCanvas({ pillarNames }: { pillarNames: string[] }) {
       const [a, b, m] = fp.split("-").map(Number);
       setFPair([a, b, m]);
     }
+    // ?fcursor=x,y — freeze a merged cursor droplet at (x, y), page coords 0..1
+    // (combines with ?fstate / ?fpair; alone it implies the resting mark still)
+    const fc = sp.get("fcursor")?.match(/^(\d*\.?\d+),(\d*\.?\d+)$/);
+    if (fc) {
+      const x = Number(fc[1]), y = Number(fc[2]);
+      if (x >= 0 && x <= 1 && y >= 0 && y <= 1) setFCursor([x, y]);
+    }
     setFastCycle(sp.get("fcycle") === "1");
     setFFlat(sp.get("fflat") === "1");
     // probe-first tier selection (once per session; ?ftier= overrides)
@@ -68,7 +77,7 @@ export function MetaballCanvas({ pillarNames }: { pillarNames: string[] }) {
   // Deterministic QA stills force a mount; otherwise the probe decides. "none"
   // (no WebGL2 / hopeless frame times) keeps the static SVG mark — never mounts
   // a per-frame canvas it can't afford.
-  const deterministic = fState !== null || fPair !== null || fFlat;
+  const deterministic = fState !== null || fPair !== null || fCursor !== null || fFlat;
   const enabled = deterministic || tier === "full" || tier === "lite";
 
   // The LIVE morphing hero (vs. a still / debug layer / reduced-motion rest).
@@ -148,13 +157,14 @@ export function MetaballCanvas({ pillarNames }: { pillarNames: string[] }) {
           <div className="metaball-canvas" data-glass-tech={tier ?? "none"}>
             {fFlat ? (
               <MetaballField {...sharedProps} glass={false} />
-            ) : fPair !== null || fState !== null ? (
-              // deterministic stills: a frozen melt frame (?fpair) or a frozen
-              // REST form (?fstate=N → the metaball cloud at rest, m=1) — the
-              // fidelity-iteration tool against the reference SVGs
+            ) : fPair !== null || fState !== null || fCursor !== null ? (
+              // deterministic stills: a frozen bridge frame (?fpair), a frozen
+              // zero-warp EXACT rest form (?fstate=N), and/or a merged cursor
+              // droplet (?fcursor=x,y) — the QA tools for fidelity + the goo
               <FieldMorphHero
                 {...sharedProps}
-                frozenPair={fPair ?? [fState!, fState!, 1]}
+                frozenPair={fPair ?? [fState ?? 0, fState ?? 0, 1]}
+                frozenCursor={fCursor}
               />
             ) : reduced ? (
               // reduced motion: a static crisp mark (AGENTS rule 7) — the only

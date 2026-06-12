@@ -1,53 +1,78 @@
 "use client";
 
 /**
- * FieldMorphHero — the living EXACT-form hero (morph-spec v1.6). One always-
- * visible glass layer fed by the owner's vector forms themselves: each form's
- * signed-distance field (built from `public/brand/forms/*.svg` + the mark) is
- * rendered through the LOCKED glass shading, with the field source animated:
+ * FieldMorphHero — the living EXACT-form hero (morph-spec v1.7). One canvas, one
+ * unified liquid field (sdf-glass-shader): the owner's vector forms as glass,
+ * with metaball droplets that physically merge with them.
  *
- *   - REST: the exact form, alive — a slow procedural domain warp (≈2 px
- *     wobble), the CSS breath (±2 %), the pointer lean (≤4 %). Silhouette and
- *     holes are the SVG's own; fidelity is exact by construction.
- *   - MORPH: the two distance fields BLEND (iMix, arrive-eased) while the warp
- *     agitates and a mid-melt PINCH shrinks the field so thin connections snap
- *     into droplets and reform on arrival — an organic, gooey melt between two
- *     exact endpoints. No metaball approximation of the forms anywhere.
+ *   - REST: the exact form, alive — slow domain warp (~3 px wobble), the CSS
+ *     breath, and the GOOEY CURSOR (owner amendment): a spring-lagged droplet
+ *     chain follows the pointer, necks into and pulls on the form's edge, and
+ *     detaches cleanly on leave (radius eases out ≤300 ms — never pops). The
+ *     cursor's influence is bounded; the silhouette always recovers. Off on
+ *     touch devices. There is NO canvas lean — the cursor IS the hover.
+ *   - MELT (v1.2/§3.3 restored): form A's field weight drains while the 48
+ *     bridge droplets condense on its footprint, travel with min-travel
+ *     matching + left-to-right stagger + radius-leads-position, and fuse into
+ *     form B as its weight rises. ONE iso-surface the whole time — droplets
+ *     visibly neck off A and reform as B; a crossfade double-exposure cannot
+ *     exist. Endpoints are the exact vectors.
  *
- * State machine (§4): rest (dwell DURATIONS.autocycle) → morph → rest…; pauses
+ * State machine (§4): rest (dwell DURATIONS.autocycle) → melt → rest…; pauses
  * off-screen (`play`) and while hovered; `manualState` (keyboard) queues a
  * retarget (applied on arrival — no snaps). FPS watchdog: full → lite (dpr 1)
- * → still-frame — it degrades, it never freezes. `frozenPair` renders one
- * deterministic frame (?fpair=a-b-m; ?fstate=N maps to [N,N,1] in the shell).
+ * → a zero-warp exact still — it degrades, it never freezes. `frozenPair`
+ * renders one deterministic frame (?fpair=a-b-m; ?fstate=N → [N,N,1]), and
+ * `frozenCursor` adds a deterministic merged cursor droplet (?fcursor=x,y).
  */
 
 import { useEffect, useReducer, useRef } from "react";
 import {
   SDF_GLASS_VERT,
   SDF_GLASS_FRAG,
+  SDF_BALL_MAX,
   SDF_THICK,
   SDF_RES,
   SDF_DRAW,
   SDF_BLUR,
   SDF_WARP_REST,
   SDF_WARP_MORPH,
-  SDF_PINCH,
+  CURSOR_R,
+  CURSOR_TRAIL_N,
+  CURSOR_SMOOTH,
+  CURSOR_INFLUENCE_MARK,
 } from "@/lib/webgl/sdf-glass-shader.mjs";
 import { buildSdfAsync } from "@/lib/webgl/sdf";
+import { ALL_RAW, ISO_LEVEL } from "@/lib/webgl/symbols.data.mjs";
 import { METABALL_STATES, STATE_COUNT } from "@/lib/webgl/states";
 import { DURATIONS } from "@/lib/animation/durations";
-import { EASINGS, EASE_POINTS } from "@/lib/animation/easings";
+import { EASE_POINTS } from "@/lib/animation/easings";
 
 const HOLD = DURATIONS.autocycle; // rest dwell (ms)
 const TRANS = DURATIONS.morph; // melt duration (ms)
-const LEAN = 0.04; // pointer lean, fraction of the stage (§4)
+const STAGGER = 0.25; // §3.3: fraction of the timeline sweeping left → right
+const RADIUS_LEAD = 1.18; // §3.3: radius finishes ~18% ahead of position
+const BRIDGE = 0.24; // p-window where a form hands off to / from the droplets
 
 const SVG_URLS: string[] = METABALL_STATES.map((s) =>
   s.key === "mark" ? "/brand/zirtuno-logo-mark.svg" : `/brand/forms/${s.key}.svg`,
 );
 
+// Morph-endpoint clouds (symbol space [-0.5,0.5], +y up; radius = field units at
+// ISO_LEVEL) → the shader's uv space: uv = sym + 0.5, visible radius = r/√iso.
+type Ball = readonly [number, number, number];
+const VR = 1 / Math.sqrt(ISO_LEVEL);
+const CLOUDS: Ball[][] = ALL_RAW.map((s: { balls: number[][] }) =>
+  s.balls.map(([x, y, r]) => [x + 0.5, y + 0.5, r * VR] as const),
+);
+const N = CLOUDS[0].length; // canonical droplet budget (48)
+// §3.3 stagger key: the droplet's x in form A (left → right sweep)
+const STAG: number[][] = CLOUDS.map((c) => c.map((b) => b[0]));
+
 // built SDFs survive remounts and are shared across instances (8 × 1 MB)
 const sdfDataCache = new Map<string, Float32Array>();
+// rest→rest droplet correspondences are stable → cached for the session (§3.2)
+const permCache = new Map<string, number[]>();
 
 async function loadSdf(url: string): Promise<Float32Array> {
   const hit = sdfDataCache.get(url);
@@ -63,6 +88,10 @@ async function loadSdf(url: string): Promise<Float32Array> {
 
 // ── small math helpers ─────────────────────────────────────────────────────────
 const clamp01 = (x: number) => (x < 0 ? 0 : x > 1 ? 1 : x);
+const smooth01 = (x: number) => {
+  const t = clamp01(x);
+  return t * t * (3 - 2 * t);
+};
 
 /** Standard cubic-bezier easing evaluator (Newton + bisection fallback). */
 function cubicBezier(p1x: number, p1y: number, p2x: number, p2y: number) {
@@ -92,6 +121,70 @@ function cubicBezier(p1x: number, p1y: number, p2x: number, p2y: number) {
   };
 }
 const arrive = cubicBezier(...(EASE_POINTS.arrive as readonly number[] as [number, number, number, number]));
+
+/** Min-travel droplet matching (§3.2): greedy nearest-neighbour, O(N² log N). */
+function matchClouds(A: Ball[], B: Ball[]): number[] {
+  const pairs: [number, number, number][] = [];
+  for (let i = 0; i < N; i++)
+    for (let j = 0; j < N; j++) {
+      const dx = A[i][0] - B[j][0], dy = A[i][1] - B[j][1];
+      pairs.push([dx * dx + dy * dy, i, j]);
+    }
+  pairs.sort((a, b) => a[0] - b[0]);
+  const perm = new Array<number>(N).fill(-1);
+  const used = new Uint8Array(N);
+  let done = 0;
+  for (const [, i, j] of pairs) {
+    if (perm[i] >= 0 || used[j]) continue;
+    perm[i] = j;
+    used[j] = 1;
+    if (++done === N) break;
+  }
+  return perm;
+}
+
+function permFor(a: number, b: number): number[] {
+  const key = `${a}->${b}`;
+  let p = permCache.get(key);
+  if (!p) {
+    p = matchClouds(CLOUDS[a], CLOUDS[b]);
+    permCache.set(key, p);
+  }
+  return p;
+}
+
+/** §3.3 bridge frame: write the melt droplets at progress p into `buf` from
+ *  `offset` (positions stagger-eased, radius leads, envelope grows/shrinks the
+ *  droplets inside the BRIDGE handoff windows). Returns the new ball count. */
+function packBridge(
+  buf: Float32Array,
+  offset: number,
+  A: Ball[],
+  B: Ball[],
+  perm: number[],
+  stag: number[],
+  p: number,
+): number {
+  const rEnv =
+    smooth01(p / BRIDGE) * (1 - smooth01((p - (1 - BRIDGE)) / BRIDGE));
+  for (let i = 0; i < N; i++) {
+    const lt = clamp01(p * (1 + STAGGER) - STAGGER * stag[i]);
+    const tp = arrive(lt);
+    const tr = arrive(clamp01(lt * RADIUS_LEAD));
+    const a = A[i], b = B[perm[i]];
+    const j = (offset + i) * 3;
+    buf[j] = a[0] + (b[0] - a[0]) * tp;
+    buf[j + 1] = a[1] + (b[1] - a[1]) * tp;
+    buf[j + 2] = (a[2] + (b[2] - a[2]) * tr) * rEnv;
+  }
+  return offset + N;
+}
+
+/** Form-A / form-B field weights across the melt (1,0 at rest). */
+const formWeights = (p: number): [number, number] => [
+  1 - smooth01(p / BRIDGE),
+  smooth01((p - (1 - BRIDGE)) / BRIDGE),
+];
 
 // ── minimal GL plumbing (one fullscreen triangle) ──────────────────────────────
 type Layer = {
@@ -156,6 +249,9 @@ type HeroProps = {
   play?: boolean;
   manualState?: number | null;
   frozenPair?: [number, number, number] | null; // [a, b, m] — one deterministic frame
+  /** Deterministic merged cursor droplet for the frozen frame (?fcursor=x,y;
+   *  page-style coords: x right, y DOWN, both 0..1). */
+  frozenCursor?: [number, number] | null;
   dwellMs?: number; // override the rest dwell (QA fast cycle)
   /** Initial render tier from the probe (§7). Must not change after mount — the
    *  in-component FPS watchdog handles runtime downshifts. */
@@ -175,6 +271,7 @@ export default function FieldMorphHero({
   play = true,
   manualState = null,
   frozenPair = null,
+  frozenCursor = null,
   dwellMs,
   tier = "full",
   onTierChange = () => {},
@@ -183,7 +280,6 @@ export default function FieldMorphHero({
   onContextLost = () => {},
 }: HeroProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const leanRef = useRef<HTMLDivElement>(null);
   const cb = useRef({ onReady, onActiveChange, onContextLost, onTierChange });
   useEffect(() => {
     cb.current = { onReady, onActiveChange, onContextLost, onTierChange };
@@ -218,10 +314,10 @@ export default function FieldMorphHero({
     layer.canvas.addEventListener("webglcontextlost", onLost);
     layer.canvas.addEventListener("webglcontextrestored", onRestored);
 
-    // ── tier (§7): the SDF renderer is cheap (a few texture reads + lighting),
-    // so lite only lowers resolution. The watchdog downshifts — never freezes.
+    // ── tier (§7): lite only lowers resolution (dpr 1). The watchdog downshifts
+    // — it never freezes; the final stop holds a zero-warp exact still.
     let liveTier: "full" | "lite" = tier;
-    let stopped = false; // final downshift: hold the exact form as a still
+    let stopped = false;
 
     gl.uniform1f(layer.U("iThick"), SDF_THICK);
     gl.uniform2f(layer.U("iTexel"), 1 / SDF_RES, 1 / SDF_RES);
@@ -239,15 +335,24 @@ export default function FieldMorphHero({
     // ── draw ─────────────────────────────────────────────────────────────────
     const maxDpr = Math.min(window.devicePixelRatio || 1, 2);
     const scaleFor = () => (liveTier === "full" ? maxDpr : 1);
+    const ballBuf = new Float32Array(SDF_BALL_MAX * 3);
     let sdfReady = false; // never draw before form 0's texture exists
-    const draw = (timeSec: number, mixv: number, warp: number, pinch: number) => {
+    const draw = (
+      timeSec: number,
+      formA: number,
+      formB: number,
+      warp: number,
+      ballCount: number,
+    ) => {
       if (!sdfReady) return;
       gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
       gl.uniform2f(layer.U("iRes"), gl.drawingBufferWidth, gl.drawingBufferHeight);
       gl.uniform1f(layer.U("iTime"), timeSec);
-      gl.uniform1f(layer.U("iMix"), mixv);
+      gl.uniform1f(layer.U("iFormA"), formA);
+      gl.uniform1f(layer.U("iFormB"), formB);
       gl.uniform1f(layer.U("iWarp"), warp);
-      gl.uniform1f(layer.U("iPinch"), pinch);
+      gl.uniform3fv(layer.U("iBalls"), ballBuf);
+      gl.uniform1i(layer.U("iBallCount"), ballCount);
       gl.clearColor(0, 0, 0, 0);
       gl.clear(gl.COLOR_BUFFER_BIT);
       gl.drawArrays(gl.TRIANGLES, 0, 3);
@@ -259,6 +364,8 @@ export default function FieldMorphHero({
     let phase = "rest" as "rest" | "morph";
     let target = 0;
     let queued = -1; // retarget requested mid-melt / before its SDF is built
+    let perm: number[] = [];
+    let stag: number[] = [];
     let morphT = 0;
     let lastTick = 0;
     let raf = 0;
@@ -268,9 +375,73 @@ export default function FieldMorphHero({
     let wdWarm = 0; // watchdog: frames seen (skip the warm-up)
     let wdSlow = 0; // watchdog: slow frames
 
+    // ── the gooey cursor (owner amendment — react-bits hover) ────────────────
+    // A spring-lagged droplet chain in the SAME field as the form: it necks into
+    // the edge, pulls liquid toward the pointer, and merges. Radius eases in/out
+    // (never pops); influence is shader-bounded; off on touch devices.
+    const canHover =
+      typeof window.matchMedia === "function" &&
+      window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+    const DROPS = 1 + CURSOR_TRAIL_N;
+    const drops = Array.from({ length: DROPS }, () => ({ x: 0.5, y: 0.5 }));
+    let tx = 0.5, ty = 0.5; // pointer target (uv, +y up)
+    let cursorGoal = 0; // 1 while the pointer is over the stage
+    let cursorOn = 0; // eased presence → radius envelope
+    let markMul = 1; // eased: the logo deforms least (CURSOR_INFLUENCE_MARK)
+
+    const updateCursor = (dt: number) => {
+      if (!canHover || (cursorOn === 0 && cursorGoal === 0)) return;
+      const goalMul = phase === "rest" && state === 0 ? CURSOR_INFLUENCE_MARK : 1;
+      markMul += (goalMul - markMul) * (1 - Math.exp(-dt / 160));
+      // presence: bloom in gently, drain out fast (silhouette recovers ≤300 ms)
+      cursorOn += (cursorGoal - cursorOn) * (1 - Math.exp(-dt / (cursorGoal ? 110 : 60)));
+      if (cursorOn < 0.003 && !cursorGoal) {
+        cursorOn = 0;
+        return;
+      }
+      // frame-rate-independent spring chain (react-bits hoverSmoothness)
+      const k = 1 - Math.pow(1 - CURSOR_SMOOTH, dt / 16.7);
+      const kt = 1 - Math.pow(1 - CURSOR_SMOOTH * 0.7, dt / 16.7);
+      drops[0].x += (tx - drops[0].x) * k;
+      drops[0].y += (ty - drops[0].y) * k;
+      for (let i = 1; i < DROPS; i++) {
+        drops[i].x += (drops[i - 1].x - drops[i].x) * kt;
+        drops[i].y += (drops[i - 1].y - drops[i].y) * kt;
+      }
+    };
+
+    const packCursor = (): number => {
+      if (cursorOn <= 0) return 0;
+      let count = 0;
+      for (let i = 0; i < DROPS; i++) {
+        const r = CURSOR_R * Math.pow(0.58, i) * cursorOn * markMul;
+        if (r < 0.002) continue;
+        ballBuf[count * 3] = drops[i].x;
+        ballBuf[count * 3 + 1] = drops[i].y;
+        ballBuf[count * 3 + 2] = r;
+        count++;
+      }
+      return count;
+    };
+
+    // ── render one frame from the machine state ──────────────────────────────
+    const render = (now: number) => {
+      const t = now / 1000;
+      let count = packCursor();
+      if (phase === "morph") {
+        const p = clamp01(morphT / TRANS);
+        const env = Math.sin(Math.PI * p); // 0 at the ends → seamless handoff
+        count = packBridge(ballBuf, count, CLOUDS[state], CLOUDS[target], perm, stag, p);
+        const [fa, fb] = formWeights(p);
+        draw(t, fa, fb, SDF_WARP_REST + (SDF_WARP_MORPH - SDF_WARP_REST) * env, count);
+      } else {
+        draw(t, 1, 0, SDF_WARP_REST, count);
+      }
+    };
+
     // FPS watchdog (§7) — downshift instead of freezing. full → lite lowers the
-    // buffer; lite → the loop stops on the exact resting form (a crisp still,
-    // never a blank or a jank).
+    // buffer; lite → the loop stops on a zero-warp EXACT still (no cursor, no
+    // wobble — a crisp form, never a blank or a jank).
     const downshift = () => {
       wdSlow = 0;
       wdWarm = 0;
@@ -282,6 +453,13 @@ export default function FieldMorphHero({
         stopped = true;
         if (timer) clearTimeout(timer);
         timer = null;
+        if (phase === "morph") {
+          // land the in-flight melt on its target, then hold
+          state = target;
+          phase = "rest";
+        }
+        bindForms(state, state);
+        draw(0, 1, 0, 0, 0);
         cb.current.onTierChange("none");
       }
     };
@@ -299,19 +477,14 @@ export default function FieldMorphHero({
       if (disposed || stopped || !playRef.current) return;
       const dt = now - lastTick;
       lastTick = now;
-      // watchdog sampling (continuous — rest and melt cost the same draw)
+      // watchdog sampling (continuous — rest and melt draw every frame)
       if (++wdWarm > 5 && dt > 25 && ++wdSlow >= 12) downshift();
       if (stopped) return; // downshifted to a still just now
+      updateCursor(dt);
       if (phase === "morph") {
         morphT += dt;
         const p = clamp01(morphT / TRANS);
-        const env = Math.sin(Math.PI * p); // 0 at the ends → seamless rest handoff
-        draw(
-          now / 1000,
-          arrive(p),
-          SDF_WARP_REST + (SDF_WARP_MORPH - SDF_WARP_REST) * env,
-          SDF_PINCH * env,
-        );
+        render(now);
         if (p >= 1) {
           state = target;
           bindForms(state, state);
@@ -327,7 +500,7 @@ export default function FieldMorphHero({
           }
         }
       } else {
-        draw(now / 1000, 0, SDF_WARP_REST, 0);
+        render(now);
         if (!announcedReady) {
           announcedReady = true;
           cb.current.onReady();
@@ -358,6 +531,9 @@ export default function FieldMorphHero({
       timer = null;
       bindForms(state, s);
       target = s;
+      // §3.3 driver inputs: melt from the resting cloud of `state` toward `s`
+      perm = permFor(state, s);
+      stag = STAG[state];
       morphT = 0;
       wdWarm = 0;
       wdSlow = 0;
@@ -379,23 +555,29 @@ export default function FieldMorphHero({
       },
     };
 
-    // ── hover: pause the autocycle + lean toward the pointer (§4) ────────────
-    const lean = leanRef.current;
+    // ── hover: pause the autocycle; the cursor droplets do the rest (§4 v1.7) ─
     const onEnter = () => {
       hovering = true;
       if (timer) clearTimeout(timer);
       timer = null;
     };
     const onMove = (e: PointerEvent) => {
-      if (!lean) return;
+      if (!canHover) return;
       const r = container.getBoundingClientRect();
-      const nx = clamp01((e.clientX - r.left) / r.width) * 2 - 1;
-      const ny = clamp01((e.clientY - r.top) / r.height) * 2 - 1;
-      lean.style.transform = `translate(${nx * LEAN * 100}%, ${ny * LEAN * 100}%)`;
+      const nx = clamp01((e.clientX - r.left) / r.width);
+      const ny = 1 - clamp01((e.clientY - r.top) / r.height); // uv +y up
+      if (cursorOn < 0.01 && cursorGoal === 0)
+        for (const d of drops) {
+          d.x = nx;
+          d.y = ny;
+        } // materialise AT the pointer (no fly-in)
+      tx = nx;
+      ty = ny;
+      cursorGoal = 1;
     };
     const onLeave = () => {
       hovering = false;
-      if (lean) lean.style.transform = "translate(0,0)";
+      cursorGoal = 0; // radius eases to 0 — detaches cleanly, never pops
       if (phase === "rest") scheduleNext();
     };
     container.addEventListener("pointerenter", onEnter);
@@ -412,18 +594,7 @@ export default function FieldMorphHero({
         layer.canvas.height = h;
       }
       // repaint immediately so resizes never flash an empty canvas
-      if (phase === "morph") {
-        const p = clamp01(morphT / TRANS);
-        const env = Math.sin(Math.PI * p);
-        draw(
-          performance.now() / 1000,
-          arrive(p),
-          SDF_WARP_REST + (SDF_WARP_MORPH - SDF_WARP_REST) * env,
-          SDF_PINCH * env,
-        );
-      } else {
-        draw(performance.now() / 1000, 0, SDF_WARP_REST, 0);
-      }
+      render(performance.now());
     };
     const ro = new ResizeObserver(resize);
     ro.observe(container);
@@ -481,7 +652,9 @@ export default function FieldMorphHero({
     else api.current?.setPlay(playRef.current); // blur → resume the autocycle
   }, [manualState]);
 
-  // ── deterministic frozen frame (?fpair=a-b-m · ?fstate=N → [N,N,1]) ────────
+  // ── deterministic frozen frame ─────────────────────────────────────────────
+  // ?fpair=a-b-m (bridge mid-frame) · ?fstate=N → [N,N,1] (zero-warp exact rest)
+  // · ?fcursor=x,y adds one merged cursor droplet at full radius.
   useEffect(() => {
     const container = containerRef.current;
     if (!container || !frozenPair) return;
@@ -497,9 +670,21 @@ export default function FieldMorphHero({
     let disposed = false;
     let texA: WebGLTexture | null = null;
     let texB: WebGLTexture | null = null;
+    const melt = a !== b;
     const env = Math.sin(Math.PI * m);
     // a rest still (a === b) renders with ZERO warp → the pixel-exact form
-    const warp = a === b ? 0 : SDF_WARP_REST + (SDF_WARP_MORPH - SDF_WARP_REST) * env;
+    const warp = melt ? SDF_WARP_REST + (SDF_WARP_MORPH - SDF_WARP_REST) * env : 0;
+    const [fa, fb] = melt ? formWeights(m) : [1, 0];
+    const buf = new Float32Array(SDF_BALL_MAX * 3);
+    let count = 0;
+    if (frozenCursor) {
+      buf[0] = clamp01(frozenCursor[0]);
+      buf[1] = 1 - clamp01(frozenCursor[1]); // page y-down → uv y-up
+      buf[2] = CURSOR_R * (!melt && a === 0 ? CURSOR_INFLUENCE_MARK : 1);
+      count = 1;
+    }
+    if (melt)
+      count = packBridge(buf, count, CLOUDS[a], CLOUDS[b], permFor(a, b), STAG[a], m);
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
 
     const draw = () => {
@@ -511,9 +696,11 @@ export default function FieldMorphHero({
       gl.viewport(0, 0, w, h);
       gl.uniform2f(layer.U("iRes"), w, h);
       gl.uniform1f(layer.U("iTime"), 0);
-      gl.uniform1f(layer.U("iMix"), arrive(m));
+      gl.uniform1f(layer.U("iFormA"), fa);
+      gl.uniform1f(layer.U("iFormB"), fb);
       gl.uniform1f(layer.U("iWarp"), warp);
-      gl.uniform1f(layer.U("iPinch"), SDF_PINCH * env);
+      gl.uniform3fv(layer.U("iBalls"), buf);
+      gl.uniform1i(layer.U("iBallCount"), count);
       gl.activeTexture(gl.TEXTURE0);
       gl.bindTexture(gl.TEXTURE_2D, texA);
       gl.activeTexture(gl.TEXTURE1);
@@ -546,22 +733,13 @@ export default function FieldMorphHero({
       gl.getExtension("WEBGL_lose_context")?.loseContext();
       layer.canvas.remove();
     };
-  }, [frozenPair]);
+  }, [frozenPair, frozenCursor]);
 
   return (
     <div
-      ref={leanRef}
-      style={{
-        width: "100%",
-        height: "100%",
-        transition: `transform 400ms ${EASINGS.arrive}`,
-      }}
-    >
-      <div
-        ref={containerRef}
-        className={frozenPair ? undefined : "sdf-glass-breath"}
-        style={{ position: "relative", width: "100%", height: "100%" }}
-      />
-    </div>
+      ref={containerRef}
+      className={frozenPair ? undefined : "sdf-glass-breath"}
+      style={{ position: "relative", width: "100%", height: "100%" }}
+    />
   );
 }

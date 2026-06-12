@@ -59,18 +59,22 @@ node scripts/capture-mesh.mjs
 ## Current State
 
 - The site builds on Next.js 16.2.7 with Turbopack.
-- **The hero is the owner's EXACT vector forms as living liquid glass**
-  (`metaball-morph-spec.md` v1.6, default since R0): each form's SVG
-  (`public/brand/forms/` + the mark) is rendered via its signed-distance field
-  through the locked glass shading — alive at rest (slow domain warp, breath,
-  pointer lean) and melting between forms by blending the distance fields with
-  a mid-melt droplet pinch (`FieldMorphHero`). Rest fidelity is pixel-exact by
-  construction (`captures/rest-forms-sheet.png`). Tiers come from a runtime
+- **The hero is the owner's EXACT vector forms as living liquid glass, with a
+  gooey cursor** (`metaball-morph-spec.md` v1.7, default since R0): one unified
+  field (`FieldMorphHero` + `sdf-glass-shader.mjs`) sums each form's
+  signed-distance field with metaball droplets before a shared iso-surface,
+  through the locked glass shading. At rest the form is pixel-exact by
+  construction (`captures/rest-forms-sheet.png`) and alive (domain warp,
+  breath); the react-bits-style cursor droplet chain necks into and merges
+  with the liquid (`captures/cursor-merge-sheet.png`) — bounded influence,
+  detaches cleanly, off on touch. Melts are the v1.2 ball-bridge: the form
+  granulates into 48 traveling droplets (min-travel matching, stagger,
+  radius-leads) that fuse into the next exact form — one iso-surface, no
+  crossfade (`captures/morph-frames-sheet.png`). Tiers come from a runtime
   probe (`lib/webgl/field-tier.ts`) with an FPS watchdog that downshifts
-  instead of freezing; reduced motion gets the static mark. The 48-ball
-  metaball system remains for the R1 chapter drivers (scatter/converge),
-  not for the hero forms. Hero QA params: `?fstate=N` · `?fpair=a-b-m` ·
-  `?fcycle=1` · `?fflat=1` · `?ftier=`.
+  instead of freezing; reduced motion gets the static mark, no cursor. Hero QA
+  params: `?fstate=N` · `?fpair=a-b-m` · `?fcursor=x,y` · `?fcycle=1` ·
+  `?fflat=1` · `?ftier=`.
 - Intent CTAs on the homepage smooth-scroll to `#contact` via Lenis and set the
   intent with `history.replaceState` (no router navigation); cross-page CTAs
   keep the routed path. The labeled contact submit is canonical; the metaball

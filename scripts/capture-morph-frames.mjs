@@ -16,7 +16,9 @@ const BASE = process.env.BASE || "http://localhost:3000";
 const LOCALE = process.env.LOCALE || "en";
 const KEYS = ["mark", "web", "software", "ai", "automation", "data", "branding", "marketing"];
 const TRANSITIONS = KEYS.map((_, i) => [i, (i + 1) % KEYS.length]);
-const MIDS = [0.25, 0.5, 0.75];
+// 0.12 / 0.88 sit inside the BRIDGE handoff windows (form ⇄ droplets — where the
+// retired crossfade double-exposed); 0.3 / 0.5 / 0.7 cover the droplet travel.
+const MIDS = [0.12, 0.3, 0.5, 0.7, 0.88];
 fs.mkdirSync(OUT, { recursive: true });
 
 const chromeCandidates = [

@@ -420,7 +420,7 @@ section[id],
   transition: opacity var(--dur-long) var(--ease-arrive);
 }
 .metaball-canvas {
-  pointer-events: auto; /* hover physics: the cursor leans the glass */
+  pointer-events: auto; /* hover physics: the cursor droplet merges with the liquid */
 }
 
 /* SDF-glass rest (v1.2 §6.1) — subtle ~8s breathing as a cheap CSS transform, so

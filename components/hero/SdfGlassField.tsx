@@ -131,6 +131,9 @@ export default function SdfGlassField({
     gl.uniform1i(U("iSDF"), 0);
     gl.uniform1f(U("iThick"), thick);
     gl.uniform2f(U("iTexel"), 1 / SDF_RES, 1 / SDF_RES);
+    // v1.7 unified-field shader: weight form A fully (no form B, no droplets —
+    // those uniforms default to 0) → the exact static rest render, unchanged.
+    gl.uniform1f(U("iFormA"), 1);
 
     let sdfReady = false;
     let announced = false;

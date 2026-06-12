@@ -104,8 +104,9 @@ window.__renderForm = async (svgText, RES, DRAW, thick, blur) => {
   const flip = maskToSdf(inside, RES, RES, blur, 1/RES);
   gl.bindTexture(gl.TEXTURE_2D,tex);
   gl.texImage2D(gl.TEXTURE_2D,0,gl.R32F,RES,RES,0,gl.RED,gl.FLOAT,flip);
-  // 4. render glass
-  gl.uniform1i(U('iSDF'),0); gl.uniform1f(U('iThick'),thick);
+  // 4. render glass (v1.7 unified shader: weight form A fully; form B / warp /
+  //    droplet uniforms default to 0 → the exact static rest render)
+  gl.uniform1i(U('iSDF'),0); gl.uniform1f(U('iThick'),thick); gl.uniform1f(U('iFormA'),1);
   gl.uniform2f(U('iRes'),cv.width,cv.height); gl.uniform2f(U('iTexel'),1/RES,1/RES);
   gl.viewport(0,0,cv.width,cv.height);
   gl.clearColor(0,0,0,1); gl.clear(gl.COLOR_BUFFER_BIT);
