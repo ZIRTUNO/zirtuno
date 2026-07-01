@@ -18,11 +18,15 @@ const FieldStage = dynamic(() => import("@/components/field/FieldStage"), {
 
 /**
  * S4 · Ecosystem core — the CONVERGE: the scatter driver run backwards on the
- * unified liquid field (R1). The S3 droplets fly home, the colour blooms back
- * from grey to vivid cyan, and the EXACT mark re-forms — the visitor earns
- * "ecossistemas, não peças soltas". On desktop the converge is pinned and
- * scroll-scrubbed (progress 1 → 0); elsewhere it plays once, timed, when the
- * diagram enters view. The static mark stays for reduced-motion / "none".
+ * unified liquid field (R1). The S3 droplets flow home on staggered schedules,
+ * fuse into a blobby ghost of the symbol, the colour blooms back from grey,
+ * and the EXACT mark grows through the mass — the visitor earns "ecossistemas,
+ * não peças soltas". On desktop the converge is pinned and scroll-scrubbed
+ * (progress 1 → 0); elsewhere it plays once, timed, when the diagram enters
+ * view. The static mark stays for reduced-motion / "none".
+ *
+ * QA: ?feco=c freezes the converge at c ∈ [0,1] (0 = dispersed, 1 = resolved)
+ * — deterministic checkpoints for the transition (capture-converge.mjs).
  */
 export function EcosystemCore({ ariaLabel = "Zirtuno" }: { ariaLabel?: string }) {
   const reduced = useReducedMotion();
@@ -30,6 +34,7 @@ export function EcosystemCore({ ariaLabel = "Zirtuno" }: { ariaLabel?: string })
   const [tier, setTier] = useState<FieldTier | null>(null);
   const [desktop, setDesktop] = useState(false);
   const [ready, setReady] = useState(false);
+  const [fEco, setFEco] = useState<number | null>(null); // ?feco=c QA hold
   // plain mutable holder (not a React ref): 1 = dispersed (S3's exit state) …
   // 0 = the mark. The scrub/tween effects write it; the driver reads per frame.
   const [driver, progress] = useMemo(() => {
@@ -39,7 +44,18 @@ export function EcosystemCore({ ariaLabel = "Zirtuno" }: { ariaLabel?: string })
 
   useEffect(() => {
     setTier(detectFieldTier());
+    const fc = new URLSearchParams(window.location.search).get("feco");
+    if (fc !== null) {
+      const c = Number(fc);
+      if (Number.isFinite(c) && c >= 0 && c <= 1) setFEco(c);
+    }
   }, []);
+
+  // deterministic QA hold: freeze the converge at c (supersedes scrub/tween)
+  useEffect(() => {
+    if (fEco === null) return;
+    progress.current = 1 - fEco;
+  }, [fEco, progress]);
 
   useEffect(() => {
     const mq = window.matchMedia("(min-width: 768px)");
@@ -53,7 +69,7 @@ export function EcosystemCore({ ariaLabel = "Zirtuno" }: { ariaLabel?: string })
 
   // Desktop: pin the diagram and scrub the converge to scroll (1 → 0).
   useEffect(() => {
-    if (!enabled || !desktop) return;
+    if (!enabled || !desktop || fEco !== null) return;
     const pinEl = stageRef.current?.closest(".eco-radial") as HTMLElement | null;
     if (!pinEl) return;
 
@@ -80,11 +96,11 @@ export function EcosystemCore({ ariaLabel = "Zirtuno" }: { ariaLabel?: string })
       window.clearTimeout(id);
       st.kill();
     };
-  }, [enabled, desktop, stageRef, progress]);
+  }, [enabled, desktop, stageRef, progress, fEco]);
 
   // Mobile / no-pin: the converge plays once, timed, when first seen.
   useEffect(() => {
-    if (!enabled || desktop || !seen) return;
+    if (!enabled || desktop || !seen || fEco !== null) return;
     let raf = 0;
     const t0 = performance.now();
     const DUR = 2600;
@@ -95,7 +111,7 @@ export function EcosystemCore({ ariaLabel = "Zirtuno" }: { ariaLabel?: string })
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [enabled, desktop, seen, progress]);
+  }, [enabled, desktop, seen, progress, fEco]);
 
   const hideFallback = enabled && ready;
 
@@ -106,7 +122,8 @@ export function EcosystemCore({ ariaLabel = "Zirtuno" }: { ariaLabel?: string })
         className={cn("eco-core-fallback", hideFallback && "is-hidden")}
       />
       {enabled && seen && (
-        <div className="eco-core-canvas">
+        // the resolved organism breathes (CSS ±2% — the same breath as the hero)
+        <div className="eco-core-canvas sdf-glass-breath">
           <FieldStage
             driver={driver}
             play={inView}

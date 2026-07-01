@@ -200,30 +200,39 @@ const hash = (i: number, k: number) => {
   return x - Math.floor(x);
 };
 
-// per-droplet scatter assignment: a dispersed TARGET position (outward from the
-// form with tangential jitter, capped inside the stage so the broken field
-// stays composed) and two drift frequencies — precomputed per form.
-type Scatter = { tx: number; ty: number; f1: number; f2: number };
-const SCATTER_MAX_R = 0.42; // max distance from stage centre (keeps ~all in frame)
+// per-droplet scatter assignment: a dispersed TARGET position, a stagger key
+// (irregular departure/arrival order) and two drift frequencies — precomputed
+// per form. The dispersed layout must read as FRAGMENTED topology, never as an
+// accidental ring/logo silhouette, so: bimodal spread distances (an inner and
+// an outer shell), wide angular jitter, and a SOFT radial compression for
+// overshooters (a hard clamp would project them all onto one circle — the ring).
+type Scatter = { tx: number; ty: number; key: number; f1: number; f2: number };
+const SCATTER_SOFT_R = 0.4; // soft-compression starts here (distance from centre)
+const SCATTER_HARD_R = 0.47; // absolute cap (keeps every droplet in frame)
 const scatterCache = new Map<number, Scatter[]>();
 function scatterFor(state: number): Scatter[] {
   let s = scatterCache.get(state);
   if (!s) {
     s = CLOUDS[state].map((b, i) => {
       const ang =
-        Math.atan2(b[1] - 0.5, b[0] - 0.5) + (hash(i, 1) - 0.5) * 1.1;
-      const d = 0.16 + 0.3 * hash(i, 2);
+        Math.atan2(b[1] - 0.5, b[0] - 0.5) + (hash(i, 1) - 0.5) * 1.6;
+      const d =
+        hash(i, 2) < 0.45
+          ? 0.13 + 0.13 * hash(i, 5) // inner shell — keeps the interior populated
+          : 0.28 + 0.17 * hash(i, 6); // outer shell — the far-flung fragments
       let tx = b[0] + Math.cos(ang) * d;
       let ty = b[1] + Math.sin(ang) * d;
       const cx = tx - 0.5, cy = ty - 0.5;
       const cd = Math.hypot(cx, cy);
-      if (cd > SCATTER_MAX_R) {
-        tx = 0.5 + (cx / cd) * SCATTER_MAX_R;
-        ty = 0.5 + (cy / cd) * SCATTER_MAX_R;
+      if (cd > SCATTER_SOFT_R) {
+        const nd = Math.min(SCATTER_SOFT_R + (cd - SCATTER_SOFT_R) * 0.3, SCATTER_HARD_R);
+        tx = 0.5 + (cx / cd) * nd;
+        ty = 0.5 + (cy / cd) * nd;
       }
       return {
         tx,
         ty,
+        key: hash(i, 7),
         f1: 0.45 + 0.8 * hash(i, 3),
         f2: 0.4 + 0.7 * hash(i, 4),
       };
@@ -235,10 +244,27 @@ function scatterFor(state: number): Scatter[] {
 
 /**
  * S3 scatter / S4·S8 converge — ONE driver; the progress ref decides which
- * story it tells. progress 0 = the exact resting form · 1 = fully dispersed,
- * desaturated, slowly drifting. Drive it 0→1 (fracture), hold it (S3's broken
- * state), or run it 1→0 (the converge payoff — colour blooms back and the
- * droplets fuse into the exact mark).
+ * story it tells. progress p: 0 = the exact resting form · 1 = fully dispersed,
+ * desaturated, drifting. Drive it 0→1 (fracture), hold it, or run it 1→0 (the
+ * converge payoff).
+ *
+ * The transformation is TEMPORALLY COHERENT — overlapping eased phases on
+ * independent channels, so nothing ever swaps (reading p downward = converge):
+ *
+ *   p 1.00→0.46  droplets loosen and FLOW home, each on its own staggered
+ *                schedule (irregular arrivals — the constellation never moves
+ *                as one rigid piece); drift stills per droplet as it lands.
+ *   p 0.58→0.08  colour blooms back from the muted grey.
+ *   p 0.46→0.16  the last droplets land; every droplet swells to its full
+ *                cloud radius as it arrives, fusing with its neighbours — the
+ *                48-droplet cloud IS the form's footprint, so the merged mass
+ *                gradually IMPLIES the unified symbol (the intermediate phase).
+ *   p 0.28→0.02  the exact form grows from its skeleton (erosion → 0)
+ *                underneath the fused mass, swallowing it.
+ *   p 0.16→0.01  droplet radii drain into the now-present form.
+ *
+ * All channels read a DAMPED progress (≈110 ms exponential), so hard external
+ * sets (pin exits, fast scrolls, tween ends) can never render as a snap.
  */
 export function makeScatterDriver(
   progress: { current: number },
@@ -246,22 +272,42 @@ export function makeScatterDriver(
 ): FieldDriver {
   const T = scatterFor(state);
   const base = CLOUDS[state];
+  let lastT = -1;
+  let dp = -1; // damped progress (initialised to the first raw read)
   return {
     forms: [state],
     frame: (tMs, buf) => {
-      const p = clamp01(progress.current);
-      const env = smooth01(p / BRIDGE); // droplets condense as the form dissolves
-      if (env <= 0) return restFrame(state);
+      const raw = clamp01(progress.current);
+      if (dp < 0) dp = raw;
+      const dt = lastT < 0 ? 16.7 : Math.min(Math.max(tMs - lastT, 0), 100);
+      lastT = tMs;
+      dp += (raw - dp) * (1 - Math.exp(-dt / 110));
+      const p = clamp01(dp);
+      if (p < 0.002) return restFrame(state);
+
       const t = tMs / 1000;
+      // the exact form emerges from its skeleton across p 0.28 → 0.02, i.e.
+      // UNDER the fused droplet mass — growth, never a reveal
+      const q = 1 - smooth01((p - 0.02) / 0.26); // form presence
+      const rEnv = smooth01((p - 0.01) / 0.15); // droplets drain at the very end
+      // complementary handoff: droplets shed radius as the form takes over, so
+      // the merged mass never over-fills (over-fill floods the mark's channels)
+      const shed = 1 - 0.45 * q;
       for (let i = 0; i < N; i++) {
         const b = base[i], s = T[i];
-        buf[i * 3] = b[0] + (s.tx - b[0]) * p + 0.012 * Math.sin(t * s.f1 + i * 1.7) * p;
-        buf[i * 3 + 1] = b[1] + (s.ty - b[1]) * p + 0.012 * Math.cos(t * s.f2 + i * 2.3) * p;
-        buf[i * 3 + 2] = b[2] * (1 - 0.25 * p) * env;
+        // staggered travel: droplet i is home below p = 0.16 + 0.30·key and
+        // fully dispersed above that +0.5 — irregular, flowing arrivals
+        const lt = smooth01((p - (0.16 + 0.3 * s.key)) / 0.5);
+        const drift = 0.014 * lt; // drift stills as each droplet lands
+        buf[i * 3] =
+          b[0] + (s.tx - b[0]) * lt + drift * Math.sin(t * s.f1 + i * 1.7);
+        buf[i * 3 + 1] =
+          b[1] + (s.ty - b[1]) * lt + drift * Math.cos(t * s.f2 + i * 2.3);
+        // fusion swell: full cloud radius at home (neighbours neck together —
+        // the blobby ghost of the symbol), leaner while dispersed
+        buf[i * 3 + 2] = b[2] * (1 - 0.28 * lt) * rEnv * shed;
       }
-      // organic dissolve/emerge: the form ERODES from its thin edges as the
-      // droplets condense (and re-grows from its skeleton on the converge)
-      const [fa, ea] = formPresence(1 - env);
+      const [fa, ea] = formPresence(q);
       return {
         a: state,
         b: state,
@@ -270,7 +316,7 @@ export function makeScatterDriver(
         ea,
         eb: 0,
         warp: SDF_WARP_REST,
-        mute: 0.85 * smooth01(p),
+        mute: 0.85 * smooth01((p - 0.08) / 0.5),
         count: N,
       };
     },
