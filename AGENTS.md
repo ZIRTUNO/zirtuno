@@ -37,7 +37,7 @@ Tone in three words: **Discreto. Preciso. Transformador.** Plus, for v0.2: **Cle
 
 - **Next.js 16** (App Router, RSC, Turbopack default), **TypeScript**
 - **Tailwind CSS v4** + CSS variables for theming
-- **Three.js** + **@react-three/fiber** + **@react-three/drei** (metaballs, particles, ecosystem)
+- **Raw WebGL2 + OGL** — the unified liquid field (metaballs, all chapter visuals; replaced Three.js/R3F in R1)
 - **GSAP** + **ScrollTrigger** (scroll choreography) · **Motion** (DOM micro-interactions)
 - **Lenis** (smooth scroll, tuned calm)
 - **next-intl** (PT-BR + EN)
@@ -81,7 +81,7 @@ Self-host fonts in `public/fonts/`. Preload Instrument Serif italic + Bricolage 
 09 Contact              — clear labeled submit + artistic exhale
 ```
 
-The 7 metaball pillar states (S2.3) are SHARED: the hero cycles them, the services chapter morphs to them, the problem chapter uses a `Fractured` variant, the ecosystem uses the unified resting state as its core. Build the metaball as one reusable component with exported state definitions in `lib/webgl/states.ts`.
+The 7 metaball pillar states (S2.3) are SHARED: the hero cycles them, the services chapter morphs to them, the problem chapter uses a `Fractured` variant, the ecosystem uses the unified resting state as its core. Build the metaball as one reusable component with exported state definitions in `lib/webgl/symbols.ts` (the registry; drivers in `lib/webgl/field-drivers.ts`).
 
 ---
 

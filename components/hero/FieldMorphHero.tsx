@@ -18,6 +18,10 @@
  *     visibly neck off A and reform as B; a crossfade double-exposure cannot
  *     exist. Endpoints are the exact vectors.
  *
+ * The §3.3 bridge math + GL plumbing live in lib/webgl/field-drivers and
+ * lib/webgl/sdf-gl (R1) — shared with the chapter FieldStage drivers, so the
+ * site has exactly ONE melt implementation.
+ *
  * State machine (§4): rest (dwell DURATIONS.autocycle) → melt → rest…; pauses
  * off-screen (`play`) and while hovered; `manualState` (keyboard) queues a
  * retarget (applied on arrival — no snaps). FPS watchdog: full → lite (dpr 1)
@@ -33,8 +37,6 @@ import {
   SDF_BALL_MAX,
   SDF_THICK,
   SDF_RES,
-  SDF_DRAW,
-  SDF_BLUR,
   SDF_WARP_REST,
   SDF_WARP_MORPH,
   CURSOR_R,
@@ -42,208 +44,20 @@ import {
   CURSOR_SMOOTH,
   CURSOR_INFLUENCE_MARK,
 } from "@/lib/webgl/sdf-glass-shader.mjs";
-import { buildSdfAsync } from "@/lib/webgl/sdf";
-import { ALL_RAW, ISO_LEVEL } from "@/lib/webgl/symbols.data.mjs";
-import { METABALL_STATES, STATE_COUNT } from "@/lib/webgl/states";
+import { makeLayer, makeSdfTexture, loadSdf } from "@/lib/webgl/sdf-gl";
+import {
+  CLOUDS,
+  STAG,
+  clamp01,
+  packBridge,
+  formWeights,
+  permFor,
+} from "@/lib/webgl/field-drivers";
+import { SVG_URLS, STATE_COUNT } from "@/lib/webgl/symbols";
 import { DURATIONS } from "@/lib/animation/durations";
-import { EASE_POINTS } from "@/lib/animation/easings";
 
 const HOLD = DURATIONS.autocycle; // rest dwell (ms)
 const TRANS = DURATIONS.morph; // melt duration (ms)
-const STAGGER = 0.25; // §3.3: fraction of the timeline sweeping left → right
-const RADIUS_LEAD = 1.18; // §3.3: radius finishes ~18% ahead of position
-const BRIDGE = 0.24; // p-window where a form hands off to / from the droplets
-
-const SVG_URLS: string[] = METABALL_STATES.map((s) =>
-  s.key === "mark" ? "/brand/zirtuno-logo-mark.svg" : `/brand/forms/${s.key}.svg`,
-);
-
-// Morph-endpoint clouds (symbol space [-0.5,0.5], +y up; radius = field units at
-// ISO_LEVEL) → the shader's uv space: uv = sym + 0.5, visible radius = r/√iso.
-type Ball = readonly [number, number, number];
-const VR = 1 / Math.sqrt(ISO_LEVEL);
-const CLOUDS: Ball[][] = ALL_RAW.map((s: { balls: number[][] }) =>
-  s.balls.map(([x, y, r]) => [x + 0.5, y + 0.5, r * VR] as const),
-);
-const N = CLOUDS[0].length; // canonical droplet budget (48)
-// §3.3 stagger key: the droplet's x in form A (left → right sweep)
-const STAG: number[][] = CLOUDS.map((c) => c.map((b) => b[0]));
-
-// built SDFs survive remounts and are shared across instances (8 × 1 MB)
-const sdfDataCache = new Map<string, Float32Array>();
-// rest→rest droplet correspondences are stable → cached for the session (§3.2)
-const permCache = new Map<string, number[]>();
-
-async function loadSdf(url: string): Promise<Float32Array> {
-  const hit = sdfDataCache.get(url);
-  if (hit) return hit;
-  const img = new Image();
-  img.decoding = "async";
-  img.src = url;
-  await img.decode();
-  const data = await buildSdfAsync(img, SDF_RES, SDF_DRAW, SDF_BLUR);
-  sdfDataCache.set(url, data);
-  return data;
-}
-
-// ── small math helpers ─────────────────────────────────────────────────────────
-const clamp01 = (x: number) => (x < 0 ? 0 : x > 1 ? 1 : x);
-const smooth01 = (x: number) => {
-  const t = clamp01(x);
-  return t * t * (3 - 2 * t);
-};
-
-/** Standard cubic-bezier easing evaluator (Newton + bisection fallback). */
-function cubicBezier(p1x: number, p1y: number, p2x: number, p2y: number) {
-  const cx = 3 * p1x, bx = 3 * (p2x - p1x) - cx, ax = 1 - cx - bx;
-  const cy = 3 * p1y, by = 3 * (p2y - p1y) - cy, ay = 1 - cy - by;
-  const X = (t: number) => ((ax * t + bx) * t + cx) * t;
-  const Y = (t: number) => ((ay * t + by) * t + cy) * t;
-  const DX = (t: number) => (3 * ax * t + 2 * bx) * t + cx;
-  return (x: number) => {
-    if (x <= 0) return 0;
-    if (x >= 1) return 1;
-    let t = x;
-    for (let i = 0; i < 5; i++) {
-      const e = X(t) - x;
-      if (Math.abs(e) < 1e-5) return Y(t);
-      const d = DX(t);
-      if (Math.abs(d) < 1e-6) break;
-      t -= e / d;
-    }
-    let lo = 0, hi = 1;
-    t = x;
-    while (hi - lo > 1e-5) {
-      t = (lo + hi) / 2;
-      if (X(t) < x) lo = t; else hi = t;
-    }
-    return Y(t);
-  };
-}
-const arrive = cubicBezier(...(EASE_POINTS.arrive as readonly number[] as [number, number, number, number]));
-
-/** Min-travel droplet matching (§3.2): greedy nearest-neighbour, O(N² log N). */
-function matchClouds(A: Ball[], B: Ball[]): number[] {
-  const pairs: [number, number, number][] = [];
-  for (let i = 0; i < N; i++)
-    for (let j = 0; j < N; j++) {
-      const dx = A[i][0] - B[j][0], dy = A[i][1] - B[j][1];
-      pairs.push([dx * dx + dy * dy, i, j]);
-    }
-  pairs.sort((a, b) => a[0] - b[0]);
-  const perm = new Array<number>(N).fill(-1);
-  const used = new Uint8Array(N);
-  let done = 0;
-  for (const [, i, j] of pairs) {
-    if (perm[i] >= 0 || used[j]) continue;
-    perm[i] = j;
-    used[j] = 1;
-    if (++done === N) break;
-  }
-  return perm;
-}
-
-function permFor(a: number, b: number): number[] {
-  const key = `${a}->${b}`;
-  let p = permCache.get(key);
-  if (!p) {
-    p = matchClouds(CLOUDS[a], CLOUDS[b]);
-    permCache.set(key, p);
-  }
-  return p;
-}
-
-/** §3.3 bridge frame: write the melt droplets at progress p into `buf` from
- *  `offset` (positions stagger-eased, radius leads, envelope grows/shrinks the
- *  droplets inside the BRIDGE handoff windows). Returns the new ball count. */
-function packBridge(
-  buf: Float32Array,
-  offset: number,
-  A: Ball[],
-  B: Ball[],
-  perm: number[],
-  stag: number[],
-  p: number,
-): number {
-  const rEnv =
-    smooth01(p / BRIDGE) * (1 - smooth01((p - (1 - BRIDGE)) / BRIDGE));
-  for (let i = 0; i < N; i++) {
-    const lt = clamp01(p * (1 + STAGGER) - STAGGER * stag[i]);
-    const tp = arrive(lt);
-    const tr = arrive(clamp01(lt * RADIUS_LEAD));
-    const a = A[i], b = B[perm[i]];
-    const j = (offset + i) * 3;
-    buf[j] = a[0] + (b[0] - a[0]) * tp;
-    buf[j + 1] = a[1] + (b[1] - a[1]) * tp;
-    buf[j + 2] = (a[2] + (b[2] - a[2]) * tr) * rEnv;
-  }
-  return offset + N;
-}
-
-/** Form-A / form-B field weights across the melt (1,0 at rest). */
-const formWeights = (p: number): [number, number] => [
-  1 - smooth01(p / BRIDGE),
-  smooth01((p - (1 - BRIDGE)) / BRIDGE),
-];
-
-// ── minimal GL plumbing (one fullscreen triangle) ──────────────────────────────
-type Layer = {
-  canvas: HTMLCanvasElement;
-  gl: WebGL2RenderingContext;
-  prog: WebGLProgram;
-  U: (n: string) => WebGLUniformLocation | null;
-  floatLinear: boolean;
-};
-
-function makeLayer(container: HTMLElement, vert: string, frag: string): Layer | null {
-  const canvas = document.createElement("canvas");
-  canvas.style.cssText =
-    "position:absolute;inset:0;width:100%;height:100%;display:block;";
-  const gl = canvas.getContext("webgl2", {
-    alpha: true,
-    premultipliedAlpha: false,
-    antialias: false,
-  });
-  if (!gl) return null;
-  const floatLinear = !!gl.getExtension("OES_texture_float_linear");
-  const sh = (type: number, src: string) => {
-    const s = gl.createShader(type)!;
-    gl.shaderSource(s, src);
-    gl.compileShader(s);
-    if (!gl.getShaderParameter(s, gl.COMPILE_STATUS))
-      throw new Error(gl.getShaderInfoLog(s) || "shader compile failed");
-    return s;
-  };
-  const prog = gl.createProgram()!;
-  gl.attachShader(prog, sh(gl.VERTEX_SHADER, vert));
-  gl.attachShader(prog, sh(gl.FRAGMENT_SHADER, frag));
-  gl.linkProgram(prog);
-  if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) return null;
-  gl.useProgram(prog);
-  const buf = gl.createBuffer();
-  gl.bindBuffer(gl.ARRAY_BUFFER, buf);
-  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
-  const loc = gl.getAttribLocation(prog, "position");
-  gl.enableVertexAttribArray(loc);
-  gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
-  gl.enable(gl.BLEND);
-  gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
-  container.appendChild(canvas);
-  return { canvas, gl, prog, U: (n) => gl.getUniformLocation(prog, n), floatLinear };
-}
-
-function makeSdfTexture(layer: Layer, data: Float32Array): WebGLTexture {
-  const gl = layer.gl;
-  const t = gl.createTexture()!;
-  gl.bindTexture(gl.TEXTURE_2D, t);
-  const f = layer.floatLinear ? gl.LINEAR : gl.NEAREST;
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, f);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, f);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-  gl.texImage2D(gl.TEXTURE_2D, 0, gl.R32F, SDF_RES, SDF_RES, 0, gl.RED, gl.FLOAT, data);
-  return t;
-}
 
 type HeroProps = {
   play?: boolean;
@@ -314,8 +128,9 @@ export default function FieldMorphHero({
     layer.canvas.addEventListener("webglcontextlost", onLost);
     layer.canvas.addEventListener("webglcontextrestored", onRestored);
 
-    // ── tier (§7): lite only lowers resolution (dpr 1). The watchdog downshifts
-    // — it never freezes; the final stop holds a zero-warp exact still.
+    // ── tier (§7): lite only lowers resolution (dpr 1) — the hero keeps glass.
+    // The watchdog downshifts — it never freezes; the final stop holds a
+    // zero-warp exact still.
     let liveTier: "full" | "lite" = tier;
     let stopped = false;
 
@@ -323,6 +138,7 @@ export default function FieldMorphHero({
     gl.uniform2f(layer.U("iTexel"), 1 / SDF_RES, 1 / SDF_RES);
     gl.uniform1i(layer.U("iSDF"), 0);
     gl.uniform1i(layer.U("iSDF2"), 1);
+    gl.uniform1f(layer.U("iGlass"), 1);
 
     const textures: (WebGLTexture | null)[] = new Array(STATE_COUNT).fill(null);
     const bindForms = (a: number, b: number) => {
@@ -666,6 +482,7 @@ export default function FieldMorphHero({
     gl.uniform2f(layer.U("iTexel"), 1 / SDF_RES, 1 / SDF_RES);
     gl.uniform1i(layer.U("iSDF"), 0);
     gl.uniform1i(layer.U("iSDF2"), 1);
+    gl.uniform1f(layer.U("iGlass"), 1);
 
     let disposed = false;
     let texA: WebGLTexture | null = null;

@@ -1,76 +1,98 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
+import { gsap } from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useReducedMotion } from "@/lib/animation/reduced-motion";
 import { useInView } from "@/lib/animation/use-in-view";
-import { glassTech, type GlassTech } from "@/lib/webgl/gpu-tier";
+import { detectFieldTier, type FieldTier } from "@/lib/webgl/field-tier";
+import { makeScrubMorphDriver } from "@/lib/webgl/field-drivers";
 import { LogoMark } from "@/components/hero/LogoMark";
 import { PillarIndicator } from "@/components/hero/PillarIndicator";
 import { cn } from "@/lib/utils";
 
-// three.js is client-only and heavy → load the scene lazily, no SSR.
-const MetaballScene = dynamic(() => import("@/components/hero/MetaballScene"), {
+// the unified liquid field is client-only (WebGL2) → lazy, no SSR.
+const FieldStage = dynamic(() => import("@/components/field/FieldStage"), {
   ssr: false,
 });
-const MeshMetaballScene = dynamic(
-  () => import("@/components/hero/MeshMetaballScene"),
-  { ssr: false },
-);
+
+// Within the gap between two pillar centres, the liquid RESTS on each side and
+// melts only across the middle window — the form is locked to the copy.
+const MELT_LO = 0.35;
+const MELT_HI = 0.65;
 
 /**
- * S5 · Services metaball — the sticky glass that morphs to each pillar's locked
- * form as that pillar scrolls through the viewport centre (reuses MetaballScene's
- * `manualState` → connected liquid morph). Drives the PillarIndicator. Reads the
- * RSC pillar articles via their `data-pillar` index (copy stays server-rendered).
- * Desktop-only; the unified CSS placeholder is the reduced-motion / mobile / no-
- * WebGL fallback. Pauses off-screen.
+ * S5 · Services liquid — the sticky glass that melts pillar→pillar in LOCKSTEP
+ * with the copy: the scrub-morph driver on the unified field (R1) replaces the
+ * old IntersectionObserver state-swap with PROGRESS-LOCKED §3.3 bridge melts.
+ * The continuous pillar coordinate comes from the articles' real positions
+ * against the viewport centre, so each form rests while its pillar is read and
+ * dissolves into the next exactly across the boundary. Drives the
+ * PillarIndicator. The copy stays server-rendered ([data-pillar] articles).
  */
 export function ServicesMetaball({ ariaLabel = "Zirtuno" }: { ariaLabel?: string }) {
   const reduced = useReducedMotion();
   const [stageRef, inView, seen] = useInView<HTMLDivElement>("250px");
-  const [enabled, setEnabled] = useState(false);
-  const [desktop, setDesktop] = useState(false);
-  const [tech, setTech] = useState<GlassTech>("none");
+  const [tier, setTier] = useState<FieldTier | null>(null);
   const [ready, setReady] = useState(false);
   const [active, setActive] = useState(0); // active pillar index 0-6
-
-  useEffect(() => {
-    setTech(glassTech());
+  // plain mutable holder (not a React ref): [fromState, toState, m] — the
+  // scroll effect writes it; the driver reads it per frame.
+  const [driver, pairRef] = useMemo(() => {
+    const p = { current: [1, 1, 0] as [number, number, number] };
+    return [makeScrubMorphDriver(p), p] as const;
   }, []);
 
   useEffect(() => {
-    const mq = window.matchMedia("(min-width: 768px) and (pointer: fine)");
-    const update = () => setDesktop(mq.matches);
-    update();
-    mq.addEventListener("change", update);
-    return () => mq.removeEventListener("change", update);
+    setTier(detectFieldTier());
   }, []);
 
-  useEffect(() => {
-    setEnabled(!reduced && desktop && tech !== "none");
-  }, [reduced, desktop, tech]);
+  const enabled = !reduced && (tier === "full" || tier === "lite");
 
-  // Active pillar = whichever article is crossing the viewport centre band.
+  // Progress-locked melts: u ∈ [0,6] from the pillar articles' centres.
   useEffect(() => {
     if (!enabled) return;
     const section = stageRef.current?.closest("section");
     if (!section) return;
-    const items = section.querySelectorAll<HTMLElement>("[data-pillar]");
-    const io = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((e) => {
-          if (e.isIntersecting) {
-            const i = Number(e.target.getAttribute("data-pillar"));
-            if (!Number.isNaN(i)) setActive(i);
-          }
-        });
-      },
-      { rootMargin: "-45% 0px -45% 0px", threshold: 0 },
+    const items = Array.from(
+      section.querySelectorAll<HTMLElement>("[data-pillar]"),
     );
-    items.forEach((it) => io.observe(it));
-    return () => io.disconnect();
-  }, [enabled, stageRef]);
+    if (items.length < 2) return;
+
+    const update = () => {
+      const cy = window.innerHeight * 0.5;
+      const centers = items.map((el) => {
+        const r = el.getBoundingClientRect();
+        return r.top + r.height / 2;
+      });
+      let u = 0;
+      if (cy <= centers[0]) u = 0;
+      else if (cy >= centers[centers.length - 1]) u = centers.length - 1;
+      else {
+        let k = 0;
+        while (k < centers.length - 2 && centers[k + 1] <= cy) k++;
+        u = k + (cy - centers[k]) / Math.max(centers[k + 1] - centers[k], 1);
+      }
+      const i = Math.floor(u);
+      const frac = u - i;
+      const m =
+        frac <= MELT_LO ? 0 : frac >= MELT_HI ? 1 : (frac - MELT_LO) / (MELT_HI - MELT_LO);
+      pairRef.current = [i + 1, Math.min(i + 2, 7), m];
+      const a = m < 0.5 ? i : Math.min(i + 1, items.length - 1);
+      setActive((prev) => (prev === a ? prev : a));
+    };
+
+    gsap.registerPlugin(ScrollTrigger);
+    const st = ScrollTrigger.create({
+      trigger: section,
+      start: "top bottom",
+      end: "bottom top",
+      onUpdate: update,
+    });
+    update();
+    return () => st.kill();
+  }, [enabled, stageRef, pairRef]);
 
   const hideFallback = enabled && ready;
 
@@ -82,19 +104,13 @@ export function ServicesMetaball({ ariaLabel = "Zirtuno" }: { ariaLabel?: string
         />
         {enabled && seen && (
           <div className="services-metaball-canvas">
-            {tech === "mesh" ? (
-              <MeshMetaballScene
-                manualState={active + 1}
-                play={inView}
-                onReady={() => setReady(true)}
-              />
-            ) : (
-              <MetaballScene
-                manualState={active + 1}
-                play={inView}
-                onReady={() => setReady(true)}
-              />
-            )}
+            <FieldStage
+              driver={driver}
+              play={inView}
+              tier={tier === "lite" ? "lite" : "full"}
+              onReady={() => setReady(true)}
+              onContextLost={() => setReady(false)}
+            />
           </div>
         )}
       </div>

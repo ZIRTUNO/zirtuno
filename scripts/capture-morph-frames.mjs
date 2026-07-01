@@ -1,6 +1,6 @@
-// Phase-3 morph QA (metaball-morph-spec §12 checkpoint): capture deterministic
-// MID-FRAMES of every autocycle transition (?hero=field&fpair=a-b-m — all liquid,
-// no pops), measure fps DURING a live melt (?fcycle=1 short dwell), and smoke-test
+// Morph QA (metaball-morph-spec §12 checkpoint): capture deterministic
+// MID-FRAMES of every autocycle transition (?fpair=a-b-m — all liquid, no
+// pops), measure fps DURING a live melt (?fcycle=1 short dwell), and smoke-test
 // the keyboard stepping (focus + ArrowRight → aria-live announces, melt starts).
 // Dev server must be running:  node scripts/capture-morph-frames.mjs
 // Writes captures/morph-frames-sheet.png (rows = transitions, cols = m).
@@ -38,11 +38,6 @@ const browser = await chromium.launch({
 const ctx = await browser.newContext({
   viewport: { width: 1280, height: 900 },
   deviceScaleFactor: 1,
-});
-// pre-seed the gpu-tier cache: the perf probe (heavy quad + readPixels) would
-// otherwise run on every fresh session and pollute the fps measurements
-await ctx.addInitScript(() => {
-  try { sessionStorage.setItem("zr-gpu-tier-v5", "lite"); } catch { /* ignore */ }
 });
 const page = await ctx.newPage();
 page.on("pageerror", (e) => console.error("PAGE ERROR:", e.message));

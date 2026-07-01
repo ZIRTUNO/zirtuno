@@ -1,19 +1,15 @@
 "use client";
 
 /**
- * MetaballField — the NEW hero metaball (metaball-morph-spec). A react-bits-style
- * OGL 2D inverse-square field (lib/webgl/field-shader) instead of the retired 3D
- * raymarch (MetaballScene) and the capsule/smin trace. It's cheap enough to run
- * live on Intel UHD: a single full-screen triangle, ~N inverse-square terms +
- * glass shading per pixel, no per-pixel sphere tracing.
+ * MetaballField — the bare react-bits-style OGL 2D inverse-square field
+ * (lib/webgl/field-shader, the LOCKED metaball engine). Since v1.6/R1 it is a
+ * DEBUG surface only: `?fflat=1` renders the static mark cloud so the field
+ * math can be eyeballed in isolation. The live hero and every chapter driver
+ * run on the unified sdf-glass shader (FieldMorphHero / FieldStage); the
+ * field-shader itself stays as the locked reference the glass lighting mirrors.
  *
- * PHASE 0/1 SCOPE: renders the STATIC `mark` form (lib/webgl/symbols.data.mjs) at
- * iso 2.2 — flat cyan (Phase 0) or liquid glass with no glow (Phase 1). The state
- * machine, the other 7 forms, and the morph come later (spec §12). Wired into
- * MetaballCanvas behind the `?hero=field` flag; MetaballScene stays importable.
- *
- * The same prop surface as MetaballScene so it's a drop-in for the shell, but only
- * `onReady` + `glass` are honoured this phase; the rest are accepted and ignored.
+ * Only `onReady` + `glass` are honoured; the rest of the prop surface is
+ * accepted for shell parity and ignored.
  */
 
 import { useEffect, useReducer, useRef } from "react";

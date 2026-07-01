@@ -7,16 +7,15 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "capture:hero": "node scripts/capture-hero.mjs",
-    "contact:sheet": "node scripts/contact-sheet.mjs",
-    "mesh:check": "node scripts/verify-mesh-metaball.mjs",
-    "morphs:check": "node scripts/capture-pair.mjs"
+    "forms:rest": "node scripts/capture-rest-forms.mjs",
+    "forms:melts": "node scripts/capture-morph-frames.mjs",
+    "forms:cursor": "node scripts/capture-cursor-merge.mjs",
+    "chapters:sheet": "node scripts/capture-chapters.mjs",
+    "endpoints": "node scripts/generate-morph-endpoints.mjs"
   },
   "dependencies": {
     "@gsap/react": "^2.1.2",
     "@hookform/resolvers": "^5.4.0",
-    "@react-three/drei": "^10.7.7",
-    "@react-three/fiber": "^9.6.1",
     "@sanity/client": "^7.22.1",
     "@sanity/image-url": "^2.1.1",
     "clsx": "^2.1.1",
@@ -31,7 +30,6 @@
     "react-hook-form": "^7.76.1",
     "resend": "^6.12.4",
     "tailwind-merge": "^3.6.0",
-    "three": "^0.184.0",
     "zod": "^4.4.3"
   },
   "devDependencies": {
@@ -39,7 +37,6 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "@types/three": "^0.184.1",
     "eslint": "^9",
     "eslint-config-next": "16.2.7",
     "playwright": "^1.60.0",

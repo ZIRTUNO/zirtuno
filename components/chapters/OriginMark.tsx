@@ -1,46 +1,57 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import { useReducedMotion } from "@/lib/animation/reduced-motion";
 import { useInView } from "@/lib/animation/use-in-view";
-import { canRunGlass } from "@/lib/webgl/can-run-glass";
+import { detectFieldTier, type FieldTier } from "@/lib/webgl/field-tier";
+import { makeScatterDriver, arrive } from "@/lib/webgl/field-drivers";
 import { LogoMark } from "@/components/hero/LogoMark";
 import { cn } from "@/lib/utils";
 
-// three.js is client-only and heavy → load the scene lazily, no SSR.
-const MetaballScene = dynamic(() => import("@/components/hero/MetaballScene"), {
+// the unified liquid field is client-only (WebGL2) → lazy, no SSR.
+const FieldStage = dynamic(() => import("@/components/field/FieldStage"), {
   ssr: false,
 });
 
-function supportsWebGL(): boolean {
-  return canRunGlass();
-}
-
 /**
- * S8 Beat 2 — "the mark forms." Reuses the existing fracture→converge metaball
- * (NO new raymarcher): the shards crystallise into the Zirtuno mark when the beat
- * enters view. Lazy-mounted + paused off-screen (strict GPU budget); the static
- * SVG mark is the reduced-motion / mobile / no-WebGL fallback.
+ * S8 Beat 2 — "the mark forms." The converge driver on the unified liquid
+ * field (R1 — same engine as the hero and S4): dispersed droplets drift home
+ * and crystallise into the EXACT mark, once, when the beat enters view. Every
+ * tier the probe clears gets it live; the static SVG mark stays for
+ * reduced-motion / "none" / no-WebGL.
  */
 export function OriginMark() {
   const reduced = useReducedMotion();
   const [stageRef, inView, seen] = useInView<HTMLDivElement>("250px");
-  const [enabled, setEnabled] = useState(false);
-  const [desktop, setDesktop] = useState(false);
+  const [tier, setTier] = useState<FieldTier | null>(null);
   const [ready, setReady] = useState(false);
-
-  useEffect(() => {
-    const mq = window.matchMedia("(min-width: 768px) and (pointer: fine)");
-    const update = () => setDesktop(mq.matches);
-    update();
-    mq.addEventListener("change", update);
-    return () => mq.removeEventListener("change", update);
+  // plain mutable holder (not a React ref): 1 = dispersed … 0 = the mark, formed
+  const [driver, progress] = useMemo(() => {
+    const p = { current: 1 };
+    return [makeScatterDriver(p), p] as const;
   }, []);
 
   useEffect(() => {
-    setEnabled(!reduced && desktop && supportsWebGL());
-  }, [reduced, desktop]);
+    setTier(detectFieldTier());
+  }, []);
+
+  const enabled = !reduced && (tier === "full" || tier === "lite");
+
+  // the converge plays once, timed, on first view
+  useEffect(() => {
+    if (!enabled || !seen) return;
+    let raf = 0;
+    const t0 = performance.now();
+    const DUR = 2600;
+    const tick = (now: number) => {
+      const p = Math.min((now - t0) / DUR, 1);
+      progress.current = 1 - arrive(p);
+      if (p < 1) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [enabled, seen, progress]);
 
   const hideFallback = enabled && ready;
 
@@ -53,12 +64,13 @@ export function OriginMark() {
         <LogoMark />
       </div>
       {enabled && seen && (
-        <div className="origin-mark-canvas">
-          <MetaballScene
-            fracture={1}
-            converge={inView}
+        <div className="origin-mark-canvas sdf-glass-breath">
+          <FieldStage
+            driver={driver}
             play={inView}
+            tier={tier === "lite" ? "lite" : "full"}
             onReady={() => setReady(true)}
+            onContextLost={() => setReady(false)}
           />
         </div>
       )}

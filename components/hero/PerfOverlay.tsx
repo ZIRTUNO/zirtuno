@@ -1,13 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { detectGpuTier } from "@/lib/webgl/gpu-tier";
+import { detectFieldTier } from "@/lib/webgl/field-tier";
 
 /**
- * Debug HUD for measuring the glass on real devices — append `?perf=1`. Shows the
- * chosen tier, the live glass fps + DPR (published by MetaballScene's AdaptiveDpr),
- * and the actual internal render resolution of the hero canvas. Off by default,
- * zero cost when not requested.
+ * Debug HUD for measuring the glass on real devices — append `?perf=1`. Shows
+ * the probed field tier (lib/webgl/field-tier) and the actual internal render
+ * resolution of the hero canvas. Off by default, zero cost when not requested.
  */
 export function PerfOverlay() {
   const [text, setText] = useState<string | null>(null);
@@ -16,7 +15,7 @@ export function PerfOverlay() {
     if (!/[?&]perf=1\b/i.test(window.location.search)) return;
     let tier = "?";
     try {
-      tier = detectGpuTier();
+      tier = detectFieldTier();
     } catch {
       /* ignore */
     }

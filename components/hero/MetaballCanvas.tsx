@@ -6,7 +6,7 @@ import dynamic from "next/dynamic";
 import { useReducedMotion } from "@/lib/animation/reduced-motion";
 import { useInView } from "@/lib/animation/use-in-view";
 import { detectFieldTier, setFieldTier, type FieldTier } from "@/lib/webgl/field-tier";
-import { STATE_COUNT } from "@/lib/webgl/states";
+import { STATE_COUNT } from "@/lib/webgl/symbols";
 import { LogoMark } from "./LogoMark";
 import { PillarIndicator } from "./PillarIndicator";
 import { PerfOverlay } from "./PerfOverlay";
@@ -23,7 +23,7 @@ const FieldMorphHero = dynamic(() => import("./FieldMorphHero"), { ssr: false })
 const SdfGlassField = dynamic(() => import("./SdfGlassField"), { ssr: false });
 const MetaballField = dynamic(() => import("./MetaballField"), { ssr: false });
 
-const STATES = STATE_COUNT; // 0 = mark, 1-7 = the service pillars (lib/webgl/states)
+const STATES = STATE_COUNT; // 0 = mark, 1-7 = the service pillars (lib/webgl/symbols)
 
 /**
  * Hero metaball (S2.3) — the field system, tiered by a runtime probe

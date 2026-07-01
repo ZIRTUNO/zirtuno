@@ -43,9 +43,6 @@ const ctx = await browser.newContext({
   viewport: { width: 1280, height: 900 },
   deviceScaleFactor: 1,
 });
-await ctx.addInitScript(() => {
-  try { sessionStorage.setItem("zr-gpu-tier-v5", "lite"); } catch { /* ignore */ }
-});
 const page = await ctx.newPage();
 page.on("pageerror", (e) => console.error("PAGE ERROR:", e.message));
 page.on("console", (m) => m.type() === "error" && console.error("CONSOLE:", m.text()));

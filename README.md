@@ -20,7 +20,7 @@ Fold durable decisions into this README, `AGENTS.md`, or `build-spec.md`.
 
 - Next.js 16 App Router, TypeScript, Turbopack default
 - Tailwind CSS v4 with CSS variables
-- Three.js, React Three Fiber, Drei
+- Raw WebGL2 + OGL (the unified liquid field — one engine for every visual)
 - GSAP ScrollTrigger, Motion, Lenis
 - next-intl, Sanity, react-hook-form, zod, Resend
 
@@ -45,15 +45,16 @@ npm run dev
 npm run build
 npm run lint
 npx tsc --noEmit
-npm run mesh:check
 ```
 
-Useful visual iteration scripts:
+Visual QA harnesses (dev server must be running; `LOCALE=pt` for the PT pass):
 
 ```bash
-npm run contact:sheet
-npm run morphs:check
-node scripts/capture-mesh.mjs
+npm run forms:rest      # rest exactness sheet (every form vs its reference SVG)
+npm run forms:melts     # §3.3 bridge mid-frames + melt fps + keyboard smoke
+npm run forms:cursor    # cursor goo sheet (bulge → neck → merge)
+npm run chapters:sheet  # S3/S4/S5/S8/S10 × ftier full/lite/none
+npm run endpoints       # re-pack the 48-droplet morph endpoints from the SVGs
 ```
 
 ## Current State
@@ -79,10 +80,16 @@ node scripts/capture-mesh.mjs
   intent with `history.replaceState` (no router navigation); cross-page CTAs
   keep the routed path. The labeled contact submit is canonical; the metaball
   exhale is decorative.
-- The legacy raymarch (`MetaballScene`) and mesh (`MeshMetaballScene`) engines
-  no longer mount in the hero but still back the other chapter visuals
-  (fracture / ecosystem / services / origin / contact) until R1 replaces them
-  with field drivers and deletes them.
+- **One engine everywhere (R1 done):** every chapter visual is a driver on the
+  same unified field (`components/field/FieldStage` + `lib/webgl/field-drivers`)
+  — S3 scatter (desaturated fragments), S4 pin-scrubbed converge (droplets fly
+  home, colour blooms, the exact mark re-forms), S5 progress-locked pillar
+  melts, S8 timed converge, S10 exhale impulse. Tiered by the same field probe:
+  full = glass, lite = flat cyan at dpr 1 (mobile now gets LIVE liquid), none =
+  static SVG. The legacy raymarch/mesh engines, their gating (`gpu-tier`,
+  `can-run-glass`, `?glass=`), their data and their capture scripts are DELETED
+  (three.js/@react-three removed from dependencies); acceptance sheet:
+  `captures/chapters-sheet-{en,pt}.png`.
 - Portfolio seed projects are prototypes only. Do not add fabricated metrics.
 
 ## Open Decisions

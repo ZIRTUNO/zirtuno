@@ -1,9 +1,8 @@
 // Screenshot the LIVE field hero in the real Next app (dev server running):
 //   node scripts/capture-field-live.mjs
-// ?hero=field      → the SDF-GLASS resting mark (SdfGlassField, v1.2 §6.1)
-// ?hero=fieldflat  → the flat metaball field (MetaballField, morph-layer debug)
-// Writes captures/field-live-glass.png + field-live-flat.png (the
-// [data-hero-metaball] stage only) + a rough requestAnimationFrame fps read.
+// Default path = the unified liquid hero (FieldMorphHero); ?fflat=1 = the bare
+// 48-ball debug layer (MetaballField). Writes captures/field-live-glass.png +
+// field-live-flat.png ([data-hero-metaball] only) + a rough rAF fps read.
 
 import { chromium } from "playwright";
 import fs from "node:fs";
@@ -33,12 +32,6 @@ const browser = await chromium.launch({
 const ctx = await browser.newContext({
   viewport: { width: 1280, height: 900 },
   deviceScaleFactor: 2,
-});
-// pre-seed the legacy gpu-tier cache (the OTHER chapters still probe it until R1)
-// so its readPixels stall can't pollute these captures; the hero's own tier is
-// forced via ?ftier=full (headless Chrome rasterises WebGL in software).
-await ctx.addInitScript(() => {
-  try { sessionStorage.setItem("zr-gpu-tier-v5", "lite"); } catch { /* ignore */ }
 });
 const page = await ctx.newPage();
 page.on("pageerror", (e) => console.error("PAGE ERROR:", e.message));

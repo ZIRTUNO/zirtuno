@@ -1,54 +1,59 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useReducedMotion } from "@/lib/animation/reduced-motion";
 import { useInView } from "@/lib/animation/use-in-view";
-import { canRunGlass } from "@/lib/webgl/can-run-glass";
+import { detectFieldTier, type FieldTier } from "@/lib/webgl/field-tier";
+import { makeScatterDriver, arrive } from "@/lib/webgl/field-drivers";
 import { LogoMark } from "@/components/hero/LogoMark";
 import { cn } from "@/lib/utils";
 
-// three.js is client-only and heavy → load the scene lazily, no SSR.
-const MetaballScene = dynamic(() => import("@/components/hero/MetaballScene"), {
+// the unified liquid field is client-only (WebGL2) → lazy, no SSR.
+const FieldStage = dynamic(() => import("@/components/field/FieldStage"), {
   ssr: false,
 });
 
-function supportsWebGL(): boolean {
-  return canRunGlass();
-}
-
 /**
- * S4 · Ecosystem core — the SCROLL-SCRUBBED converge. Reuses the hero glass
- * (MetaballScene): the S3 shards (fracture = 1) reassemble into the connected
- * organism (uFracture → 0) tied to scroll progress through the pinned diagram —
- * the visitor earns "ecossistemas, não peças soltas" by scrolling. Desktop-only;
- * the unified CSS placeholder is the reduced-motion / mobile / no-WebGL fallback.
+ * S4 · Ecosystem core — the CONVERGE: the scatter driver run backwards on the
+ * unified liquid field (R1). The S3 droplets fly home, the colour blooms back
+ * from grey to vivid cyan, and the EXACT mark re-forms — the visitor earns
+ * "ecossistemas, não peças soltas". On desktop the converge is pinned and
+ * scroll-scrubbed (progress 1 → 0); elsewhere it plays once, timed, when the
+ * diagram enters view. The static mark stays for reduced-motion / "none".
  */
 export function EcosystemCore({ ariaLabel = "Zirtuno" }: { ariaLabel?: string }) {
   const reduced = useReducedMotion();
   const [stageRef, inView, seen] = useInView<HTMLDivElement>("250px");
-  const [enabled, setEnabled] = useState(false);
+  const [tier, setTier] = useState<FieldTier | null>(null);
   const [desktop, setDesktop] = useState(false);
   const [ready, setReady] = useState(false);
-  const fractureRef = useRef(1); // live uFracture, driven by scroll progress
+  // plain mutable holder (not a React ref): 1 = dispersed (S3's exit state) …
+  // 0 = the mark. The scrub/tween effects write it; the driver reads per frame.
+  const [driver, progress] = useMemo(() => {
+    const p = { current: 1 };
+    return [makeScatterDriver(p), p] as const;
+  }, []);
 
   useEffect(() => {
-    const mq = window.matchMedia("(min-width: 768px) and (pointer: fine)");
+    setTier(detectFieldTier());
+  }, []);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 768px)");
     const update = () => setDesktop(mq.matches);
     update();
     mq.addEventListener("change", update);
     return () => mq.removeEventListener("change", update);
   }, []);
 
-  useEffect(() => {
-    setEnabled(!reduced && desktop && supportsWebGL());
-  }, [reduced, desktop]);
+  const enabled = !reduced && (tier === "full" || tier === "lite");
 
-  // Pin the diagram and scrub the converge to scroll progress (1 → 0).
+  // Desktop: pin the diagram and scrub the converge to scroll (1 → 0).
   useEffect(() => {
-    if (!enabled) return;
+    if (!enabled || !desktop) return;
     const pinEl = stageRef.current?.closest(".eco-radial") as HTMLElement | null;
     if (!pinEl) return;
 
@@ -60,13 +65,13 @@ export function EcosystemCore({ ariaLabel = "Zirtuno" }: { ariaLabel?: string })
       pin: true,
       scrub: 0.6,
       onUpdate: (self) => {
-        fractureRef.current = 1 - self.progress;
+        progress.current = 1 - self.progress;
       },
       onLeave: () => {
-        fractureRef.current = 0;
+        progress.current = 0;
       },
       onLeaveBack: () => {
-        fractureRef.current = 1;
+        progress.current = 1;
       },
     });
     // recompute pin offsets once layout/fonts have settled
@@ -75,7 +80,22 @@ export function EcosystemCore({ ariaLabel = "Zirtuno" }: { ariaLabel?: string })
       window.clearTimeout(id);
       st.kill();
     };
-  }, [enabled, stageRef]);
+  }, [enabled, desktop, stageRef, progress]);
+
+  // Mobile / no-pin: the converge plays once, timed, when first seen.
+  useEffect(() => {
+    if (!enabled || desktop || !seen) return;
+    let raf = 0;
+    const t0 = performance.now();
+    const DUR = 2600;
+    const tick = (now: number) => {
+      const p = Math.min((now - t0) / DUR, 1);
+      progress.current = 1 - arrive(p);
+      if (p < 1) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [enabled, desktop, seen, progress]);
 
   const hideFallback = enabled && ready;
 
@@ -87,11 +107,12 @@ export function EcosystemCore({ ariaLabel = "Zirtuno" }: { ariaLabel?: string })
       />
       {enabled && seen && (
         <div className="eco-core-canvas">
-          <MetaballScene
-            fracture={1}
-            fractureRef={fractureRef}
+          <FieldStage
+            driver={driver}
             play={inView}
+            tier={tier === "lite" ? "lite" : "full"}
             onReady={() => setReady(true)}
+            onContextLost={() => setReady(false)}
           />
         </div>
       )}

@@ -1,74 +1,48 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import { useReducedMotion } from "@/lib/animation/reduced-motion";
 import { useInView } from "@/lib/animation/use-in-view";
-import { glassTech, type GlassTech } from "@/lib/webgl/gpu-tier";
+import { detectFieldTier, type FieldTier } from "@/lib/webgl/field-tier";
+import { makeImpulseDriver } from "@/lib/webgl/field-drivers";
 import { LogoMark } from "@/components/hero/LogoMark";
 import { cn } from "@/lib/utils";
 
-// three.js is client-only and heavy → load the scene lazily, no SSR.
-const MetaballScene = dynamic(() => import("@/components/hero/MetaballScene"), {
+// the unified liquid field is client-only (WebGL2) → lazy, no SSR.
+const FieldStage = dynamic(() => import("@/components/field/FieldStage"), {
   ssr: false,
 });
-const MeshMetaballScene = dynamic(
-  () => import("@/components/hero/MeshMetaballScene"),
-  { ssr: false },
-);
 
 export const EXHALE_EVENT = "zirtuno:exhale";
 
 /**
- * S10 — the contact metaball: the resting connected mark, breathing. Additive
- * only — the labeled submit is the canonical action. On submit it "exhales":
- * the form briefly disperses (uFracture pulses 0 → ~0.45 → 0) and reforms,
- * triggered by the `zirtuno:exhale` window event the form dispatches. Desktop-
- * only; the unified CSS placeholder is the reduced-motion / mobile / no-WebGL
- * fallback. Pauses off-screen.
+ * S10 — the contact liquid: the EXACT resting mark, breathing. Additive only —
+ * the labeled submit is the canonical action. On submit it "exhales": the
+ * impulse driver (R1, unified field) bursts droplets off the mark and sinks
+ * them back over ~1.5 s, triggered by the `zirtuno:exhale` window event the
+ * form dispatches. Every tier the probe clears gets it live; the static mark
+ * stays for reduced-motion / "none" / no-WebGL.
  */
 export function ContactMetaball() {
   const reduced = useReducedMotion();
   const [stageRef, inView, seen] = useInView<HTMLDivElement>("250px");
-  const [enabled, setEnabled] = useState(false);
-  const [desktop, setDesktop] = useState(false);
-  const [tech, setTech] = useState<GlassTech>("none");
+  const [tier, setTier] = useState<FieldTier | null>(null);
   const [ready, setReady] = useState(false);
-  const fractureRef = useRef(0);
+  const { driver, trigger } = useMemo(() => makeImpulseDriver(0), []);
 
   useEffect(() => {
-    setTech(glassTech());
+    setTier(detectFieldTier());
   }, []);
 
+  // the exhale gesture — a one-shot droplet pulse on submit
   useEffect(() => {
-    const mq = window.matchMedia("(min-width: 768px) and (pointer: fine)");
-    const update = () => setDesktop(mq.matches);
-    update();
-    mq.addEventListener("change", update);
-    return () => mq.removeEventListener("change", update);
-  }, []);
-
-  useEffect(() => {
-    setEnabled(!reduced && desktop && tech !== "none");
-  }, [reduced, desktop, tech]);
-
-  // the exhale gesture — a one-shot fracture pulse on submit
-  useEffect(() => {
-    const onExhale = () => {
-      const start = performance.now();
-      const dur = 1500;
-      const tick = (now: number) => {
-        const p = Math.min((now - start) / dur, 1);
-        fractureRef.current = Math.sin(p * Math.PI) * 0.45; // 0 → peak → 0
-        if (p < 1) requestAnimationFrame(tick);
-        else fractureRef.current = 0;
-      };
-      requestAnimationFrame(tick);
-    };
+    const onExhale = () => trigger();
     window.addEventListener(EXHALE_EVENT, onExhale);
     return () => window.removeEventListener(EXHALE_EVENT, onExhale);
-  }, []);
+  }, [trigger]);
 
+  const enabled = !reduced && (tier === "full" || tier === "lite");
   const hideFallback = enabled && ready;
 
   return (
@@ -77,21 +51,14 @@ export function ContactMetaball() {
         className={cn("contact-metaball-fallback", hideFallback && "is-hidden")}
       />
       {enabled && seen && (
-        <div className="contact-metaball-canvas">
-          {tech === "mesh" ? (
-            <MeshMetaballScene
-              manualState={0}
-              play={inView}
-              onReady={() => setReady(true)}
-            />
-          ) : (
-            <MetaballScene
-              fracture={0}
-              fractureRef={fractureRef}
-              play={inView}
-              onReady={() => setReady(true)}
-            />
-          )}
+        <div className="contact-metaball-canvas sdf-glass-breath">
+          <FieldStage
+            driver={driver}
+            play={inView}
+            tier={tier === "lite" ? "lite" : "full"}
+            onReady={() => setReady(true)}
+            onContextLost={() => setReady(false)}
+          />
         </div>
       )}
     </div>

@@ -18,7 +18,7 @@ const ctx = await browser.newContext({
   reducedMotion: "no-preference",
 });
 const page = await ctx.newPage();
-await page.goto(`${BASE}/en?glass=full`, { waitUntil: "domcontentloaded" });
+await page.goto(`${BASE}/en?ftier=full`, { waitUntil: "domcontentloaded" });
 await page.waitForFunction(() => !!document.querySelector("h1"), { timeout: 40000 });
 const el = page.locator(sel).first();
 await el.scrollIntoViewIfNeeded();
