@@ -102,6 +102,8 @@ export default function FieldStage({
       gl.uniform1f(layer.U("iTime"), tMs / 1000);
       gl.uniform1f(layer.U("iFormA"), f.fa);
       gl.uniform1f(layer.U("iFormB"), textures[f.b] ? f.fb : 0);
+      gl.uniform1f(layer.U("iEroA"), f.ea);
+      gl.uniform1f(layer.U("iEroB"), f.eb);
       gl.uniform1f(layer.U("iWarp"), f.warp);
       gl.uniform1f(layer.U("iMute"), f.mute);
       gl.uniform1f(layer.U("iGlass"), liveTier === "full" ? 1 : 0);

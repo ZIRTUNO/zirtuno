@@ -19,6 +19,7 @@
 import {
   SDF_WARP_REST,
   SDF_WARP_MORPH,
+  SDF_MELT_ERODE,
 } from "./sdf-glass-shader.mjs";
 import { ALL_RAW, ISO_LEVEL } from "./symbols.data.mjs";
 import { EASE_POINTS } from "../animation/easings";
@@ -38,7 +39,7 @@ export const STAG: number[][] = CLOUDS.map((c) => c.map((b) => b[0]));
 // ── §3.3 melt constants (single source — hero + services scrub) ───────────────
 export const STAGGER = 0.25; // fraction of the timeline sweeping left → right
 export const RADIUS_LEAD = 1.18; // radius finishes ~18% ahead of position
-export const BRIDGE = 0.24; // p-window where a form hands off to / from droplets
+export const BRIDGE = 0.38; // p-window where a form hands off to / from droplets
 
 // ── small math helpers ─────────────────────────────────────────────────────────
 export const clamp01 = (x: number) => (x < 0 ? 0 : x > 1 ? 1 : x);
@@ -123,8 +124,11 @@ export function packBridge(
   stag: number[],
   p: number,
 ): number {
+  // droplets grow ahead of the form's erosion (and shrink after the landing
+  // form has begun re-growing), so the liquid never loses body at a handoff
+  const R_WIN = BRIDGE * 0.65;
   const rEnv =
-    smooth01(p / BRIDGE) * (1 - smooth01((p - (1 - BRIDGE)) / BRIDGE));
+    smooth01(p / R_WIN) * (1 - smooth01((p - (1 - R_WIN)) / R_WIN));
   for (let i = 0; i < N; i++) {
     const lt = clamp01(p * (1 + STAGGER) - STAGGER * stag[i]);
     const tp = arrive(lt);
@@ -138,11 +142,27 @@ export function packBridge(
   return offset + N;
 }
 
-/** Form-A / form-B field weights across a melt (1,0 at rest). */
-export const formWeights = (p: number): [number, number] => [
-  1 - smooth01(p / BRIDGE),
-  smooth01((p - (1 - BRIDGE)) / BRIDGE),
+/**
+ * Form PRESENCE q ∈ [0,1] → [field weight, erosion offset]. The transformation
+ * must feel organic, never a pop: EROSION does the visible work — it moves the
+ * form's boundary continuously (thin features dissolve first on the way out;
+ * the skeleton emerges first and grows to the exact silhouette on the way in).
+ * The weight only drains the residual field tail near q = 0, where the form is
+ * already visually gone.
+ */
+export const formPresence = (q: number): [number, number] => [
+  smooth01(Math.min(q * 2.5, 1)),
+  (1 - q) * SDF_MELT_ERODE,
 ];
+
+/** Both forms' [weight, erosion] across a melt (A hands off, B lands). */
+export function formPhase(
+  p: number,
+): { wA: number; eA: number; wB: number; eB: number } {
+  const [wA, eA] = formPresence(1 - smooth01(p / BRIDGE));
+  const [wB, eB] = formPresence(smooth01((p - (1 - BRIDGE)) / BRIDGE));
+  return { wA, eA, wB, eB };
+}
 
 // ── the driver contract (consumed by components/field/FieldStage) ─────────────
 export type FieldFrame = {
@@ -150,6 +170,8 @@ export type FieldFrame = {
   b: number; // form B state index
   fa: number; // form A field weight
   fb: number; // form B field weight
+  ea: number; // form A erosion offset (0 = exact)
+  eb: number; // form B erosion offset
   warp: number;
   mute: number; // 0 = brand cyan … 1 = desaturated (S3)
   count: number; // balls the driver packed into the buffer
@@ -165,6 +187,8 @@ const restFrame = (s: number): FieldFrame => ({
   b: s,
   fa: 1,
   fb: 0,
+  ea: 0,
+  eb: 0,
   warp: SDF_WARP_REST,
   mute: 0,
   count: 0,
@@ -235,11 +259,16 @@ export function makeScatterDriver(
         buf[i * 3 + 1] = b[1] + (s.ty - b[1]) * p + 0.012 * Math.cos(t * s.f2 + i * 2.3) * p;
         buf[i * 3 + 2] = b[2] * (1 - 0.25 * p) * env;
       }
+      // organic dissolve/emerge: the form ERODES from its thin edges as the
+      // droplets condense (and re-grows from its skeleton on the converge)
+      const [fa, ea] = formPresence(1 - env);
       return {
         a: state,
         b: state,
-        fa: 1 - env,
+        fa,
         fb: 0,
+        ea,
+        eb: 0,
         warp: SDF_WARP_REST,
         mute: 0.85 * smooth01(p),
         count: N,
@@ -264,13 +293,15 @@ export function makeScrubMorphDriver(pair: {
       if (a === b || m <= 0) return restFrame(a);
       if (m >= 1) return restFrame(b);
       const count = packBridge(buf, 0, CLOUDS[a], CLOUDS[b], permFor(a, b), STAG[a], m);
-      const [fa, fb] = formWeights(m);
+      const { wA, eA, wB, eB } = formPhase(m);
       const env = Math.sin(Math.PI * m);
       return {
         a,
         b,
-        fa,
-        fb,
+        fa: wA,
+        fb: wB,
+        ea: eA,
+        eb: eB,
         warp: SDF_WARP_REST + (SDF_WARP_MORPH - SDF_WARP_REST) * env,
         mute: 0,
         count,
@@ -316,6 +347,8 @@ export function makeImpulseDriver(
           b: state,
           fa: 1,
           fb: 0,
+          ea: 0,
+          eb: 0,
           warp: SDF_WARP_REST + 0.004 * e,
           mute: 0,
           count: N,

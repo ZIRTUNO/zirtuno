@@ -50,7 +50,7 @@ import {
   STAG,
   clamp01,
   packBridge,
-  formWeights,
+  formPhase,
   permFor,
 } from "@/lib/webgl/field-drivers";
 import { SVG_URLS, STATE_COUNT } from "@/lib/webgl/symbols";
@@ -157,6 +157,8 @@ export default function FieldMorphHero({
       timeSec: number,
       formA: number,
       formB: number,
+      eroA: number,
+      eroB: number,
       warp: number,
       ballCount: number,
     ) => {
@@ -166,6 +168,8 @@ export default function FieldMorphHero({
       gl.uniform1f(layer.U("iTime"), timeSec);
       gl.uniform1f(layer.U("iFormA"), formA);
       gl.uniform1f(layer.U("iFormB"), formB);
+      gl.uniform1f(layer.U("iEroA"), eroA);
+      gl.uniform1f(layer.U("iEroB"), eroB);
       gl.uniform1f(layer.U("iWarp"), warp);
       gl.uniform3fv(layer.U("iBalls"), ballBuf);
       gl.uniform1i(layer.U("iBallCount"), ballCount);
@@ -248,10 +252,12 @@ export default function FieldMorphHero({
         const p = clamp01(morphT / TRANS);
         const env = Math.sin(Math.PI * p); // 0 at the ends → seamless handoff
         count = packBridge(ballBuf, count, CLOUDS[state], CLOUDS[target], perm, stag, p);
-        const [fa, fb] = formWeights(p);
-        draw(t, fa, fb, SDF_WARP_REST + (SDF_WARP_MORPH - SDF_WARP_REST) * env, count);
+        // erosion-based handoff: A dissolves thin-edges-first, B grows from its
+        // skeleton under the landing droplets — no whole-form pop, ever
+        const { wA, eA, wB, eB } = formPhase(p);
+        draw(t, wA, wB, eA, eB, SDF_WARP_REST + (SDF_WARP_MORPH - SDF_WARP_REST) * env, count);
       } else {
-        draw(t, 1, 0, SDF_WARP_REST, count);
+        draw(t, 1, 0, 0, 0, SDF_WARP_REST, count);
       }
     };
 
@@ -275,7 +281,7 @@ export default function FieldMorphHero({
           phase = "rest";
         }
         bindForms(state, state);
-        draw(0, 1, 0, 0, 0);
+        draw(0, 1, 0, 0, 0, 0, 0);
         cb.current.onTierChange("none");
       }
     };
@@ -491,7 +497,9 @@ export default function FieldMorphHero({
     const env = Math.sin(Math.PI * m);
     // a rest still (a === b) renders with ZERO warp → the pixel-exact form
     const warp = melt ? SDF_WARP_REST + (SDF_WARP_MORPH - SDF_WARP_REST) * env : 0;
-    const [fa, fb] = melt ? formWeights(m) : [1, 0];
+    const { wA, eA, wB, eB } = melt
+      ? formPhase(m)
+      : { wA: 1, eA: 0, wB: 0, eB: 0 };
     const buf = new Float32Array(SDF_BALL_MAX * 3);
     let count = 0;
     if (frozenCursor) {
@@ -513,8 +521,10 @@ export default function FieldMorphHero({
       gl.viewport(0, 0, w, h);
       gl.uniform2f(layer.U("iRes"), w, h);
       gl.uniform1f(layer.U("iTime"), 0);
-      gl.uniform1f(layer.U("iFormA"), fa);
-      gl.uniform1f(layer.U("iFormB"), fb);
+      gl.uniform1f(layer.U("iFormA"), wA);
+      gl.uniform1f(layer.U("iFormB"), wB);
+      gl.uniform1f(layer.U("iEroA"), eA);
+      gl.uniform1f(layer.U("iEroB"), eB);
       gl.uniform1f(layer.U("iWarp"), warp);
       gl.uniform3fv(layer.U("iBalls"), buf);
       gl.uniform1i(layer.U("iBallCount"), count);
