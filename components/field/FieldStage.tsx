@@ -89,7 +89,11 @@ export default function FieldStage({
     const scaleFor = () => (liveTier === "full" ? maxDpr : 1);
 
     const drawFrame = (tMs: number) => {
-      const f = driverRef.current.frame(tMs, ballBuf);
+      const aspect =
+        gl.drawingBufferHeight > 0
+          ? gl.drawingBufferWidth / gl.drawingBufferHeight
+          : 1;
+      const f = driverRef.current.frame(tMs, ballBuf, aspect);
       const ta = textures[f.a];
       if (!ta) return; // the driver's form isn't built yet — fallback stays
       const tb = textures[f.b] ?? ta;
@@ -104,6 +108,8 @@ export default function FieldStage({
       gl.uniform1f(layer.U("iFormB"), textures[f.b] ? f.fb : 0);
       gl.uniform1f(layer.U("iEroA"), f.ea);
       gl.uniform1f(layer.U("iEroB"), f.eb);
+      gl.uniform2f(layer.U("iFormOff"), f.ox ?? 0, f.oy ?? 0);
+      gl.uniform1f(layer.U("iFormScale"), f.scale ?? 1);
       gl.uniform1f(layer.U("iWarp"), f.warp);
       gl.uniform1f(layer.U("iMute"), f.mute);
       gl.uniform1f(layer.U("iGlass"), liveTier === "full" ? 1 : 0);

@@ -45,7 +45,7 @@ for (const c of STOPS) {
   await page.goto(`${BASE}/${LOCALE}?ftier=full&feco=${c}`, {
     waitUntil: "networkidle",
   });
-  const stage = page.locator("[data-ecosystem-core]");
+  const stage = page.locator("[data-organism]");
   await stage.scrollIntoViewIfNeeded();
   // the driver's damped progress settles in ~600 ms; give it room
   await page.waitForTimeout(2200);
@@ -64,7 +64,7 @@ await sheet.setContent(
        (b, i) => `<div style="text-align:center">
      <img src="data:image/png;base64,${b}" style="width:200px;height:200px;border:1px solid #13313a;border-radius:4px;object-fit:contain;background:#000"/>
      <div style="font:12px ui-monospace,monospace;color:#00e3fe;margin-top:5px">${Math.round(STOPS[i] * 100)}% · ${
-       ["dispersed", "flowing home", "gathering", "fused ghost", "resolved"][i]
+       ["dispersed", "flowing home", "fused ghost", "organism + tendrils", "fed ecosystem"][i]
      }</div>
    </div>`,
      )

@@ -455,53 +455,6 @@ section[id],
   pointer-events: none;
 }
 
-/* S3.2 — fractured metaball (The Problem). Square stage; CSS placeholder base
-   layer + glass canvas overlay (desktop), placeholder fades out once glass paints. */
-.fractured-stage {
-  position: relative;
-  width: 100%;
-  max-width: 560px;
-  margin-inline: auto;
-  aspect-ratio: 1 / 1;
-}
-.fractured-stage > .fractured-fallback,
-.fractured-stage > .fractured-canvas {
-  position: absolute;
-  inset: 0;
-}
-.fractured-stage > .fractured-fallback {
-  max-width: none;
-  transition: opacity var(--dur-long) var(--ease-arrive);
-}
-.fractured-fallback.is-hidden {
-  opacity: 0;
-}
-.fractured-canvas {
-  pointer-events: none;
-}
-
-/* S4 — ecosystem core (the converge). Fills the diagram centre (.eco-core). */
-.eco-core-stage {
-  position: relative;
-  width: 100%;
-  aspect-ratio: 1 / 1;
-}
-.eco-core-stage > .eco-core-fallback,
-.eco-core-stage > .eco-core-canvas {
-  position: absolute;
-  inset: 0;
-}
-.eco-core-stage > .eco-core-fallback {
-  max-width: none;
-  transition: opacity var(--dur-long) var(--ease-arrive);
-}
-.eco-core-fallback.is-hidden {
-  opacity: 0;
-}
-.eco-core-canvas {
-  pointer-events: none;
-}
-
 /* S5 — services metaball (sticky; morphs to each pillar's form on scroll-in). */
 .services-metaball-stage {
   position: relative;
@@ -659,18 +612,52 @@ section[id],
 }
 
 /* ===========================================================================
-   The Problem — symptom ledger (S3)
+   The Problem (S3 remake) — the fracture field + symptom shards.
+   The liquid layer is sticky full-viewport; the whole chapter scrolls over it
+   (-100vh bottom margin). Shards float with a deliberately broken rhythm.
    =========================================================================== */
+.fracture-layer {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  margin-bottom: -100vh;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+.fracture-fallback {
+  position: absolute;
+  right: 6%;
+  top: 22%;
+  width: 38vmin;
+  opacity: 0.55;
+}
+@media (max-width: 767px) {
+  /* atmosphere, never noise: dim the field behind small-screen copy */
+  .fracture-layer {
+    opacity: 0.45;
+  }
+}
+
 .symptom {
+  position: relative;
   display: grid;
-  grid-template-columns: 2.5rem 1fr;
-  gap: 0 1.25rem;
+  grid-template-columns: 2.75rem 1fr;
+  gap: 0 1.4rem;
   align-items: baseline;
-  padding: 1.25rem 0;
+  max-width: 26rem;
+  padding: 1.5rem 0 0;
+  margin-bottom: 22vh;
   border-top: 1px solid var(--color-paper-faint);
 }
 .symptom:last-child {
-  border-bottom: 1px solid var(--color-paper-faint);
+  margin-bottom: 0;
+}
+@media (min-width: 768px) {
+  .symptom {
+    margin-left: var(--shard-x, 0);
+    margin-bottom: 30vh;
+  }
 }
 .symptom-num {
   font-family: var(--font-mono);
@@ -678,188 +665,102 @@ section[id],
   color: var(--color-cyan);
 }
 .symptom-label {
-  font-size: 1.25rem;
+  font-size: 1.35rem;
   font-weight: 500;
   line-height: 1.2;
   color: var(--color-paper);
 }
 .symptom-desc {
-  margin-top: 0.2rem;
+  margin-top: 0.35rem;
   font-size: var(--text-body);
   color: var(--color-paper-mute);
+  max-width: 20rem;
 }
 
 /* ===========================================================================
-   The Ecosystem — radial diagram (S4)
+   The Ecosystem (S4 remake) — the ORGANISM. A full-bleed liquid stage: the
+   converged mark breathes at the centre; liquid tendrils feed ten capability
+   labels orbiting irregularly around it. No SVG spokes, no orbit ring.
    =========================================================================== */
-.eco-radial {
+.organism {
   position: relative;
   width: 100%;
-  max-width: 680px;
-  margin-inline: auto;
-  aspect-ratio: 1 / 1;
-  overflow: visible;
+  height: 100vh;
+  overflow: hidden;
 }
-.eco-lines {
+.organism > .organism-stage {
   position: absolute;
   inset: 0;
-  width: 100%;
-  height: 100%;
-  overflow: visible;
+  pointer-events: none;
 }
-.eco-line {
-  stroke: var(--color-cyan);
-  stroke-width: 0.45;
-  opacity: 0.3;
-  transition:
-    opacity 240ms var(--ease-arrive),
-    stroke-width 240ms var(--ease-arrive);
-}
-.eco-line.is-lit {
-  opacity: 0.9;
-  stroke-width: 0.8;
-}
-
-/* Traveling data-flow pulse — a short bright dash running node → core (the
-   ecosystem feeding the business). Hidden under reduced motion. */
-.eco-pulse {
-  stroke: var(--color-cyan-glow);
-  stroke-width: 0.7;
-  stroke-linecap: round;
-  opacity: 0;
-}
-.eco-pulse.is-lit {
-  stroke-width: 1;
-}
-@media (prefers-reduced-motion: no-preference) {
-  .eco-pulse {
-    opacity: 0.9;
-    stroke-dasharray: 2.5 84;
-    animation: eco-flow 2.8s linear infinite;
-  }
-}
-@keyframes eco-flow {
-  from {
-    stroke-dashoffset: 86.5;
-  }
-  to {
-    stroke-dashoffset: 0;
-  }
-}
-
-/* Faint orbit ring rotating slowly behind the constellation — a quiet sign of
-   life that never disturbs label legibility or the scroll-pinned converge. */
-.eco-orbit {
-  fill: none;
-  stroke: var(--color-cyan);
-  stroke-width: 0.25;
-  stroke-dasharray: 1 3;
-  opacity: 0.16;
-  transform-box: fill-box;
-  transform-origin: center;
-}
-@media (prefers-reduced-motion: no-preference) {
-  .eco-orbit {
-    animation: eco-orbit-spin 90s linear infinite;
-  }
-}
-@keyframes eco-orbit-spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-.eco-core {
+.organism-fallback {
   position: absolute;
   left: 50%;
   top: 50%;
-  width: 30%;
+  width: 36vmin;
   transform: translate(-50%, -50%);
-  display: grid;
-  place-items: center;
 }
-.eco-core-label {
+.organism-center {
   position: absolute;
-  top: calc(100% + 0.25rem);
   left: 50%;
+  top: 81%;
   transform: translateX(-50%);
   font-family: var(--font-mono);
   font-size: var(--text-mono-sm);
-  letter-spacing: 0.12em;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--color-cyan);
   white-space: nowrap;
+  opacity: 0; /* revealed with the tendrils (imperative) */
 }
-.eco-node {
+.organism-nodes {
   position: absolute;
-  display: flex;
+  inset: 0;
+  pointer-events: none;
+}
+.organism-node {
+  position: absolute;
+  display: none;
   flex-direction: column;
   align-items: center;
-  gap: 0.4rem;
+  gap: 0.3rem;
   transform: translate(-50%, -50%);
   text-align: center;
-  cursor: pointer;
+  opacity: 0; /* arrives with its tendril (imperative) */
+  pointer-events: auto;
 }
-.eco-node-dot {
-  width: 11px;
-  height: 11px;
-  border-radius: 9999px;
-  background: var(--color-cyan);
-  box-shadow:
-    0 0 10px color-mix(in srgb, var(--color-cyan) 55%, transparent),
-    0 0 0 5px color-mix(in srgb, var(--color-cyan) 14%, transparent);
-  transition:
-    transform 200ms var(--ease-arrive),
-    box-shadow 200ms var(--ease-arrive);
+@media (min-width: 768px) {
+  .organism-node {
+    display: flex;
+  }
 }
-.eco-node-name {
+.organism-node-name {
   font-family: var(--font-mono);
   font-size: var(--text-mono-sm);
-  letter-spacing: 0.08em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
   white-space: nowrap;
   color: var(--color-paper-mute);
   transition: color 200ms var(--ease-arrive);
 }
-.eco-node:hover .eco-node-name,
-.eco-node:focus-visible .eco-node-name {
+.organism-node:hover .organism-node-name {
   color: var(--color-paper);
 }
-.eco-node:hover .eco-node-dot,
-.eco-node:focus-visible .eco-node-dot {
-  transform: scale(1.25);
-  box-shadow: 0 0 0 6px color-mix(in srgb, var(--color-cyan) 22%, transparent);
-}
-.eco-node:focus-visible {
-  outline: none;
-}
-.eco-node-tip {
-  position: absolute;
-  top: calc(100% + 0.4rem);
-  left: 50%;
-  width: max-content;
-  max-width: 14rem;
-  padding: 0.5rem 0.7rem;
-  background: var(--color-surface);
-  border: 1px solid var(--color-paper-faint);
-  border-radius: 2px;
-  color: var(--color-paper-mute);
+.organism-node-cap {
+  max-width: 13rem;
   font-family: var(--font-sans);
   font-size: var(--text-mono-sm);
   line-height: 1.4;
-  letter-spacing: 0;
-  text-transform: none;
+  color: var(--color-paper-dim);
   opacity: 0;
-  pointer-events: none;
-  transform: translateX(-50%) translateY(4px);
+  transform: translateY(3px);
   transition:
-    opacity 200ms var(--ease-arrive),
-    transform 200ms var(--ease-arrive);
-  z-index: 5;
+    opacity 220ms var(--ease-arrive),
+    transform 220ms var(--ease-arrive);
 }
-.eco-node:hover .eco-node-tip,
-.eco-node:focus-visible .eco-node-tip {
+.organism-node:hover .organism-node-cap {
   opacity: 1;
-  transform: translateX(-50%) translateY(0);
+  transform: translateY(0);
 }
 
 /* Mobile — vertical connected stack */

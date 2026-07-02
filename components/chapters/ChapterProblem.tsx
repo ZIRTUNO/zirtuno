@@ -1,14 +1,20 @@
 import { useTranslations } from "next-intl";
 import { Reveal } from "@/components/ui/Reveal";
-import { FracturedMetaball } from "@/components/hero/FracturedMetaball";
+import { FractureField } from "@/components/field/FractureField";
 import { CtaStructure } from "@/components/chrome/CtaButton";
 
 type Symptom = { label: string; desc: string };
 
+// the shards' broken horizontal rhythm (rem, desktop only — deliberately
+// irregular: the layout itself is fragmenting)
+const SHARD_X = [0, 7, 2, 11, 5, 13, 1];
+
 /**
- * S3 · The Problem. Names the pain (structure, not marketing). The fractured
- * metaball (placeholder in Phase 1) reads as clearly disconnected and stays
- * unresolved — S4 resolves it. Copy is server-rendered (RSC) for SEO.
+ * S3 · The Problem (remake) — the reader walks INSIDE the fragmentation. A
+ * full-viewport liquid layer (FractureField) holds the mark, breaking one
+ * notch per symptom; the seven symptoms float as offset SHARDS over it, each
+ * given near-viewport presence so the fracture has room to be felt. Copy is
+ * server-rendered (RSC) for SEO; the liquid layer is decorative.
  */
 export function ChapterProblem() {
   const t = useTranslations("problem");
@@ -18,39 +24,35 @@ export function ChapterProblem() {
     <section
       id="problem"
       data-chapter
-      className="page-x relative border-t border-paper-faint py-24 md:py-32"
+      className="relative border-t border-paper-faint"
     >
-      <Reveal inView as="p" className="chapter-label">
-        {t("chapterLabel")}
-      </Reveal>
+      {/* the liquid field — sticky full viewport, everything scrolls over it */}
+      <FractureField />
 
-      <Reveal inView delay={0.05}>
-        <h2 className="mt-6 max-w-4xl text-balance text-display-l font-medium text-paper">
-          {t("headline")}
-        </h2>
-      </Reveal>
+      <div className="page-x relative z-10 py-24 md:py-32">
+        <Reveal inView as="p" className="chapter-label">
+          {t("chapterLabel")}
+        </Reveal>
 
-      <Reveal inView delay={0.1}>
-        <p className="mt-6 max-w-2xl text-body-l text-paper-mute">{t("lead")}</p>
-      </Reveal>
+        <Reveal inView delay={0.05}>
+          <h2 className="mt-6 max-w-4xl text-balance text-display-l font-medium text-paper">
+            {t("headline")}
+          </h2>
+        </Reveal>
 
-      <div className="mt-12 grid gap-12 md:grid-cols-[1.15fr_0.85fr] md:items-start">
-        {/* Fractured visual — mobile first (simplified), desktop sticky right */}
-        <div className="order-1 md:order-2 md:sticky md:top-[calc(var(--topbar-h)+1.5rem)]">
-          <div className="mx-auto max-w-xs md:max-w-none">
-            <FracturedMetaball ariaLabel={t("chapterLabel")} />
-          </div>
-        </div>
+        <Reveal inView delay={0.1}>
+          <p className="mt-6 max-w-2xl text-body-l text-paper-mute">{t("lead")}</p>
+        </Reveal>
 
-        {/* Seven symptoms */}
-        <ul className="order-2 md:order-1">
+        {/* Seven symptoms — floating shards; each crossing breaks the mark further */}
+        <ul className="mt-[16vh] max-w-xl md:mt-[22vh]">
           {symptoms.map((s, i) => (
             <Reveal
               inView
               as="li"
               key={s.label}
-              delay={i * 0.04}
               className="symptom"
+              style={{ "--shard-x": `${SHARD_X[i % SHARD_X.length]}rem` } as React.CSSProperties}
             >
               <span className="symptom-num">{String(i + 1).padStart(2, "0")}</span>
               <div>
@@ -60,11 +62,11 @@ export function ChapterProblem() {
             </Reveal>
           ))}
         </ul>
-      </div>
 
-      <Reveal inView className="mt-14 flex">
-        <CtaStructure />
-      </Reveal>
+        <Reveal inView className="mt-[14vh] flex">
+          <CtaStructure />
+        </Reveal>
+      </div>
     </section>
   );
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "motion/react";
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import { useReducedMotion } from "@/lib/animation/reduced-motion";
 import { EASE_POINTS, type EasingName } from "@/lib/animation/easings";
 
@@ -18,6 +18,8 @@ type RevealProps = {
   ease?: EasingName;
   as?: Tag;
   className?: string;
+  /** Static inline styles (e.g. per-item CSS custom properties). */
+  style?: CSSProperties;
 };
 
 /**
@@ -34,12 +36,17 @@ export function Reveal({
   ease = "arrive",
   as = "div",
   className,
+  style,
 }: RevealProps) {
   const reduced = useReducedMotion();
 
   if (reduced) {
     const Tag = as;
-    return <Tag className={className}>{children}</Tag>;
+    return (
+      <Tag className={className} style={style}>
+        {children}
+      </Tag>
+    );
   }
 
   // motion.div / motion.h1 / ... — dynamic tag lookup.
@@ -50,6 +57,7 @@ export function Reveal({
     return (
       <MotionTag
         className={className}
+        style={style}
         initial={{ opacity: 0, y }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, margin: "-12% 0px" }}
@@ -63,6 +71,7 @@ export function Reveal({
   return (
     <MotionTag
       className={className}
+      style={style}
       initial={{ opacity: 0, y }}
       animate={{ opacity: 1, y: 0 }}
       transition={transition}

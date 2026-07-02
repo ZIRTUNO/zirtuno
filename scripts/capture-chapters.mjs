@@ -17,8 +17,8 @@ const LOCALE = process.env.LOCALE || "en";
 const TIERS = ["full", "lite", "none"];
 // [label, css selector, settle ms (converges need their timed run)]
 const TARGETS = [
-  ["S3 problem", "[data-fractured-metaball]", 2200],
-  ["S4 ecosystem", "[data-ecosystem-core]", 3400],
+  ["S3 problem", "[data-fracture-field]", 2200],
+  ["S4 ecosystem", "[data-organism]", 4600],
   ["S5 services", ".services-metaball-stage", 2200],
   ["S8 origin", ".origin-mark-stage", 3400],
   ["S10 contact", ".contact-metaball-stage", 2200],

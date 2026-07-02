@@ -175,11 +175,15 @@ export type FieldFrame = {
   warp: number;
   mute: number; // 0 = brand cyan … 1 = desaturated (S3)
   count: number; // balls the driver packed into the buffer
+  ox?: number; // form-domain offset (uv units; full-bleed staging)
+  oy?: number;
+  scale?: number; // form-domain scale (default 1)
 };
 export type FieldDriver = {
   /** SDF state indices to prefetch; forms[0] gates the first paint. */
   forms: readonly number[];
-  frame: (tMs: number, buf: Float32Array) => FieldFrame;
+  /** aspect = buffer width/height; the uv domain spans x ∈ [½−a/2, ½+a/2]. */
+  frame: (tMs: number, buf: Float32Array, aspect: number) => FieldFrame;
 };
 
 const restFrame = (s: number): FieldFrame => ({
@@ -400,6 +404,272 @@ export function makeImpulseDriver(
           count: N,
         };
       },
+    },
+  };
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// FULL-BLEED STAGING (the S3/S4 remake): the liquid is the page, not a box.
+// The stage may be any aspect; uv x spans [0.5 − a/2, 0.5 + a/2]. The form can
+// sit off-centre (ox) and scaled (scale); droplets roam the whole field.
+// ═══════════════════════════════════════════════════════════════════════════════
+
+type WideScatter = { tx: number; ty: number; key: number; f1: number; f2: number };
+
+/** Dispersed targets spread across a full-bleed field around a form placed at
+ *  (cx, cy) with the given scale — bimodal shells, wide jitter, soft edge
+ *  compression (never a ring, never off-frame). Recomputed when the stage
+ *  aspect actually changes. */
+function wideScatter(
+  state: number,
+  aspect: number,
+  cx: number,
+  cy: number,
+  scale: number,
+): WideScatter[] {
+  const halfW = Math.max(aspect, 0.6) / 2;
+  const stretch = Math.min(1 + (aspect - 1) * 0.7, 1.8); // spread wide on wide stages
+  return CLOUDS[state].map((b, i) => {
+    const hx = cx + (b[0] - 0.5) * scale;
+    const hy = cy + (b[1] - 0.5) * scale;
+    const ang = Math.atan2(hy - cy, hx - cx) + (hash(i, 1) - 0.5) * 1.6;
+    const d =
+      (hash(i, 2) < 0.45
+        ? 0.13 + 0.13 * hash(i, 5)
+        : 0.28 + 0.17 * hash(i, 6)) * Math.max(scale, 0.75);
+    let tx = cx + Math.cos(ang) * d * stretch;
+    let ty = cy + Math.sin(ang) * d;
+    // soft horizontal compression toward the stage edges
+    const ex = tx - 0.5;
+    const lim = halfW - 0.05;
+    if (Math.abs(ex) > lim * 0.82)
+      tx = 0.5 + Math.sign(ex) * Math.min(lim * 0.82 + (Math.abs(ex) - lim * 0.82) * 0.35, lim);
+    ty = Math.min(Math.max(ty, 0.09), 0.91);
+    return {
+      tx,
+      ty,
+      key: hash(i, 7),
+      f1: 0.45 + 0.8 * hash(i, 3),
+      f2: 0.4 + 0.7 * hash(i, 4),
+    };
+  });
+}
+
+/** The shared converge envelopes (see makeScatterDriver for the phase map). */
+function convergeEnvelopes(p: number) {
+  const q = 1 - smooth01((p - 0.02) / 0.26); // form presence
+  const rEnv = smooth01((p - 0.01) / 0.15); // droplets drain at the very end
+  const shed = 1 - 0.45 * q; // complementary mass handoff
+  return { q, rEnv, shed };
+}
+
+/**
+ * S3 remake — the FRACTURE FIELD: a full-viewport liquid layer behind the whole
+ * chapter. The mark sits large, right of centre; as the symptoms are read
+ * (progress 0 → 1) it breaks apart and its desaturated fragments drift across
+ * the entire field, around the copy. Same phase math as the converge — S4
+ * begins from exactly this dispersed vocabulary.
+ */
+export function makeFractureFieldDriver(progress: { current: number }): FieldDriver {
+  const state = 0;
+  const base = CLOUDS[state];
+  const scale = 0.62;
+  let lastT = -1;
+  let dp = -1;
+  let cachedAspect = -1;
+  let T: WideScatter[] = [];
+  let ox = 0;
+  return {
+    forms: [state],
+    frame: (tMs, buf, aspect) => {
+      if (Math.abs(aspect - cachedAspect) > 0.02) {
+        cachedAspect = aspect;
+        // form centre ≈ 66% of the stage width (centred on narrow stages)
+        ox = Math.min(0.16 * aspect, Math.max(aspect / 2 - 0.28, 0));
+        T = wideScatter(state, aspect, 0.5 + ox, 0.5, scale);
+      }
+      const raw = clamp01(progress.current);
+      if (dp < 0) dp = raw;
+      const dt = lastT < 0 ? 16.7 : Math.min(Math.max(tMs - lastT, 0), 100);
+      lastT = tMs;
+      dp += (raw - dp) * (1 - Math.exp(-dt / 110));
+      const p = clamp01(dp);
+      if (p < 0.002) return { ...restFrame(state), ox, scale };
+
+      const t = tMs / 1000;
+      const { q, rEnv, shed } = convergeEnvelopes(p);
+      const cx = 0.5 + ox;
+      for (let i = 0; i < N; i++) {
+        const b = base[i], s = T[i];
+        const hx = cx + (b[0] - 0.5) * scale;
+        const hy = 0.5 + (b[1] - 0.5) * scale;
+        const lt = smooth01((p - (0.16 + 0.3 * s.key)) / 0.5);
+        const drift = 0.016 * lt;
+        buf[i * 3] = hx + (s.tx - hx) * lt + drift * Math.sin(t * s.f1 + i * 1.7);
+        buf[i * 3 + 1] = hy + (s.ty - hy) * lt + drift * Math.cos(t * s.f2 + i * 2.3);
+        buf[i * 3 + 2] = b[2] * scale * (1 - 0.28 * lt) * rEnv * shed;
+      }
+      const [fa, ea] = formPresence(q);
+      return {
+        a: state,
+        b: state,
+        fa,
+        fb: 0,
+        ea,
+        eb: 0,
+        ox,
+        scale,
+        warp: SDF_WARP_REST,
+        mute: 0.85 * smooth01((p - 0.08) / 0.5),
+        count: N,
+      };
+    },
+  };
+}
+
+// ── S4 remake — the ORGANISM ──────────────────────────────────────────────────
+// The ecosystem diagram is liquid all the way down: fragments converge into a
+// breathing organism at the stage centre, then the SAME 48 droplets become
+// TENDRILS — bead chains that grow outward toward ten capability labels and
+// pulse continuously (droplets travelling outward: the organism feeding its
+// capabilities). No SVG spokes, no orbit ring.
+
+/** Irregular orbital layout for the ten capability nodes (order = the i18n
+ *  ecosystem.nodes array). ang: degrees, 0 = up, clockwise; r: uv units from
+ *  the stage centre. Deliberately NOT a perfect circle. */
+export const ECO_NODES: { ang: number; r: number }[] = [
+  { ang: -10, r: 0.34 }, // stays clear of the topbar zone
+  { ang: 33, r: 0.36 },
+  { ang: 69, r: 0.42 },
+  { ang: 108, r: 0.37 },
+  { ang: 143, r: 0.41 },
+  { ang: 193, r: 0.37 }, // off the vertical, clearing the centre label
+  { ang: 216, r: 0.42 },
+  { ang: 251, r: 0.36 },
+  { ang: 288, r: 0.41 },
+  { ang: 324, r: 0.38 },
+];
+const ORGANISM_SCALE = 0.5; // the resolved mark's half-extent ≈ 0.2 uv
+const TENDRIL_START = 0.21; // beads emerge just outside the organism's edge
+export const ECO_SPREAD_MAX = 1.5; // horizontal orbit stretch cap on wide stages
+
+/** Horizontal orbit stretch for a given stage aspect (shared with the DOM). */
+export const ecoSpreadX = (aspect: number) =>
+  Math.min(Math.max(aspect * 0.72, 1), ECO_SPREAD_MAX);
+
+/** Node position in uv space (y up), for the given stage aspect. */
+export function ecoNodePos(i: number, aspect: number): { x: number; y: number } {
+  const n = ECO_NODES[i % ECO_NODES.length];
+  const a = ((n.ang - 90) * Math.PI) / 180;
+  return {
+    x: 0.5 + Math.cos(a) * n.r * ecoSpreadX(aspect),
+    y: 0.5 - Math.sin(a) * n.r,
+  };
+}
+
+/** Per-node growth envelope at tendril progress g (staggered arrivals). */
+export const ecoNodeEnv = (g: number, i: number) =>
+  smooth01((g - i * 0.055) / 0.32);
+
+/**
+ * The organism driver. conv: 1 = dispersed … 0 = resolved (same semantics as
+ * the fracture field, damped). grow: 0 → 1 grows the tendrils (damped). The
+ * SAME 48 droplets that converge become the tendril beads — 10 chains × (3
+ * marching beads + 1 node anchor); the pulse phase is time-driven so the
+ * organism keeps feeding its capabilities while the page rests.
+ */
+export function makeOrganismDriver(
+  conv: { current: number },
+  grow: { current: number },
+): FieldDriver {
+  const state = 0;
+  const base = CLOUDS[state];
+  const scale = ORGANISM_SCALE;
+  let lastT = -1;
+  let dpC = -1;
+  let dpG = -1;
+  let cachedAspect = -1;
+  let T: WideScatter[] = [];
+  return {
+    forms: [state],
+    frame: (tMs, buf, aspect) => {
+      if (Math.abs(aspect - cachedAspect) > 0.02) {
+        cachedAspect = aspect;
+        T = wideScatter(state, aspect, 0.5, 0.5, 1);
+      }
+      const dt = lastT < 0 ? 16.7 : Math.min(Math.max(tMs - lastT, 0), 100);
+      lastT = tMs;
+      const rawC = clamp01(conv.current);
+      const rawG = clamp01(grow.current);
+      if (dpC < 0) dpC = rawC;
+      if (dpG < 0) dpG = rawG;
+      dpC += (rawC - dpC) * (1 - Math.exp(-dt / 110));
+      dpG += (rawG - dpG) * (1 - Math.exp(-dt / 140));
+      const p = clamp01(dpC);
+      const g = clamp01(dpG);
+
+      const t = tMs / 1000;
+      const { q, rEnv, shed } = convergeEnvelopes(p);
+      const sx = ecoSpreadX(aspect);
+      for (let i = 0; i < N; i++) {
+        const b = base[i], s = T[i];
+        // converge leg (identical vocabulary to the fracture field)
+        const hx = 0.5 + (b[0] - 0.5) * scale;
+        const hy = 0.5 + (b[1] - 0.5) * scale;
+        const lt = smooth01((p - (0.16 + 0.3 * s.key)) / 0.5);
+        const drift = 0.016 * lt;
+        let x = hx + (s.tx - hx) * lt + drift * Math.sin(t * s.f1 + i * 1.7);
+        let y = hy + (s.ty - hy) * lt + drift * Math.cos(t * s.f2 + i * 2.3);
+        let r = b[2] * scale * (1 - 0.28 * lt) * rEnv * shed;
+        // tendril leg: droplet i belongs to tendril i%10, bead i/10 (0-3)
+        if (i < 40) {
+          const nIdx = i % 10;
+          const bead = (i / 10) | 0;
+          const e = ecoNodeEnv(g, nIdx);
+          if (e > 0.001) {
+            const node = ECO_NODES[nIdx];
+            const a = ((node.ang - 90) * Math.PI) / 180;
+            const dirX = Math.cos(a) * sx;
+            const dirY = -Math.sin(a);
+            let txp: number, typ: number, trp: number;
+            if (bead === 3) {
+              // the node anchor droplet
+              txp = 0.5 + dirX * node.r;
+              typ = 0.5 + dirY * node.r;
+              trp = 0.012;
+            } else {
+              // marching beads: emerge at the organism's edge, travel to just
+              // short of the node, absorbed — a continuous outward pulse
+              const f =
+                (bead + (t * 0.3 + nIdx * 0.618) % 1) / 3;
+              const fr = Math.min(f, 1);
+              const rr = TENDRIL_START + (node.r * 0.9 - TENDRIL_START) * fr;
+              txp = 0.5 + dirX * rr;
+              typ = 0.5 + dirY * rr;
+              trp = 0.0155 * (0.55 + 0.45 * Math.sin(Math.PI * fr));
+            }
+            x += (txp - x) * e;
+            y += (typ - y) * e;
+            r = r * (1 - e) + trp * e;
+          }
+        }
+        buf[i * 3] = x;
+        buf[i * 3 + 1] = y;
+        buf[i * 3 + 2] = r;
+      }
+      const [fa, ea] = formPresence(q);
+      return {
+        a: state,
+        b: state,
+        fa,
+        fb: 0,
+        ea,
+        eb: 0,
+        scale,
+        warp: SDF_WARP_REST,
+        mute: 0.85 * smooth01((p - 0.08) / 0.5),
+        count: N,
+      };
     },
   };
 }

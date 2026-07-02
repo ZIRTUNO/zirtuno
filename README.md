@@ -81,15 +81,24 @@ npm run endpoints       # re-pack the 48-droplet morph endpoints from the SVGs
   keep the routed path. The labeled contact submit is canonical; the metaball
   exhale is decorative.
 - **One engine everywhere (R1 done):** every chapter visual is a driver on the
-  same unified field (`components/field/FieldStage` + `lib/webgl/field-drivers`)
-  — S3 scatter (desaturated fragments), S4 pin-scrubbed converge (droplets fly
-  home, colour blooms, the exact mark re-forms), S5 progress-locked pillar
-  melts, S8 timed converge, S10 exhale impulse. Tiered by the same field probe:
-  full = glass, lite = flat cyan at dpr 1 (mobile now gets LIVE liquid), none =
-  static SVG. The legacy raymarch/mesh engines, their gating (`gpu-tier`,
-  `can-run-glass`, `?glass=`), their data and their capture scripts are DELETED
-  (three.js/@react-three removed from dependencies); acceptance sheet:
+  same unified field (`components/field/FieldStage` + `lib/webgl/field-drivers`).
+  Tiered by the field probe: full = glass, lite = flat cyan at dpr 1 (mobile
+  gets LIVE liquid), none = static SVG. The legacy raymarch/mesh engines, their
+  gating (`gpu-tier`, `can-run-glass`, `?glass=`) and their capture scripts are
+  DELETED (three.js/@react-three removed); sheets:
   `captures/chapters-sheet-{en,pt}.png`.
+- **S3 + S4 are full-bleed liquid stages (the remake):** The Problem is a
+  FRACTURE FIELD — a sticky full-viewport layer where the mark (offset right)
+  breaks one notch per symptom while its grey fragments drift across the whole
+  field; the symptoms float as offset shards (`FractureField` +
+  `ChapterProblem`). The Ecosystem is the ORGANISM — a pinned full-viewport
+  converge that resolves into the breathing mark, whose droplets then become
+  liquid TENDRILS pulsing outward to ten irregularly-orbiting capability
+  labels (`OrganismField`; the SVG spoke diagram is deleted; mobile keeps the
+  vertical stack). QA: `?feco=c` freezes the S4 choreography
+  (`captures/converge-sheet.png`, `remake-s3-*.png`, `remake-s4-organism.png`).
+  The unified shader gained form-domain staging (aspect-normalised uv,
+  `iFormOff`, `iFormScale`) — identical output on square stages.
 - Portfolio seed projects are prototypes only. Do not add fabricated metrics.
 
 ## Open Decisions

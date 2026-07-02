@@ -1,4 +1,4 @@
-// Run the site on the SVG path (what an integrated GPU sees) and check it's
+﻿// Run the site on the SVG path (what an integrated GPU sees) and check it's
 // healthy: no console/page errors through a full scroll, all chapters present,
 // the contact form + CTAs intact, and a full-page screenshot to eyeball.
 //   BASE_URL=http://localhost:PORT node scripts/verify-site.mjs
@@ -40,7 +40,7 @@ const struct = await page.evaluate(() => ({
   chapters: document.querySelectorAll("[data-chapter]").length,
   ctas: document.querySelectorAll("a.cta").length,
   heroMark: !!document.querySelector("[data-hero-metaball]"),
-  ecoNodes: document.querySelectorAll(".eco-node").length,
+  ecoNodes: document.querySelectorAll(".organism-node").length,
   h1: (document.querySelector("h1")?.textContent || "").slice(0, 60),
 }));
 
