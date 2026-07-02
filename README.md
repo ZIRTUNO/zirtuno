@@ -87,18 +87,21 @@ npm run endpoints       # re-pack the 48-droplet morph endpoints from the SVGs
   gating (`gpu-tier`, `can-run-glass`, `?glass=`) and their capture scripts are
   DELETED (three.js/@react-three removed); sheets:
   `captures/chapters-sheet-{en,pt}.png`.
-- **S3 + S4 are full-bleed liquid stages (the remake):** The Problem is a
-  FRACTURE FIELD — a sticky full-viewport layer where the mark (offset right)
-  breaks one notch per symptom while its grey fragments drift across the whole
-  field; the symptoms float as offset shards (`FractureField` +
-  `ChapterProblem`). The Ecosystem is the ORGANISM — a pinned full-viewport
-  converge that resolves into the breathing mark, whose droplets then become
-  liquid TENDRILS pulsing outward to ten irregularly-orbiting capability
-  labels (`OrganismField`; the SVG spoke diagram is deleted; mobile keeps the
-  vertical stack). QA: `?feco=c` freezes the S4 choreography
-  (`captures/converge-sheet.png`, `remake-s3-*.png`, `remake-s4-organism.png`).
-  The unified shader gained form-domain staging (aspect-normalised uv,
-  `iFormOff`, `iFormScale`) — identical output on square stages.
+- **S3 → S4 → S5 are ONE LIQUID JOURNEY:** a single persistent renderer
+  (`components/field/LiquidChapters` + `makeJourneyDriver`) spans The Problem,
+  The Ecosystem and The Services — one sticky full-viewport canvas, one damped
+  scroll-progress source, 48 stable droplet identities end to end, no GSAP
+  pins. The Problem is dispersed unstable droplets (the whole mark NEVER
+  appears there); the travel phase drifts the same droplets to centre; the
+  converge resolves the exact mark; its droplets become liquid TENDRILS
+  feeding ten orbital capability labels (lg+; the capability stack serves
+  narrow viewports, static tiers and AT); the same liquid then melts through
+  the seven pillar forms while ONE service owns the viewport at a time.
+  QA: `?feco=c` freezes the S4 choreography; diagnostics:
+  `scripts/capture-transition-diagnostics.mjs` (798×698 in-app-class viewport,
+  three ranges, filmstrips) → `captures/diagnostics-after/`. The unified
+  shader's form-domain staging (aspect-normalised uv, `iFormOff`,
+  `iFormScale`) is identical on square stages.
 - Portfolio seed projects are prototypes only. Do not add fabricated metrics.
 
 ## Open Decisions

@@ -1,6 +1,5 @@
 import { useTranslations } from "next-intl";
 import { Reveal } from "@/components/ui/Reveal";
-import { FractureField } from "@/components/field/FractureField";
 import { CtaStructure } from "@/components/chrome/CtaButton";
 
 type Symptom = { label: string; desc: string };
@@ -10,26 +9,20 @@ type Symptom = { label: string; desc: string };
 const SHARD_X = [0, 7, 2, 11, 5, 13, 1];
 
 /**
- * S3 · The Problem (remake) — the reader walks INSIDE the fragmentation. A
- * full-viewport liquid layer (FractureField) holds the mark, breaking one
- * notch per symptom; the seven symptoms float as offset SHARDS over it, each
- * given near-viewport presence so the fracture has room to be felt. Copy is
- * server-rendered (RSC) for SEO; the liquid layer is decorative.
+ * S3 · The Problem — the reader walks INSIDE the fragmentation. The liquid
+ * (unstable grey chunks that break one notch per symptom) lives in the shared
+ * LiquidChapters layer behind this copy; the seven symptoms float as offset
+ * SHARDS, each given near-viewport presence so the fracture has room to be
+ * felt. The complete Zirtuno mark NEVER appears here — The Problem is already
+ * broken. Copy is server-rendered (RSC) for SEO.
  */
 export function ChapterProblem() {
   const t = useTranslations("problem");
   const symptoms = t.raw("symptoms") as Symptom[];
 
   return (
-    <section
-      id="problem"
-      data-chapter
-      className="relative border-t border-paper-faint"
-    >
-      {/* the liquid field — sticky full viewport, everything scrolls over it */}
-      <FractureField />
-
-      <div className="page-x relative z-10 py-24 md:py-32">
+    <section id="problem" data-chapter className="relative border-t border-paper-faint">
+      <div className="page-x relative py-24 md:py-32">
         <Reveal inView as="p" className="chapter-label">
           {t("chapterLabel")}
         </Reveal>
@@ -44,8 +37,8 @@ export function ChapterProblem() {
           <p className="mt-6 max-w-2xl text-body-l text-paper-mute">{t("lead")}</p>
         </Reveal>
 
-        {/* Seven symptoms — floating shards; each crossing breaks the mark further */}
-        <ul className="mt-[16vh] max-w-xl md:mt-[22vh]">
+        {/* Seven symptoms — floating shards; each crossing breaks the liquid further */}
+        <ul className="mt-[14vh] max-w-xl md:mt-[20vh]">
           {symptoms.map((s, i) => (
             <Reveal
               inView
@@ -63,7 +56,7 @@ export function ChapterProblem() {
           ))}
         </ul>
 
-        <Reveal inView className="mt-[14vh] flex">
+        <Reveal inView className="mt-[12vh] flex">
           <CtaStructure />
         </Reveal>
       </div>

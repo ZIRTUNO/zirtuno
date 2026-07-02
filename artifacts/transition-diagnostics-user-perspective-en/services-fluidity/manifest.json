@@ -1,0 +1,766 @@
+{
+  "id": "services-fluidity",
+  "label": "Services fluidity",
+  "sourceUrl": "http://127.0.0.1:3000/en",
+  "range": {
+    "id": "services-fluidity",
+    "label": "Services fluidity",
+    "start": 5850,
+    "end": 10850,
+    "step": 140
+  },
+  "frameCount": 36,
+  "framesDir": "C:\\Users\\pedro\\Desktop\\04_Repositorios_Sites\\REPOSITORIOS\\ZIRTUNO WEBSITE\\artifacts\\transition-diagnostics-user-perspective-en\\services-fluidity\\frames",
+  "frames": [
+    {
+      "index": 0,
+      "file": "frame-000.jpg",
+      "requestedScrollY": 5850,
+      "canvasCount": 4,
+      "scrollY": 5850,
+      "viewport": {
+        "dpr": 1.25,
+        "height": 698,
+        "width": 798
+      },
+      "visibleSections": [
+        {
+          "bottom": 51,
+          "id": "ecosystem",
+          "top": -2402
+        },
+        {
+          "bottom": 4798,
+          "id": "services",
+          "top": 51
+        }
+      ]
+    },
+    {
+      "index": 1,
+      "file": "frame-001.jpg",
+      "requestedScrollY": 5990,
+      "canvasCount": 4,
+      "scrollY": 5990,
+      "viewport": {
+        "dpr": 1.25,
+        "height": 698,
+        "width": 798
+      },
+      "visibleSections": [
+        {
+          "bottom": -89,
+          "id": "ecosystem",
+          "top": -2542
+        },
+        {
+          "bottom": 4658,
+          "id": "services",
+          "top": -89
+        }
+      ]
+    },
+    {
+      "index": 2,
+      "file": "frame-002.jpg",
+      "requestedScrollY": 6130,
+      "canvasCount": 4,
+      "scrollY": 6130,
+      "viewport": {
+        "dpr": 1.25,
+        "height": 698,
+        "width": 798
+      },
+      "visibleSections": [
+        {
+          "bottom": -229,
+          "id": "ecosystem",
+          "top": -2682
+        },
+        {
+          "bottom": 4518,
+          "id": "services",
+          "top": -229
+        }
+      ]
+    },
+    {
+      "index": 3,
+      "file": "frame-003.jpg",
+      "requestedScrollY": 6270,
+      "canvasCount": 4,
+      "scrollY": 6270,
+      "viewport": {
+        "dpr": 1.25,
+        "height": 698,
+        "width": 798
+      },
+      "visibleSections": [
+        {
+          "bottom": 4378,
+          "id": "services",
+          "top": -369
+        }
+      ]
+    },
+    {
+      "index": 4,
+      "file": "frame-004.jpg",
+      "requestedScrollY": 6410,
+      "canvasCount": 4,
+      "scrollY": 6410,
+      "viewport": {
+        "dpr": 1.25,
+        "height": 698,
+        "width": 798
+      },
+      "visibleSections": [
+        {
+          "bottom": 4238,
+          "id": "services",
+          "top": -509
+        }
+      ]
+    },
+    {
+      "index": 5,
+      "file": "frame-005.jpg",
+      "requestedScrollY": 6550,
+      "canvasCount": 4,
+      "scrollY": 6550,
+      "viewport": {
+        "dpr": 1.25,
+        "height": 698,
+        "width": 798
+      },
+      "visibleSections": [
+        {
+          "bottom": 4098,
+          "id": "services",
+          "top": -649
+        }
+      ]
+    },
+    {
+      "index": 6,
+      "file": "frame-006.jpg",
+      "requestedScrollY": 6690,
+      "canvasCount": 4,
+      "scrollY": 6690,
+      "viewport": {
+        "dpr": 1.25,
+        "height": 698,
+        "width": 798
+      },
+      "visibleSections": [
+        {
+          "bottom": 3958,
+          "id": "services",
+          "top": -789
+        }
+      ]
+    },
+    {
+      "index": 7,
+      "file": "frame-007.jpg",
+      "requestedScrollY": 6830,
+      "canvasCount": 4,
+      "scrollY": 6830,
+      "viewport": {
+        "dpr": 1.25,
+        "height": 698,
+        "width": 798
+      },
+      "visibleSections": [
+        {
+          "bottom": 3818,
+          "id": "services",
+          "top": -929
+        }
+      ]
+    },
+    {
+      "index": 8,
+      "file": "frame-008.jpg",
+      "requestedScrollY": 6970,
+      "canvasCount": 4,
+      "scrollY": 6970,
+      "viewport": {
+        "dpr": 1.25,
+        "height": 698,
+        "width": 798
+      },
+      "visibleSections": [
+        {
+          "bottom": 3678,
+          "id": "services",
+          "top": -1069
+        }
+      ]
+    },
+    {
+      "index": 9,
+      "file": "frame-009.jpg",
+      "requestedScrollY": 7110,
+      "canvasCount": 4,
+      "scrollY": 7110,
+      "viewport": {
+        "dpr": 1.25,
+        "height": 698,
+        "width": 798
+      },
+      "visibleSections": [
+        {
+          "bottom": 3538,
+          "id": "services",
+          "top": -1209
+        }
+      ]
+    },
+    {
+      "index": 10,
+      "file": "frame-010.jpg",
+      "requestedScrollY": 7250,
+      "canvasCount": 4,
+      "scrollY": 7250,
+      "viewport": {
+        "dpr": 1.25,
+        "height": 698,
+        "width": 798
+      },
+      "visibleSections": [
+        {
+          "bottom": 3398,
+          "id": "services",
+          "top": -1349
+        }
+      ]
+    },
+    {
+      "index": 11,
+      "file": "frame-011.jpg",
+      "requestedScrollY": 7390,
+      "canvasCount": 4,
+      "scrollY": 7390,
+      "viewport": {
+        "dpr": 1.25,
+        "height": 698,
+        "width": 798
+      },
+      "visibleSections": [
+        {
+          "bottom": 3258,
+          "id": "services",
+          "top": -1489
+        }
+      ]
+    },
+    {
+      "index": 12,
+      "file": "frame-012.jpg",
+      "requestedScrollY": 7530,
+      "canvasCount": 4,
+      "scrollY": 7530,
+      "viewport": {
+        "dpr": 1.25,
+        "height": 698,
+        "width": 798
+      },
+      "visibleSections": [
+        {
+          "bottom": 3118,
+          "id": "services",
+          "top": -1629
+        }
+      ]
+    },
+    {
+      "index": 13,
+      "file": "frame-013.jpg",
+      "requestedScrollY": 7670,
+      "canvasCount": 4,
+      "scrollY": 7670,
+      "viewport": {
+        "dpr": 1.25,
+        "height": 698,
+        "width": 798
+      },
+      "visibleSections": [
+        {
+          "bottom": 2978,
+          "id": "services",
+          "top": -1769
+        }
+      ]
+    },
+    {
+      "index": 14,
+      "file": "frame-014.jpg",
+      "requestedScrollY": 7810,
+      "canvasCount": 4,
+      "scrollY": 7810,
+      "viewport": {
+        "dpr": 1.25,
+        "height": 698,
+        "width": 798
+      },
+      "visibleSections": [
+        {
+          "bottom": 2838,
+          "id": "services",
+          "top": -1909
+        }
+      ]
+    },
+    {
+      "index": 15,
+      "file": "frame-015.jpg",
+      "requestedScrollY": 7950,
+      "canvasCount": 4,
+      "scrollY": 7950,
+      "viewport": {
+        "dpr": 1.25,
+        "height": 698,
+        "width": 798
+      },
+      "visibleSections": [
+        {
+          "bottom": 2698,
+          "id": "services",
+          "top": -2049
+        }
+      ]
+    },
+    {
+      "index": 16,
+      "file": "frame-016.jpg",
+      "requestedScrollY": 8090,
+      "canvasCount": 4,
+      "scrollY": 8090,
+      "viewport": {
+        "dpr": 1.25,
+        "height": 698,
+        "width": 798
+      },
+      "visibleSections": [
+        {
+          "bottom": 2558,
+          "id": "services",
+          "top": -2189
+        }
+      ]
+    },
+    {
+      "index": 17,
+      "file": "frame-017.jpg",
+      "requestedScrollY": 8230,
+      "canvasCount": 4,
+      "scrollY": 8230,
+      "viewport": {
+        "dpr": 1.25,
+        "height": 698,
+        "width": 798
+      },
+      "visibleSections": [
+        {
+          "bottom": 2418,
+          "id": "services",
+          "top": -2329
+        }
+      ]
+    },
+    {
+      "index": 18,
+      "file": "frame-018.jpg",
+      "requestedScrollY": 8370,
+      "canvasCount": 4,
+      "scrollY": 8370,
+      "viewport": {
+        "dpr": 1.25,
+        "height": 698,
+        "width": 798
+      },
+      "visibleSections": [
+        {
+          "bottom": 2278,
+          "id": "services",
+          "top": -2469
+        }
+      ]
+    },
+    {
+      "index": 19,
+      "file": "frame-019.jpg",
+      "requestedScrollY": 8510,
+      "canvasCount": 4,
+      "scrollY": 8510,
+      "viewport": {
+        "dpr": 1.25,
+        "height": 698,
+        "width": 798
+      },
+      "visibleSections": [
+        {
+          "bottom": 2138,
+          "id": "services",
+          "top": -2609
+        }
+      ]
+    },
+    {
+      "index": 20,
+      "file": "frame-020.jpg",
+      "requestedScrollY": 8650,
+      "canvasCount": 4,
+      "scrollY": 8650,
+      "viewport": {
+        "dpr": 1.25,
+        "height": 698,
+        "width": 798
+      },
+      "visibleSections": [
+        {
+          "bottom": 1998,
+          "id": "services",
+          "top": -2749
+        }
+      ]
+    },
+    {
+      "index": 21,
+      "file": "frame-021.jpg",
+      "requestedScrollY": 8790,
+      "canvasCount": 4,
+      "scrollY": 8790,
+      "viewport": {
+        "dpr": 1.25,
+        "height": 698,
+        "width": 798
+      },
+      "visibleSections": [
+        {
+          "bottom": 1858,
+          "id": "services",
+          "top": -2889
+        }
+      ]
+    },
+    {
+      "index": 22,
+      "file": "frame-022.jpg",
+      "requestedScrollY": 8930,
+      "canvasCount": 4,
+      "scrollY": 8930,
+      "viewport": {
+        "dpr": 1.25,
+        "height": 698,
+        "width": 798
+      },
+      "visibleSections": [
+        {
+          "bottom": 1718,
+          "id": "services",
+          "top": -3029
+        }
+      ]
+    },
+    {
+      "index": 23,
+      "file": "frame-023.jpg",
+      "requestedScrollY": 9070,
+      "canvasCount": 4,
+      "scrollY": 9070,
+      "viewport": {
+        "dpr": 1.25,
+        "height": 698,
+        "width": 798
+      },
+      "visibleSections": [
+        {
+          "bottom": 1578,
+          "id": "services",
+          "top": -3169
+        }
+      ]
+    },
+    {
+      "index": 24,
+      "file": "frame-024.jpg",
+      "requestedScrollY": 9210,
+      "canvasCount": 4,
+      "scrollY": 9210,
+      "viewport": {
+        "dpr": 1.25,
+        "height": 698,
+        "width": 798
+      },
+      "visibleSections": [
+        {
+          "bottom": 1438,
+          "id": "services",
+          "top": -3309
+        }
+      ]
+    },
+    {
+      "index": 25,
+      "file": "frame-025.jpg",
+      "requestedScrollY": 9350,
+      "canvasCount": 4,
+      "scrollY": 9350,
+      "viewport": {
+        "dpr": 1.25,
+        "height": 698,
+        "width": 798
+      },
+      "visibleSections": [
+        {
+          "bottom": 1298,
+          "id": "services",
+          "top": -3449
+        }
+      ]
+    },
+    {
+      "index": 26,
+      "file": "frame-026.jpg",
+      "requestedScrollY": 9490,
+      "canvasCount": 4,
+      "scrollY": 9490,
+      "viewport": {
+        "dpr": 1.25,
+        "height": 698,
+        "width": 798
+      },
+      "visibleSections": [
+        {
+          "bottom": 1158,
+          "id": "services",
+          "top": -3589
+        }
+      ]
+    },
+    {
+      "index": 27,
+      "file": "frame-027.jpg",
+      "requestedScrollY": 9630,
+      "canvasCount": 4,
+      "scrollY": 9630,
+      "viewport": {
+        "dpr": 1.25,
+        "height": 698,
+        "width": 798
+      },
+      "visibleSections": [
+        {
+          "bottom": 1018,
+          "id": "services",
+          "top": -3729
+        }
+      ]
+    },
+    {
+      "index": 28,
+      "file": "frame-028.jpg",
+      "requestedScrollY": 9770,
+      "canvasCount": 4,
+      "scrollY": 9770,
+      "viewport": {
+        "dpr": 1.25,
+        "height": 698,
+        "width": 798
+      },
+      "visibleSections": [
+        {
+          "bottom": 878,
+          "id": "services",
+          "top": -3869
+        },
+        {
+          "bottom": 1826,
+          "id": "method",
+          "top": 878
+        }
+      ]
+    },
+    {
+      "index": 29,
+      "file": "frame-029.jpg",
+      "requestedScrollY": 9910,
+      "canvasCount": 4,
+      "scrollY": 9910,
+      "viewport": {
+        "dpr": 1.25,
+        "height": 698,
+        "width": 798
+      },
+      "visibleSections": [
+        {
+          "bottom": 738,
+          "id": "services",
+          "top": -4009
+        },
+        {
+          "bottom": 1686,
+          "id": "method",
+          "top": 738
+        }
+      ]
+    },
+    {
+      "index": 30,
+      "file": "frame-030.jpg",
+      "requestedScrollY": 10050,
+      "canvasCount": 4,
+      "scrollY": 10050,
+      "viewport": {
+        "dpr": 1.25,
+        "height": 698,
+        "width": 798
+      },
+      "visibleSections": [
+        {
+          "bottom": 598,
+          "id": "services",
+          "top": -4149
+        },
+        {
+          "bottom": 1546,
+          "id": "method",
+          "top": 598
+        }
+      ]
+    },
+    {
+      "index": 31,
+      "file": "frame-031.jpg",
+      "requestedScrollY": 10190,
+      "canvasCount": 4,
+      "scrollY": 10190,
+      "viewport": {
+        "dpr": 1.25,
+        "height": 698,
+        "width": 798
+      },
+      "visibleSections": [
+        {
+          "bottom": 458,
+          "id": "services",
+          "top": -4289
+        },
+        {
+          "bottom": 1406,
+          "id": "method",
+          "top": 458
+        }
+      ]
+    },
+    {
+      "index": 32,
+      "file": "frame-032.jpg",
+      "requestedScrollY": 10330,
+      "canvasCount": 4,
+      "scrollY": 10330,
+      "viewport": {
+        "dpr": 1.25,
+        "height": 698,
+        "width": 798
+      },
+      "visibleSections": [
+        {
+          "bottom": 318,
+          "id": "services",
+          "top": -4429
+        },
+        {
+          "bottom": 1266,
+          "id": "method",
+          "top": 318
+        }
+      ]
+    },
+    {
+      "index": 33,
+      "file": "frame-033.jpg",
+      "requestedScrollY": 10470,
+      "canvasCount": 4,
+      "scrollY": 10470,
+      "viewport": {
+        "dpr": 1.25,
+        "height": 698,
+        "width": 798
+      },
+      "visibleSections": [
+        {
+          "bottom": 178,
+          "id": "services",
+          "top": -4569
+        },
+        {
+          "bottom": 1126,
+          "id": "method",
+          "top": 178
+        }
+      ]
+    },
+    {
+      "index": 34,
+      "file": "frame-034.jpg",
+      "requestedScrollY": 10610,
+      "canvasCount": 4,
+      "scrollY": 10610,
+      "viewport": {
+        "dpr": 1.25,
+        "height": 698,
+        "width": 798
+      },
+      "visibleSections": [
+        {
+          "bottom": 38,
+          "id": "services",
+          "top": -4709
+        },
+        {
+          "bottom": 986,
+          "id": "method",
+          "top": 38
+        },
+        {
+          "bottom": 2752,
+          "id": "work",
+          "top": 986
+        }
+      ]
+    },
+    {
+      "index": 35,
+      "file": "frame-035.jpg",
+      "requestedScrollY": 10750,
+      "canvasCount": 4,
+      "scrollY": 10750,
+      "viewport": {
+        "dpr": 1.25,
+        "height": 698,
+        "width": 798
+      },
+      "visibleSections": [
+        {
+          "bottom": -102,
+          "id": "services",
+          "top": -4849
+        },
+        {
+          "bottom": 846,
+          "id": "method",
+          "top": -102
+        },
+        {
+          "bottom": 2612,
+          "id": "work",
+          "top": 846
+        }
+      ]
+    }
+  ],
+  "capturedAt": "2026-07-02T03:26:35.677Z"
+}

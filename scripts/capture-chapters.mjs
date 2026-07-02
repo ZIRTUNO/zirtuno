@@ -16,12 +16,13 @@ const BASE = process.env.BASE || "http://localhost:3000";
 const LOCALE = process.env.LOCALE || "en";
 const TIERS = ["full", "lite", "none"];
 // [label, css selector, settle ms (converges need their timed run)]
+// [label, selector, settle ms, locator index]
 const TARGETS = [
-  ["S3 problem", "[data-fracture-field]", 2200],
-  ["S4 ecosystem", "[data-organism]", 4600],
-  ["S5 services", ".services-metaball-stage", 2200],
-  ["S8 origin", ".origin-mark-stage", 3400],
-  ["S10 contact", ".contact-metaball-stage", 2200],
+  ["S3 problem", "#problem .symptom", 2600, 3],
+  ["S4 ecosystem", "[data-organism]", 4600, 0],
+  ["S5 services", "#services .pillar", 2600, 1],
+  ["S8 origin", ".origin-mark-stage", 3400, 0],
+  ["S10 contact", ".contact-metaball-stage", 2200, 0],
 ];
 fs.mkdirSync(OUT, { recursive: true });
 
@@ -54,13 +55,13 @@ for (const tier of TIERS) {
   await page.goto(`${BASE}/${LOCALE}?ftier=${tier}`, { waitUntil: "networkidle" });
   await page.waitForFunction(() => !!document.querySelector("h1"), { timeout: 30000 });
   for (const row of rows) {
-    const el = page.locator(row.sel).first();
+    const [, , settle, idx] = TARGETS.find(([l]) => l === row.label);
+    const el = page.locator(row.sel).nth(idx);
     try {
-      await el.scrollIntoViewIfNeeded();
-      const [, , settle] = TARGETS.find(([l]) => l === row.label);
+      await el.evaluate((n) => n.scrollIntoView({ block: "center" }));
       await page.waitForTimeout(settle);
-      await el.scrollIntoViewIfNeeded(); // pins/reveals can shift layout
-      const shot = await el.screenshot();
+      // the liquid is a full-viewport sticky layer — capture the VIEWPORT
+      const shot = await page.screenshot();
       row.cells.push(shot.toString("base64"));
       const file = `chapter-${row.label.split(" ")[0].toLowerCase()}-${tier}.png`;
       fs.writeFileSync(path.join(OUT, file), shot);

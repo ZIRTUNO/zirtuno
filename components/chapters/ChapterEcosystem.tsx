@@ -1,18 +1,21 @@
 import { useTranslations } from "next-intl";
 import { Reveal } from "@/components/ui/Reveal";
-import { OrganismField, type EcoNode } from "@/components/field/OrganismField";
+import { LogoMark } from "@/components/hero/LogoMark";
 import { CtaStructure, CtaPortfolio } from "@/components/chrome/CtaButton";
 
+type Node = { name: string; tooltip: string };
+
 /**
- * S4 · The Ecosystem (remake) — the conceptual centerpiece. "Ecossistemas,
- * não peças soltas." A full-bleed liquid stage: S3's fragments converge into
- * the breathing organism, then liquid tendrils grow outward to the ten
- * capability labels (OrganismField — no SVG diagram). Copy is server-rendered
- * (RSC) for SEO; mobile keeps the vertical capability stack below the stage.
+ * S4 · The Ecosystem — the conceptual centerpiece. "Ecossistemas, não peças
+ * soltas." The liquid travel + converge + tendril choreography plays in the
+ * shared LiquidChapters layer; this chapter contributes the copy, the RUNWAY
+ * (the scroll distance the converge is scrubbed across — no pins) and the
+ * capability stack for narrow viewports / assistive tech / static tiers.
+ * Copy is server-rendered (RSC) for SEO.
  */
 export function ChapterEcosystem() {
   const t = useTranslations("ecosystem");
-  const nodes = t.raw("nodes") as EcoNode[];
+  const nodes = t.raw("nodes") as Node[];
 
   return (
     <section
@@ -20,7 +23,7 @@ export function ChapterEcosystem() {
       data-chapter
       className="relative border-t border-paper-faint"
     >
-      <div className="page-x pt-24 pb-10 md:pt-32 md:pb-14">
+      <div className="page-x pt-24 pb-6 md:pt-32 md:pb-10">
         <Reveal inView as="p" className="chapter-label">
           {t("chapterLabel")}
         </Reveal>
@@ -36,15 +39,18 @@ export function ChapterEcosystem() {
         </Reveal>
       </div>
 
-      <OrganismField
-        nodes={nodes}
-        centerLabel={t("centerLabel")}
-        headline={t("headline")}
-      />
+      {/* the converge runway — the sticky liquid layer plays across this
+          scroll distance; static tiers see the resolved mark instead */}
+      <div className="eco-runway" data-organism>
+        <div className="journey-static organism-fallback">
+          <LogoMark ariaLabel={t("centerLabel")} />
+        </div>
+      </div>
 
-      <div className="page-x pt-12 pb-24 md:pb-32">
-        {/* Mobile — the capabilities as a connected stack (labels are desktop) */}
-        <ul className="eco-stack mb-12 md:hidden" aria-label={t("headline")}>
+      <div className="page-x pt-10 pb-24 md:pb-32">
+        {/* the capabilities as a connected stack — narrow viewports, static
+            tiers and assistive tech (the orbital labels are lg+ and visual) */}
+        <ul className="eco-stack mb-12" aria-label={t("headline")}>
           <li className="eco-stack-center">{t("centerLabel")}</li>
           {nodes.map((n, i) => (
             <li key={i} className="eco-stack-item">

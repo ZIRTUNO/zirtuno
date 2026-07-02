@@ -1,5 +1,6 @@
-import { setRequestLocale } from "next-intl/server";
+import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Hero } from "@/components/hero/Hero";
+import { LiquidChapters, type EcoNode } from "@/components/field/LiquidChapters";
 import { ChapterProblem } from "@/components/chapters/ChapterProblem";
 import { ChapterEcosystem } from "@/components/chapters/ChapterEcosystem";
 import { ChapterServices } from "@/components/chapters/ChapterServices";
@@ -20,15 +21,24 @@ export default async function HomePage({
 }) {
   const { locale } = await params;
   setRequestLocale(locale);
+  const tEco = await getTranslations("ecosystem");
+  const ecoNodes = tEco.raw("nodes") as EcoNode[];
 
   return (
     <main id="content">
       <JsonLd locale={locale} />
       <SideIndex />
       <Hero />
-      <ChapterProblem />
-      <ChapterEcosystem />
-      <ChapterServices />
+      {/* S3 → S4 → S5 share ONE persistent liquid renderer (LiquidChapters) */}
+      <LiquidChapters
+        nodes={ecoNodes}
+        centerLabel={tEco("centerLabel")}
+        ecosystemLabel={tEco("headline")}
+      >
+        <ChapterProblem />
+        <ChapterEcosystem />
+        <ChapterServices />
+      </LiquidChapters>
       <ChapterMethod />
       <ChapterWork />
       <ChapterName />

@@ -46,11 +46,11 @@ for (const c of STOPS) {
     waitUntil: "networkidle",
   });
   const stage = page.locator("[data-organism]");
-  await stage.scrollIntoViewIfNeeded();
+  await stage.evaluate((n) => n.scrollIntoView({ block: "center" }));
   // the driver's damped progress settles in ~600 ms; give it room
-  await page.waitForTimeout(2200);
-  await stage.scrollIntoViewIfNeeded();
-  const shot = await stage.screenshot();
+  await page.waitForTimeout(2400);
+  // the liquid is a full-viewport sticky layer — capture the VIEWPORT
+  const shot = await page.screenshot();
   cells.push(shot.toString("base64"));
   fs.writeFileSync(path.join(OUT, `converge-${Math.round(c * 100)}.png`), shot);
   console.log(`converge checkpoint ${Math.round(c * 100)}%`);
