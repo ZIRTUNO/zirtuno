@@ -53,3 +53,6 @@ dev-server.log
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# local visual-evidence drops (videos, frame dumps) - reviewed, never shipped
+artifacts/
