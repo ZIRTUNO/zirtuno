@@ -18,7 +18,14 @@ import LenisProvider from "@/components/motion/LenisProvider";
 import { BreathLayer } from "@/components/ui/BreathLayer";
 import { TopBar } from "@/components/chrome/TopBar";
 import { Footer } from "@/components/chrome/Footer";
+import { EntryVeil } from "@/components/chrome/EntryVeil";
 import "../globals.css";
+
+// Pre-paint skip for the entry veil (S1.10): return visitors in the same
+// session must never see it flash — the attribute lands BEFORE the veil
+// element parses, so CSS hides it at first paint.
+const VEIL_SKIP =
+  'try{if(sessionStorage.getItem("zveil"))document.documentElement.dataset.zveil="seen"}catch(e){}';
 
 // Self-hosted at build time by next/font (no runtime third-party requests).
 // sans = business/UI · serif = poetry ONLY · mono = labels/numbers/CTAs.
@@ -97,6 +104,9 @@ export default async function LocaleLayout({
       className={`${bricolage.variable} ${instrument.variable} ${jetbrains.variable}`}
     >
       <body>
+        {/* must precede EntryVeil in DOM order (pre-paint skip) */}
+        <script dangerouslySetInnerHTML={{ __html: VEIL_SKIP }} />
+        <EntryVeil label={tCommon("loading")} />
         <BreathLayer />
         <NextIntlClientProvider locale={locale} messages={messages}>
           <a href="#content" className="skip-link">

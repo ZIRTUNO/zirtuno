@@ -60,6 +60,11 @@ const anchors = await page.evaluate(() => {
   const pillars = [...document.querySelectorAll("#services .pillar")].map(
     (el) => el.getBoundingClientRect().top + window.scrollY,
   );
+  const origin = document.querySelector("#name .origin-journey");
+  const originTop = origin
+    ? origin.getBoundingClientRect().top + window.scrollY
+    : null;
+  const originH = origin ? origin.getBoundingClientRect().height : 0;
   return {
     problem: top("#problem"),
     ecosystem: top("#ecosystem"),
@@ -67,6 +72,8 @@ const anchors = await page.evaluate(() => {
     runwayTop,
     runwayH,
     pillars,
+    originTop,
+    originH,
     vh: window.innerHeight,
   };
 });
@@ -97,6 +104,14 @@ const RANGES = [
     start: anchors.services - anchors.vh * 0.5,
     end: (anchors.pillars[3] ?? anchors.services + 3000) + anchors.vh * 0.4,
     frames: 36,
+  },
+  {
+    // S8's five scrubbed beats: two brothers → the mark (+ pillar labels) →
+    // the hold → the ecosystem echo → the drain under the particle wordmark
+    id: "origin-beats",
+    start: (anchors.originTop ?? 0) - anchors.vh * 0.3,
+    end: (anchors.originTop ?? 0) + (anchors.originH ?? 0),
+    frames: 32,
   },
 ];
 

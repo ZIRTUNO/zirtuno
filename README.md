@@ -108,8 +108,24 @@ npm run endpoints       # re-pack the 48-droplet morph endpoints from the SVGs
   QA: `?feco=c` freezes the S4 choreography; hero stills (`?fstate`/`?fpair`/
   `?fcursor`) render on the standalone frozen path (rest sheets stay
   byte-exact); diagnostics: `scripts/capture-transition-diagnostics.mjs`
-  (798×698 in-app-class viewport, four ranges incl. hero-to-problem,
-  filmstrips) → `captures/diagnostics-after/`.
+  (798×698 in-app-class viewport, five ranges incl. hero-to-problem and
+  origin-beats, filmstrips) → `captures/diagnostics-after/`.
+- **S8 The Origin is the five scrubbed beats (R2, build-spec S8.3)** on the
+  same runway pattern (`components/chapters/OriginFlow` + `makeOriginDriver`):
+  two brother-masses drift in from opposite sides, fuse into the EXACT mark
+  (three founding-pillar labels float beside its lobes — mono, muted, never
+  styled like the seven services), the mark holds breathing under the purpose
+  line, multiplies outward as the ecosystem echo, then drains while the CPU
+  particle wordmark assembles (shared engine:
+  `lib/animation/wordmark-particles`). Static tiers/reduced motion collapse
+  the runway to the plain reading column with the crisp mark.
+- **The loading moment (R2, S1.10) is the brand assembling:** `EntryVeil` in
+  the locale layout plays the wordmark particle convergence (~1.5 s) on the
+  FIRST visit of a session, then releases; return visits skip with no flash
+  (pre-paint script + `html[data-zveil]`), reduced motion and `?f*` QA
+  contexts never see it, and a hard cap guarantees it can never strand the
+  page (`scripts/verify-entry-veil.mjs` guards all three behaviors). The
+  route-segment pulse remains for in-app navigations.
 - Portfolio seed projects are prototypes only. Do not add fabricated metrics.
 
 ## Open Decisions

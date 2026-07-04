@@ -503,27 +503,6 @@ section[id],
   pointer-events: none;
 }
 
-/* S8 Beat 2 — origin mark stage (reuses the metaball; fills .origin-mark) */
-.origin-mark-stage {
-  position: relative;
-  width: 100%;
-  height: 100%;
-}
-.origin-mark-stage > .origin-mark-fallback,
-.origin-mark-stage > .origin-mark-canvas {
-  position: absolute;
-  inset: 0;
-}
-.origin-mark-stage > .origin-mark-fallback {
-  transition: opacity var(--dur-long) var(--ease-arrive);
-}
-.origin-mark-fallback.is-hidden {
-  opacity: 0;
-}
-.origin-mark-canvas {
-  pointer-events: none;
-}
-
 /* S8 Beat 5 — wordmark convergence (CPU particles → crisp text crossfade) */
 .origin-wordmark {
   position: relative;
@@ -1353,59 +1332,93 @@ section[id],
    finance) are the WHY — understated muted mono, deliberately distinct from
    the seven SERVICE pillars (the HOW): never numbered, never cyan-styled.
    --------------------------------------------------------------------------- */
-/* Deliberate beat rhythm (5.5): a quiet open, a large visual peak (the mark),
-   one dominant statement, a quieter coda, the resolution — varied scale/colour
-   so the beats never read as one identical centred-serif stack. */
-.origin-flow {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  margin-top: 3.5rem;
-}
+/* The five beats ride the house runway pattern (OriginFlow → .liquid-journey/
+   .journey-layer/.journey-content): each beat block owns ~a viewport of scroll
+   while the sticky liquid stage behind plays the story. Copy sits in the LOWER
+   third — the liquid (the mark) owns the centre. The static path collapses the
+   runway back to the plain reading column. */
 .origin-beat {
   display: flex;
+  min-height: 108vh;
   flex-direction: column;
   align-items: center;
+  justify-content: flex-end;
+  padding-bottom: 16vh;
+  text-align: center;
 }
-/* Beat 1 — a quiet opening */
+/* Beat 1 — a quiet opening (the two masses drift in behind) */
 .origin-open {
   max-width: 32rem;
   font-size: var(--text-poetic);
   line-height: 1.25;
   color: var(--color-paper-mute);
 }
-/* Beat 2 — the mark: the visual peak, larger and given room */
+/* Beat 2 — the mark forms on the stage; the pillar line reads beneath it */
 .origin-beat--mark {
-  margin-top: 5rem;
+  min-height: 118vh;
 }
-.origin-mark {
-  width: clamp(220px, 40vw, 360px);
-  aspect-ratio: 2950 / 3200;
+/* Beat 3 — the purpose: the dominant line, CENTRED over the breathing mark */
+.origin-beat--hold {
+  justify-content: center;
+  padding-bottom: 0;
 }
-/* Beat 3 — the purpose: the dominant line (bigger, brighter, breathing room) */
 .origin-statement {
-  margin-top: 6rem;
-  max-width: 24rem;
+  max-width: 26rem;
   font-size: var(--text-display-m);
   line-height: 1.16;
   color: var(--color-paper);
+  text-shadow: 0 0 24px rgb(0 0 0 / 0.55); /* legible over the liquid */
 }
-/* Beat 4 — the evolution: a quieter summary, tight under the statement */
+/* Beat 4 — the evolution: a quieter summary while the echo fans out */
 .origin-coda {
-  margin-top: 2rem;
   max-width: 36rem;
   font-size: var(--text-body-l);
   line-height: 1.5;
   color: var(--color-paper-dim);
 }
-/* Beat 5 — the resolution */
+/* Beat 5 — the resolution: the wordmark assembles as the liquid drains */
 .origin-beat--resolve {
-  margin-top: 6.5rem;
+  min-height: 118vh;
+  justify-content: center;
+  padding-bottom: 0;
 }
 .origin-wordmark-wrap {
   width: 100%;
   max-width: 28rem;
+}
+/* the static mark (reduced motion / "none" tier) — hidden while live via the
+   shared .journey-static rule */
+.origin-static-mark {
+  width: clamp(220px, 40vw, 360px);
+  aspect-ratio: 2950 / 3200;
+  margin-bottom: 2.5rem;
+}
+/* the three FOUNDING-pillar labels float beside the mark's lobes (decorative;
+   the accessible line lives in the beat-2 copy) */
+.origin-pillar-labels {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.origin-pillar-label {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  font-family: var(--font-mono);
+  font-size: var(--text-mono-sm);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-paper-mute);
+  white-space: nowrap;
+  opacity: 0; /* arrives with the mark (imperative) */
+}
+/* static path: collapse the runway to the plain reading column */
+.origin-journey[data-liquid="static"] .origin-beat {
+  min-height: 0;
+  padding: 3rem 0 1.5rem;
+  justify-content: center;
+}
+.origin-journey[data-liquid="static"] .origin-pillar-labels {
+  display: none;
 }
 .founding-pillars {
   margin-top: 1.75rem;
@@ -1838,6 +1851,58 @@ section[id],
   letter-spacing: 0.02em;
   color: var(--color-paper);
   animation: loading-pulse 1.4s var(--ease-breath) infinite;
+}
+
+/* S1.10 — the ENTRY veil: the first brand touch is the wordmark assembling
+   (shared particle engine with S8 Beat 5). Return visitors skip it with no
+   flash: the layout's pre-paint script sets html[data-zveil="seen"] before
+   this element parses. Reduced motion never sees it. */
+.entry-veil {
+  position: fixed;
+  inset: 0;
+  z-index: 80; /* above the wipe and the route loading screen */
+  display: grid;
+  place-items: center;
+  background: var(--color-ink);
+  transition: opacity 650ms var(--ease-arrive);
+}
+.entry-veil.is-leaving {
+  opacity: 0;
+  pointer-events: none;
+}
+html[data-zveil="seen"] .entry-veil {
+  display: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .entry-veil {
+    display: none;
+  }
+}
+.entry-veil-stage {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: min(78vw, 520px);
+  min-height: 5.5rem;
+}
+.entry-veil-canvas {
+  width: 100%;
+  height: auto;
+  transition: opacity 500ms var(--ease-arrive);
+}
+.entry-veil-canvas.is-faded {
+  opacity: 0;
+}
+.entry-veil-text {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  margin: 0;
+  transition: opacity 500ms var(--ease-arrive);
+}
+.entry-veil-text.is-hidden {
+  opacity: 0;
 }
 @keyframes loading-pulse {
   0%,

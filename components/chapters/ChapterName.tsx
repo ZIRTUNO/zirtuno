@@ -1,19 +1,23 @@
 import { useTranslations } from "next-intl";
 import { Reveal } from "@/components/ui/Reveal";
-import { OriginMark } from "./OriginMark";
+import { LogoMark } from "@/components/hero/LogoMark";
+import { OriginFlow } from "./OriginFlow";
 import { OriginWordmark } from "./OriginWordmark";
 
 /**
  * S8 · Chapter 7 — A Origem / The Origin (+ manifesto coda). The emotional
  * peak, AFTER the business case. Zirtuno's real beginning: two brothers, three
  * founding pillars (social/health/finance — the WHY, distinct from the seven
- * service pillars), and a purpose: to build what doesn't exist yet. Five beats:
- * two forms → the mark + three pillars → purpose → ecosystem → wordmark.
+ * service pillars), and a purpose: to build what doesn't exist yet.
  *
- * Skeleton render (static reveals). PHASE 2 turns this into the pinned ~600vh
- * ScrollTrigger scrub: Beat 2 forms the mark from the SVG-traced metaball, Beat
- * 5 converges the particles into the wordmark. Anchor id stays `name` so the
- * chapter index / SideIndex / hash links keep working.
+ * The five beats (build-spec S8.3) are SCRUBBED on the house runway pattern
+ * (OriginFlow): the copy blocks scroll over one sticky liquid stage while the
+ * same 48 droplets play the story — two masses drift together, fuse into the
+ * EXACT mark (+ the three founding-pillar labels), hold breathing under the
+ * purpose line, multiply outward as the ecosystem echo, then drain while the
+ * particle wordmark assembles. Copy is server-rendered (RSC) for SEO; the
+ * static path (reduced motion / "none" tier) collapses the runway to the
+ * plain column with the static mark. Anchor id stays `name`.
  */
 export function ChapterName() {
   const t = useTranslations("name");
@@ -24,53 +28,71 @@ export function ChapterName() {
     <section
       id="name"
       data-chapter
-      className="page-x relative border-t border-paper-faint py-28 md:py-40"
+      className="relative border-t border-paper-faint"
     >
-      <Reveal inView as="p" className="chapter-label">
-        {t("chapterLabel")}
-      </Reveal>
-
-      {/* Five beats with a deliberate rhythm — a soft open, a visual peak (the
-          mark), a dominant statement, a quiet coda, the resolution — rather than
-          a stack of identically-sized centred serif paragraphs (5.5). */}
-      <div className="origin-flow">
-        {/* Beat 1 — Two brothers: a quiet opening */}
-        <Reveal inView>
-          <p className="font-poetic origin-open">{t("b1")}</p>
-        </Reveal>
-
-        {/* Beat 2 — Three pillars, one mark (fracture→converge forms the mark) */}
-        <Reveal inView className="origin-beat origin-beat--mark">
-          <div className="origin-mark">
-            <OriginMark />
-          </div>
-          <p className="founding-pillars">{pillars.join("   ·   ")}</p>
-          <p className="font-poetic name-word-text">{t("b2")}</p>
-        </Reveal>
-
-        {/* Beat 3 — The purpose: the dominant line */}
-        <Reveal inView>
-          <p className="font-poetic origin-statement">{t("b3")}</p>
-        </Reveal>
-
-        {/* Beat 4 — The evolution: a quiet coda, tight to the statement */}
-        <Reveal inView>
-          <p className="font-poetic origin-coda">{t("b4")}</p>
-        </Reveal>
-
-        {/* Beat 5 — Resolution: CPU particle convergence → wordmark + closing line */}
-        <Reveal inView className="origin-beat origin-beat--resolve">
-          <div className="origin-wordmark-wrap">
-            <OriginWordmark text={t("wordmark")} />
-          </div>
-          <p className="font-poetic origin-closing">{t("closing")}</p>
-          {/* Zéfiro + Ventura kept ONLY as a single dim grace note (S8.5 default) */}
-          <p className="font-poetic origin-grace">{t("graceNote")}</p>
+      <div className="page-x pt-28 md:pt-40">
+        <Reveal inView as="p" className="chapter-label">
+          {t("chapterLabel")}
         </Reveal>
       </div>
 
-      {/* Manifesto coda — tight sequence */}
-      <div className="manifesto mt-32 md:mt-44">
+      <OriginFlow pillars={pillars}>
+        {/* Beat 1 — Two brothers: a quiet opening; the two masses drift in */}
+        <div className="origin-beat page-x">
+          <Reveal inView>
+            <p className="font-poetic origin-open">{t("b1")}</p>
+          </Reveal>
+        </div>
+
+        {/* Beat 2 — Three pillars, one mark: the liquid fuses into the EXACT
+            mark on the stage behind; static path shows the crisp mark */}
+        <div className="origin-beat origin-beat--mark page-x">
+          <div className="journey-static origin-static-mark" aria-hidden="true">
+            <LogoMark />
+          </div>
+          {/* the joined line serves the static path; live mode floats the three
+              labels beside the mark instead (b2 prose names them for AT) */}
+          <Reveal inView>
+            <p className="founding-pillars journey-static">
+              {pillars.join("   ·   ")}
+            </p>
+          </Reveal>
+          <Reveal inView>
+            <p className="font-poetic name-word-text">{t("b2")}</p>
+          </Reveal>
+        </div>
+
+        {/* Beat 3 — The purpose: the dominant line over the breathing mark */}
+        <div className="origin-beat origin-beat--hold page-x">
+          <Reveal inView>
+            <p className="font-poetic origin-statement">{t("b3")}</p>
+          </Reveal>
+        </div>
+
+        {/* Beat 4 — The evolution: the mark multiplies (the ecosystem echo) */}
+        <div className="origin-beat page-x">
+          <Reveal inView>
+            <p className="font-poetic origin-coda">{t("b4")}</p>
+          </Reveal>
+        </div>
+
+        {/* Beat 5 — Resolution: the liquid drains; particles assemble the
+            wordmark; closing line + the single dim grace note (S8.5) */}
+        <div className="origin-beat origin-beat--resolve page-x">
+          <Reveal inView className="origin-wordmark-wrap">
+            <OriginWordmark text={t("wordmark")} />
+          </Reveal>
+          <Reveal inView>
+            <p className="font-poetic origin-closing">{t("closing")}</p>
+          </Reveal>
+          <Reveal inView>
+            <p className="font-poetic origin-grace">{t("graceNote")}</p>
+          </Reveal>
+        </div>
+      </OriginFlow>
+
+      {/* Manifesto coda — tight sequence, after the resolution */}
+      <div className="manifesto page-x mt-24 pb-28 md:mt-32 md:pb-40">
         {manifesto.map((line, i) => (
           <Reveal inView key={i} delay={i * 0.1}>
             <p className="manifesto-line">{line}</p>

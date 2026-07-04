@@ -9,8 +9,9 @@
  *   - site fluid (Hero → S3 → S4 → S5): ONE driver — the hero machine, the
  *     pour, the journey, the tendrils and the service melts (see the banner
  *     further down). One physics table (PHYS), brand cyan everywhere.
- *   - scatter  (S8 timed converge): droplets fly home on staggered schedules,
- *     the exact mark re-forms.
+ *   - origin   (S8): the five scrubbed beats — two brothers → the exact mark
+ *     (+ founding pillars) → the hold → the ecosystem echo → the drain under
+ *     the particle wordmark. Same droplets, same PHYS.
  *   - impulse  (S10): the exhale — droplets burst off the resting mark and
  *     sink back (additive; the labeled submit stays canonical).
  */
@@ -84,6 +85,15 @@ export const arrive = cubicBezier(
   ...(EASE_POINTS.arrive as readonly number[] as [number, number, number, number]),
 );
 
+export function bridgeRadiusEnvelope(p: number): number {
+  const rPad = BRIDGE * 0.35;
+  const rWin = BRIDGE * 0.55;
+  return (
+    smooth01((p - rPad) / rWin) *
+    (1 - smooth01((p - (1 - rPad - rWin)) / rWin))
+  );
+}
+
 /** Min-travel droplet matching (§3.2): greedy nearest-neighbour, O(N² log N). */
 export function matchClouds(A: Ball[], B: Ball[]): number[] {
   const pairs: [number, number, number][] = [];
@@ -129,11 +139,9 @@ export function packBridge(
   stag: number[],
   p: number,
 ): number {
-  // droplets grow ahead of the form's erosion (and shrink after the landing
-  // form has begun re-growing), so the liquid never loses body at a handoff
-  const R_WIN = BRIDGE * 0.65;
-  const rEnv =
-    smooth01(p / R_WIN) * (1 - smooth01((p - (1 - R_WIN)) / R_WIN));
+  // Keep droplets out of fully solid forms: they take over after the source
+  // has started dissolving and drain before the target is already solid.
+  const rEnv = bridgeRadiusEnvelope(p);
   for (let i = 0; i < N; i++) {
     const lt = clamp01(p * (1 + STAGGER) - STAGGER * stag[i]);
     const tp = arrive(lt);
@@ -252,89 +260,6 @@ function scatterFor(state: number): Scatter[] {
     scatterCache.set(state, s);
   }
   return s;
-}
-
-/**
- * S3 scatter / S4·S8 converge — ONE driver; the progress ref decides which
- * story it tells. progress p: 0 = the exact resting form · 1 = fully dispersed,
- * desaturated, drifting. Drive it 0→1 (fracture), hold it, or run it 1→0 (the
- * converge payoff).
- *
- * The transformation is TEMPORALLY COHERENT — overlapping eased phases on
- * independent channels, so nothing ever swaps (reading p downward = converge):
- *
- *   p 1.00→0.46  droplets loosen and FLOW home, each on its own staggered
- *                schedule (irregular arrivals — the constellation never moves
- *                as one rigid piece); drift stills per droplet as it lands.
- *   p 0.58→0.08  colour blooms back from the muted grey.
- *   p 0.46→0.16  the last droplets land; every droplet swells to its full
- *                cloud radius as it arrives, fusing with its neighbours — the
- *                48-droplet cloud IS the form's footprint, so the merged mass
- *                gradually IMPLIES the unified symbol (the intermediate phase).
- *   p 0.28→0.02  the exact form grows from its skeleton (erosion → 0)
- *                underneath the fused mass, swallowing it.
- *   p 0.16→0.01  droplet radii drain into the now-present form.
- *
- * All channels read a DAMPED progress (≈110 ms exponential), so hard external
- * sets (pin exits, fast scrolls, tween ends) can never render as a snap.
- */
-export function makeScatterDriver(
-  progress: { current: number },
-  state = 0,
-): FieldDriver {
-  const T = scatterFor(state);
-  const base = CLOUDS[state];
-  let lastT = -1;
-  let dp = -1; // damped progress (initialised to the first raw read)
-  return {
-    forms: [state],
-    frame: (tMs, buf) => {
-      const raw = clamp01(progress.current);
-      if (dp < 0) dp = raw;
-      const dt = lastT < 0 ? 16.7 : Math.min(Math.max(tMs - lastT, 0), 100);
-      lastT = tMs;
-      dp += (raw - dp) * (1 - Math.exp(-dt / 110));
-      const p = clamp01(dp);
-      if (p < 0.002) return restFrame(state);
-
-      const t = tMs / 1000;
-      // the exact form emerges from its skeleton across p 0.28 → 0.02, i.e.
-      // UNDER the fused droplet mass — growth, never a reveal
-      const q = 1 - smooth01((p - 0.02) / 0.26); // form presence
-      const rEnv = smooth01((p - 0.01) / 0.15); // droplets drain at the very end
-      // complementary handoff: droplets shed radius as the form takes over, so
-      // the merged mass never over-fills (over-fill floods the mark's channels)
-      const shed = 1 - 0.45 * q;
-      for (let i = 0; i < N; i++) {
-        const b = base[i], s = T[i];
-        // staggered travel: droplet i is home below p = 0.16 + 0.30·key and
-        // fully dispersed above that +0.5 — irregular, flowing arrivals
-        const lt = smooth01((p - (0.16 + 0.3 * s.key)) / 0.5);
-        const drift = 0.014 * lt; // drift stills as each droplet lands
-        buf[i * 3] =
-          b[0] + (s.tx - b[0]) * lt + drift * Math.sin(t * s.f1 + i * 1.7);
-        buf[i * 3 + 1] =
-          b[1] + (s.ty - b[1]) * lt + drift * Math.cos(t * s.f2 + i * 2.3);
-        // fusion swell: full cloud radius at home (neighbours neck together —
-        // the blobby ghost of the symbol), leaner while dispersed
-        buf[i * 3 + 2] = b[2] * (1 - 0.28 * lt) * rEnv * shed;
-      }
-      const [fa, ea] = formPresence(q);
-      return {
-        a: state,
-        b: state,
-        fa,
-        fb: 0,
-        ea,
-        eb: 0,
-        warp: SDF_WARP_REST,
-        // brand cyan even while dispersed (owner directive: one consistent
-        // liquid identity site-wide — no desaturation states)
-        mute: 0,
-        count: N,
-      };
-    },
-  };
 }
 
 /**
@@ -487,7 +412,7 @@ function clusterTargets(aspect: number, cx: number): WideScatter[] {
 /** The shared converge envelopes (form presence / droplet drain / mass shed). */
 function convergeEnvelopes(p: number) {
   const q = 1 - smooth01((p - 0.02) / 0.26); // form presence
-  const rEnv = smooth01((p - 0.01) / 0.15); // droplets drain at the very end
+  const rEnv = smooth01((p - 0.075) / 0.24); // droplets drain before the form is solid
   const shed = 1 - 0.45 * q; // complementary mass handoff
   return { q, rEnv, shed };
 }
@@ -922,10 +847,7 @@ export function makeSiteDriver(
           const tp = arrive(lm);
           const trr = arrive(clamp01(lm * RADIUS_LEAD));
           const aa = A[i], bb2 = B[pm[i]];
-          const R_WIN = BRIDGE * 0.65;
-          const rEnvM =
-            smooth01(dmp.m / R_WIN) *
-            (1 - smooth01((dmp.m - (1 - R_WIN)) / R_WIN));
+          const rEnvM = bridgeRadiusEnvelope(dmp.m);
           jx = 0.5 + jOx + (aa[0] + (bb2[0] - aa[0]) * tp - 0.5) * jScale;
           jy = 0.5 + jOy + (aa[1] + (bb2[1] - aa[1]) * tp - 0.5) * jScale;
           jr = (aa[2] + (bb2[2] - aa[2]) * trr) * rEnvM * jScale;
@@ -1030,6 +952,169 @@ export function makeSiteDriver(
       // brand cyan EVERYWHERE — the desaturated "broken" state is expressed by
       // motion and separation, never by draining the colour (owner directive)
       return { a, b, fa, fb, ea, eb, ox, oy, scale, warp, mute: 0, count };
+    },
+  };
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// THE ORIGIN (S8) — the five scrubbed beats (build-spec S8.3) on the SAME
+// unified liquid and the SAME physics as the site fluid. One driver, one
+// scroll-progress channel, damped + per-droplet inertia:
+//
+//   Beat 1  p 0.00–0.18  two brothers: two fluid masses enter from opposite
+//                        sides and DRIFT toward each other — drawn, not
+//                        colliding.
+//   Beat 2  p 0.18–0.42  three pillars, one mark: the masses fuse onto the
+//                        mark's droplet footprint and the EXACT SVG-traced
+//                        mark grows from its skeleton underneath (the same
+//                        converge language as the ecosystem).
+//   Beat 3  p 0.42–0.62  the purpose: the mark holds, breathing (rest warp);
+//                        the copy takes the foreground.
+//   Beat 4  p 0.62–0.82  the evolution: satellite droplets are REBORN off the
+//                        mark and fan out to loose orbits — the ecosystem echo.
+//   Beat 5  p 0.82–1.00  resolution: the satellites sink back and drain; the
+//                        mark erodes away under the assembling particle
+//                        wordmark (DOM), closing line + grace note.
+// ═══════════════════════════════════════════════════════════════════════════════
+
+export type OriginInput = { p: number }; // raw runway progress, 0..1
+
+const ORIGIN_SCALE = 0.5; // the mark's half-extent ≈ 0.2 uv (same as the eco)
+const ORIGIN_OY = 0.06; // slightly above centre — the beat copy reads below
+
+type OriginTarget = {
+  ex: number; // off-stage entry
+  ey: number;
+  mx: number; // the meeting (two loose masses, about to touch)
+  my: number;
+  ox: number; // beat-4 echo orbit
+  oy: number;
+};
+
+export function makeOriginDriver(input: OriginInput): FieldDriver {
+  const base = CLOUDS[0];
+  let lastT = -1;
+  let dp = -1;
+  let cachedAspect = -1;
+  let T: OriginTarget[] = [];
+  const P = new Float32Array(N * 2).fill(-1);
+  const R = new Float32Array(N).fill(-1);
+  return {
+    forms: [0],
+    frame: (tMs, buf, aspect) => {
+      if (Math.abs(aspect - cachedAspect) > 0.02) {
+        cachedAspect = aspect;
+        const halfW = Math.max(aspect, 0.6) / 2;
+        const sx = Math.min(Math.max(aspect * 0.8, 1), 1.45);
+        T = base.map((_, i) => {
+          const side = i % 2 === 0 ? -1 : 1; // brother A / brother B, interleaved
+          const ma = hash(i, 54) * Math.PI * 2;
+          const md = 0.03 + 0.09 * hash(i, 55);
+          const oa = hash(i, 56) * Math.PI * 2;
+          const orr = 0.26 + 0.16 * hash(i, 57);
+          return {
+            ex: 0.5 + side * (halfW + 0.12 + 0.1 * hash(i, 52)),
+            ey: 0.36 + 0.38 * hash(i, 53),
+            mx: 0.5 + side * 0.105 + Math.cos(ma) * md * 0.9,
+            my: 0.5 + ORIGIN_OY + side * 0.02 + Math.sin(ma) * md,
+            ox: 0.5 + Math.cos(oa) * orr * sx,
+            oy: 0.5 + ORIGIN_OY + Math.sin(oa) * orr,
+          };
+        });
+      }
+      const dt = lastT < 0 ? 16.7 : Math.min(Math.max(tMs - lastT, 0), 100);
+      lastT = tMs;
+      if (dp < 0) dp = clamp01(input.p);
+      dp += (clamp01(input.p) - dp) * (1 - Math.exp(-dt / PHYS.TAU_CHANNEL));
+      const p = clamp01(dp);
+      const t = tMs / 1000;
+
+      // beat envelopes (windows overlap on purpose — nothing ever swaps)
+      const q1 = smooth01(p / 0.17); // enter → the meeting
+      const q2 = smooth01((p - 0.19) / 0.22); // fuse → the mark
+      const q4 = smooth01((p - 0.62) / 0.19); // multiply outward
+      const q5 = smooth01((p - 0.84) / 0.12); // resolve under the wordmark
+
+      // the mark: grows from its skeleton under the fused mass (late beat 2),
+      // holds through beats 3–4, erodes away at the resolution
+      const [wIn, eIn] = formPresence(smooth01((q2 - 0.5) / 0.45));
+      const out = smooth01((p - 0.86) / 0.11);
+      const fa = wIn * (1 - out);
+      const ea = eIn + out * SDF_MELT_ERODE;
+      const warp =
+        SDF_WARP_REST +
+        (SDF_WARP_MORPH - SDF_WARP_REST) * 0.6 * Math.sin(Math.PI * q2);
+
+      for (let i = 0; i < N; i++) {
+        const b = base[i];
+        const s = T[i];
+        // entry → the meeting
+        let x = s.ex + (s.mx - s.ex) * q1;
+        let y = s.ey + (s.my - s.ey) * q1;
+        // the meeting → the mark's footprint (staggered — the fusion flows)
+        const lt2 = smooth01((q2 - 0.45 * hash(i, 58)) / 0.55);
+        const fx = 0.5 + (b[0] - 0.5) * ORIGIN_SCALE;
+        const fy = 0.5 + ORIGIN_OY + (b[1] - 0.5) * ORIGIN_SCALE;
+        x += (fx - x) * lt2;
+        y += (fy - y) * lt2;
+        // radius: travelling mass → footprint swell → drained as the form lands
+        const drain = 1 - smooth01((q2 - 0.68) / 0.28);
+        let r = b[2] * ORIGIN_SCALE * (0.6 + 0.4 * VARY[i]) * drain;
+        // beat 4 — half the droplets are REBORN off the mark as the echo
+        let loose = 1 - lt2;
+        if (i % 2 === 0 && q4 > 0.001) {
+          const q4i = smooth01((q4 - 0.5 * hash(i, 59)) / 0.5);
+          if (q4i > 0.001) {
+            x += (s.ox - x) * q4i;
+            y += (s.oy - y) * q4i;
+            r = Math.max(r, 0.016 * VARY[i] * q4i);
+            loose = Math.max(loose, q4i);
+          }
+        }
+        // resolution: everything sinks and drains
+        r *= 1 - q5;
+        // wander while loose; stills as it lands (the same drift family)
+        const wob = PHYS.DRIFT * loose * (1 - q5);
+        x += wob * Math.sin(t * (0.5 + hash(i, 62)) + i * 1.7);
+        y += wob * Math.cos(t * (0.45 + hash(i, 63)) + i * 2.3);
+
+        // per-droplet inertia — identical physics to the site fluid
+        const kp = 1 - Math.exp(-dt / TAUP[i]);
+        const kr = 1 - Math.exp(-dt / PHYS.TAU_RADIUS);
+        if (P[i * 2] < 0) {
+          P[i * 2] = x;
+          P[i * 2 + 1] = y;
+          R[i] = r;
+        } else {
+          P[i * 2] += (x - P[i * 2]) * kp;
+          P[i * 2 + 1] += (y - P[i * 2 + 1]) * kp;
+          R[i] += (r - R[i]) * kr;
+        }
+      }
+
+      let count = 0;
+      for (let i = 0; i < N; i++) {
+        if (R[i] < 0.0012) continue;
+        buf[count * 3] = P[i * 2];
+        buf[count * 3 + 1] = P[i * 2 + 1];
+        buf[count * 3 + 2] = R[i];
+        count++;
+      }
+
+      return {
+        a: 0,
+        b: 0,
+        fa,
+        fb: 0,
+        ea,
+        eb: 0,
+        ox: 0,
+        oy: ORIGIN_OY,
+        scale: ORIGIN_SCALE,
+        warp,
+        mute: 0,
+        count,
+      };
     },
   };
 }
