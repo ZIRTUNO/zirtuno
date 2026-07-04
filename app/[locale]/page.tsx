@@ -1,6 +1,6 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Hero } from "@/components/hero/Hero";
-import { LiquidChapters, type EcoNode } from "@/components/field/LiquidChapters";
+import { LiquidSite, type EcoNode } from "@/components/field/LiquidSite";
 import { ChapterProblem } from "@/components/chapters/ChapterProblem";
 import { ChapterEcosystem } from "@/components/chapters/ChapterEcosystem";
 import { ChapterServices } from "@/components/chapters/ChapterServices";
@@ -28,17 +28,19 @@ export default async function HomePage({
     <main id="content">
       <JsonLd locale={locale} />
       <SideIndex />
-      <Hero />
-      {/* S3 → S4 → S5 share ONE persistent liquid renderer (LiquidChapters) */}
-      <LiquidChapters
+      {/* Hero → S3 → S4 → S5 share ONE persistent liquid renderer (LiquidSite):
+          the hero's living mark, the pour into The Problem, the ecosystem
+          organism and the service melts are one continuous fluid. */}
+      <LiquidSite
         nodes={ecoNodes}
         centerLabel={tEco("centerLabel")}
         ecosystemLabel={tEco("headline")}
       >
+        <Hero />
         <ChapterProblem />
         <ChapterEcosystem />
         <ChapterServices />
-      </LiquidChapters>
+      </LiquidSite>
       <ChapterMethod />
       <ChapterWork />
       <ChapterName />

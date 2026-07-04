@@ -73,6 +73,14 @@ const anchors = await page.evaluate(() => {
 
 const RANGES = [
   {
+    // the POUR: hero rest → the mark granulates → droplets stream into the
+    // Problem's clusters (one droplet identity — the site-fluid seam)
+    id: "hero-to-problem",
+    start: 0,
+    end: anchors.problem + anchors.vh * 1.2,
+    frames: 29,
+  },
+  {
     id: "problem-to-ecosystem",
     start: anchors.problem - 60,
     end: anchors.runwayTop + anchors.runwayH * 0.35,

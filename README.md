@@ -87,21 +87,29 @@ npm run endpoints       # re-pack the 48-droplet morph endpoints from the SVGs
   gating (`gpu-tier`, `can-run-glass`, `?glass=`) and their capture scripts are
   DELETED (three.js/@react-three removed); sheets:
   `captures/chapters-sheet-{en,pt}.png`.
-- **S3 → S4 → S5 are ONE LIQUID JOURNEY:** a single persistent renderer
-  (`components/field/LiquidChapters` + `makeJourneyDriver`) spans The Problem,
-  The Ecosystem and The Services — one sticky full-viewport canvas, one damped
-  scroll-progress source, 48 stable droplet identities end to end, no GSAP
-  pins. The Problem is dispersed unstable droplets (the whole mark NEVER
-  appears there); the travel phase drifts the same droplets to centre; the
-  converge resolves the exact mark; its droplets become liquid TENDRILS
+- **Hero → S3 → S4 → S5 are ONE SITE FLUID:** a single persistent renderer
+  (`components/field/LiquidSite` + `makeSiteDriver`) spans the Hero, The
+  Problem, The Ecosystem and The Services — one sticky full-viewport canvas
+  (the liquid has NO interior edge and is never scrolled away as a block), one
+  rAF measurement loop, ONE physics table (`PHYS`), 48 stable droplet
+  identities end to end, no GSAP pins. The hero's living machine (autocycle
+  §3.3 melts, gooey cursor, keyboard) is a SEGMENT of the driver, staged over
+  the hero column via `iFormOff`/`iFormScale`; scrolling out granulates the
+  resting form and POURS its droplets into The Problem's unstable clusters;
+  the travel/converge resolves the exact mark; its droplets become tendrils
   feeding ten orbital capability labels (lg+; the capability stack serves
-  narrow viewports, static tiers and AT); the same liquid then melts through
-  the seven pillar forms while ONE service owns the viewport at a time.
-  QA: `?feco=c` freezes the S4 choreography; diagnostics:
-  `scripts/capture-transition-diagnostics.mjs` (798×698 in-app-class viewport,
-  three ranges, filmstrips) → `captures/diagnostics-after/`. The unified
-  shader's form-domain staging (aspect-normalised uv, `iFormOff`,
-  `iFormScale`) is identical on square stages.
+  narrow viewports, static tiers and AT); the same liquid melts through the
+  seven pillar forms (ONE service dominant at a time) and settles away before
+  the layer unsticks. Twelve ambient lava-lamp droplets share the field
+  site-wide; every droplet carries its own inertia (heavy lags — scroll
+  STRETCHES the liquid) and scroll velocity stirs it. Colour is brand cyan
+  EVERYWHERE — no desaturation states, no dimming, and the FPS watchdog only
+  ever lowers resolution (full → lite → half): the liquid never freezes.
+  QA: `?feco=c` freezes the S4 choreography; hero stills (`?fstate`/`?fpair`/
+  `?fcursor`) render on the standalone frozen path (rest sheets stay
+  byte-exact); diagnostics: `scripts/capture-transition-diagnostics.mjs`
+  (798×698 in-app-class viewport, four ranges incl. hero-to-problem,
+  filmstrips) → `captures/diagnostics-after/`.
 - Portfolio seed projects are prototypes only. Do not add fabricated metrics.
 
 ## Open Decisions

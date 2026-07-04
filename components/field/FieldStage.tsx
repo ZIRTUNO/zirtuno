@@ -7,10 +7,12 @@
  * (S3), converge (S4/S8), scrub-morph (S5), impulse exhale (S10).
  *
  * Tiers (lib/webgl/field-tier): "full" = glass at dpr ≤ 2 · "lite" = the flat
- * cyan branch at dpr 1. An FPS watchdog downshifts full → lite → stop (holds
- * the last frame) — locally only; a janky scroll on one chapter must not nuke
- * the whole site's tier. Pauses when `play` is false (off-screen). Context
- * loss → onContextLost (shell re-shows its fallback) + rebuild on restore.
+ * cyan branch at dpr 1 · "half" = flat at dpr 0.5 (watchdog floor). The FPS
+ * watchdog needs SUSTAINED slowness (the counter decays on smooth frames) and
+ * only ever lowers resolution — the liquid never freezes: a frozen scroll-
+ * choreographed canvas reads as a pasted image being dragged, which is the
+ * exact failure this system exists to prevent. Pauses when `play` is false
+ * (off-screen). Context loss → onContextLost + rebuild on restore.
  */
 
 import { useEffect, useReducer, useRef } from "react";
@@ -31,6 +33,8 @@ type FieldStageProps = {
   tier?: "full" | "lite";
   onReady?: () => void;
   onContextLost?: () => void;
+  /** A runtime watchdog downshift happened (persist it if site-wide). */
+  onTierChange?: (tier: "lite" | "none") => void;
 };
 
 export default function FieldStage({
@@ -39,12 +43,13 @@ export default function FieldStage({
   tier = "full",
   onReady = () => {},
   onContextLost = () => {},
+  onTierChange = () => {},
 }: FieldStageProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const cb = useRef({ onReady, onContextLost });
+  const cb = useRef({ onReady, onContextLost, onTierChange });
   useEffect(() => {
-    cb.current = { onReady, onContextLost };
-  }, [onReady, onContextLost]);
+    cb.current = { onReady, onContextLost, onTierChange };
+  }, [onReady, onContextLost, onTierChange]);
 
   const driverRef = useRef(driver);
   useEffect(() => {
@@ -73,8 +78,11 @@ export default function FieldStage({
     layer.canvas.addEventListener("webglcontextlost", onLost);
     layer.canvas.addEventListener("webglcontextrestored", onRestored);
 
-    let liveTier: "full" | "lite" = tier;
-    let stopped = false;
+    // full = glass at dpr ≤ 2 · lite = flat cyan at dpr 1 · half = flat at
+    // dpr 0.5. There is NO stop state: freezing a scroll-choreographed liquid
+    // reads as a pasted image being dragged — a blurrier LIVING liquid always
+    // beats a crisp dead one.
+    let liveTier: "full" | "lite" | "half" = tier;
 
     gl.uniform1f(layer.U("iThick"), SDF_THICK);
     gl.uniform2f(layer.U("iTexel"), 1 / SDF_RES, 1 / SDF_RES);
@@ -86,7 +94,8 @@ export default function FieldStage({
     let announced = false;
 
     const maxDpr = Math.min(window.devicePixelRatio || 1, 2);
-    const scaleFor = () => (liveTier === "full" ? maxDpr : 1);
+    const scaleFor = () =>
+      liveTier === "full" ? maxDpr : liveTier === "lite" ? 1 : 0.5;
 
     const drawFrame = (tMs: number) => {
       const aspect =
@@ -124,8 +133,10 @@ export default function FieldStage({
       }
     };
 
-    // FPS watchdog — chapter-local downshifts (never persisted globally: scroll
-    // jank on one section must not demote the whole site).
+    // FPS watchdog — requires SUSTAINED slowness (the counter decays on good
+    // frames), so scroll flicks, tab stalls or capture harnesses can never
+    // demote a healthy canvas. Downshifts lower resolution only; the liquid
+    // NEVER freezes.
     let lastTick = 0;
     let raf = 0;
     let wdWarm = 0;
@@ -136,23 +147,31 @@ export default function FieldStage({
       if (liveTier === "full") {
         liveTier = "lite";
         resize();
-      } else {
-        stopped = true; // hold the last frame; the chapter stays composed
+        cb.current.onTierChange("lite");
+      } else if (liveTier === "lite") {
+        liveTier = "half";
+        resize();
       }
     };
 
     const tick = (now: number) => {
       raf = 0;
-      if (disposed || stopped || !playRef.current) return;
+      if (disposed || !playRef.current) return;
       const dt = now - lastTick;
       lastTick = now;
-      if (++wdWarm > 5 && dt > 25 && ++wdSlow >= 12) downshift();
-      if (stopped) return;
+      if (++wdWarm > 5) {
+        // missing 2+ vsyncs counts up; smooth frames pay it back down
+        if (dt > 34) {
+          if (++wdSlow >= 30) downshift();
+        } else {
+          wdSlow = Math.max(0, wdSlow - 2);
+        }
+      }
       drawFrame(now);
       raf = requestAnimationFrame(tick);
     };
     const startLoop = () => {
-      if (raf || disposed || stopped || !playRef.current) return;
+      if (raf || disposed || !playRef.current) return;
       lastTick = performance.now();
       raf = requestAnimationFrame(tick);
     };
@@ -185,6 +204,7 @@ export default function FieldStage({
           const data = await loadSdf(SVG_URLS[s]);
           if (disposed) return;
           textures[s] = makeSdfTexture(layer, data);
+          driverRef.current.formReady?.(s); // retargeting drivers gate on this
           drawFrame(performance.now()); // paint as soon as the form exists
         } catch {
           /* missing form: the fallback stays for frames that need it */

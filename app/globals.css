@@ -612,10 +612,13 @@ section[id],
 }
 
 /* ===========================================================================
-   THE LIQUID JOURNEY (S3 → S4 → S5) — one persistent fluid renderer under all
-   three chapters. The layer is sticky full-viewport and spans the whole
-   wrapper (-100vh bottom margin); every chapter's copy scrolls over it.
+   THE SITE FLUID (Hero → S3 → S4 → S5) — one persistent fluid renderer under
+   all four chapters. The layer is sticky full-viewport and spans the whole
+   wrapper (-100vh bottom margin); every chapter's copy scrolls over it, so
+   the liquid has no interior edge and is never dragged away as a block.
    Deterministic layering: canvas z-0 (no pointer events) · copy z-10.
+   NEVER dimmed, faded or desaturated — one consistent cyan luminosity
+   everywhere (owner directive); legibility comes from composition.
    =========================================================================== */
 .liquid-journey {
   position: relative;
@@ -628,7 +631,6 @@ section[id],
   z-index: 0;
   pointer-events: none;
   overflow: hidden;
-  transition: opacity 600ms var(--ease-arrive);
 }
 .journey-canvas {
   position: absolute;

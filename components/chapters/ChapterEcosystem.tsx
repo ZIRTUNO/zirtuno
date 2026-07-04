@@ -8,7 +8,7 @@ type Node = { name: string; tooltip: string };
 /**
  * S4 · The Ecosystem — the conceptual centerpiece. "Ecossistemas, não peças
  * soltas." The liquid travel + converge + tendril choreography plays in the
- * shared LiquidChapters layer; this chapter contributes the copy, the RUNWAY
+ * shared LiquidSite layer; this chapter contributes the copy, the RUNWAY
  * (the scroll distance the converge is scrubbed across — no pins) and the
  * capability stack for narrow viewports / assistive tech / static tiers.
  * Copy is server-rendered (RSC) for SEO.

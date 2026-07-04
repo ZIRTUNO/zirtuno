@@ -6,10 +6,11 @@ import { PILLARS } from "@/lib/content/services";
 
 /**
  * S5 · The Services — ONE service owns the viewport at a time. The liquid
- * (the shared LiquidChapters layer) melts pillar → pillar in lockstep with
- * the copy, sitting right of the column on wide stages and dimming to
- * atmosphere on narrow ones. Each pillar gets near-viewport presence — no
- * competing states, no stacked screens. Copy is server-rendered (RSC).
+ * (the shared LiquidSite layer) melts pillar → pillar in lockstep with the
+ * copy — beside the column on wide stages, smaller and below it on narrow
+ * ones (placement, never dimming: the liquid keeps full luminosity). Each
+ * pillar gets near-viewport presence — no competing states, no stacked
+ * screens. Copy is server-rendered (RSC).
  */
 export function ChapterServices() {
   const t = useTranslations("services");

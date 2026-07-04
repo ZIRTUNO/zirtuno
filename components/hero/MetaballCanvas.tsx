@@ -1,24 +1,23 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useContext, useEffect, useState } from "react";
 import type { KeyboardEvent } from "react";
 import dynamic from "next/dynamic";
 import { useReducedMotion } from "@/lib/animation/reduced-motion";
-import { useInView } from "@/lib/animation/use-in-view";
-import { detectFieldTier, setFieldTier, type FieldTier } from "@/lib/webgl/field-tier";
+import { detectFieldTier, type FieldTier } from "@/lib/webgl/field-tier";
 import { STATE_COUNT } from "@/lib/webgl/symbols";
+import { HeroLiquidContext } from "@/components/field/LiquidSite";
 import { LogoMark } from "./LogoMark";
 import { PillarIndicator } from "./PillarIndicator";
 import { PerfOverlay } from "./PerfOverlay";
 
-// The FIELD hero (metaball-morph-spec v1.2–v1.4, default since R0):
-//   FieldMorphHero  = the live hero — SDF-glass rest + metaball melt morphs,
-//                     autocycle / hover / keyboard.
-//   SdfGlassField   = a single static SDF-glass form (reduced-motion rest +
-//                     ?fstate=N stills).
+// The live hero is rendered by the SITE fluid (components/field/LiquidSite —
+// one persistent canvas from the hero to the services, so the liquid has no
+// interior edge and never scrolls away as a block). What remains here:
+//   FieldMorphHero  = the deterministic frozen QA stills (?fstate/?fpair/?fcursor).
+//   SdfGlassField   = the reduced-motion static glass mark.
 //   MetaballField   = the bare metaball layer (?fflat=1 debug).
-// All client-only (WebGL2) → lazy, no SSR. The legacy raymarch/mesh scenes no
-// longer mount here (other chapters still use them until R1 deletes them).
+// All client-only (WebGL2) → lazy, no SSR.
 const FieldMorphHero = dynamic(() => import("./FieldMorphHero"), { ssr: false });
 const SdfGlassField = dynamic(() => import("./SdfGlassField"), { ssr: false });
 const MetaballField = dynamic(() => import("./MetaballField"), { ssr: false });
@@ -26,30 +25,25 @@ const MetaballField = dynamic(() => import("./MetaballField"), { ssr: false });
 const STATES = STATE_COUNT; // 0 = mark, 1-7 = the service pillars (lib/webgl/symbols)
 
 /**
- * Hero metaball (S2.3) — the field system, tiered by a runtime probe
- * (lib/webgl/field-tier, morph-spec §7): "full" = liquid glass, "lite" =
- * flat-cyan melts at a smaller buffer, "none" = the static SVG mark. An FPS
- * watchdog inside FieldMorphHero downshifts at runtime instead of freezing.
- *
- * Reduced motion rests on the static SDF-glass mark (no autocycle, no cursor
- * goo). Keyboard (←/→/Home/End) steps the pillars with aria-live announcements;
- * the PillarIndicator tracks the active state; the autocycle pauses off-screen.
+ * Hero metaball shell (S2.3) — the STAGE: layout box, static fallback, a11y
+ * (keyboard steps + aria-live), pillar indicator and the QA still renderers.
+ * The living liquid itself is the site fluid's hero segment; this shell
+ * registers its box with LiquidSite (the form is staged exactly over it) and
+ * forwards keyboard retargets through HeroLiquidContext.
  *
  * QA params: ?fstate=N (one rest form) · ?fpair=a-b-m (one frozen bridge frame)
- * · ?fcursor=x,y (a merged cursor droplet on the still) · ?fcycle=1 (short
- * dwell) · ?fflat=1 (bare flat field) · ?ftier=full|lite|none.
+ * · ?fcursor=x,y (a merged cursor droplet on the still) · ?fflat=1 (bare flat
+ * field) · ?fcycle=1 (short dwell — handled by LiquidSite) · ?ftier=….
  */
 export function MetaballCanvas({ pillarNames }: { pillarNames: string[] }) {
   const reduced = useReducedMotion();
-  const [stageRef, heroInView] = useInView<HTMLDivElement>("150px"); // pause off-screen
+  const hero = useContext(HeroLiquidContext);
   const [tier, setTier] = useState<FieldTier | null>(null); // null until probed
-  const [ready, setReady] = useState(false);
-  const [active, setActive] = useState(-1); // pillar index: -1 = mark, 0-6 = pillars
-  const [manual, setManual] = useState<number | null>(null); // state index 0-7, or null = auto
-  const [fState, setFState] = useState<number | null>(null); // ?fstate=N → static SDF-glass still
+  const [ready, setReady] = useState(false); // QA-still readiness
+  const [manual, setManual] = useState<number | null>(null); // 0-7, null = auto
+  const [fState, setFState] = useState<number | null>(null); // ?fstate=N
   const [fPair, setFPair] = useState<[number, number, number] | null>(null); // ?fpair=a-b-m
   const [fCursor, setFCursor] = useState<[number, number] | null>(null); // ?fcursor=x,y
-  const [fastCycle, setFastCycle] = useState(false); // ?fcycle=1 → short dwell (QA)
   const [fFlat, setFFlat] = useState(false); // ?fflat=1 → bare flat field (QA)
 
   useEffect(() => {
@@ -62,38 +56,46 @@ export function MetaballCanvas({ pillarNames }: { pillarNames: string[] }) {
       setFPair([a, b, m]);
     }
     // ?fcursor=x,y — freeze a merged cursor droplet at (x, y), page coords 0..1
-    // (combines with ?fstate / ?fpair; alone it implies the resting mark still)
     const fc = sp.get("fcursor")?.match(/^(\d*\.?\d+),(\d*\.?\d+)$/);
     if (fc) {
       const x = Number(fc[1]), y = Number(fc[2]);
       if (x >= 0 && x <= 1 && y >= 0 && y <= 1) setFCursor([x, y]);
     }
-    setFastCycle(sp.get("fcycle") === "1");
     setFFlat(sp.get("fflat") === "1");
-    // probe-first tier selection (once per session; ?ftier= overrides)
     setTier(detectFieldTier());
   }, []);
 
-  // Deterministic QA stills force a mount; otherwise the probe decides. "none"
-  // (no WebGL2 / hopeless frame times) keeps the static SVG mark — never mounts
-  // a per-frame canvas it can't afford.
-  const deterministic = fState !== null || fPair !== null || fCursor !== null || fFlat;
-  const enabled = deterministic || tier === "full" || tier === "lite";
+  const deterministic =
+    fState !== null || fPair !== null || fCursor !== null || fFlat;
 
-  // The LIVE morphing hero (vs. a still / debug layer / reduced-motion rest).
-  const live = enabled && !deterministic && !reduced;
+  // the site fluid renders the live hero; this shell only mounts a canvas for
+  // the deterministic QA stills and the reduced-motion static glass
+  const siteLive = !!hero?.live && !deterministic;
+  const ownCanvas =
+    !siteLive && (deterministic || (reduced && (tier === "full" || tier === "lite")));
+
+  const active = hero?.active ?? -1;
 
   // keyboard control only when the live hero can respond to it — never
   // advertise inert shortcuts to assistive tech.
-  const interactive = live;
+  const interactive = siteLive && !reduced;
 
+  const retarget = useCallback(
+    (n: number | null) => {
+      setManual(n);
+      hero?.setManual(n);
+    },
+    [hero],
+  );
   const step = useCallback(
     (delta: number) =>
       setManual((m) => {
         const base = m != null ? m : active >= 0 ? active + 1 : 0;
-        return (base + delta + STATES) % STATES;
+        const next = (base + delta + STATES) % STATES;
+        hero?.setManual(next);
+        return next;
       }),
-    [active],
+    [active, hero],
   );
 
   const onKeyDown = useCallback(
@@ -111,26 +113,25 @@ export function MetaballCanvas({ pillarNames }: { pillarNames: string[] }) {
           break;
         case "Home":
           e.preventDefault();
-          setManual(0);
+          retarget(0);
           break;
         case "End":
           e.preventDefault();
-          setManual(STATES - 1);
+          retarget(STATES - 1);
           break;
         default:
           break;
       }
     },
-    [step],
+    [step, retarget],
   );
 
-  const hideFallback = enabled && ready;
+  const hideFallback = siteLive ? !!hero?.ready : ownCanvas && ready;
 
   // announced only while the user is stepping manually (auto-cycle stays quiet)
   const liveText =
     manual == null ? "" : manual === 0 ? "Zirtuno" : (pillarNames[manual - 1] ?? "");
 
-  const play = heroInView || deterministic;
   const sharedProps = {
     onReady: () => setReady(true),
     onContextLost: () => setReady(false),
@@ -139,7 +140,7 @@ export function MetaballCanvas({ pillarNames }: { pillarNames: string[] }) {
   return (
     <>
       <div
-        ref={stageRef}
+        ref={(el) => hero?.registerStage(el)}
         className="metaball-stage"
         data-hero-metaball
         role="img"
@@ -147,17 +148,17 @@ export function MetaballCanvas({ pillarNames }: { pillarNames: string[] }) {
         tabIndex={interactive ? 0 : undefined}
         aria-keyshortcuts={interactive ? "ArrowRight ArrowLeft Home End" : undefined}
         onKeyDown={interactive ? onKeyDown : undefined}
-        onBlur={interactive ? () => setManual(null) : undefined}
+        onBlur={interactive ? () => retarget(null) : undefined}
       >
         <LogoMark
           className="metaball-fallback"
           style={{ opacity: hideFallback ? 0 : 1 }}
         />
-        {enabled && (
+        {ownCanvas && (
           <div className="metaball-canvas" data-glass-tech={tier ?? "none"}>
             {fFlat ? (
               <MetaballField {...sharedProps} glass={false} />
-            ) : fPair !== null || fState !== null || fCursor !== null ? (
+            ) : deterministic ? (
               // deterministic stills: a frozen bridge frame (?fpair), a frozen
               // zero-warp EXACT rest form (?fstate=N), and/or a merged cursor
               // droplet (?fcursor=x,y) — the QA tools for fidelity + the goo
@@ -166,23 +167,12 @@ export function MetaballCanvas({ pillarNames }: { pillarNames: string[] }) {
                 frozenPair={fPair ?? [fState ?? 0, fState ?? 0, 1]}
                 frozenCursor={fCursor}
               />
-            ) : reduced ? (
-              // reduced motion: a static crisp mark (AGENTS rule 7) — the only
-              // place the SVG-glass renderer remains in the hero
+            ) : (
+              // reduced motion: a static crisp mark (AGENTS rule 7)
               <SdfGlassField
                 {...sharedProps}
                 svgUrl="/brand/zirtuno-logo-mark.svg"
                 breathing={false}
-              />
-            ) : (
-              <FieldMorphHero
-                {...sharedProps}
-                play={play}
-                manualState={manual}
-                tier={tier === "lite" ? "lite" : "full"}
-                onTierChange={setFieldTier}
-                dwellMs={fastCycle ? 2000 : undefined}
-                onActiveChange={setActive}
               />
             )}
           </div>

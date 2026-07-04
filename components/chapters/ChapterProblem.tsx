@@ -10,11 +10,11 @@ const SHARD_X = [0, 7, 2, 11, 5, 13, 1];
 
 /**
  * S3 · The Problem — the reader walks INSIDE the fragmentation. The liquid
- * (unstable grey chunks that break one notch per symptom) lives in the shared
- * LiquidChapters layer behind this copy; the seven symptoms float as offset
- * SHARDS, each given near-viewport presence so the fracture has room to be
- * felt. The complete Zirtuno mark NEVER appears here — The Problem is already
- * broken. Copy is server-rendered (RSC) for SEO.
+ * (unstable cyan droplets, poured from the hero's mark, that break one notch
+ * per symptom) lives in the shared LiquidSite layer behind this copy; the
+ * seven symptoms float as offset SHARDS, each given near-viewport presence so
+ * the fracture has room to be felt. The complete Zirtuno mark NEVER appears
+ * here — The Problem is already broken. Copy is server-rendered (RSC) for SEO.
  */
 export function ChapterProblem() {
   const t = useTranslations("problem");

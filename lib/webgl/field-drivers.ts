@@ -6,12 +6,11 @@
  * (components/field/FieldStage) owns GL; the hero (FieldMorphHero) shares the
  * §3.3 bridge math below so the melt has exactly ONE implementation.
  *
- *   - scatter  (S3): the exact mark granulates into desaturated drifting
- *     droplets — progress 0 = the resting form, 1 = fully dispersed.
- *   - converge (S4 pin-scrub · S8 timed): the SAME driver run backwards —
- *     droplets fly home, colour blooms back, the exact mark re-forms.
- *   - scrub-morph (S5): a §3.3 bridge frame at scroll-locked progress —
- *     pillar→pillar melts in lockstep with the copy.
+ *   - site fluid (Hero → S3 → S4 → S5): ONE driver — the hero machine, the
+ *     pour, the journey, the tendrils and the service melts (see the banner
+ *     further down). One physics table (PHYS), brand cyan everywhere.
+ *   - scatter  (S8 timed converge): droplets fly home on staggered schedules,
+ *     the exact mark re-forms.
  *   - impulse  (S10): the exhale — droplets burst off the resting mark and
  *     sink back (additive; the labeled submit stays canonical).
  */
@@ -20,9 +19,14 @@ import {
   SDF_WARP_REST,
   SDF_WARP_MORPH,
   SDF_MELT_ERODE,
+  CURSOR_R,
+  CURSOR_TRAIL_N,
+  CURSOR_SMOOTH,
+  CURSOR_INFLUENCE_MARK,
 } from "./sdf-glass-shader.mjs";
 import { ALL_RAW, ISO_LEVEL } from "./symbols.data.mjs";
 import { EASE_POINTS } from "../animation/easings";
+import { DURATIONS } from "../animation/durations";
 
 // ── the canonical droplet clouds (morph endpoints), in shader uv space ────────
 // symbols.data.mjs is symbol space [-0.5,0.5] (+y up), radius = field units at
@@ -33,6 +37,7 @@ export const CLOUDS: Ball[][] = ALL_RAW.map((s: { balls: number[][] }) =>
   s.balls.map(([x, y, r]) => [x + 0.5, y + 0.5, r * VR] as const),
 );
 export const N = CLOUDS[0].length; // canonical droplet budget (48)
+const STATE_COUNT = CLOUDS.length; // 0 = mark, 1-7 = the pillar forms
 // §3.3 stagger key: the droplet's x in the source form (left → right sweep)
 export const STAG: number[][] = CLOUDS.map((c) => c.map((b) => b[0]));
 
@@ -182,6 +187,9 @@ export type FieldFrame = {
 export type FieldDriver = {
   /** SDF state indices to prefetch; forms[0] gates the first paint. */
   forms: readonly number[];
+  /** Called by the stage as each form's SDF texture becomes drawable — drivers
+   *  that retarget between forms (the hero autocycle) gate on this. */
+  formReady?: (s: number) => void;
   /** aspect = buffer width/height; the uv domain spans x ∈ [½−a/2, ½+a/2]. */
   frame: (tMs: number, buf: Float32Array, aspect: number) => FieldFrame;
 };
@@ -320,7 +328,9 @@ export function makeScatterDriver(
         ea,
         eb: 0,
         warp: SDF_WARP_REST,
-        mute: 0.85 * smooth01((p - 0.08) / 0.5),
+        // brand cyan even while dispersed (owner directive: one consistent
+        // liquid identity site-wide — no desaturation states)
+        mute: 0,
         count: N,
       };
     },
@@ -377,14 +387,32 @@ export function makeImpulseDriver(
 
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// THE LIQUID JOURNEY (S3 → S4 → S5): ONE persistent canvas spans The Problem,
-// The Ecosystem and The Services, and ONE driver owns every droplet through the
-// whole sequence. The 48 droplets keep their identity from the first fracture
-// to the last service melt — the visual states are structured TARGET SETS the
-// driver lerps between with eased, damped progress. No pins, no canvas
-// handoffs, no topology resets. The stage may be any aspect (uv x spans
-// [0.5 − a/2, 0.5 + a/2]); the form sits off-centre (ox) and scaled (scale).
+// THE SITE FLUID (Hero → Problem → Ecosystem → Services): ONE canvas, ONE
+// driver, ONE physics. The hero's living machine (autocycle melts, gooey
+// cursor) is a SEGMENT of this driver; scrolling out of the hero granulates
+// the resting form into its 48 droplets, which pour into The Problem's
+// unstable clusters, travel to the ecosystem, resolve the mark, feed the
+// tendrils and melt through the services — one unbroken droplet identity.
+// Twelve ambient lava-lamp droplets share the field the whole way. Every
+// droplet carries its own positional inertia (heavier lags more), so scroll
+// STRETCHES the liquid instead of translating it; scroll velocity stirs it.
+// Colour is brand cyan EVERYWHERE — no desaturation states, no dimming.
 // ═══════════════════════════════════════════════════════════════════════════════
+
+// ── the ONE physics table — every regime reads these, so the liquid keeps a
+// single physical identity across the whole site ──────────────────────────────
+export const PHYS = {
+  TAU_CHANNEL: 110, // scroll-channel smoothing (ms)
+  TAU_DROP_MIN: 90, // per-droplet positional inertia (ms) — the light droplets
+  TAU_DROP_MAX: 260, // … the heavy ones lag behind (the field stretches)
+  TAU_RADIUS: 120, // per-droplet radius smoothing (ms) — no radius pops
+  TAU_VEL: 240, // scroll-velocity smoothing (ms)
+  DRIFT: 0.016, // loose-droplet wander amplitude (uv)
+  STIR: 0.035, // scroll velocity (vh/s) → vertical drag on loose liquid (uv)
+  AMBIENT_N: 12, // lava-lamp droplets across the full bleed
+  AMBIENT_R: 0.014, // ambient radius floor (uv) — the same droplet family
+  AMBIENT_R_VAR: 0.024,
+} as const;
 
 type WideScatter = { tx: number; ty: number; key: number; f1: number; f2: number };
 
@@ -467,16 +495,70 @@ function convergeEnvelopes(p: number) {
 // per-ball organic radius variety — loose fragments must not read as equal dots
 const VARY: number[] = CLOUDS[0].map((_, i) => 0.7 + 0.8 * hash(i, 9));
 
-/** The journey's control channels — written RAW by one scroll source
- *  (components/field/LiquidChapters); the driver damps every one of them, so
- *  external jumps can never render as snaps. */
-export type JourneyInput = {
+// per-droplet positional inertia: heavier (bigger) droplets lag more, plus a
+// per-droplet spread so the field never moves as one rigid piece
+const TAUP: number[] = (() => {
+  let rMin = 1, rMax = 0;
+  for (const b of CLOUDS[0]) {
+    rMin = Math.min(rMin, b[2]);
+    rMax = Math.max(rMax, b[2]);
+  }
+  return CLOUDS[0].map((b, i) => {
+    const mass = (b[2] - rMin) / Math.max(rMax - rMin, 1e-4);
+    return (
+      PHYS.TAU_DROP_MIN +
+      (PHYS.TAU_DROP_MAX - PHYS.TAU_DROP_MIN) * (0.65 * mass + 0.35 * hash(i, 21))
+    );
+  });
+})();
+
+// ambient lava-lamp droplets: normalised anchors (fx spans the bleed at frame
+// time — continuous in aspect, so resizes never jump), slow buoyant loops
+const AMB = Array.from({ length: PHYS.AMBIENT_N }, (_, k) => ({
+  fx: 0.06 + 0.88 * hash(k, 31),
+  ay: 0.1 + 0.8 * hash(k, 32),
+  r: PHYS.AMBIENT_R + PHYS.AMBIENT_R_VAR * hash(k, 33),
+  f1: 0.05 + 0.08 * hash(k, 34), // x wander (rad/s) — minutes-slow
+  f2: 0.06 + 0.1 * hash(k, 35), // y buoyant loop
+  f3: 0.11 + 0.13 * hash(k, 36), // y second octave
+  f4: 0.14 + 0.2 * hash(k, 37), // radius breath
+  p1: hash(k, 38) * Math.PI * 2,
+  p2: hash(k, 39) * Math.PI * 2,
+  p3: hash(k, 40) * Math.PI * 2,
+  stir: 0.5 + 0.8 * hash(k, 41),
+}));
+
+/** The site fluid's control channels — written RAW by one scroll source
+ *  (components/field/LiquidSite); the driver damps every one of them (and each
+ *  droplet damps its own position), so external jumps can never render as
+ *  snaps. */
+export type SiteInput = {
+  heroPhase: number; // 0 = the hero owns the liquid … 1 = poured into The Problem
+  vel: number; // scroll velocity (viewport-heights/s, + = down) — the stir
   fracture: number; // S3: 0 = unstable broken chunks … 1 = fully dispersed
-  travel: number; // S3 → S4: the dispersed field drifts from the right bias to centre
+  travel: number; // S3 → S4: the dispersed field drifts to centre
   converge: number; // S4: 0 = dispersed … 1 = the organism resolved
   grow: number; // S4: tendrils reach the capability labels
-  svcPos: number; // S4 → S5: the organism drifts to the services position
+  svcPos: number; // S4 → S5: the organism clears the services headline
   pair: [number, number, number]; // S5 melt [a, b, m]; [0,0,0] outside services
+  exit: number; // S5 → S6: the liquid settles away before the layer unsticks
+  hero: {
+    play: boolean; // autocycle allowed (in view, motion OK)
+    hover: boolean; // pointer over the hero → pause the autocycle
+    manual: number | null; // keyboard-selected state (0-7), null = auto
+    dwellMs: number; // rest dwell (QA ?fcycle shortens it)
+    px: number; // pointer in FIELD uv (y up)
+    py: number;
+    cursorOn: boolean;
+    ox: number; // form staging: the hero stage box, measured by the shell
+    oy: number;
+    scale: number;
+  };
+};
+
+export type SiteCallbacks = {
+  /** Hero active state for the pillar indicator / aria: -1 = mark, 0-6. */
+  onHeroActive?: (i: number) => void;
 };
 
 // ── the ecosystem's orbital layout (canvas beads + DOM labels share this) ─────
@@ -518,19 +600,36 @@ export function ecoNodePos(i: number, aspect: number): { x: number; y: number } 
 export const ecoNodeEnv = (g: number, i: number) =>
   smooth01((g - i * 0.055) / 0.32);
 
+const HERO_DROPS = 1 + CURSOR_TRAIL_N; // gooey cursor chain length
+
 /**
- * The journey driver — the single fluid renderer's brain. Regimes:
- *  - journey (S3 → S4): droplet targets lerp clusters → dispersed → eco field
- *    (identity-preserving travel), then the converge phases resolve the mark;
- *    the form NEVER appears while dispersed (no sliced-logo reading).
+ * The site driver — the single fluid renderer's brain.
+ *
+ * Regimes (all continuously blended, never switched):
+ *  - hero: the living exact-form machine (rest wobble → §3.3 melt autocycle,
+ *    hover pause, keyboard retargets, the gooey cursor) staged over the hero
+ *    column via the form-domain uniforms.
+ *  - pour (heroPhase): the resting form erodes thin-edges-first while its 48
+ *    droplets emerge on its footprint and stream — each on its own staggered
+ *    schedule and inertia — into The Problem's clusters.
+ *  - journey (S3 → S4): clusters → dispersed → the eco field (identity-
+ *    preserving travel), then the converge resolves the exact mark; the form
+ *    NEVER appears while dispersed.
  *  - tendrils: the same droplets feed the ten capabilities once resolved.
  *  - services: §3.3 bridge melts between the exact pillar forms, scaled and
- *    offset into the services position — the same liquid, reconfigured.
+ *    offset clear of the copy — the same liquid, reconfigured.
+ *  - exit: the last form erodes away before the sticky layer unsticks, so the
+ *    unstick never drags visible liquid.
+ *  - always: twelve ambient lava-lamp droplets drift the full bleed, stirred
+ *    by scroll velocity; every visible thing is brand-cyan glass.
  */
-export function makeJourneyDriver(input: JourneyInput): FieldDriver {
+export function makeSiteDriver(
+  input: SiteInput,
+  cbs: SiteCallbacks = {},
+): FieldDriver {
   const base = CLOUDS[0];
   let lastT = -1;
-  const dmp = { f: -1, tr: -1, c: -1, g: -1, sp: -1, m: -1 };
+  const dmp = { hp: -1, f: -1, tr: -1, c: -1, g: -1, sp: -1, m: -1, ex: -1, v: 0 };
   let lastPair = "0-0";
   let cachedAspect = -1;
   let Tclu: WideScatter[] = [];
@@ -539,8 +638,41 @@ export function makeJourneyDriver(input: JourneyInput): FieldDriver {
   let svcOx = 0;
   let svcOy = 0;
   let svcScale = ORGANISM_SCALE;
+
+  // ── hero machine (autocycle / melt / queue) ─────────────────────────────────
+  const texReady = new Array(STATE_COUNT).fill(false) as boolean[];
+  let hState = 0;
+  let hTarget = 0;
+  let hPhase: "rest" | "melt" = "rest";
+  let hMorphT = 0;
+  let hDwell = 0;
+  let hQueued = -1;
+  let perm: number[] = [];
+  let stag: number[] = [];
+  const scratch = new Float32Array(N * 3); // hero bridge cloud (form-local)
+  const startMelt = (s: number) => {
+    perm = permFor(hState, s);
+    stag = STAG[hState];
+    hTarget = s;
+    hMorphT = 0;
+    hPhase = "melt";
+    cbs.onHeroActive?.(s - 1);
+  };
+
+  // ── gooey cursor chain (same spring family as the old hero) ─────────────────
+  const drops = Array.from({ length: HERO_DROPS }, () => ({ x: 0.5, y: 0.5 }));
+  let cursorOn = 0;
+  let markMul = 1;
+
+  // ── per-droplet inertia state (position + radius live HERE, not per frame) ──
+  const P = new Float32Array(N * 2).fill(-1);
+  const R = new Float32Array(N).fill(-1);
+
   return {
     forms: [0, 1, 2, 3, 4, 5, 6, 7],
+    formReady: (s) => {
+      texReady[s] = true;
+    },
     frame: (tMs, buf, aspect) => {
       if (Math.abs(aspect - cachedAspect) > 0.02) {
         cachedAspect = aspect;
@@ -558,14 +690,17 @@ export function makeJourneyDriver(input: JourneyInput): FieldDriver {
       }
       const dt = lastT < 0 ? 16.7 : Math.min(Math.max(tMs - lastT, 0), 100);
       lastT = tMs;
-      const k = 1 - Math.exp(-dt / 110);
+      const k = 1 - Math.exp(-dt / PHYS.TAU_CHANNEL);
       const damp = (cur: number, raw: number) =>
         cur < 0 ? raw : cur + (raw - cur) * k;
+      dmp.hp = damp(dmp.hp, clamp01(input.heroPhase));
       dmp.f = damp(dmp.f, clamp01(input.fracture));
       dmp.tr = damp(dmp.tr, clamp01(input.travel));
       dmp.c = damp(dmp.c, clamp01(input.converge));
       dmp.g = damp(dmp.g, clamp01(input.grow));
       dmp.sp = damp(dmp.sp, clamp01(input.svcPos));
+      dmp.ex = damp(dmp.ex, clamp01(input.exit));
+      dmp.v += (input.vel - dmp.v) * (1 - Math.exp(-dt / PHYS.TAU_VEL));
       const [pa, pb] = input.pair;
       const pairKey = pa + "-" + pb;
       if (pairKey !== lastPair) {
@@ -578,124 +713,323 @@ export function makeJourneyDriver(input: JourneyInput): FieldDriver {
       }
 
       const t = tMs / 1000;
+      const H = input.hero;
       const SP = smooth01(dmp.sp);
-      const scale = ORGANISM_SCALE + (svcScale - ORGANISM_SCALE) * SP;
-      const ox = svcOx * SP;
-      const oy = svcOy * SP;
+      const EXW = 1 - smooth01(dmp.ex); // exit drain (radii; forms get erosion)
+      const jScale = ORGANISM_SCALE + (svcScale - ORGANISM_SCALE) * SP;
+      const jOx = svcOx * SP;
+      const jOy = svcOy * SP;
       const inServices = pa !== pb || pa > 0;
-      const inMelt = pa !== pb && dmp.m > 0.0005 && dmp.m < 0.9995;
+      const inSvcMelt = pa !== pb && dmp.m > 0.0005 && dmp.m < 0.9995;
 
-      // ── form channels ────────────────────────────────────────────────────
-      let a = 0;
-      let b = 0;
+      // ── hero machine tick ──────────────────────────────────────────────────
+      const atHero = dmp.hp < 0.04;
+      if (hPhase === "melt") {
+        hMorphT += dt;
+        if (hMorphT >= DURATIONS.morph) {
+          hState = hTarget;
+          hPhase = "rest";
+          hDwell = 0;
+          cbs.onHeroActive?.(hState - 1);
+        }
+      }
+      if (hPhase === "rest") {
+        const man = H.manual;
+        if (man != null && man !== hState && texReady[man]) {
+          startMelt(man);
+        } else if (hQueued >= 0 && hQueued !== hState && texReady[hQueued]) {
+          const q = hQueued;
+          hQueued = -1;
+          startMelt(q);
+        } else if (man == null && H.play && !H.hover && atHero) {
+          hDwell += dt;
+          const next = (hState + 1) % STATE_COUNT;
+          if (hDwell >= H.dwellMs && texReady[next]) startMelt(next);
+        }
+      } else if (H.manual != null && H.manual !== hTarget) {
+        hQueued = H.manual; // retarget applies on arrival (no snap)
+      }
+
+      // ── gooey cursor (hero only; presence drains as the hero pours out) ────
+      const cGoal = H.cursorOn && atHero ? 1 : 0;
+      if (cursorOn > 0.003 || cGoal > 0) {
+        const goalMul =
+          hPhase === "rest" && hState === 0 ? CURSOR_INFLUENCE_MARK : 1;
+        markMul += (goalMul - markMul) * (1 - Math.exp(-dt / 160));
+        cursorOn += (cGoal - cursorOn) * (1 - Math.exp(-dt / (cGoal ? 110 : 60)));
+        if (cursorOn < 0.01 && cGoal > 0) {
+          for (const d of drops) {
+            d.x = H.px;
+            d.y = H.py;
+          } // materialise AT the pointer (no fly-in)
+        }
+        const ck = 1 - Math.pow(1 - CURSOR_SMOOTH, dt / 16.7);
+        const ckt = 1 - Math.pow(1 - CURSOR_SMOOTH * 0.7, dt / 16.7);
+        drops[0].x += (H.px - drops[0].x) * ck;
+        drops[0].y += (H.py - drops[0].y) * ck;
+        for (let i = 1; i < HERO_DROPS; i++) {
+          drops[i].x += (drops[i - 1].x - drops[i].x) * ckt;
+          drops[i].y += (drops[i - 1].y - drops[i].y) * ckt;
+        }
+      } else cursorOn = 0;
+
+      // ── hero presence (the pour) + form-slot ownership ─────────────────────
+      // The resting form erodes thin-edges-first across heroPhase 0.04 → 0.62;
+      // its droplets emerge on the footprint and stream to the journey.
+      const heroQ = 1 - smooth01((dmp.hp - 0.04) / 0.58);
+      const [heroW, heroE] = formPresence(heroQ);
+      const meltP = clamp01(hMorphT / DURATIONS.morph);
+      const meltEnv = hPhase === "melt" ? Math.sin(Math.PI * meltP) : 0;
+
+      let a: number;
+      let b: number;
       let fa: number;
-      let fb = 0;
+      let fb: number;
       let ea: number;
-      let eb = 0;
-      let warp = SDF_WARP_REST;
-      if (inServices) {
-        a = pa;
-        b = pb;
-        const ph = formPhase(dmp.m);
-        fa = ph.wA;
-        ea = ph.eA;
-        fb = ph.wB;
-        eb = ph.eB;
-        warp =
-          SDF_WARP_REST +
-          (SDF_WARP_MORPH - SDF_WARP_REST) * Math.sin(Math.PI * dmp.m);
-      } else {
-        // the mark emerges only at full convergence — never while dispersed
-        const [w, e] = formPresence(convergeEnvelopes(1 - dmp.c).q);
-        fa = w;
-        ea = e;
-      }
+      let eb: number;
+      let ox: number;
+      let oy: number;
+      let scale: number;
+      let warp =
+        SDF_WARP_REST +
+        Math.min(Math.abs(dmp.v) * 0.003, 0.004); // scroll agitates the liquid
 
-      // ── droplets (one stable 48-droplet superset, always count = N) ───────
-      let count: number;
-      if (inMelt) {
-        count = packBridge(
-          buf,
-          0,
-          CLOUDS[a],
-          CLOUDS[b],
-          permFor(a, b),
-          STAG[a],
-          dmp.m,
-        );
-        for (let i = 0; i < N; i++) {
-          buf[i * 3] = 0.5 + ox + (buf[i * 3] - 0.5) * scale;
-          buf[i * 3 + 1] = 0.5 + oy + (buf[i * 3 + 1] - 0.5) * scale;
-          buf[i * 3 + 2] *= scale;
+      if (heroW > 0.002) {
+        // hero owns the form slots (journey form weight is 0 out here)
+        ox = H.ox;
+        oy = H.oy;
+        scale = H.scale;
+        if (hPhase === "melt") {
+          const ph = formPhase(meltP);
+          a = hState;
+          b = hTarget;
+          fa = ph.wA * heroW;
+          fb = ph.wB * heroW;
+          ea = ph.eA + heroE;
+          eb = ph.eB + heroE;
+          warp += (SDF_WARP_MORPH - SDF_WARP_REST) * meltEnv;
+        } else {
+          a = hState;
+          b = hState;
+          fa = heroW;
+          fb = 0;
+          ea = heroE;
+          eb = 0;
         }
       } else {
-        const p = 1 - dmp.c;
-        const { rEnv, shed } = convergeEnvelopes(p);
-        const F = smooth01(dmp.f);
-        const TR = smooth01(dmp.tr);
-        const sx = ecoSpreadX(aspect);
-        for (let i = 0; i < N; i++) {
-          const bb = base[i];
-          const clu = Tclu[i], dis = Tdis[i], eco = Teco[i];
-          // the journey target: clusters → dispersed (S3) → the eco field (travel)
-          let tx = clu.tx + (dis.tx - clu.tx) * F;
-          let ty = clu.ty + (dis.ty - clu.ty) * F;
-          tx += (eco.tx - tx) * TR;
-          ty += (eco.ty - ty) * TR;
-          // converge home: the organism's cloud (centred, scaled, services drift)
-          const hx = 0.5 + ox + (bb[0] - 0.5) * scale;
-          const hy = 0.5 + oy + (bb[1] - 0.5) * scale;
-          const lt = smooth01((p - (0.16 + 0.3 * dis.key)) / 0.5);
-          const drift = 0.016 * lt;
-          let x = hx + (tx - hx) * lt + drift * Math.sin(t * dis.f1 + i * 1.7);
-          let y = hy + (ty - hy) * lt + drift * Math.cos(t * dis.f2 + i * 2.3);
-          const vary = 1 + (VARY[i] - 1) * lt; // size spread while loose
-          let r = bb[2] * scale * (1 - 0.28 * lt) * rEnv * shed * vary;
-          // tendrils: the same droplets feed the capabilities once resolved
-          if (i < 40) {
-            const nIdx = i % 10;
-            const e = ecoNodeEnv(dmp.g, nIdx) * (1 - SP);
-            if (e > 0.001) {
-              const node = ECO_NODES[nIdx];
-              const na = ((node.ang - 90) * Math.PI) / 180;
-              const np = ecoNodePos(nIdx, aspect);
-              const sxp = 0.5 + Math.cos(na) * sx * TENDRIL_START;
-              const syp = 0.5 - Math.sin(na) * TENDRIL_START;
-              const bead = (i / 10) | 0;
-              let txp: number;
-              let typ: number;
-              let trp: number;
-              if (bead === 3) {
-                txp = np.x;
-                typ = np.y;
-                trp = 0.012;
-              } else {
-                // marching beads: born at the organism's edge, absorbed just
-                // short of the node — a continuous outward pulse
-                const fr = (bead + ((t * 0.3 + nIdx * 0.618) % 1)) / 3;
-                txp = sxp + (np.x - sxp) * fr * 0.9;
-                typ = syp + (np.y - syp) * fr * 0.9;
-                trp = 0.015 * (0.45 + 0.55 * Math.sin(Math.PI * fr));
-              }
-              x += (txp - x) * e;
-              y += (typ - y) * e;
-              r = r * (1 - e) + trp * e;
-            }
+        ox = jOx;
+        oy = jOy;
+        scale = jScale;
+        if (inServices) {
+          a = pa;
+          b = pb;
+          if (pa === pb) {
+            // degenerate pair (last pillar) — a solid rest, never a weight dip
+            fa = 1;
+            fb = 0;
+            ea = 0;
+            eb = 0;
+          } else {
+            const ph = formPhase(dmp.m);
+            fa = ph.wA;
+            fb = ph.wB;
+            ea = ph.eA;
+            eb = ph.eB;
+            warp +=
+              (SDF_WARP_MORPH - SDF_WARP_REST) * Math.sin(Math.PI * dmp.m);
           }
-          buf[i * 3] = x;
-          buf[i * 3 + 1] = y;
-          buf[i * 3 + 2] = r;
+        } else {
+          // the mark emerges only at full convergence — never while dispersed
+          const [w, e] = formPresence(convergeEnvelopes(1 - dmp.c).q);
+          a = 0;
+          b = 0;
+          fa = w;
+          fb = 0;
+          ea = e;
+          eb = 0;
         }
-        count = N;
+        // exit: the form erodes away before the sticky layer unsticks
+        const exE = smooth01(dmp.ex);
+        fa *= 1 - exE;
+        fb *= 1 - exE;
+        ea += exE * SDF_MELT_ERODE;
+        eb += exE * SDF_MELT_ERODE;
       }
 
-      // colour: half-broken grey chunks → fully muted while dispersed →
-      // blooming back through the converge; services stay vivid
-      const mute =
-        0.85 *
-        (0.5 + 0.5 * smooth01(dmp.f)) *
-        (1 - smooth01((dmp.c - 0.08) / 0.55));
-      return { a, b, fa, fb, ea, eb, ox, oy, scale, warp, mute, count };
+      // ── the 48 droplets: hero side ⟶ journey side, per-droplet inertia ─────
+      // hero-side (form-local → staged): melt bridge while melting, else the
+      // footprint (radii emerge with the pour)
+      let heroBridge = false;
+      if (hPhase === "melt" && heroW > 0.002) {
+        packBridge(scratch, 0, CLOUDS[hState], CLOUDS[hTarget], perm, stag, meltP);
+        heroBridge = true;
+      }
+      const pourR = smooth01((dmp.hp - 0.05) / 0.3); // droplets emerge as the form erodes
+      // loose liquid drags with the scroll (bounded — a flick stirs, never flings)
+      const stirY = Math.max(-2.2, Math.min(2.2, dmp.v)) * PHYS.STIR;
+
+      // journey-side shared factors
+      const p = 1 - dmp.c;
+      const { rEnv, shed } = convergeEnvelopes(p);
+      const F = smooth01(dmp.f);
+      const TR = smooth01(dmp.tr);
+      const sx = ecoSpreadX(aspect);
+
+      for (let i = 0; i < N; i++) {
+        const bb = base[i];
+        // hero-side target
+        let hx: number;
+        let hy: number;
+        let hr: number;
+        if (heroBridge) {
+          hx = scratch[i * 3];
+          hy = scratch[i * 3 + 1];
+          hr = scratch[i * 3 + 2];
+        } else {
+          hx = bb[0];
+          hy = bb[1];
+          hr = bb[2] * pourR * (0.55 + 0.45 * VARY[i]);
+        }
+        // stage into field space
+        hx = 0.5 + H.ox + (hx - 0.5) * H.scale;
+        hy = 0.5 + H.oy + (hy - 0.5) * H.scale;
+        hr *= H.scale;
+
+        // journey-side target: clusters → dispersed (S3) → the eco field
+        const clu = Tclu[i], dis = Tdis[i], eco = Teco[i];
+        let tx = clu.tx + (dis.tx - clu.tx) * F;
+        let ty = clu.ty + (dis.ty - clu.ty) * F;
+        tx += (eco.tx - tx) * TR;
+        ty += (eco.ty - ty) * TR;
+        // converge home: the organism's cloud (centred, scaled, services drift)
+        const hx2 = 0.5 + jOx + (bb[0] - 0.5) * jScale;
+        const hy2 = 0.5 + jOy + (bb[1] - 0.5) * jScale;
+        const lt = smooth01((p - (0.16 + 0.3 * dis.key)) / 0.5);
+        const drift = PHYS.DRIFT * lt;
+        let jx = hx2 + (tx - hx2) * lt + drift * Math.sin(t * dis.f1 + i * 1.7);
+        let jy =
+          hy2 +
+          (ty - hy2) * lt +
+          drift * Math.cos(t * dis.f2 + i * 2.3) +
+          stirY * lt; // loose liquid drags with the scroll; landed liquid holds
+        const vary = 1 + (VARY[i] - 1) * lt; // size spread while loose
+        let jr = bb[2] * jScale * (1 - 0.28 * lt) * rEnv * shed * vary;
+        if (inSvcMelt) {
+          // the §3.3 services bridge is the journey target while melting
+          const A = CLOUDS[pa], B = CLOUDS[pb];
+          const pm = permFor(pa, pb), st = STAG[pa];
+          const lm = clamp01(dmp.m * (1 + STAGGER) - STAGGER * st[i]);
+          const tp = arrive(lm);
+          const trr = arrive(clamp01(lm * RADIUS_LEAD));
+          const aa = A[i], bb2 = B[pm[i]];
+          const R_WIN = BRIDGE * 0.65;
+          const rEnvM =
+            smooth01(dmp.m / R_WIN) *
+            (1 - smooth01((dmp.m - (1 - R_WIN)) / R_WIN));
+          jx = 0.5 + jOx + (aa[0] + (bb2[0] - aa[0]) * tp - 0.5) * jScale;
+          jy = 0.5 + jOy + (aa[1] + (bb2[1] - aa[1]) * tp - 0.5) * jScale;
+          jr = (aa[2] + (bb2[2] - aa[2]) * trr) * rEnvM * jScale;
+        } else if (i < 40) {
+          // tendrils: the same droplets feed the capabilities once resolved
+          const nIdx = i % 10;
+          const e = ecoNodeEnv(dmp.g, nIdx) * (1 - SP);
+          if (e > 0.001) {
+            const node = ECO_NODES[nIdx];
+            const na = ((node.ang - 90) * Math.PI) / 180;
+            const np = ecoNodePos(nIdx, aspect);
+            const sxp = 0.5 + Math.cos(na) * sx * TENDRIL_START;
+            const syp = 0.5 - Math.sin(na) * TENDRIL_START;
+            const bead = (i / 10) | 0;
+            let txp: number;
+            let typ: number;
+            let trp: number;
+            if (bead === 3) {
+              txp = np.x;
+              typ = np.y;
+              trp = 0.012;
+            } else {
+              // marching beads: born at the organism's edge, absorbed just
+              // short of the node — a continuous outward pulse
+              const fr = (bead + ((t * 0.3 + nIdx * 0.618) % 1)) / 3;
+              txp = sxp + (np.x - sxp) * fr * 0.9;
+              typ = syp + (np.y - syp) * fr * 0.9;
+              trp = 0.015 * (0.45 + 0.55 * Math.sin(Math.PI * fr));
+            }
+            jx += (txp - jx) * e;
+            jy += (typ - jy) * e;
+            jr = jr * (1 - e) + trp * e;
+          }
+        }
+
+        // the pour: hero side ⟶ journey side, each droplet on its own schedule
+        const li = smooth01((dmp.hp - 0.08 - 0.42 * hash(i, 15)) / 0.44);
+        const txF = hx + (jx - hx) * li;
+        const tyF = hy + (jy - hy) * li;
+        const trF = (hr + (jr - hr) * li) * EXW;
+
+        // per-droplet inertia — the physics that makes scroll STRETCH the field
+        const kp = 1 - Math.exp(-dt / TAUP[i]);
+        const kr = 1 - Math.exp(-dt / PHYS.TAU_RADIUS);
+        if (P[i * 2] < 0) {
+          P[i * 2] = txF;
+          P[i * 2 + 1] = tyF;
+          R[i] = trF;
+        } else {
+          P[i * 2] += (txF - P[i * 2]) * kp;
+          P[i * 2 + 1] += (tyF - P[i * 2 + 1]) * kp;
+          R[i] += (trF - R[i]) * kr;
+        }
+      }
+
+      // ── pack: droplets (visible only) + ambient + cursor — one shared field ─
+      let count = 0;
+      for (let i = 0; i < N; i++) {
+        if (R[i] < 0.0012) continue;
+        buf[count * 3] = P[i * 2];
+        buf[count * 3 + 1] = P[i * 2 + 1];
+        buf[count * 3 + 2] = R[i];
+        count++;
+      }
+
+      // ambient lava lamp — always alive, calmer where a composition must read
+      const ambW =
+        (1 - 0.5 * smooth01(dmp.c) * (1 - SP)) * (1 - 0.35 * SP) * EXW;
+      if (ambW > 0.02) {
+        const spanX = Math.max(aspect - 0.1, 0.5);
+        for (let j = 0; j < PHYS.AMBIENT_N; j++) {
+          const m = AMB[j];
+          const x =
+            0.5 + (m.fx - 0.5) * spanX + 0.05 * Math.sin(t * m.f1 + m.p1);
+          const y =
+            m.ay +
+            0.09 * Math.sin(t * m.f2 + m.p2) +
+            0.045 * Math.sin(t * m.f3 + m.p3) +
+            stirY * m.stir;
+          const r = m.r * ambW * (0.86 + 0.14 * Math.sin(t * m.f4 + m.p1));
+          if (r < 0.0012) continue;
+          buf[count * 3] = x;
+          buf[count * 3 + 1] = Math.min(Math.max(y, 0.04), 0.96);
+          buf[count * 3 + 2] = r;
+          count++;
+        }
+      }
+
+      // cursor chain (hero only)
+      if (cursorOn > 0.003) {
+        const cw = cursorOn * markMul * (1 - smooth01(dmp.hp * 3));
+        for (let j = 0; j < HERO_DROPS; j++) {
+          const r = CURSOR_R * Math.pow(0.58, j) * cw;
+          if (r < 0.002) continue;
+          buf[count * 3] = drops[j].x;
+          buf[count * 3 + 1] = drops[j].y;
+          buf[count * 3 + 2] = r;
+          count++;
+        }
+      }
+
+      // brand cyan EVERYWHERE — the desaturated "broken" state is expressed by
+      // motion and separation, never by draining the colour (owner directive)
+      return { a, b, fa, fb, ea, eb, ox, oy, scale, warp, mute: 0, count };
     },
   };
 }
