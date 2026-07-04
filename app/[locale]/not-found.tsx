@@ -1,10 +1,12 @@
 import { useTranslations } from "next-intl";
 import { Link } from "@/lib/i18n/config";
-import { LogoMark } from "@/components/hero/LogoMark";
+import { LoneDroplet } from "@/components/chrome/LoneDroplet";
 
 /**
- * Localized 404 (S1.11) — the lone, dispersed metaball. "This page has
- * dispersed." Rendered within the locale layout, so it keeps the chrome.
+ * Localized 404 (S1.11) — the lone, dispersed droplet (R3): one living
+ * droplet that stayed, two fragments drifting away. "This page has
+ * dispersed." Rendered within the locale layout, so it keeps the chrome;
+ * static tiers keep the fractured mark.
  */
 export default function NotFound() {
   const t = useTranslations("notFound");
@@ -15,9 +17,7 @@ export default function NotFound() {
       className="page-x grid min-h-svh place-items-center pt-[var(--topbar-h)] text-center"
     >
       <div className="max-w-xl">
-        <div className="mx-auto max-w-[14rem]">
-          <LogoMark variant="fractured" ariaLabel="404" />
-        </div>
+        <LoneDroplet />
         <p className="mt-8 font-mono text-mono uppercase tracking-wide text-cyan">
           {t("code")}
         </p>

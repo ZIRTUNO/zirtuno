@@ -126,6 +126,14 @@ npm run endpoints       # re-pack the 48-droplet morph endpoints from the SVGs
   contexts never see it, and a hard cap guarantees it can never strand the
   page (`scripts/verify-entry-veil.mjs` guards all three behaviors). The
   route-segment pulse remains for in-app navigations.
+- **R3 polish (round 1):** work-card previews render the category's baked
+  SDF-glass form still (`scripts/build-form-stills.mjs` →
+  `public/brand/stills/`, mapped in `lib/content/form-stills.ts`) as
+  placeholder art until real media arrives; the 404 is a LIVE lone dispersed
+  droplet (`makeLoneDropDriver` + `LoneDroplet`, fractured-mark fallback);
+  the scrollbar wears the brand (thin, cyan-whisper on hover). The remaining
+  R3 rounds — morph feel, fracture readability, converge weight, origin
+  pacing — are owner-taste iterations on real hardware.
 - Portfolio seed projects are prototypes only. Do not add fabricated metrics.
 
 ## Open Decisions

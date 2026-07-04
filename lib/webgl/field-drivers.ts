@@ -263,6 +263,42 @@ function scatterFor(state: number): Scatter[] {
 }
 
 /**
+ * 404 — the lone, dispersed droplet: one droplet that stayed, wandering
+ * slowly, and two fragments drifting at the edge of its reach — almost gone.
+ * "This page has dispersed." Pure droplets (no form), the same liquid.
+ */
+export function makeLoneDropDriver(): FieldDriver {
+  return {
+    forms: [0],
+    frame: (tMs, buf) => {
+      const t = tMs / 1000;
+      // the one that stayed
+      buf[0] = 0.5 + 0.045 * Math.sin(t * 0.21) + 0.018 * Math.sin(t * 0.53);
+      buf[1] = 0.48 + 0.045 * Math.cos(t * 0.17) + 0.018 * Math.sin(t * 0.61);
+      buf[2] = 0.16 + 0.008 * Math.sin(t * 0.6);
+      // the two that dispersed — drifting away, barely holding on
+      buf[3] = 0.2 + 0.05 * Math.sin(t * 0.13 + 2);
+      buf[4] = 0.74 + 0.04 * Math.cos(t * 0.19 + 1);
+      buf[5] = 0.042 + 0.005 * Math.sin(t * 0.7 + 3);
+      buf[6] = 0.8 + 0.05 * Math.sin(t * 0.11 + 4);
+      buf[7] = 0.3 + 0.045 * Math.cos(t * 0.23 + 5);
+      buf[8] = 0.055 + 0.006 * Math.cos(t * 0.9);
+      return {
+        a: 0,
+        b: 0,
+        fa: 0,
+        fb: 0,
+        ea: 0,
+        eb: 0,
+        warp: SDF_WARP_REST,
+        mute: 0,
+        count: 3,
+      };
+    },
+  };
+}
+
+/**
  * S10 impulse — the exhale: a one-shot pulse where droplets burst off the
  * resting form and sink back in (~durMs). Additive decoration only; the form
  * itself never breaks (the labeled submit is the canonical action).

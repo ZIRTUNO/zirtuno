@@ -118,6 +118,27 @@
     color: var(--color-ink);
   }
 
+  /* the scrollbar wears the brand (Design-Spells sweep, R3) — thin and quiet,
+     a whisper of cyan only when touched */
+  html {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-paper-faint) transparent;
+  }
+  ::-webkit-scrollbar {
+    width: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--color-paper-faint);
+    border-radius: 999px;
+    border: 3px solid var(--color-ink);
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: color-mix(in srgb, var(--color-cyan) 45%, var(--color-paper-faint));
+  }
+
   h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-sans);
     font-weight: 500;
@@ -1166,12 +1187,28 @@ section[id],
 .project-card:hover .project-preview {
   border-color: var(--color-cyan);
 }
+/* the category's SDF-glass form as placeholder ART (R3) — contained with
+   breathing room; lifts slightly on hover, like liquid noticing you */
+.project-preview-form {
+  object-fit: contain;
+  padding: 9%;
+  transition: transform 500ms var(--ease-arrive);
+}
+.project-card:hover .project-preview-form {
+  transform: scale(1.04);
+}
 .project-preview-cat {
   font-family: var(--font-mono);
-  font-size: var(--text-mono);
+  font-size: var(--text-mono-sm);
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--color-paper-dim);
+}
+/* over the form art the category becomes a quiet corner tag */
+.project-preview-form + .project-preview-cat {
+  position: absolute;
+  left: 1rem;
+  bottom: 0.85rem;
 }
 .project-body {
   padding-top: 1.25rem;
@@ -1843,6 +1880,28 @@ section[id],
   display: grid;
   place-items: center;
   background: var(--color-ink);
+}
+
+/* 404 — the lone dispersed droplet (R3). Fallback = the fractured mark. */
+.lone-drop-stage {
+  position: relative;
+  width: min(64vw, 22rem);
+  aspect-ratio: 1 / 1;
+  margin-inline: auto;
+}
+.lone-drop-stage > .lone-drop-fallback,
+.lone-drop-stage > .lone-drop-canvas {
+  position: absolute;
+  inset: 0;
+}
+.lone-drop-fallback {
+  display: grid;
+  place-items: center;
+  padding: 22%;
+  transition: opacity var(--dur-long) var(--ease-arrive);
+}
+.lone-drop-fallback.is-hidden {
+  opacity: 0;
 }
 .loading-word {
   font-family: var(--font-sans);

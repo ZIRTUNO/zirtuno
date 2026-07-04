@@ -2,12 +2,17 @@ import { useTranslations, useLocale } from "next-intl";
 import Image from "next/image";
 import { Link } from "@/lib/i18n/config";
 import { localize, type Project } from "@/lib/sanity/types";
+import { FORM_STILLS } from "@/lib/content/form-stills";
 
 /**
  * Project card (S7.2). Full anatomy: preview · category · name · challenge ·
  * what was built · services · outcome · ghost CTA. The outcome respects the
  * no-invented-metrics rule: "architecture" → the Selected-architecture label,
  * otherwise the honest narrative/metric text.
+ *
+ * Preview (R3): real media when it exists; otherwise the category's baked
+ * SDF-glass form still — consistent, on-brand placeholder ART (never a bare
+ * word in a box), with the category as a small corner tag.
  */
 export function ProjectCard({ project }: { project: Project }) {
   const t = useTranslations("work");
@@ -33,9 +38,19 @@ export function ProjectCard({ project }: { project: Project }) {
             className="object-cover"
           />
         ) : (
-          <span className="project-preview-cat" aria-hidden="true">
-            {categories[0]}
-          </span>
+          <>
+            <Image
+              src={FORM_STILLS[project.category[0]]}
+              alt=""
+              fill
+              sizes="(max-width: 768px) 100vw, 50vw"
+              className="project-preview-form"
+              aria-hidden="true"
+            />
+            <span className="project-preview-cat" aria-hidden="true">
+              {categories[0]}
+            </span>
+          </>
         )}
       </div>
 
