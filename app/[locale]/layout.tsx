@@ -26,6 +26,7 @@ import "../globals.css";
 // element parses, so CSS hides it at first paint.
 const VEIL_SKIP =
   'try{if(sessionStorage.getItem("zveil"))document.documentElement.dataset.zveil="seen"}catch(e){}';
+const VEIL_SKIP_MARKUP = `<script>${VEIL_SKIP}</script>`;
 
 // Self-hosted at build time by next/font (no runtime third-party requests).
 // sans = business/UI · serif = poetry ONLY · mono = labels/numbers/CTAs.
@@ -102,10 +103,16 @@ export default async function LocaleLayout({
     <html
       lang={locale}
       className={`${bricolage.variable} ${instrument.variable} ${jetbrains.variable}`}
+      data-scroll-behavior="smooth"
+      suppressHydrationWarning
     >
       <body>
         {/* must precede EntryVeil in DOM order (pre-paint skip) */}
-        <script dangerouslySetInnerHTML={{ __html: VEIL_SKIP }} />
+        <div
+          aria-hidden="true"
+          data-prepaint-script=""
+          dangerouslySetInnerHTML={{ __html: VEIL_SKIP_MARKUP }}
+        />
         <EntryVeil label={tCommon("loading")} />
         <BreathLayer />
         <NextIntlClientProvider locale={locale} messages={messages}>

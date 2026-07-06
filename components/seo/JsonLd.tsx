@@ -4,6 +4,11 @@ import { PILLARS } from "@/lib/content/services";
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://zirtuno.com";
 const INSTAGRAM =
   process.env.NEXT_PUBLIC_INSTAGRAM_URL ?? "https://www.instagram.com/zirtuno/";
+const escapeJsonForScript = (value: string) =>
+  value
+    .replace(/</g, "\\u003c")
+    .replace(/\u2028/g, "\\u2028")
+    .replace(/\u2029/g, "\\u2029");
 
 /**
  * Structured data (S15): Organization + a Service entry per pillar. Server-
@@ -36,11 +41,16 @@ export function JsonLd({ locale }: { locale: string }) {
     areaServed: "BR",
   }));
 
+  const json = escapeJsonForScript(JSON.stringify([organization, ...services]));
+
   return (
-    <script
-      type="application/ld+json"
+    <div
+      aria-hidden="true"
+      data-structured-data=""
       dangerouslySetInnerHTML={{
-        __html: JSON.stringify([organization, ...services]),
+        __html:
+          `<script id="zirtuno-jsonld-${locale}" ` +
+          `type="application/ld+json">${json}</script>`,
       }}
     />
   );
