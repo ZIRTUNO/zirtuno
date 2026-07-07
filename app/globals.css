@@ -918,37 +918,65 @@ section[id],
 }
 
 /* ===========================================================================
-   Método Zirtuno — connector timeline (S6). Mobile = vertical, desktop = row.
+   Método Zirtuno (S6) — the liquid rehearses the client's transformation on
+   the house runway (MethodFlow → .liquid-journey): five phase states behind
+   five ~viewport copy blocks, one phase dominant at a time. The old drawn
+   connector survives as a vertical THREAD beside the copy, filling with
+   --method-flow (0→1, written by the shell). Static tiers collapse the
+   runway to the plain numbered list.
    =========================================================================== */
-.method {
+.method-runway {
   position: relative;
-  margin-top: 3rem;
-  display: flex;
-  flex-direction: column;
-  padding-left: 1.75rem;
-}
-.method::before {
-  content: "";
-  position: absolute;
-  left: 5px;
-  top: 1.6rem;
-  bottom: 1.6rem;
-  width: 1px;
-  background: var(--color-paper-faint);
+  margin: 0;
+  padding-top: 4vh;
+  padding-bottom: 4vh;
+  list-style: none;
 }
 .method-phase {
   position: relative;
-  padding: 1.4rem 0;
+  display: flex;
+  min-height: 92vh;
+  flex-direction: column;
+  justify-content: center;
+  max-width: 24rem;
+  padding-left: 1.75rem; /* clears the thread */
 }
-.method-node {
+/* copy right, liquid left on wide stages (the mirror of the services) */
+@media (min-width: 1024px) {
+  .method-phase {
+    width: 24rem;
+    margin-left: auto;
+    margin-right: clamp(2rem, 9vw, 9rem);
+    padding-left: 0;
+  }
+}
+/* the thread: the old drawn connector reborn — a quiet hairline (::before)
+   that FILLS with cyan (::after) as the method advances */
+.method-runway::before,
+.method-runway::after {
+  content: "";
   position: absolute;
-  left: -1.75rem;
-  top: 1.85rem;
-  width: 11px;
-  height: 11px;
-  border-radius: 9999px;
-  background: var(--color-ink);
-  border: 1px solid var(--color-cyan);
+  left: var(--page-padding, 1.5rem);
+  top: 4vh;
+  bottom: 4vh;
+  width: 1px;
+  pointer-events: none;
+}
+.method-runway::before {
+  background: var(--color-paper-faint);
+}
+.method-runway::after {
+  background: var(--color-cyan);
+  box-shadow: 0 0 10px var(--color-cyan-glow);
+  transform-origin: top;
+  transform: scaleY(var(--method-flow, 0));
+}
+@media (min-width: 1024px) {
+  .method-runway::before,
+  .method-runway::after {
+    left: auto;
+    right: calc(var(--page-padding, 1.5rem) + clamp(2rem, 9vw, 9rem) + 24rem + 1.75rem);
+  }
 }
 .method-num {
   font-family: var(--font-mono);
@@ -957,209 +985,30 @@ section[id],
   color: var(--color-cyan);
 }
 .method-name {
-  margin-top: 0.35rem;
+  margin-top: 0.5rem;
   font-weight: 500;
   color: var(--color-paper);
 }
 .method-desc {
-  margin-top: 0.6rem;
+  margin-top: 0.75rem;
   max-width: 22rem;
   color: var(--color-paper-mute);
 }
-
-@media (min-width: 768px) {
-  .method {
-    flex-direction: row;
-    gap: 1.75rem;
-    padding-left: 0;
-  }
-  .method::before {
-    left: 0;
-    right: 0;
-    top: 5px;
-    bottom: auto;
-    width: auto;
-    height: 1px;
-  }
-  .method-phase {
-    flex: 1;
-    padding: 1.75rem 0 0;
-  }
-  .method-node {
-    left: 0;
-    top: 0;
-  }
-  .method-desc {
-    margin-top: 0.75rem;
-  }
+/* static path: the runway collapses to the clean numbered list */
+.method-journey[data-liquid="static"] .method-phase {
+  min-height: 0;
+  width: auto;
+  padding: 1.6rem 0 1.6rem 1.75rem;
+  margin-left: 0;
+  margin-right: 0;
 }
-
-/* S6 — connector line that draws on scroll (--method-draw 0→1) + per-phase gestures */
-.method-draw {
-  position: absolute;
-  left: 5px;
-  top: 1.6rem;
-  bottom: 1.6rem;
-  width: 2px;
-  margin: 0;
-  list-style: none;
-  background: var(--color-cyan);
-  box-shadow: 0 0 10px var(--color-cyan-glow);
-  transform-origin: top;
-  transform: scaleY(var(--method-draw, 0));
-  pointer-events: none;
+.method-journey[data-liquid="static"] .method-runway::before,
+.method-journey[data-liquid="static"] .method-runway::after {
+  left: var(--page-padding, 1.5rem);
+  right: auto;
 }
-.method-gesture {
-  width: 44px;
-  height: 44px;
-  margin-bottom: 0.9rem;
-}
-.method-gesture svg {
-  width: 100%;
-  height: 100%;
-  overflow: visible;
-}
-.mg-grid,
-.mg-link {
-  stroke: var(--color-cyan);
-  stroke-width: 1.6;
-  fill: none;
-}
-.mg-frame {
-  stroke: var(--color-paper-dim);
-  stroke-width: 1.6;
-  fill: none;
-}
-.mg-node,
-.mg-core {
-  fill: var(--color-cyan);
-}
-.mg-pulse {
-  stroke: var(--color-cyan);
-  stroke-width: 1.4;
-  fill: none;
-  transform-origin: 20px 20px;
-  opacity: 0;
-}
-.mg-fill {
-  fill: var(--color-cyan);
-  transform-origin: 20px 32px;
-}
-.mg-scan {
-  stroke: var(--color-cyan-glow);
-  stroke-width: 1.7;
-}
-.mg-scan {
-  animation: mg-scan 2.6s var(--ease-calm) infinite;
-}
-.mg-grid {
-  animation: mg-grid 2.6s ease-in-out infinite;
-}
-.mg-grid:nth-of-type(2) {
-  animation-delay: 0.2s;
-}
-.mg-grid:nth-of-type(3) {
-  animation-delay: 0.35s;
-}
-.mg-grid:nth-of-type(4) {
-  animation-delay: 0.5s;
-}
-.mg-fill {
-  animation: mg-fill 3s var(--ease-calm) infinite;
-}
-.mg-link {
-  stroke-dasharray: 24;
-  stroke-dashoffset: 24;
-  animation: mg-link 2.8s ease-in-out infinite;
-}
-.mg-link:nth-of-type(2) {
-  animation-delay: 0.25s;
-}
-.mg-link:nth-of-type(3) {
-  animation-delay: 0.5s;
-}
-.mg-pulse {
-  animation: mg-pulse 2.8s ease-out infinite;
-}
-.mg-pulse:nth-of-type(2) {
-  animation-delay: 0.9s;
-}
-.mg-pulse:nth-of-type(3) {
-  animation-delay: 1.8s;
-}
-@keyframes mg-scan {
-  0%,
-  100% {
-    transform: translateY(0);
-    opacity: 0.4;
-  }
-  50% {
-    transform: translateY(14px);
-    opacity: 1;
-  }
-}
-@keyframes mg-grid {
-  0%,
-  100% {
-    opacity: 0.3;
-  }
-  50% {
-    opacity: 1;
-  }
-}
-@keyframes mg-fill {
-  0% {
-    transform: scaleY(0.12);
-  }
-  60%,
-  100% {
-    transform: scaleY(1);
-  }
-}
-@keyframes mg-link {
-  0% {
-    stroke-dashoffset: 24;
-  }
-  55%,
-  100% {
-    stroke-dashoffset: 0;
-  }
-}
-@keyframes mg-pulse {
-  0% {
-    transform: scale(0.45);
-    opacity: 0.9;
-  }
-  100% {
-    transform: scale(2.6);
-    opacity: 0;
-  }
-}
-@media (min-width: 768px) {
-  .method-draw {
-    left: 0;
-    right: 0;
-    top: 5px;
-    bottom: auto;
-    width: auto;
-    height: 2px;
-    transform-origin: left;
-    transform: scaleX(var(--method-draw, 0));
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .method-gesture * {
-    animation: none !important;
-  }
-  .mg-fill {
-    transform: scaleY(1);
-  }
-  .mg-pulse {
-    opacity: 0.45;
-  }
-  .mg-link {
-    stroke-dashoffset: 0;
-  }
+.method-journey[data-liquid="static"] .method-runway::after {
+  transform: none; /* the thread reads full — a plain timeline */
 }
 
 /* ===========================================================================

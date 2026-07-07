@@ -4,6 +4,7 @@
 //    into the glass surface.
 
 import { chromium } from "playwright";
+import fs from "node:fs";
 import {
   SDF_BALL_MAX,
   SDF_GLASS_FRAG,
@@ -14,7 +15,22 @@ import {
 
 const SIZE = 256;
 
-const browser = await chromium.launch({ headless: true, chromiumSandbox: false });
+// prefer the system browser (matches the other harnesses) — survives
+// playwright version bumps without a `playwright install`
+const chromeCandidates = [
+  process.env.CHROME_PATH,
+  "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+  "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe",
+  `${process.env.LOCALAPPDATA}\\Google\\Chrome\\Application\\chrome.exe`,
+  "C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe",
+].filter(Boolean);
+const executablePath = chromeCandidates.find((c) => fs.existsSync(c));
+
+const browser = await chromium.launch({
+  headless: true,
+  chromiumSandbox: false,
+  ...(executablePath ? { executablePath } : {}),
+});
 const page = await browser.newPage({
   viewport: { width: SIZE, height: SIZE },
   deviceScaleFactor: 1,

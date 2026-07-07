@@ -126,6 +126,20 @@ npm run endpoints       # re-pack the 48-droplet morph endpoints from the SVGs
   contexts never see it, and a hard cap guarantees it can never strand the
   page (`scripts/verify-entry-veil.mjs` guards all three behaviors). The
   route-segment pulse remains for in-app navigations.
+- **S6 Método is the liquid REHEARSING the client's transformation** (remake):
+  five phase states of the same 48 droplets on the house runway
+  (`components/chapters/MethodFlow` + `makeMethodDriver`) — the fragmented
+  cloud examined by a sweeping probe droplet (Diagnóstico) → a jittered
+  liquid lattice (Estrutura) → three accreting masses (Construção) → the
+  EXACT mark resolves ("one organism" — Integração) → the mark grows and
+  sheds orbital satellites (Evolução). One phase per viewport, copy right /
+  liquid left on wide stages, the old drawn connector reborn as a vertical
+  thread that fills with progress; the line icons and the horizontal
+  timeline are deleted. Exit drain before the unstick. Diagnostics range:
+  `method-phases`. The shader's coverage AA is now CLAMPED
+  (`min(fwidth(d), 0.02)`) — unclamped, the reversed smoothstep degenerated
+  at every ball's bounded-influence edge and painted phantom ~0.5-alpha
+  discs (a dark film around dense droplet fields), site-wide fix.
 - **R3 polish (round 1):** work-card previews render the category's baked
   SDF-glass form still (`scripts/build-form-stills.mjs` →
   `public/brand/stills/`, mapped in `lib/content/form-stills.ts`) as

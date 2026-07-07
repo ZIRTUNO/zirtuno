@@ -65,6 +65,11 @@ const anchors = await page.evaluate(() => {
     ? origin.getBoundingClientRect().top + window.scrollY
     : null;
   const originH = origin ? origin.getBoundingClientRect().height : 0;
+  const method = document.querySelector("#method .method-journey");
+  const methodTop = method
+    ? method.getBoundingClientRect().top + window.scrollY
+    : null;
+  const methodH = method ? method.getBoundingClientRect().height : 0;
   return {
     problem: top("#problem"),
     ecosystem: top("#ecosystem"),
@@ -74,6 +79,8 @@ const anchors = await page.evaluate(() => {
     pillars,
     originTop,
     originH,
+    methodTop,
+    methodH,
     vh: window.innerHeight,
   };
 });
@@ -104,6 +111,14 @@ const RANGES = [
     start: anchors.services - anchors.vh * 0.5,
     end: (anchors.pillars[3] ?? anchors.services + 3000) + anchors.vh * 0.4,
     frames: 36,
+  },
+  {
+    // S6's five phase states: fragmented cloud + probe → lattice → three
+    // masses → the mark ("one organism") → growth + satellites
+    id: "method-phases",
+    start: (anchors.methodTop ?? 0) - anchors.vh * 0.3,
+    end: (anchors.methodTop ?? 0) + (anchors.methodH ?? 0),
+    frames: 30,
   },
   {
     // S8's five scrubbed beats: two brothers → the mark (+ pillar labels) →

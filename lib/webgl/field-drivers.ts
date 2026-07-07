@@ -1154,3 +1154,254 @@ export function makeOriginDriver(input: OriginInput): FieldDriver {
     },
   };
 }
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// MÉTODO (S6) — the liquid REHEARSES the client's transformation. Five phase
+// states of the same 48 droplets, one per method phase, flowed through with
+// per-droplet stagger + inertia (PHYS) as the copy scrolls:
+//
+//   0 Diagnóstico   the fragmented cloud — uneasy, size-varied — examined by
+//                   a slow sweeping PROBE droplet (droplets swell as it passes)
+//   1 Estrutura     the same droplets snap into a jittered liquid LATTICE —
+//                   the architecture, drawn in liquid, almost calm
+//   2 Construção    they accrete into three growing MASSES — the pieces being
+//                   built, each fusing solid
+//   3 Integração    the masses flow together and the EXACT mark resolves —
+//                   "systems operating as one organism", literally
+//   4 Evolução      the mark holds, breathes, GROWS slightly; satellites shed
+//                   into slow orbits — the ecosystem expanding
+//
+// Rest plateaus on each phase, melts between them (the services rhythm); the
+// whole thing is brand-cyan glass on the unified field.
+// ═══════════════════════════════════════════════════════════════════════════════
+
+export type MethodInput = {
+  u: number; // continuous phase coord, 0..4
+  ex: number; // end-of-runway drain — the unstick never drags visible liquid
+};
+
+const M_STATES = 5;
+
+export function makeMethodDriver(input: MethodInput): FieldDriver {
+  const base = CLOUDS[0];
+  let lastT = -1;
+  let du = -1;
+  let dex = -1;
+  let cachedAspect = -1;
+  let ST = new Float32Array(M_STATES * N * 3); // per-state droplet targets
+  let stageCx = 0.5;
+  let stageCy = 0.5;
+  let mOx = 0;
+  let mOy = 0;
+  let mScale = ORGANISM_SCALE;
+  const P = new Float32Array(N * 2).fill(-1);
+  const R = new Float32Array(N).fill(-1);
+  // per-state wander activity (fragmented = restless … integrated = still)
+  const ACT = [1, 0.3, 0.5, 0.12, 0.35];
+
+  const put = (s: number, i: number, x: number, y: number, r: number) => {
+    const j = (s * N + i) * 3;
+    ST[j] = x;
+    ST[j + 1] = y;
+    ST[j + 2] = r;
+  };
+
+  return {
+    forms: [0],
+    frame: (tMs, buf, aspect) => {
+      if (Math.abs(aspect - cachedAspect) > 0.02) {
+        cachedAspect = aspect;
+        // stage left of the copy column on wide stages; below it on narrow
+        const wide = aspect >= 1.4;
+        mOx = wide ? -Math.min(0.15 * aspect, aspect / 2 - 0.32) : 0;
+        mOy = wide ? 0 : -0.22;
+        mScale = wide ? ORGANISM_SCALE : 0.38;
+        stageCx = 0.5 + mOx;
+        stageCy = 0.5 + mOy;
+        const sz = mScale / ORGANISM_SCALE; // local size factor
+        ST = new Float32Array(M_STATES * N * 3);
+        // 0 — the fragmented cloud (Diagnosis): SEPARATED droplets — small
+        // enough that their falloff tails never fuse into a dark film — and
+        // compressed into the stage column so the copy stays clear
+        const dis = wideScatter(aspect, stageCx, stageCy, 0.62);
+        const clampD = (v: number, c: number, lim: number) =>
+          c + Math.max(-lim, Math.min(lim, (v - c) * 0.9));
+        // 1 — the lattice (Structure): 8 × 6 = exactly the 48 droplets
+        const COLS = 8;
+        const ROWS = 6;
+        const spanX = 0.54 * sz;
+        const spanY = 0.42 * sz;
+        // 2 — three accreting masses (Construction)
+        const CORE_R = 0.155 * sz;
+        for (let i = 0; i < N; i++) {
+          const b = base[i];
+          put(
+            0,
+            i,
+            clampD(dis[i].tx, stageCx, 0.33),
+            clampD(dis[i].ty, stageCy, 0.33),
+            b[2] * mScale * (0.24 + 0.24 * VARY[i]),
+          );
+          const col = i % COLS;
+          const row = (i / COLS) | 0;
+          put(
+            1,
+            i,
+            stageCx - spanX / 2 + (spanX / (COLS - 1)) * col +
+              (row % 2 ? spanX / (COLS - 1) / 2 : 0) +
+              (hash(i, 72) - 0.5) * 0.014,
+            stageCy - spanY / 2 + (spanY / (ROWS - 1)) * row +
+              (hash(i, 73) - 0.5) * 0.014,
+            0.012 * sz * (0.92 + 0.16 * hash(i, 74)),
+          );
+          const core = i % 3;
+          const ca = ((core * 120 + 90) * Math.PI) / 180;
+          const cx = stageCx + Math.cos(ca) * CORE_R;
+          const cy = stageCy + Math.sin(ca) * CORE_R;
+          const od = (0.012 + 0.062 * Math.pow(hash(i, 75), 1.4)) * sz;
+          const oa = hash(i, 76) * Math.PI * 2;
+          put(
+            2,
+            i,
+            cx + Math.cos(oa) * od,
+            cy + Math.sin(oa) * od,
+            (0.036 - 0.26 * od) * sz,
+          );
+          // 3 — the mark's footprint (the form swallows the fused mass)
+          const fx = 0.5 + mOx + (b[0] - 0.5) * mScale;
+          const fy = 0.5 + mOy + (b[1] - 0.5) * mScale;
+          put(3, i, fx, fy, b[2] * mScale * 0.5);
+          // 4 — evolution: a third of the droplets shed into slow orbits
+          if (i % 3 === 0) {
+            const sa = hash(i, 77) * Math.PI * 2;
+            const so = (0.29 + 0.15 * hash(i, 78)) * sz;
+            put(
+              4,
+              i,
+              stageCx + Math.cos(sa) * so * Math.min(Math.max(aspect * 0.8, 1), 1.4),
+              stageCy + Math.sin(sa) * so,
+              0.014 * sz,
+            );
+          } else {
+            put(4, i, fx, fy, 0.002);
+          }
+        }
+      }
+      const dt = lastT < 0 ? 16.7 : Math.min(Math.max(tMs - lastT, 0), 100);
+      lastT = tMs;
+      const uRaw = Math.min(Math.max(input.u, 0), 4);
+      if (du < 0) du = uRaw;
+      du += (uRaw - du) * (1 - Math.exp(-dt / PHYS.TAU_CHANNEL));
+      const exRaw = clamp01(input.ex);
+      if (dex < 0) dex = exRaw;
+      dex += (exRaw - dex) * (1 - Math.exp(-dt / PHYS.TAU_CHANNEL));
+      const t = tMs / 1000;
+
+      // rest plateau on each phase, melt across the middle of each gap
+      const k0 = Math.min(Math.floor(du), 3);
+      const f = du - k0;
+      const fw = f <= 0.35 ? 0 : f >= 0.65 ? 1 : (f - 0.35) / 0.3;
+      const sEff = k0 + fw;
+
+      // exit: the liquid settles away BEFORE the sticky layer unsticks
+      const exE = smooth01(dex);
+      const EXW = 1 - exE;
+
+      // the mark: converges across the 2 → 3 melt, holds, erodes back below
+      const formT = clamp01((sEff - 2.45) / 0.5);
+      const [fa0, ea0] = formPresence(formT);
+      const fa = fa0 * EXW;
+      const ea = ea0 + exE * SDF_MELT_ERODE;
+      const grow = smooth01((sEff - 3.35) / 0.55); // Evolution: it grows
+      const scale = mScale * (1 + 0.06 * grow);
+
+      // the probe (Diagnosis only): a slow horizontal sweep, examining
+      const probeW = 1 - smooth01((sEff - 0.45) / 0.35);
+      let probeX = 0;
+      let probeY = 0;
+      if (probeW > 0.01) {
+        const tri = (t * 0.07) % 1;
+        const sw = tri < 0.5 ? tri * 2 : 2 - tri * 2;
+        probeX = stageCx - 0.26 + 0.52 * smooth01(sw);
+        probeY = stageCy + 0.1 * Math.sin(t * 0.31);
+      }
+
+      const k1 = Math.min(k0 + 1, M_STATES - 1);
+      for (let i = 0; i < N; i++) {
+        const ja = (k0 * N + i) * 3;
+        const jb = (k1 * N + i) * 3;
+        // staggered flow: each droplet crosses the melt on its own window
+        const fi = smooth01((fw - 0.4 * hash(i, 71)) / 0.6);
+        let x = ST[ja] + (ST[jb] - ST[ja]) * fi;
+        let y = ST[ja + 1] + (ST[jb + 1] - ST[ja + 1]) * fi;
+        let r = ST[ja + 2] + (ST[jb + 2] - ST[ja + 2]) * fi;
+        // orbiting satellites actually ORBIT (Evolution)
+        if (i % 3 === 0 && sEff > 3.05) {
+          const rot = t * (0.03 + 0.03 * hash(i, 79)) * smooth01(sEff - 3.05);
+          const dx = x - stageCx;
+          const dy = y - stageCy;
+          const cs = Math.cos(rot);
+          const sn = Math.sin(rot);
+          x = stageCx + dx * cs - dy * sn;
+          y = stageCy + dx * sn + dy * cs;
+        }
+        // the probe's examination: droplets swell as it passes over them
+        if (probeW > 0.01) {
+          const d = x - probeX;
+          r *= 1 + 0.34 * probeW * Math.exp(-(d * d) / 0.006);
+        }
+        // life: restless while fragmented, stiller as order takes hold
+        const act = ACT[k0] + (ACT[k1] - ACT[k0]) * fi;
+        const wob = PHYS.DRIFT * act;
+        x += wob * Math.sin(t * (0.5 + hash(i, 80)) + i * 1.7);
+        y += wob * Math.cos(t * (0.44 + hash(i, 81)) + i * 2.3);
+        r *= EXW; // exit: everything settles away before the unstick
+
+        // per-droplet inertia — the same physics as everywhere else
+        const kp = 1 - Math.exp(-dt / TAUP[i]);
+        const kr = 1 - Math.exp(-dt / PHYS.TAU_RADIUS);
+        if (P[i * 2] < 0) {
+          P[i * 2] = x;
+          P[i * 2 + 1] = y;
+          R[i] = r;
+        } else {
+          P[i * 2] += (x - P[i * 2]) * kp;
+          P[i * 2 + 1] += (y - P[i * 2 + 1]) * kp;
+          R[i] += (r - R[i]) * kr;
+        }
+      }
+
+      let count = 0;
+      for (let i = 0; i < N; i++) {
+        if (R[i] < 0.0012) continue;
+        buf[count * 3] = P[i * 2];
+        buf[count * 3 + 1] = P[i * 2 + 1];
+        buf[count * 3 + 2] = R[i];
+        count++;
+      }
+      if (probeW > 0.01 && EXW > 0.02) {
+        buf[count * 3] = probeX;
+        buf[count * 3 + 1] = probeY;
+        buf[count * 3 + 2] = 0.02 * probeW * EXW;
+        count++;
+      }
+
+      return {
+        a: 0,
+        b: 0,
+        fa,
+        fb: 0,
+        ea,
+        eb: 0,
+        ox: mOx,
+        oy: mOy,
+        scale,
+        warp:
+          SDF_WARP_REST +
+          (SDF_WARP_MORPH - SDF_WARP_REST) * 0.5 * Math.sin(Math.PI * fw),
+        mute: 0,
+        count,
+      };
+    },
+  };
+}
