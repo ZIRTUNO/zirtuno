@@ -13,49 +13,81 @@
   --color-cyan-glow: #4decff;
   --color-cyan-deep: #00b6cc;
   --color-paper: #f2f0eb;
-  --color-paper-mute: rgba(242, 240, 235, 0.5);
-  --color-paper-dim: rgba(242, 240, 235, 0.25);
+  /* secondary/tertiary paper — lifted for readable contrast on black (R4):
+     mute carries body/lead + labels (was 0.5), dim carries captions (was 0.25),
+     faint stays hairline-only for borders/rules. */
+  --color-paper-mute: rgba(242, 240, 235, 0.62);
+  --color-paper-dim: rgba(242, 240, 235, 0.34);
   --color-paper-faint: rgba(242, 240, 235, 0.1);
   --color-warn: #ff6b5c; /* form errors only */
 
-  /* --- Fonts (S1.2). next/font sets --font-bricolage/-instrument/-jetbrains
-     on <html>. sans = Bricolage (business + UI), display = Instrument Serif
-     (poetry ONLY), mono = JetBrains (labels, numbers, CTAs). --- */
-  --font-sans: var(--font-bricolage), ui-sans-serif, system-ui, sans-serif;
+  /* --- Fonts (S1.2 · display/text split, R4). next/font sets the family vars
+     on <html>. grotesk = Bricolage → DISPLAY headlines ONLY (hero + section
+     h2s). sans = Geist → body, UI, nav, subheads, forms (the workhorse).
+     display = Instrument Serif → poetry italic ONLY. mono = JetBrains →
+     labels, numbers, CTAs. --- */
+  --font-sans: var(--font-geist), ui-sans-serif, system-ui, -apple-system,
+    "Segoe UI", sans-serif;
+  --font-grotesk: var(--font-bricolage), var(--font-geist), ui-sans-serif,
+    system-ui, sans-serif;
   --font-display: var(--font-instrument), Georgia, "Times New Roman", serif;
   --font-mono: var(--font-jetbrains), ui-monospace, "SFMono-Regular", monospace;
 
-  /* --- Type scale (S1.2) — fluid mobile→desktop via clamp --- */
-  --text-hero: clamp(2.25rem, 1.43rem + 3.5vw, 3.75rem);
-  --text-hero--line-height: 1.08;
-  --text-hero--letter-spacing: -0.02em;
+  /* --- Type scale (S1.2 · R4) — one disciplined modular system, fluid
+     mobile→desktop via clamp. DISPLAY tiers ride Bricolage (tight tracking +
+     leading, the expressive voice); TEXT tiers ride Geist (calm leading,
+     near-zero tracking, engineered for reading); the LABEL tier rides the mono
+     (open tracking, uppercase). Contrast between tiers is deliberate. --- */
 
-  --text-display-xl: clamp(3rem, 0.6rem + 9.6vw, 7rem);
-  --text-display-xl--line-height: 0.98;
-  --text-display-xl--letter-spacing: -0.02em;
+  /* DISPLAY — Bricolage grotesk (headlines opt in via .font-grotesk) */
+  --text-hero: clamp(2.4rem, 1.62rem + 3.5vw, 4rem);
+  --text-hero--line-height: 1.03;
+  --text-hero--letter-spacing: -0.028em;
 
-  --text-display-l: clamp(2rem, 1.33rem + 2.86vw, 3.25rem);
-  --text-display-l--line-height: 1.06;
-  --text-display-l--letter-spacing: -0.015em;
+  --text-display-xl: clamp(3rem, 0.9rem + 8.6vw, 6.5rem);
+  --text-display-xl--line-height: 0.95;
+  --text-display-xl--letter-spacing: -0.03em;
 
-  --text-display-m: clamp(1.5rem, 1.1rem + 1.7vw, 2.25rem);
+  --text-display-l: clamp(2.15rem, 1.52rem + 2.8vw, 3.5rem);
+  --text-display-l--line-height: 1.05;
+  --text-display-l--letter-spacing: -0.022em;
+
+  --text-display-m: clamp(1.55rem, 1.24rem + 1.4vw, 2.25rem);
   --text-display-m--line-height: 1.14;
-  --text-display-m--letter-spacing: -0.01em;
+  --text-display-m--letter-spacing: -0.015em;
 
-  --text-poetic: clamp(1.125rem, 0.93rem + 0.8vw, 1.5rem);
+  /* TITLE — mid headings (card/service/phase names, studio roles). Geist. */
+  --text-title: clamp(1.2rem, 1.06rem + 0.62vw, 1.5rem);
+  --text-title--line-height: 1.25;
+  --text-title--letter-spacing: -0.01em;
+
+  /* TEXT — Geist (serif only for --text-poetic) */
+  --text-poetic: clamp(1.2rem, 1rem + 0.85vw, 1.6rem);
   --text-poetic--line-height: 1.4;
+  --text-poetic--letter-spacing: 0em;
 
-  --text-body-l: clamp(1.125rem, 1.05rem + 0.32vw, 1.25rem);
+  --text-lead: clamp(1.15rem, 1.02rem + 0.58vw, 1.375rem);
+  --text-lead--line-height: 1.55;
+  --text-lead--letter-spacing: -0.006em;
+
+  --text-body-l: clamp(1.0625rem, 1rem + 0.3vw, 1.1875rem);
   --text-body-l--line-height: 1.6;
+  --text-body-l--letter-spacing: -0.004em;
 
-  --text-body: 1rem;
+  --text-body: clamp(1rem, 0.97rem + 0.14vw, 1.0625rem);
   --text-body--line-height: 1.65;
+  --text-body--letter-spacing: -0.002em;
 
-  --text-mono: 0.75rem;
+  --text-body-s: 0.875rem;
+  --text-body-s--line-height: 1.5;
+  --text-body-s--letter-spacing: 0em;
+
+  /* LABEL — JetBrains mono (uppercase, open tracking) */
+  --text-mono: 0.8125rem;
   --text-mono--line-height: 1.4;
   --text-mono--letter-spacing: 0.08em;
 
-  --text-mono-sm: 0.6875rem;
+  --text-mono-sm: 0.75rem;
   --text-mono-sm--line-height: 1.45;
   --text-mono-sm--letter-spacing: 0.1em;
 }
@@ -100,6 +132,7 @@
     background: var(--color-ink);
     color: var(--color-paper);
     -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
     scroll-behavior: smooth;
   }
@@ -109,8 +142,15 @@
     color: var(--color-paper);
     font-family: var(--font-sans);
     font-size: var(--text-body);
-    line-height: 1.65;
+    line-height: var(--text-body--line-height);
+    letter-spacing: var(--text-body--letter-spacing);
+    font-synthesis: none;
     overflow-x: hidden;
+  }
+
+  /* long-form copy gets balanced rag; headings balance per component */
+  p {
+    text-wrap: pretty;
   }
 
   ::selection {
@@ -139,14 +179,23 @@
     background: color-mix(in srgb, var(--color-cyan) 45%, var(--color-paper-faint));
   }
 
+  /* Headings default to the TEXT face (Geist) — clean and readable. The large
+     DISPLAY headlines (hero + section h2s) opt into Bricolage via .font-grotesk.
+     Poetry opts into the serif via .font-poetic. */
   h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-sans);
     font-weight: 500;
+    line-height: 1.15;
+    letter-spacing: -0.01em;
+    text-wrap: balance;
   }
 }
 
 @layer components {
-  /* The 70/30 mechanism, codified: serif italic is poetry ONLY (S1.2). */
+  /* --- The type-role mechanism, codified (S1.2 · R4) --- */
+  /* Bricolage = DISPLAY voice (hero headline + every section h2): applied in
+     markup as `font-grotesk` (the utility generated from --font-grotesk) with
+     an explicit weight. Instrument Serif italic = poetry ONLY: */
   .font-poetic {
     font-family: var(--font-display);
     font-style: italic;
@@ -689,16 +738,18 @@ section[id],
   color: var(--color-cyan);
 }
 .symptom-label {
-  font-size: 1.35rem;
+  font-size: var(--text-title);
+  line-height: var(--text-title--line-height);
+  letter-spacing: var(--text-title--letter-spacing);
   font-weight: 500;
-  line-height: 1.2;
   color: var(--color-paper);
 }
 .symptom-desc {
-  margin-top: 0.35rem;
+  margin-top: 0.5rem;
   font-size: var(--text-body);
+  line-height: var(--text-body--line-height);
   color: var(--color-paper-mute);
-  max-width: 20rem;
+  max-width: 22rem;
 }
 
 /* ===========================================================================
@@ -1338,7 +1389,9 @@ section[id],
 .studio-role {
   background: var(--color-ink);
   padding: 1.5rem;
-  font-size: 1.125rem;
+  font-size: var(--text-title);
+  line-height: var(--text-title--line-height);
+  letter-spacing: var(--text-title--letter-spacing);
   font-weight: 500;
   color: var(--color-paper);
 }

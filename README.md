@@ -148,6 +148,16 @@ npm run endpoints       # re-pack the 48-droplet morph endpoints from the SVGs
   the scrollbar wears the brand (thin, cyan-whisper on hover). The remaining
   R3 rounds — morph feel, fracture readability, converge weight, origin
   pacing — are owner-taste iterations on real hardware.
+- **Typography is a four-role system (R4 reform).** DISPLAY headlines (the hero
+  headline + every section `h2`) ride **Bricolage Grotesque** via `font-grotesk`
+  (`--font-grotesk`); **body, UI, nav, subheads, leads and forms ride Geist**
+  (`--font-sans`, the readable workhorse — a display/text split in the mould of
+  Google Sans vs Google Sans Text); **Instrument Serif italic** stays poetry-only
+  (eyebrow, pillar accents, Origin, Contact prompt, manifesto); **JetBrains Mono**
+  carries labels/numbers/counters/CTAs. One disciplined `--text-*` scale in
+  `globals.css` — display / title / lead / body / mono tiers, fluid clamps, tuned
+  tracking + leading per tier — and lifted secondary-text contrast
+  (`--color-paper-mute` 0.5 → 0.62). Fonts self-host via `next/font/google`.
 - Portfolio seed projects are prototypes only. Do not add fabricated metrics.
 
 ## Open Decisions

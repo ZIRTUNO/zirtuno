@@ -61,7 +61,7 @@ export default async function CaseStudyPage({
 
       <header className="mt-8 max-w-4xl">
         <p className="project-cats">{categories.join(" · ")}</p>
-        <h1 className="mt-3 text-display-l font-medium text-paper">{title}</h1>
+        <h1 className="mt-3 text-display-l font-grotesk font-medium text-paper">{title}</h1>
         {project.servicesInvolved.length > 0 && (
           <p className="project-services mt-4">
             {project.servicesInvolved.join(" · ")}

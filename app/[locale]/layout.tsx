@@ -9,6 +9,7 @@ import {
 } from "next-intl/server";
 import {
   Bricolage_Grotesque,
+  Geist,
   Instrument_Serif,
   JetBrains_Mono,
 } from "next/font/google";
@@ -29,10 +30,19 @@ const VEIL_SKIP =
 const VEIL_SKIP_MARKUP = `<script>${VEIL_SKIP}</script>`;
 
 // Self-hosted at build time by next/font (no runtime third-party requests).
-// sans = business/UI · serif = poetry ONLY · mono = labels/numbers/CTAs.
+// Typography system (display/text split, R4):
+//   grotesk = Bricolage → DISPLAY headlines only (hero + section h2s)
+//   text    = Geist     → body, UI, nav, subheads, forms (the workhorse)
+//   serif   = Instrument Serif italic → poetry accents ONLY
+//   mono    = JetBrains Mono → labels, numbers, CTAs
 const bricolage = Bricolage_Grotesque({
   subsets: ["latin"],
   variable: "--font-bricolage",
+  display: "swap",
+});
+const geist = Geist({
+  subsets: ["latin"],
+  variable: "--font-geist",
   display: "swap",
 });
 const instrument = Instrument_Serif({
@@ -102,7 +112,7 @@ export default async function LocaleLayout({
   return (
     <html
       lang={locale}
-      className={`${bricolage.variable} ${instrument.variable} ${jetbrains.variable}`}
+      className={`${geist.variable} ${bricolage.variable} ${instrument.variable} ${jetbrains.variable}`}
       data-scroll-behavior="smooth"
       suppressHydrationWarning
     >

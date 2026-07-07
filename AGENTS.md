@@ -22,7 +22,7 @@ Tone in three words: **Discreto. Preciso. Transformador.** Plus, for v0.2: **Cle
 
 ## NON-NEGOTIABLE RULES
 
-1. **Typography split = the 70/30 mechanism.** Business headlines (Problem, Ecosystem, Services, Method, all UI) use **Bricolage Grotesque (sans)**. **Serif italic (Instrument Serif) is for poetic accents ONLY** — hero eyebrow, pillar descriptors, the etymology chapter, the manifesto coda. Never set a business headline in the serif. Never set body/UI in the serif.
+1. **Typography = a four-role system (display / text / serif / mono).** DISPLAY headlines — the hero headline and every section `h2` — use **Bricolage Grotesque** via the `font-grotesk` utility (`--font-grotesk`). **BODY, UI, nav, subheads, leads and forms use Geist** (`--font-sans`, the workhorse text face). **Serif italic (Instrument Serif) is for poetic accents ONLY** — hero eyebrow, pillar descriptors, the Origin chapter, the Contact prompt, the manifesto coda. **JetBrains Mono** carries labels, numbers, counters and CTAs. Reserve Bricolage for display-scale headlines (never mid-titles or body); never set a business headline or body/UI in the serif. The scale lives as `--text-*` tokens in `globals.css` (display / title / lead / body / mono tiers) — compose type from those tiers, don't hardcode sizes.
 2. **The metaball narrative carries business meaning.** Fragments scatter in The Problem (S3) and converge into one connected organism in The Ecosystem (S4). This is the visual proof of the whole pitch. Do not break the dispersed→connected arc.
 3. **NEVER invent metrics.** Portfolio outcomes are real verified numbers, honest narratives, or labeled "Arquitetura selecionada / Selected architecture." No fabricated percentages, ever.
 4. **The contact submit must be obvious.** A real labeled button (`Solicitar análise inicial`) is always the canonical action. The metaball "exhale" is additive decoration, never the only way to submit.
@@ -55,15 +55,18 @@ Tone in three words: **Discreto. Preciso. Transformador.** Plus, for v0.2: **Cle
 --paper:#F2F0EB; --paper-mute:rgba(242,240,235,0.5);
 --paper-dim:rgba(242,240,235,0.25); --paper-faint:rgba(242,240,235,0.1);
 --warn:#FF6B5C; /* form errors only */
---font-display:'Instrument Serif';   /* SERIF ITALIC = poetry only */
---font-sans:'Bricolage Grotesque';   /* business + UI */
---font-mono:'JetBrains Mono';        /* labels, numbers, CTAs */
+--font-grotesk:'Bricolage Grotesque'; /* DISPLAY headlines only (hero + section h2) */
+--font-sans:'Geist';                  /* body, UI, nav, subheads, leads, forms */
+--font-display:'Instrument Serif';    /* SERIF ITALIC = poetry accents only */
+--font-mono:'JetBrains Mono';         /* labels, numbers, counters, CTAs */
 ```
 
 Easings: `calm cubic-bezier(0.65,0,0.35,1)`, `arrive cubic-bezier(0.22,1,0.36,1)`, `depart cubic-bezier(0.64,0,0.78,0)`.
 Durations (ms): micro 200, short 400, medium 700, long 1200, morph 1400, autocycle 9000, breath 8000.
 
-Self-host fonts in `public/fonts/`. Preload Instrument Serif italic + Bricolage variable.
+Fonts are self-hosted at build time by `next/font/google` (no runtime third-party
+requests): Geist (text), Bricolage Grotesque (display), Instrument Serif (poetry),
+JetBrains Mono (labels).
 
 ---
 

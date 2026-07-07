@@ -41,12 +41,12 @@ export function Hero() {
           </p>
         </Reveal>
 
-        <Reveal as="h1" delay={0.4} y={16} duration={1.1} className="mt-4 text-hero font-medium text-paper">
+        <Reveal as="h1" delay={0.4} y={16} duration={1.1} className="mt-4 text-hero font-grotesk font-medium text-paper">
           {t("headline")}
         </Reveal>
 
         <Reveal delay={0.8} y={0} duration={0.8} ease="calm">
-          <p className="mt-6 max-w-[32rem] text-body-l text-paper-mute">
+          <p className="mt-6 max-w-[34rem] text-lead text-paper-mute">
             {t("subline")}
           </p>
         </Reveal>

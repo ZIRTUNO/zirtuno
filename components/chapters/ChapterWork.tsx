@@ -23,13 +23,13 @@ export async function ChapterWork() {
       </Reveal>
 
       <Reveal inView delay={0.05}>
-        <h2 className="mt-6 text-display-l font-medium text-paper">
+        <h2 className="mt-6 text-display-l font-grotesk font-medium text-paper">
           {t("headline")}
         </h2>
       </Reveal>
 
       <Reveal inView delay={0.1}>
-        <p className="mt-5 max-w-2xl text-body-l text-paper-mute">
+        <p className="mt-5 max-w-2xl text-lead text-paper-mute">
           {t("lead")}
         </p>
       </Reveal>

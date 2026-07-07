@@ -41,10 +41,10 @@ export default async function WorkPage({
       className="page-x min-h-svh pb-28 pt-[calc(var(--topbar-h)+3rem)]"
     >
       <p className="chapter-label">{t("chapterLabel")}</p>
-      <h1 className="mt-6 text-display-l font-medium text-paper">
+      <h1 className="mt-6 text-display-l font-grotesk font-medium text-paper">
         {t("indexTitle")}
       </h1>
-      <p className="mt-4 max-w-2xl text-body-l text-paper-mute">
+      <p className="mt-4 max-w-2xl text-lead text-paper-mute">
         {t("indexLead")}
       </p>
 

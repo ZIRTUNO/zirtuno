@@ -32,7 +32,7 @@ export function ChapterMethod() {
         </Reveal>
 
         <Reveal inView delay={0.05}>
-          <h2 className="mt-6 text-display-l font-medium text-paper">
+          <h2 className="mt-6 text-display-l font-grotesk font-medium text-paper">
             {t("headline")}
           </h2>
         </Reveal>
