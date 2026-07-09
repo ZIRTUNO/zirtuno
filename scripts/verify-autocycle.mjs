@@ -3,6 +3,7 @@
 //   node scripts/verify-autocycle.mjs
 
 import { chromium } from "playwright";
+import { LAUNCH } from "./_launch.mjs";
 import fs from "node:fs";
 import path from "node:path";
 
@@ -10,7 +11,7 @@ const BASE = process.env.BASE_URL || "http://localhost:3000";
 const OUT = "captures/verify";
 fs.mkdirSync(OUT, { recursive: true });
 
-const browser = await chromium.launch({ headless: true, chromiumSandbox: false });
+const browser = await chromium.launch(LAUNCH);
 const ctx = await browser.newContext({
   viewport: { width: 1440, height: 900 },
   deviceScaleFactor: 1,

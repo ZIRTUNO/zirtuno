@@ -87,31 +87,34 @@ npm run endpoints       # re-pack the 48-droplet morph endpoints from the SVGs
   gating (`gpu-tier`, `can-run-glass`, `?glass=`) and their capture scripts are
   DELETED (three.js/@react-three removed); sheets:
   `captures/chapters-sheet-{en,pt}.png`.
-- **Hero → S3 → S4 → S5 are ONE SITE FLUID:** a single persistent renderer
-  (`components/field/LiquidSite` + `makeSiteDriver`) spans the Hero, The
-  Problem, The Ecosystem and The Services — one sticky full-viewport canvas
-  (the liquid has NO interior edge and is never scrolled away as a block), one
-  rAF measurement loop, ONE physics table (`PHYS`), 48 stable droplet
-  identities end to end, no GSAP pins. The hero's living machine (autocycle
-  §3.3 melts, gooey cursor, keyboard) is a SEGMENT of the driver, staged over
-  the hero column via `iFormOff`/`iFormScale`; scrolling out granulates the
-  resting form and POURS its droplets into The Problem's unstable clusters;
-  the travel/converge resolves the exact mark; its droplets become tendrils
-  feeding ten orbital capability labels (lg+; the capability stack serves
-  narrow viewports, static tiers and AT); the same liquid melts through the
-  seven pillar forms (ONE service dominant at a time) and settles away before
-  the layer unsticks. Twelve ambient lava-lamp droplets share the field
-  site-wide; every droplet carries its own inertia (heavy lags — scroll
-  STRETCHES the liquid) and scroll velocity stirs it. Colour is brand cyan
-  EVERYWHERE — no desaturation states, no dimming, and the FPS watchdog only
-  ever lowers resolution (full → lite → half): the liquid never freezes.
-  QA: `?feco=c` freezes the S4 choreography; hero stills (`?fstate`/`?fpair`/
-  `?fcursor`) render on the standalone frozen path (rest sheets stay
-  byte-exact); diagnostics: `scripts/capture-transition-diagnostics.mjs`
-  (798×698 in-app-class viewport, five ranges incl. hero-to-problem and
-  origin-beats, filmstrips) → `captures/diagnostics-after/`.
+- **THE WHOLE PAGE IS ONE LIQUID (R5-A, the conductor):** every chapter visual
+  renders on a single persistent page-wide canvas —
+  `components/field/PageStage` (one sticky layer, one rAF measurement loop)
+  conducting four SCENES (`lib/webgl/scenes/{site,method,origin,contact}`)
+  through `lib/webgl/conductor.mjs`. The conductor owns everything between
+  scenes: per-channel damping (the PHYS taus), presence weighting, per-droplet
+  target blending across handoffs, the form-slot ARBITER (the shader's two
+  form slots NEVER crossfade — ownership transfers only through droplet-only
+  states, machine-checked by `scripts/verify-conductor.mjs`), the shared
+  12-droplet ambient family, integration (per-droplet TAUP inertia — Phase B
+  replaces this block with real physics) and the light-score merge (Phase D).
+  The 48 droplets keep ONE identity from the hero's resting mark to the
+  contact form; scene handoffs complete off-screen (presence curves + entry/
+  exit envelopes author invisibility that canvas mounting used to imply). The
+  pure kernel (CLOUDS, PHYS, TAUP, scatter/orbital vocabulary) lives in
+  `lib/webgl/phys.mjs` — node-runnable, the sdf-core convention — and
+  `lib/webgl/field-drivers.ts` keeps the §3.3 melt implementation + the
+  FieldStage contract + the 404's `makeLoneDropDriver`. The 8 chapter
+  hairlines are gone (separation = liquid + spacing); the Footer renders
+  inside the page (the liquid reaches the true bottom). Colour is brand cyan
+  EVERYWHERE; the FPS watchdog only ever lowers resolution: the liquid never
+  freezes. QA: `?feco=c` freezes the S4 choreography; hero stills
+  (`?fstate`/`?fpair`/`?fcursor`) render on the standalone frozen path (rest
+  sheets stay byte-exact); `window.__scenes` exposes the live channels;
+  diagnostics: `scripts/capture-transition-diagnostics.mjs` (six
+  section-anchored ranges, filmstrips) → `captures/diagnostics-after/`.
 - **S8 The Origin is the five scrubbed beats (R2, build-spec S8.3)** on the
-  same runway pattern (`components/chapters/OriginFlow` + `makeOriginDriver`):
+  page fluid (`lib/webgl/scenes/origin` since R5-A):
   two brother-masses drift in from opposite sides, fuse into the EXACT mark
   (three founding-pillar labels float beside its lobes — mono, muted, never
   styled like the seven services), the mark holds breathing under the purpose
@@ -127,8 +130,8 @@ npm run endpoints       # re-pack the 48-droplet morph endpoints from the SVGs
   page (`scripts/verify-entry-veil.mjs` guards all three behaviors). The
   route-segment pulse remains for in-app navigations.
 - **S6 Método is the liquid REHEARSING the client's transformation** (remake):
-  five phase states of the same 48 droplets on the house runway
-  (`components/chapters/MethodFlow` + `makeMethodDriver`) — the fragmented
+  five phase states of the same 48 droplets on the page fluid
+  (`lib/webgl/scenes/method` since R5-A) — the fragmented
   cloud examined by a sweeping probe droplet (Diagnóstico) → a jittered
   liquid lattice (Estrutura) → three accreting masses (Construção) → the
   EXACT mark resolves ("one organism" — Integração) → the mark grows and

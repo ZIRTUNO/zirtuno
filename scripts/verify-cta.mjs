@@ -4,9 +4,10 @@
 //   BASE_URL=http://localhost:PORT node scripts/verify-cta.mjs
 
 import { chromium } from "playwright";
+import { LAUNCH } from "./_launch.mjs";
 
 const BASE = process.env.BASE_URL || "http://localhost:3000";
-const browser = await chromium.launch({ headless: true, chromiumSandbox: false });
+const browser = await chromium.launch(LAUNCH);
 const page = await (
   await browser.newContext({ viewport: { width: 1440, height: 900 } })
 ).newPage();
@@ -77,11 +78,18 @@ await page.waitForTimeout(1800);
 // #contact. A window marker survives only if no reload happened.
 await page.goto(`${BASE}/en`, { waitUntil: "domcontentloaded" });
 await page.waitForFunction(() => !!document.querySelector("h1"), { timeout: 40000 });
+// wait for HYDRATION (the CTA interception handler), not just SSR paint —
+// window.__scenes is set by PageStage in an effect, a reliable post-hydration
+// signal. Pre-hydration clicks fall back to the native anchor (progressive
+// enhancement), which is correct behavior but not the path under test.
+await page.waitForFunction(() => !!window.__scenes, { timeout: 20000 });
 await page.evaluate(() => {
   window.__noReload = true;
 });
 await page.click('a.cta[href*="intent=structure"]');
-await page.waitForTimeout(2500); // let the smooth scroll settle
+// Lenis is lerp-based (frame-rate dependent) — software-GL frames are slow in
+// the harness, so give the smooth scroll a generous settle
+await page.waitForTimeout(5000);
 const samePage = await page.evaluate(() => {
   const contact = document.getElementById("contact");
   const rect = contact ? contact.getBoundingClientRect() : null;

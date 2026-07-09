@@ -529,30 +529,6 @@ section[id],
   pointer-events: none;
 }
 
-/* S5 — services metaball (sticky; morphs to each pillar's form on scroll-in). */
-.services-metaball-stage {
-  position: relative;
-  width: 100%;
-  max-width: 380px;
-  margin-inline: auto;
-  aspect-ratio: 1 / 1;
-}
-.services-metaball-stage > .services-metaball-fallback,
-.services-metaball-stage > .services-metaball-canvas {
-  position: absolute;
-  inset: 0;
-}
-.services-metaball-stage > .services-metaball-fallback {
-  max-width: none;
-  transition: opacity var(--dur-long) var(--ease-arrive);
-}
-.services-metaball-fallback.is-hidden {
-  opacity: 0;
-}
-.services-metaball-canvas {
-  pointer-events: none;
-}
-
 /* S10 — contact metaball STAGE (R5: the mark renders on the page fluid,
    anchored to this box; the fallback shows on the static path). */
 .contact-metaball-stage {
