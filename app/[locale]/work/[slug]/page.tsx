@@ -3,6 +3,7 @@ import Image from "next/image";
 import { notFound } from "next/navigation";
 import { setRequestLocale, getTranslations } from "next-intl/server";
 import { Link, routing } from "@/lib/i18n/config";
+import { Footer } from "@/components/chrome/Footer";
 import { localize } from "@/lib/sanity/types";
 import {
   getProjectBySlug,
@@ -48,6 +49,7 @@ export default async function CaseStudyPage({
   const categories = project.category.map((c) => t(`categories.${c}`));
 
   return (
+    <>
     <main
       id="content"
       className="page-x min-h-svh pb-28 pt-[calc(var(--topbar-h)+3rem)]"
@@ -151,5 +153,7 @@ export default async function CaseStudyPage({
         </Link>
       )}
     </main>
+    <Footer />
+    </>
   );
 }

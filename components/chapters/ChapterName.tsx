@@ -1,7 +1,6 @@
 import { useTranslations } from "next-intl";
 import { Reveal } from "@/components/ui/Reveal";
 import { LogoMark } from "@/components/hero/LogoMark";
-import { OriginFlow } from "./OriginFlow";
 import { OriginWordmark } from "./OriginWordmark";
 
 /**
@@ -10,14 +9,16 @@ import { OriginWordmark } from "./OriginWordmark";
  * founding pillars (social/health/finance — the WHY, distinct from the seven
  * service pillars), and a purpose: to build what doesn't exist yet.
  *
- * The five beats (build-spec S8.3) are SCRUBBED on the house runway pattern
- * (OriginFlow): the copy blocks scroll over one sticky liquid stage while the
- * same 48 droplets play the story — two masses drift together, fuse into the
- * EXACT mark (+ the three founding-pillar labels), hold breathing under the
- * purpose line, multiply outward as the ecosystem echo, then drain while the
- * particle wordmark assembles. Copy is server-rendered (RSC) for SEO; the
- * static path (reduced motion / "none" tier) collapses the runway to the
- * plain column with the static mark. Anchor id stays `name`.
+ * The five beats (build-spec S8.3) are SCRUBBED on the PAGE fluid (PageStage's
+ * origin scene): the copy blocks scroll over the one sticky liquid stage while
+ * the same 48 droplets play the story — two masses drift together, fuse into
+ * the EXACT mark (+ the three founding-pillar labels, hosted by PageStage),
+ * hold breathing under the purpose line, multiply outward as the ecosystem
+ * echo, then drain while the particle wordmark assembles. The
+ * `.origin-journey` div is the scene's measurement anchor. Copy is
+ * server-rendered (RSC) for SEO; the static path (reduced motion / "none"
+ * tier) collapses the runway to the plain column with the static mark.
+ * Anchor id stays `name`.
  */
 export function ChapterName() {
   const t = useTranslations("name");
@@ -28,7 +29,7 @@ export function ChapterName() {
     <section
       id="name"
       data-chapter
-      className="relative border-t border-paper-faint"
+      className="relative"
     >
       <div className="page-x pt-28 md:pt-40">
         <Reveal inView as="p" className="chapter-label">
@@ -36,7 +37,7 @@ export function ChapterName() {
         </Reveal>
       </div>
 
-      <OriginFlow pillars={pillars}>
+      <div className="origin-journey">
         {/* Beat 1 — Two brothers: a quiet opening; the two masses drift in */}
         <div className="origin-beat page-x">
           <Reveal inView>
@@ -89,7 +90,7 @@ export function ChapterName() {
             <p className="font-poetic origin-grace">{t("graceNote")}</p>
           </Reveal>
         </div>
-      </OriginFlow>
+      </div>
 
       {/* Manifesto coda — tight sequence, after the resolution */}
       <div className="manifesto page-x mt-24 pb-28 md:mt-32 md:pb-40">

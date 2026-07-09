@@ -19,7 +19,7 @@ export function ChapterServices() {
     <section
       id="services"
       data-chapter
-      className="relative border-t border-paper-faint"
+      className="relative"
     >
       <div className="page-x py-24 md:py-32">
         <Reveal inView as="p" className="chapter-label">

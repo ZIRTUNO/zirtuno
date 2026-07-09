@@ -17,13 +17,24 @@ import {
   smooth01,
 } from "@/lib/webgl/field-drivers";
 import { makeConductor } from "@/lib/webgl/conductor.mjs";
-import type { SceneChannels, SceneGeom } from "@/lib/webgl/scenes/types";
+import type {
+  SceneChannels,
+  SceneGeom,
+  SceneModule,
+} from "@/lib/webgl/scenes/types";
 import {
   makeSiteScene,
   CONV_END,
   GROW_START,
   GROW_SPAN,
 } from "@/lib/webgl/scenes/site";
+import { makeMethodScene } from "@/lib/webgl/scenes/method";
+import {
+  makeOriginScene,
+  PILLAR_ANCHORS,
+  ORIGIN_OY,
+} from "@/lib/webgl/scenes/origin";
+import { makeContactScene, EXHALE_EVENT } from "@/lib/webgl/scenes/contact";
 import { HeroLiquidContext, type HeroLiquid } from "./hero-liquid-context";
 
 // the unified liquid field is client-only (WebGL2) → lazy, no SSR.
@@ -34,37 +45,37 @@ const FieldStage = dynamic(() => import("@/components/field/FieldStage"), {
 export type EcoNode = { name: string; tooltip: string };
 
 /**
- * PageStage (R5-A) — the CONDUCTOR's shell: ONE persistent fluid renderer, one
- * sticky full-viewport canvas, one rAF measurement loop for the whole page.
- * Scenes (lib/webgl/scenes/*) translate measured geometry into channels; the
- * conductor damps them, blends per-droplet targets across scene handoffs,
- * arbitrates the two form slots and packs the one shared field. No GSAP pins,
- * no per-chapter canvases, no handoffs-as-swaps — one liquid, one identity.
+ * PageStage (R5-A) — the CONDUCTOR's shell: ONE persistent fluid renderer for
+ * the ENTIRE page. One sticky full-viewport canvas under every chapter, one
+ * rAF measurement loop, four scenes (site · method · origin · contact) whose
+ * 48 droplets are the SAME 48 droplets end to end — the conductor damps every
+ * channel, blends per-droplet targets across scene handoffs, arbitrates the
+ * two form slots (ownership transfers only through droplet-only states) and
+ * packs the one shared field. No per-chapter canvases, no handoffs-as-swaps.
  *
- * Phase A wraps Hero → Problem → Ecosystem → Services (the LiquidSite span);
- * A3 extends the wrap to every chapter + the footer edge.
- *
- * The ecosystem labels live HERE (in the sticky layer), anchored to the same
- * ECO_NODES math the tendril beads use, and only enter after the organism has
- * resolved. Deterministic layering: canvas z-0 (pointer-events none), copy
- * z-10. Reduced-motion / "none" tier / hero QA stills render no canvas and
- * flag the wrapper `data-liquid="static"` so the chapters' static fallbacks
- * (and the hero's own QA renderers) show instead.
+ * DOM choreography also lives here (in the sticky layer): the ecosystem
+ * orbital labels, the origin founding-pillar labels, and the method progress
+ * thread (--method-flow). Deterministic layering: canvas z-0 (pointer-events
+ * none), copy z-10. Reduced-motion / "none" tier / hero QA stills render no
+ * canvas and flag the wrapper `data-liquid="static"` so every chapter's
+ * static fallback shows instead.
  *
  * QA: ?feco=c freezes the S4 choreography at c ∈ [0,1]; ?fcycle=1 shortens
  * the hero dwell; ?fstate/?fpair/?fcursor/?fflat switch the hero to its
  * deterministic standalone renderers (page canvas off). window.__liquid
- * exposes the site scene's raw channels.
+ * exposes the site scene's raw channels; window.__scenes exposes all four.
  */
 export function PageStage({
   nodes,
   centerLabel,
   ecosystemLabel,
+  pillars,
   children,
 }: {
   nodes: EcoNode[];
   centerLabel: string;
   ecosystemLabel: string;
+  pillars: string[];
   children: ReactNode;
 }) {
   const reduced = useReducedMotion();
@@ -77,16 +88,22 @@ export function PageStage({
   const [heroActive, setHeroActive] = useState(-1);
   const nodeEls = useRef<(HTMLLIElement | null)[]>([]);
   const centerEl = useRef<HTMLSpanElement>(null);
+  const pillarEls = useRef<(HTMLLIElement | null)[]>([]);
   const stageEl = useRef<HTMLElement | null>(null);
   const inViewRef = useRef(true);
   useEffect(() => {
     inViewRef.current = inView;
   }, [inView]);
 
-  const [conductor, scene] = useMemo(() => {
+  const [conductor, scenes] = useMemo(() => {
     // setHeroActive is a stable useState setter — safe to close over here
-    const sc = makeSiteScene({ onHeroActive: setHeroActive });
-    return [makeConductor([sc]), sc] as const;
+    const scs: SceneModule[] = [
+      makeSiteScene({ onHeroActive: setHeroActive }),
+      makeMethodScene(),
+      makeOriginScene(),
+      makeContactScene(),
+    ];
+    return [makeConductor(scs), scs] as const;
   }, []);
   const site = conductor.raw.site;
 
@@ -106,10 +123,15 @@ export function PageStage({
     );
   }, [site]);
 
-  // QA visibility: the site scene's live raw channels (read-only diagnostics)
+  // QA visibility: the live raw channels (read-only diagnostics)
   useEffect(() => {
-    (window as unknown as { __liquid?: SceneChannels }).__liquid = site;
-  }, [site]);
+    const w = window as unknown as {
+      __liquid?: SceneChannels;
+      __scenes?: Record<string, SceneChannels>;
+    };
+    w.__liquid = site;
+    w.__scenes = conductor.raw;
+  }, [site, conductor]);
 
   const enabled = !reduced && !heroQA && (tier === "full" || tier === "lite");
 
@@ -133,7 +155,17 @@ export function PageStage({
     [enabled, heroReady, heroActive, setManual, registerStage],
   );
 
-  // label geometry: the same ECO_NODES math as the tendril beads
+  // the exhale gesture (ContactForm dispatches on submit) → the contact scene
+  useEffect(() => {
+    const onExhale = () => {
+      conductor.raw.contact.exhaleAt = performance.now();
+    };
+    window.addEventListener(EXHALE_EVENT, onExhale);
+    return () => window.removeEventListener(EXHALE_EVENT, onExhale);
+  }, [conductor]);
+
+  // label geometry: eco nodes (ECO_NODES math) + origin founding pillars
+  // (fixed anchors beside the mark's lobes), both aspect-corrected
   useEffect(() => {
     const layer = layerRef.current;
     if (!layer) return;
@@ -147,14 +179,20 @@ export function PageStage({
         el.style.left = `${(((p.x - 0.5) / aspect + 0.5) * 100).toFixed(2)}%`;
         el.style.top = `${((1 - p.y) * 100).toFixed(2)}%`;
       });
+      pillarEls.current.forEach((el, i) => {
+        if (!el) return;
+        const a = PILLAR_ANCHORS[i % PILLAR_ANCHORS.length];
+        el.style.left = `${((a.dx / aspect + 0.5) * 100).toFixed(2)}%`;
+        el.style.top = `${((1 - (0.5 + ORIGIN_OY + a.dy)) * 100).toFixed(2)}%`;
+      });
     };
     layout();
     const ro = new ResizeObserver(layout);
     ro.observe(layer);
     return () => ro.disconnect();
-  }, [nodes.length]);
+  }, [nodes.length, pillars.length]);
 
-  // ── the ONE measurement loop (channels + labels + hero staging + velocity) ──
+  // ── the ONE measurement loop (all scenes' channels + DOM choreography) ─────
   useEffect(() => {
     if (tier === null) return; // wait for the tier probe (static path included)
     const wrap = wrapRef.current;
@@ -162,7 +200,7 @@ export function PageStage({
 
     let lastG = -1;
     let lastS = -1;
-    const applyLabels = (grow: number, svcPos: number) => {
+    const applyEcoLabels = (grow: number, svcPos: number) => {
       if (Math.abs(grow - lastG) < 0.002 && Math.abs(svcPos - lastS) < 0.002)
         return;
       lastG = grow;
@@ -179,6 +217,25 @@ export function PageStage({
           smooth01((grow - 0.1) / 0.35) * fade,
         );
     };
+    let lastP = -1;
+    const applyOriginLabels = (p: number) => {
+      if (Math.abs(p - lastP) < 0.002) return;
+      lastP = p;
+      // the three labels arrive staggered as the mark resolves, leave at the end
+      const gone = 1 - smooth01((p - 0.84) / 0.1);
+      pillarEls.current.forEach((el, i) => {
+        if (!el) return;
+        const e = smooth01((p - (0.3 + i * 0.04)) / 0.09) * gone;
+        el.style.opacity = String(e);
+        el.style.transform = `translate(-50%, -50%) translateY(${((1 - e) * 8).toFixed(1)}px)`;
+      });
+    };
+    let lastFlow = -1;
+    const applyMethodFlow = (flow: number) => {
+      if (Math.abs(flow - lastFlow) < 0.004) return;
+      lastFlow = flow;
+      wrap.style.setProperty("--method-flow", flow.toFixed(4));
+    };
 
     // static paths / deterministic QA hold
     if (!enabled || fEco !== null) {
@@ -194,25 +251,34 @@ export function PageStage({
       site.pairM = 0;
       site.exit = 0;
       conductor.input.vel = 0;
-      applyLabels(site.grow, 0);
+      applyEcoLabels(site.grow, 0);
+      wrap.style.setProperty("--method-flow", "1"); // static thread reads full
       return;
     }
 
     // scene-anchor element caches (queried once — the DOM is stable post-
-    // hydration, exactly like LiquidSite before this)
-    const anchorEls = new Map<string, HTMLElement | null>();
-    for (const [key, sel] of Object.entries(scene.anchors ?? {}))
-      anchorEls.set(key, sel === "@wrap" ? wrap : document.querySelector(sel));
-    const listEls = new Map<string, HTMLElement[]>();
-    for (const [key, sel] of Object.entries(scene.lists ?? {}))
-      listEls.set(key, Array.from(wrap.querySelectorAll<HTMLElement>(sel)));
-    const geom: SceneGeom = {
-      vh: 0,
-      vw: 0,
-      scrollY: 0,
-      rect: (key) => anchorEls.get(key)?.getBoundingClientRect() ?? null,
-      list: (key) => (listEls.get(key) ?? []).map((el) => el.getBoundingClientRect()),
-    };
+    // hydration; every chapter renders inside this wrapper)
+    const geoms = scenes.map((sc) => {
+      const anchorEls = new Map<string, HTMLElement | null>();
+      for (const [key, sel] of Object.entries(sc.anchors ?? {}))
+        anchorEls.set(key, document.querySelector(sel));
+      const listEls = new Map<string, HTMLElement[]>();
+      for (const [key, sel] of Object.entries(sc.lists ?? {}))
+        listEls.set(key, Array.from(wrap.querySelectorAll<HTMLElement>(sel)));
+      const g: SceneGeom = {
+        vh: 0,
+        vw: 0,
+        scrollY: 0,
+        rect: (key) => anchorEls.get(key)?.getBoundingClientRect() ?? null,
+        list: (key) =>
+          (listEls.get(key) ?? []).map((el) => el.getBoundingClientRect()),
+      };
+      return g;
+    });
+    const methodPhases = Math.max(
+      wrap.querySelectorAll("#method .method-phase").length - 1,
+      1,
+    );
 
     // gooey cursor + autocycle hover-pause: the WHOLE hero section is the
     // pointer surface (the liquid has no interior edge to clip against)
@@ -273,13 +339,19 @@ export function PageStage({
         site.heroScale = Math.min(r.width, r.height) / md;
       }
 
-      // the scene's own geometry → channels (pure math, reads only)
-      geom.vh = vh;
-      geom.vw = vw;
-      geom.scrollY = y;
-      scene.read?.(geom, site);
+      // every scene's geometry → channels (pure math, reads only)
+      for (let si = 0; si < scenes.length; si++) {
+        const g = geoms[si];
+        g.vh = vh;
+        g.vw = vw;
+        g.scrollY = y;
+        scenes[si].read?.(g, conductor.raw[scenes[si].id]);
+      }
 
-      applyLabels(site.grow, site.svcPos);
+      // DOM choreography (writes AFTER all reads — no layout thrash)
+      applyEcoLabels(site.grow, site.svcPos);
+      applyOriginLabels(conductor.raw.origin.p);
+      applyMethodFlow(clamp01(conductor.raw.method.u / methodPhases));
     };
     update();
     return () => {
@@ -290,7 +362,7 @@ export function PageStage({
         heroSec.removeEventListener("pointerleave", onLeave);
       }
     };
-  }, [enabled, tier, fEco, conductor, scene, site, wrapRef]);
+  }, [enabled, tier, fEco, conductor, scenes, site, wrapRef]);
 
   return (
     <HeroLiquidContext.Provider value={heroCtx}>
@@ -326,6 +398,21 @@ export function PageStage({
               >
                 <span className="organism-node-name">{n.name}</span>
                 <span className="organism-node-cap">{n.tooltip}</span>
+              </li>
+            ))}
+          </ul>
+          {/* decorative founding-pillar labels (S8 beat 2) — the accessible
+              pillar line lives in the beat-2 copy block (static path) */}
+          <ul className="origin-pillar-labels" aria-hidden="true">
+            {pillars.map((p, i) => (
+              <li
+                key={p}
+                className="origin-pillar-label"
+                ref={(el) => {
+                  pillarEls.current[i] = el;
+                }}
+              >
+                {p}
               </li>
             ))}
           </ul>

@@ -3,6 +3,7 @@ import { setRequestLocale, getTranslations } from "next-intl/server";
 import { Link, routing } from "@/lib/i18n/config";
 import { cn } from "@/lib/utils";
 import { ProjectCard } from "@/components/chapters/ProjectCard";
+import { Footer } from "@/components/chrome/Footer";
 import { getProjectsByCategory } from "@/lib/content/work";
 import { PROJECT_CATEGORIES } from "@/lib/sanity/types";
 
@@ -36,6 +37,7 @@ export default async function WorkPage({
   const active = category ?? "all";
 
   return (
+    <>
     <main
       id="content"
       className="page-x min-h-svh pb-28 pt-[calc(var(--topbar-h)+3rem)]"
@@ -78,5 +80,7 @@ export default async function WorkPage({
         </div>
       )}
     </main>
+    <Footer />
+    </>
   );
 }

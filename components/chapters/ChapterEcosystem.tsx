@@ -21,7 +21,7 @@ export function ChapterEcosystem() {
     <section
       id="ecosystem"
       data-chapter
-      className="relative border-t border-paper-faint"
+      className="relative"
     >
       <div className="page-x pt-24 pb-6 md:pt-32 md:pb-10">
         <Reveal inView as="p" className="chapter-label">

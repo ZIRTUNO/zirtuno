@@ -21,7 +21,7 @@ export function ChapterProblem() {
   const symptoms = t.raw("symptoms") as Symptom[];
 
   return (
-    <section id="problem" data-chapter className="relative border-t border-paper-faint">
+    <section id="problem" data-chapter className="relative">
       <div className="page-x relative py-24 md:py-32">
         <Reveal inView as="p" className="chapter-label">
           {t("chapterLabel")}

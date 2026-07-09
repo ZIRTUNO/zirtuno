@@ -553,7 +553,8 @@ section[id],
   pointer-events: none;
 }
 
-/* S10 — contact metaball (resting mark; exhales on submit). */
+/* S10 — contact metaball STAGE (R5: the mark renders on the page fluid,
+   anchored to this box; the fallback shows on the static path). */
 .contact-metaball-stage {
   position: relative;
   width: 100%;
@@ -561,20 +562,10 @@ section[id],
   margin: 0 auto 2.5rem;
   aspect-ratio: 1 / 1;
 }
-.contact-metaball-stage > .contact-metaball-fallback,
-.contact-metaball-stage > .contact-metaball-canvas {
+.contact-metaball-stage > .contact-metaball-fallback {
   position: absolute;
   inset: 0;
-}
-.contact-metaball-stage > .contact-metaball-fallback {
   max-width: none;
-  transition: opacity var(--dur-long) var(--ease-arrive);
-}
-.contact-metaball-fallback.is-hidden {
-  opacity: 0;
-}
-.contact-metaball-canvas {
-  pointer-events: none;
 }
 
 /* S8 Beat 5 — wordmark convergence (CPU particles → crisp text crossfade) */
@@ -1058,20 +1049,21 @@ section[id],
   max-width: 22rem;
   color: var(--color-paper-mute);
 }
-/* static path: the runway collapses to the clean numbered list */
-.method-journey[data-liquid="static"] .method-phase {
+/* static path: the runway collapses to the clean numbered list (the
+   data-liquid flag lives on the page-wide PageStage wrapper since R5) */
+.liquid-journey[data-liquid="static"] .method-phase {
   min-height: 0;
   width: auto;
   padding: 1.6rem 0 1.6rem 1.75rem;
   margin-left: 0;
   margin-right: 0;
 }
-.method-journey[data-liquid="static"] .method-runway::before,
-.method-journey[data-liquid="static"] .method-runway::after {
+.liquid-journey[data-liquid="static"] .method-runway::before,
+.liquid-journey[data-liquid="static"] .method-runway::after {
   left: var(--page-padding, 1.5rem);
   right: auto;
 }
-.method-journey[data-liquid="static"] .method-runway::after {
+.liquid-journey[data-liquid="static"] .method-runway::after {
   transform: none; /* the thread reads full — a plain timeline */
 }
 
@@ -1361,13 +1353,14 @@ section[id],
   white-space: nowrap;
   opacity: 0; /* arrives with the mark (imperative) */
 }
-/* static path: collapse the runway to the plain reading column */
-.origin-journey[data-liquid="static"] .origin-beat {
+/* static path: collapse the runway to the plain reading column (the
+   data-liquid flag lives on the page-wide PageStage wrapper since R5) */
+.liquid-journey[data-liquid="static"] .origin-beat {
   min-height: 0;
   padding: 3rem 0 1.5rem;
   justify-content: center;
 }
-.origin-journey[data-liquid="static"] .origin-pillar-labels {
+.liquid-journey[data-liquid="static"] .origin-pillar-labels {
   display: none;
 }
 .founding-pillars {

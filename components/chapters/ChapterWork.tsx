@@ -16,7 +16,7 @@ export async function ChapterWork() {
     <section
       id="work"
       data-chapter
-      className="page-x relative border-t border-paper-faint py-24 md:py-32"
+      className="page-x relative py-24 md:py-32"
     >
       <Reveal inView as="p" className="chapter-label">
         {t("chapterLabel")}

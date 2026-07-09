@@ -18,7 +18,6 @@ import CustomCursor from "@/components/chrome/CustomCursor";
 import LenisProvider from "@/components/motion/LenisProvider";
 import { BreathLayer } from "@/components/ui/BreathLayer";
 import { TopBar } from "@/components/chrome/TopBar";
-import { Footer } from "@/components/chrome/Footer";
 import { EntryVeil } from "@/components/chrome/EntryVeil";
 import "../globals.css";
 
@@ -130,10 +129,11 @@ export default async function LocaleLayout({
             {tCommon("skipToContent")}
           </a>
           <CustomCursor />
+          {/* Footer renders inside each page (R5: on the homepage it lives
+              INSIDE PageStage so the liquid reaches the true page bottom) */}
           <LenisProvider>
             <TopBar />
             {children}
-            <Footer />
           </LenisProvider>
         </NextIntlClientProvider>
       </body>

@@ -26,7 +26,7 @@ export function ChapterContact() {
     <section
       id="contact"
       data-chapter
-      className="page-x relative border-t border-paper-faint py-24 md:py-32"
+      className="page-x relative py-24 md:py-32"
     >
       <div className="mx-auto max-w-2xl text-center">
         <ContactMetaball />

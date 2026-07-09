@@ -201,7 +201,6 @@ export function makeSiteScene(cbs: SiteCallbacks = {}): SceneModule {
       hero: "#hero",
       runway: "[data-organism]",
       services: "#services",
-      wrap: "@wrap", // served by the shell from its own wrapper element
     },
     lists: {
       symptoms: "#problem .symptom",
@@ -239,7 +238,18 @@ export function makeSiteScene(cbs: SiteCallbacks = {}): SceneModule {
       // S4 → S5: the organism clears the services HEADLINE (drift + scale
       // start as the section approaches, not when the first pillar arrives)
       const sr = g.rect("services");
-      if (sr) out.svcPos = clamp01((vh * 0.92 - sr.top) / (vh * 0.85));
+      if (sr) {
+        out.svcPos = clamp01((vh * 0.92 - sr.top) / (vh * 0.85));
+        // S5 → S6: the liquid settles away BEFORE the method chapter, so the
+        // handoff never drags visible liquid. The window is the services CTA
+        // zone only — the last pillar keeps its liquid while read. (Anchored
+        // to the services bottom — identical geometry to the old wrap bottom.)
+        out.exit = clamp01(1 - (sr.bottom - vh) / (vh * 0.35));
+        // presence: this scene's grip fades once the services have fully left
+        // (long after the exit drain made everything invisible) — the method
+        // scene takes the weights from here
+        out.on = clamp01((sr.bottom + vh * 0.2) / (vh * 0.8));
+      }
       const pillars = g.list("pillars");
       if (pillars.length >= 2 && out.svcPos > 0.02) {
         // virtual pre-pillar centre gives the organism → pillar-1 melt a runway
@@ -263,11 +273,6 @@ export function makeSiteScene(cbs: SiteCallbacks = {}): SceneModule {
         out.pairM = 0;
       }
 
-      // S5 → S6: the liquid settles away BEFORE the sticky layer unsticks, so
-      // the unstick never drags visible liquid off-screen. The window is the
-      // services CTA zone only — the last pillar keeps its liquid while read.
-      const wr = g.rect("wrap");
-      if (wr) out.exit = clamp01(1 - (wr.bottom - vh) / (vh * 0.35));
     },
 
     presence(ctx: SceneCtx) {

@@ -3,11 +3,11 @@
 /**
  * FieldMorphHero — the hero's DETERMINISTIC still renderer (QA / capture
  * harnesses only). The LIVING hero machine (autocycle melts, gooey cursor,
- * keyboard retargets) moved into the site fluid (lib/webgl/field-drivers
- * `makeSiteDriver` hero segment, hosted by components/field/LiquidSite) so the
- * whole site is ONE liquid; what remains here renders one frozen frame on the
- * hero's own square stage — which keeps the rest-exactness sheets
- * byte-comparable to the reference vectors:
+ * keyboard retargets) lives in the page fluid's hero segment (lib/webgl/
+ * scenes/site, conducted by components/field/PageStage) so the whole site is
+ * ONE liquid; what remains here renders one frozen frame on the hero's own
+ * square stage — which keeps the rest-exactness sheets byte-comparable to the
+ * reference vectors:
  *
  *   ?fstate=N   → [N, N, 1]: a zero-warp EXACT rest form
  *   ?fpair=a-b-m → one §3.3 bridge mid-frame (A melts into B at m)
