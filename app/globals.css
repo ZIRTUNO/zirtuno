@@ -13,11 +13,15 @@
   --color-cyan-glow: #4decff;
   --color-cyan-deep: #00b6cc;
   --color-paper: #f2f0eb;
-  /* secondary/tertiary paper — lifted for readable contrast on black (R4):
-     mute carries body/lead + labels (was 0.5), dim carries captions (was 0.25),
-     faint stays hairline-only for borders/rules. */
-  --color-paper-mute: rgba(242, 240, 235, 0.62);
-  --color-paper-dim: rgba(242, 240, 235, 0.34);
+  /* the secondary→faint ladder (R4.1) — a calmer, clearly-separated hierarchy
+     so muted text RECEDES in steps instead of reading as one flat loud gray:
+       mute = readable secondary (leads, descriptions, poetic accents)
+       soft = quiet mono metadata (capability lists, counters, fine print)
+       dim  = captions / input placeholders
+       faint = hairline borders + rules only */
+  --color-paper-mute: rgba(242, 240, 235, 0.56);
+  --color-paper-soft: rgba(242, 240, 235, 0.42);
+  --color-paper-dim: rgba(242, 240, 235, 0.3);
   --color-paper-faint: rgba(242, 240, 235, 0.1);
   --color-warn: #ff6b5c; /* form errors only */
 
@@ -953,12 +957,21 @@ section[id],
 .pillar-block dd {
   color: var(--color-paper);
 }
+/* the capability list — quiet mono fine-print with cyan-tinted separators so
+   it reads as an organised set, not a flat gray run-on */
 .pillar-caps {
   margin-top: 1.5rem;
+  max-width: 42rem;
   font-family: var(--font-mono);
   font-size: var(--text-mono-sm);
-  letter-spacing: 0.06em;
-  color: var(--color-paper-mute);
+  letter-spacing: 0.04em;
+  line-height: 1.9;
+  color: var(--color-paper-soft);
+}
+.pillar-cap:not(:last-child)::after {
+  content: "·";
+  margin: 0 0.55em;
+  color: var(--color-cyan-deep);
 }
 
 @media (max-width: 640px) {
@@ -1142,7 +1155,7 @@ section[id],
   font-family: var(--font-mono);
   font-size: var(--text-mono-sm);
   letter-spacing: 0.06em;
-  color: var(--color-paper-mute);
+  color: var(--color-paper-soft);
 }
 .project-outcome {
   margin-top: 1rem;

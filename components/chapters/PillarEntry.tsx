@@ -46,7 +46,13 @@ export function PillarEntry({
         </div>
       </dl>
 
-      <p className="pillar-caps">{caps.join(" · ")}</p>
+      <p className="pillar-caps">
+        {caps.map((c) => (
+          <span key={c} className="pillar-cap">
+            {c}
+          </span>
+        ))}
+      </p>
 
       <div className="mt-5">
         <CtaButton
