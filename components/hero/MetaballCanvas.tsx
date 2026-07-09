@@ -6,14 +6,14 @@ import dynamic from "next/dynamic";
 import { useReducedMotion } from "@/lib/animation/reduced-motion";
 import { detectFieldTier, type FieldTier } from "@/lib/webgl/field-tier";
 import { STATE_COUNT } from "@/lib/webgl/symbols";
-import { HeroLiquidContext } from "@/components/field/LiquidSite";
+import { HeroLiquidContext } from "@/components/field/hero-liquid-context";
 import { LogoMark } from "./LogoMark";
 import { PillarIndicator } from "./PillarIndicator";
 import { PerfOverlay } from "./PerfOverlay";
 
-// The live hero is rendered by the SITE fluid (components/field/LiquidSite —
-// one persistent canvas from the hero to the services, so the liquid has no
-// interior edge and never scrolls away as a block). What remains here:
+// The live hero is rendered by the PAGE fluid (components/field/PageStage —
+// one persistent conductor canvas, so the liquid has no interior edge and
+// never scrolls away as a block). What remains here:
 //   FieldMorphHero  = the deterministic frozen QA stills (?fstate/?fpair/?fcursor).
 //   SdfGlassField   = the reduced-motion static glass mark.
 //   MetaballField   = the bare metaball layer (?fflat=1 debug).
@@ -27,13 +27,13 @@ const STATES = STATE_COUNT; // 0 = mark, 1-7 = the service pillars (lib/webgl/sy
 /**
  * Hero metaball shell (S2.3) — the STAGE: layout box, static fallback, a11y
  * (keyboard steps + aria-live), pillar indicator and the QA still renderers.
- * The living liquid itself is the site fluid's hero segment; this shell
- * registers its box with LiquidSite (the form is staged exactly over it) and
+ * The living liquid itself is the hero segment of the page fluid; this shell
+ * registers its box with PageStage (the form is staged exactly over it) and
  * forwards keyboard retargets through HeroLiquidContext.
  *
  * QA params: ?fstate=N (one rest form) · ?fpair=a-b-m (one frozen bridge frame)
  * · ?fcursor=x,y (a merged cursor droplet on the still) · ?fflat=1 (bare flat
- * field) · ?fcycle=1 (short dwell — handled by LiquidSite) · ?ftier=….
+ * field) · ?fcycle=1 (short dwell — handled by PageStage) · ?ftier=….
  */
 export function MetaballCanvas({ pillarNames }: { pillarNames: string[] }) {
   const reduced = useReducedMotion();
