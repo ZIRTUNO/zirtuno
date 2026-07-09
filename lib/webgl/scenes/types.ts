@@ -126,8 +126,16 @@ export type Conductor = {
   driver: FieldDriver;
   /** Raw channel storage, keyed by scene id — the shell writes here. */
   raw: Record<string, SceneChannels>;
-  /** Global raw inputs (damped internally). */
-  input: { vel: number };
+  /** Global raw inputs: scroll velocity (damped internally) + the page-wide
+   *  pointer in field uv (the Phase-B cursor force field; pon = 0/1). */
+  input: {
+    vel: number;
+    px: number;
+    py: number;
+    pvx: number;
+    pvy: number;
+    pon: number;
+  };
   /** The merged light score after each frame (stable object, mutated). */
   score: LightScore;
   /** Diagnostics: arbiter violations, current holder, energy, active count. */

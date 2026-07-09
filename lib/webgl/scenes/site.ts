@@ -496,6 +496,8 @@ export function makeSiteScene(cbs: SiteCallbacks = {}): SceneModule {
       hr *= hScale;
 
       // journey-side target: clusters → dispersed (S3) → the eco field
+      let bindJ = 0; // journey-side bind (exactness of the current regime)
+      let clusJ = -1; // cohesion group (the fracture's unstable chunks)
       const clu = Tclu[i],
         dis = Tdis[i],
         eco = Teco[i];
@@ -507,6 +509,12 @@ export function makeSiteScene(cbs: SiteCallbacks = {}): SceneModule {
       const hx2 = 0.5 + jOx + (bb[0] - 0.5) * jScale;
       const hy2 = 0.5 + jOy + (bb[1] - 0.5) * jScale;
       const lt = smooth01((convP - (0.16 + 0.3 * dis.key)) / 0.5);
+      // landed at the converge home = exact under the form; loose = free liquid
+      bindJ = 1 - lt;
+      // the fracture's unstable CHUNKS cohere like liquid until the field
+      // fully disperses / travels — the same anchor pick as clusterTargets
+      if (TR < 0.6 && F < 0.85 && lt > 0.5)
+        clusJ = Math.min((hash(i, 11) * 4) | 0, 3);
       const drift = PHYS.DRIFT * lt;
       let jx = hx2 + (tx - hx2) * lt + drift * Math.sin(t * dis.f1 + i * 1.7);
       let jy =
@@ -531,6 +539,8 @@ export function makeSiteScene(cbs: SiteCallbacks = {}): SceneModule {
         jx = 0.5 + jOx + (aa[0] + (bb2[0] - aa[0]) * tp - 0.5) * jScale;
         jy = 0.5 + jOy + (aa[1] + (bb2[1] - aa[1]) * tp - 0.5) * jScale;
         jr = (aa[2] + (bb2[2] - aa[2]) * trr) * rEnvM * jScale;
+        bindJ = 1; // the §3.3 bridge is analytic-exact — physics hands off
+        clusJ = -1;
       } else if (i < 40) {
         // tendrils: the same droplets feed the capabilities once resolved
         const nIdx = i % 10;
@@ -560,6 +570,9 @@ export function makeSiteScene(cbs: SiteCallbacks = {}): SceneModule {
           jx += (txp - jx) * e;
           jy += (typ - jy) * e;
           jr = jr * (1 - e) + trp * e;
+          // tendril beads march exact paths — mostly protected from forces
+          bindJ = Math.max(bindJ, e * 0.9);
+          if (e > 0.3) clusJ = -1;
         }
       }
 
@@ -568,9 +581,11 @@ export function makeSiteScene(cbs: SiteCallbacks = {}): SceneModule {
       out.x = hx + (jx - hx) * li;
       out.y = hy + (jy - hy) * li;
       out.r = (hr + (jr - hr) * li) * EXW;
-      // physics attributes (consumed from Phase B; neutral in Phase A)
-      out.bind = 0;
-      out.cluster = -1;
+      // physics attributes (R5-B): the hero side is analytic-exact (rest
+      // footprint / §3.3 bridge); looseness grows through the pour and lands
+      // at the journey regime's own exactness
+      out.bind = 1 - li * (1 - bindJ);
+      out.cluster = li > 0.6 ? clusJ : -1;
       out.z = 0;
     },
 

@@ -113,6 +113,26 @@ npm run endpoints       # re-pack the 48-droplet morph endpoints from the SVGs
   sheets stay byte-exact); `window.__scenes` exposes the live channels;
   diagnostics: `scripts/capture-transition-diagnostics.mjs` (six
   section-anchored ranges, filmstrips) → `captures/diagnostics-after/`.
+- **THE LIQUID HAS REAL PHYSICS (R5-B, fluid-core):** between the scene
+  targets and the render sits `lib/webgl/fluid-core.mjs` — velocity state,
+  fixed 8 ms substeps, a near-critically-damped spring per droplet (stiffness
+  from the SAME TAUP mass identity: heavy lags, now with genuine momentum),
+  soft-core pairwise REPULSION (loose liquid reads volumetric), cluster
+  COHESION toward group centroids (the fracture's chunks hold together like
+  liquid, the Método's three Construction masses ACCRETE by attraction, the
+  Origin's brother-masses travel as two coherent bodies), divergence-free
+  CURL drift (three analytic gyres replace sinusoidal wander for free
+  droplets), a page-wide CURSOR FORCE FIELD (radial push + vortex +
+  hand-drag, fine pointers only), and PINCH-OFF satellites (a straining free
+  droplet sheds 1–2 spray micro-droplets with inherited velocity, TTL
+  shrink-out, 14-droplet pool; ball budget 63 → 80). THE BIND CONTRACT keeps
+  the signed-off choreography exact: scenes emit bind ∈ [0,1] per droplet;
+  forces scale by (1−bind) and the output blends toward a byte-exact replica
+  of the legacy low-pass — at bind = 1 (§3.3 melts, resting footprints, the
+  exact mark) motion is IDENTICAL to pre-physics (machine-checked parity in
+  `verify-conductor.mjs`), at bind = 0 (pours, scatters, echoes) the liquid
+  is fully alive. `?fphys=0` routes the legacy integrator (A/B + escape
+  hatch). Feel constants: the FLUID table in fluid-core.mjs.
 - **S8 The Origin is the five scrubbed beats (R2, build-spec S8.3)** on the
   page fluid (`lib/webgl/scenes/origin` since R5-A):
   two brother-masses drift in from opposite sides, fuse into the EXACT mark

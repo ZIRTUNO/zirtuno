@@ -34,9 +34,11 @@ const mkScene = (id, x, form, opts = {}) => ({
   channels: { p: 0 },
   presence: (ctx) => ctx.ch.p,
   target: (i, ctx, out) => {
-    out.x = x;
-    out.y = 0.5;
-    out.r = 0.03 * ctx.ch.p;
+    // realistic composition: droplets spread on a small disc (scenes never
+    // stack 48 live droplets on one point — footprints distribute them)
+    out.x = x + 0.1 * Math.cos(i * 2.4) * (0.3 + 0.7 * ((i * 7) % 10) / 10);
+    out.y = 0.5 + 0.1 * Math.sin(i * 2.4) * (0.3 + 0.7 * ((i * 7) % 10) / 10);
+    out.r = 0.012 * ctx.ch.p;
     out.bind = 0;
     out.cluster = -1;
     out.z = 0;
@@ -112,7 +114,9 @@ const finiteFrame = (f) =>
     if (c.stats.holderId && !granted.endsWith(c.stats.holderId))
       granted += c.stats.holderId;
   }
-  ok(maxDelta < 0.02, `continuity: max per-frame droplet delta ${maxDelta.toFixed(4)} ≥ 0.02`);
+  // no-teleport ceiling: physics moves faster than the old filter (velocity-
+  // limited glide ≤ V_MAX), but a step input must never render as a jump
+  ok(maxDelta < 0.04, `continuity: max per-frame droplet delta ${maxDelta.toFixed(4)} ≥ 0.04`);
   ok(granted === "AB", `arbiter: holder sequence "${granted}" (want "AB")`);
   ok(!switchedWhileHot, "arbiter: a texture slot index changed while rendering");
   ok(c.stats.violations === 0, `arbiter: ${c.stats.violations} violations on a correct script`);
@@ -191,6 +195,124 @@ const finiteFrame = (f) =>
     ok(finiteFrame(f), `gap frame ${fr} not finite`);
     if (fr === 119) ok(f.fa < EPS_FORM, `gap: form still rendering (fa=${f.fa})`);
   }
+}
+
+// ═══ PHYSICS (R5-B: fluid-core through the conductor) ═════════════════════════
+
+// a scene whose droplets sit at (x0,y0) then JUMP to (x1,y1) at a scripted
+// frame, with a controllable bind — the physics test fixture
+const mkJumpScene = (bind) => ({
+  id: "J",
+  forms: [0],
+  channels: { p: 1, jump: 0 },
+  damp: { p: false, jump: false },
+  presence: (ctx) => ctx.ch.p,
+  target: (i, ctx, out) => {
+    out.x = ctx.ch.jump ? 0.7 : 0.3;
+    out.y = 0.5;
+    // ONE live droplet — free-droplet dynamics in isolation (48 coincident
+    // live droplets would rightly repel into an equilibrium ring)
+    out.r = i === 0 ? 0.02 : 0;
+    out.bind = bind;
+    out.cluster = -1;
+    out.z = 0;
+  },
+  form: () => null,
+});
+
+// ── P1: settle — a free droplet reaches a jumped target fast, no ringing ────
+{
+  const c = makeConductor([mkJumpScene(0)]);
+  let t = 0;
+  for (let fr = 0; fr < 30; fr++) {
+    t += 16.7;
+    c.driver.frame(t, buf, 1.5); // settle at the initial target
+  }
+  c.raw.J.jump = 1;
+  let settledAt = -1;
+  let overshoot = 0;
+  for (let fr = 0; fr < 180; fr++) {
+    t += 16.7;
+    const f = c.driver.frame(t, buf, 1.5);
+    const x = buf[0]; // droplet 0 (first packed)
+    if (x > 0.7) overshoot = Math.max(overshoot, x - 0.7);
+    if (settledAt < 0 && Math.abs(x - 0.7) < 0.004) settledAt = fr * 16.7;
+    ok(finiteFrame(f), `settle frame ${fr} not finite`);
+  }
+  ok(
+    settledAt >= 0 && settledAt < 1500,
+    `settle: free droplet took ${settledAt}ms (want < 1500)`,
+  );
+  // a whisper of slosh on a hard 0.4-uv jump is liquid; ringing is not
+  ok(overshoot < 0.025, `settle: overshoot ${overshoot.toFixed(4)} ≥ 0.025 (ringing)`);
+}
+
+// ── P2: bind=1 parity — bound droplets move EXACTLY like the legacy path ────
+{
+  const cPhys = makeConductor([mkJumpScene(1)]);
+  const cLeg = makeConductor([mkJumpScene(1)], { physics: false });
+  const buf2 = new Float32Array(SDF_BALL_MAX * 3);
+  let t = 0;
+  let maxDiff = 0;
+  for (let fr = 0; fr < 300; fr++) {
+    t += 16.7;
+    if (fr === 60) {
+      cPhys.raw.J.jump = 1;
+      cLeg.raw.J.jump = 1;
+    }
+    cPhys.driver.frame(t, buf, 1.5);
+    cLeg.driver.frame(t, buf2, 1.5);
+    for (let i = 0; i < 8; i++) {
+      const d = Math.abs(buf[i * 3] - buf2[i * 3]) + Math.abs(buf[i * 3 + 1] - buf2[i * 3 + 1]);
+      if (d > maxDiff) maxDiff = d;
+    }
+  }
+  ok(
+    maxDiff < 1e-5,
+    `bind parity: bound physics diverges from legacy by ${maxDiff.toExponential(2)} (melts would change)`,
+  );
+}
+
+// ── P3: physics stress — random everything, all finite, budget held ─────────
+{
+  const A = mkScene("A", 0.3, 0);
+  const B = mkScene("B", 0.7, 3);
+  // free-liquid targets so all forces + spawning paths run
+  A.target = (i, ctx, out) => {
+    out.x = 0.2 + 0.5 * ((i * 37) % 100) / 100;
+    out.y = 0.2 + 0.6 * ((i * 61) % 100) / 100;
+    out.r = 0.02;
+    out.bind = 0;
+    out.cluster = i % 4;
+    out.z = 0;
+  };
+  const c = makeConductor([A, B]);
+  let rngState = 987654;
+  const rng = () => {
+    rngState = (rngState * 1103515245 + 12345) & 0x7fffffff;
+    return rngState / 0x7fffffff;
+  };
+  let t = 0;
+  let allFinite = true;
+  let maxCount = 0;
+  for (let fr = 0; fr < 10000; fr++) {
+    c.raw.A.p = rng();
+    c.raw.B.p = rng();
+    c.input.vel = (rng() - 0.5) * 12;
+    c.input.px = rng();
+    c.input.py = rng();
+    c.input.pvx = (rng() - 0.5) * 2;
+    c.input.pvy = (rng() - 0.5) * 2;
+    c.input.pon = rng() > 0.3 ? 1 : 0;
+    t += rng() * 120;
+    const f = c.driver.frame(t, buf, 0.7 + rng() * 1.6);
+    if (!finiteFrame(f)) allFinite = false;
+    for (let i = 0; i < f.count * 3; i++)
+      if (!Number.isFinite(buf[i])) allFinite = false;
+    if (f.count > maxCount) maxCount = f.count;
+  }
+  ok(allFinite, "physics stress: non-finite output");
+  ok(maxCount <= SDF_BALL_MAX, `physics stress: count ${maxCount} > ${SDF_BALL_MAX}`);
 }
 
 console.log(

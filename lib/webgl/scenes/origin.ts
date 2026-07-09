@@ -150,6 +150,7 @@ export function makeOriginScene(): SceneModule {
       let r = b[2] * ORIGIN_SCALE * (0.6 + 0.4 * VARY[i]) * drain;
       // beat 4 — half the droplets are REBORN off the mark as the echo
       let loose = 1 - lt2;
+      let echo = 0;
       if (i % 2 === 0 && q4 > 0.001) {
         const q4i = smooth01((q4 - 0.5 * hash(i, 59)) / 0.5);
         if (q4i > 0.001) {
@@ -157,6 +158,7 @@ export function makeOriginScene(): SceneModule {
           y += (s.oy - y) * q4i;
           r = Math.max(r, 0.016 * VARY[i] * q4i);
           loose = Math.max(loose, q4i);
+          echo = q4i;
         }
       }
       // resolution: everything sinks and drains
@@ -169,8 +171,11 @@ export function makeOriginScene(): SceneModule {
       out.x = x;
       out.y = y;
       out.r = r;
-      out.bind = 0;
-      out.cluster = -1;
+      // physics attributes (R5-B): the two brothers travel as COHERENT liquid
+      // bodies (side clusters + low bind), fuse into exactness (bind → 1 with
+      // lt2), and the echo breaks free again
+      out.bind = clamp01(lt2 * (1 - echo));
+      out.cluster = lt2 < 0.7 && echo < 0.3 ? i % 2 : -1;
       out.z = 0;
     },
 

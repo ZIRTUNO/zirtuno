@@ -103,7 +103,11 @@ export function PageStage({
       makeOriginScene(),
       makeContactScene(),
     ];
-    return [makeConductor(scs), scs] as const;
+    // ?fphys=0 routes the legacy low-pass integrator (A/B + escape hatch)
+    const physics =
+      typeof window === "undefined" ||
+      new URLSearchParams(window.location.search).get("fphys") !== "0";
+    return [makeConductor(scs, { physics }), scs] as const;
   }, []);
   const site = conductor.raw.site;
 
@@ -310,6 +314,37 @@ export function PageStage({
       heroSec.addEventListener("pointerleave", onLeave);
     }
 
+    // page-wide pointer → the cursor force field (R5-B; fine pointers only).
+    // Field uv + velocity; velocity decays in the rAF loop so a resting hand
+    // stops dragging the liquid.
+    let lastPT = 0;
+    let lastPX = 0.5;
+    let lastPY = 0.5;
+    const onPageMove = (e: PointerEvent) => {
+      const md = Math.min(window.innerWidth, window.innerHeight);
+      const px = 0.5 + (e.clientX - window.innerWidth / 2) / md;
+      const py = 0.5 - (e.clientY - window.innerHeight / 2) / md;
+      const now = performance.now();
+      if (lastPT > 0) {
+        const dts = Math.min(Math.max((now - lastPT) / 1000, 1e-3), 0.1);
+        conductor.input.pvx = (px - lastPX) / dts;
+        conductor.input.pvy = (py - lastPY) / dts;
+      }
+      lastPT = now;
+      lastPX = px;
+      lastPY = py;
+      conductor.input.px = px;
+      conductor.input.py = py;
+      conductor.input.pon = 1;
+    };
+    const onPageLeave = () => {
+      conductor.input.pon = 0;
+    };
+    if (canHover) {
+      window.addEventListener("pointermove", onPageMove, { passive: true });
+      document.documentElement.addEventListener("pointerleave", onPageLeave);
+    }
+
     let raf = 0;
     let lastY = window.scrollY;
     let lastNow = performance.now();
@@ -328,6 +363,10 @@ export function PageStage({
       lastNow = now;
 
       site.heroPlay = inViewRef.current ? 1 : 0;
+
+      // pointer velocity decays between move events (a resting hand lets go)
+      conductor.input.pvx *= 0.82;
+      conductor.input.pvy *= 0.82;
 
       // hero staging: the liquid form sits exactly over the stage box and
       // rides with it — while the POUR sheds its droplets into the fixed field
@@ -360,6 +399,13 @@ export function PageStage({
         heroSec.removeEventListener("pointerenter", onEnter);
         heroSec.removeEventListener("pointermove", onMove);
         heroSec.removeEventListener("pointerleave", onLeave);
+      }
+      if (canHover) {
+        window.removeEventListener("pointermove", onPageMove);
+        document.documentElement.removeEventListener(
+          "pointerleave",
+          onPageLeave,
+        );
       }
     };
   }, [enabled, tier, fEco, conductor, scenes, site, wrapRef]);

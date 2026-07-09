@@ -49,6 +49,10 @@ export function makeMethodScene(): SceneModule {
   let mScale = ORGANISM_SCALE;
   // per-state wander activity (fragmented = restless … integrated = still)
   const ACT = [1, 0.3, 0.5, 0.12, 0.35];
+  // per-state physics bind (R5-B): the cloud is FREE liquid, the lattice is
+  // mostly held (order taking hold), the masses stay loose enough to ACCRETE
+  // by cohesion, the mark is exact, the orbits drift a little
+  const BINDS = [0, 0.7, 0.3, 1, 0.5];
 
   const put = (s: number, i: number, x: number, y: number, r: number) => {
     const j = (s * N + i) * 3;
@@ -268,8 +272,11 @@ export function makeMethodScene(): SceneModule {
       out.x = x;
       out.y = y;
       out.r = r;
-      out.bind = 0;
-      out.cluster = -1;
+      // physics attributes (R5-B): per-state bind; Construction's three
+      // masses share cluster ids so cohesion makes the accretion REAL
+      out.bind = BINDS[k0] + (BINDS[k1] - BINDS[k0]) * fi;
+      const st = fi > 0.5 ? k1 : k0;
+      out.cluster = st === 2 ? i % 3 : -1;
       out.z = 0;
     },
 
