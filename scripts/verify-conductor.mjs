@@ -273,7 +273,101 @@ const mkJumpScene = (bind) => ({
   );
 }
 
-// ── P3: physics stress — random everything, all finite, budget held ─────────
+// ── P3: bind handoff continuity — neither hidden branch may reappear stale ─
+{
+  const S = {
+    id: "S",
+    forms: [0],
+    channels: { p: 1, x: 0.25, bind: 0 },
+    damp: { p: false, x: false, bind: false },
+    presence: (ctx) => ctx.ch.p,
+    target: (i, ctx, out) => {
+      out.x = ctx.ch.x;
+      out.y = 0.5;
+      out.r = i === 0 ? 0.02 : 0;
+      out.bind = ctx.ch.bind;
+      out.cluster = -1;
+      out.z = 0;
+    },
+    form: () => null,
+    ambient: () => 0,
+    activity: () => 0,
+  };
+  const c = makeConductor([S]);
+  let t = 0;
+  let prev = 0;
+  let bindRiseDelta = 0;
+  let bindFallDelta = 0;
+  for (let fr = 0; fr < 100; fr++) {
+    // Let the free body and the hidden legacy shadow acquire different motion,
+    // then switch both ways. The shown identity must continue from P rather
+    // than reveal whichever branch was previously hidden.
+    if (fr === 20) c.raw.S.x = 0.8;
+    if (fr === 32) c.raw.S.bind = 1;
+    if (fr === 52) c.raw.S.x = 0.2;
+    if (fr === 64) c.raw.S.bind = 0;
+    t += 16.7;
+    c.driver.frame(t, buf, 1.5);
+    const x = buf[0];
+    if (fr > 0) {
+      const d = Math.abs(x - prev);
+      if (fr === 32) bindRiseDelta = d;
+      if (fr === 64) bindFallDelta = d;
+    }
+    prev = x;
+  }
+  ok(
+    bindRiseDelta < 0.04,
+    `bind handoff: free→exact jumped ${bindRiseDelta.toFixed(4)} ≥ 0.04`,
+  );
+  ok(
+    bindFallDelta < 0.04,
+    `bind handoff: exact→free jumped ${bindFallDelta.toFixed(4)} ≥ 0.04`,
+  );
+}
+
+// ── P4: high-refresh interpolation — no freeze/catch-up at 144/165 Hz ──────
+{
+  const makeMotionScene = () => ({
+    id: "M",
+    forms: [0],
+    channels: { p: 1, x: 0.2 },
+    damp: { p: false, x: false },
+    presence: (ctx) => ctx.ch.p,
+    target: (i, ctx, out) => {
+      out.x = ctx.ch.x;
+      out.y = 0.5;
+      out.r = i === 0 ? 0.02 : 0;
+      out.bind = 0;
+      out.cluster = -1;
+      out.z = 0;
+    },
+    form: () => null,
+    ambient: () => 0,
+    activity: () => 0,
+  });
+
+  for (const hz of [144, 165]) {
+    const c = makeConductor([makeMotionScene()]);
+    let t = 0;
+    let prev = 0;
+    let freezes = 0;
+    for (let fr = 0; fr < 500; fr++) {
+      c.raw.M.x = 0.2 + (0.35 * fr) / 499;
+      t += 1000 / hz;
+      c.driver.frame(t, buf, 1.5);
+      const x = buf[0];
+      if (fr > 80 && Math.abs(x - prev) < 1e-7) freezes++;
+      prev = x;
+    }
+    ok(
+      freezes === 0,
+      `high refresh: ${freezes} frozen moving frames at ${hz} Hz`,
+    );
+  }
+}
+
+// ── P5: physics stress — random everything, all finite, budget held ─────────
 {
   const A = mkScene("A", 0.3, 0);
   const B = mkScene("B", 0.7, 3);
