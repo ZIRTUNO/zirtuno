@@ -1,13 +1,16 @@
-# Zirtuno Morph References
+# Zirtuno Morph Reference Assets
 
-This folder contains the seven definitive service morph references.
+This folder contains the seven definitive owner-provided service form
+references. They define the exact SDF rest endpoints; the 48-droplet bridge
+clouds are generated from and registered to these shapes, but do not replace
+them at rest. See `metaball-morph-spec.md` for the runtime contract.
 
 Each category folder keeps the original PNG and its traced SVG endpoint together:
 
 - `original/` keeps the owner-provided source image.
 - `svg/` keeps the transparent cyan vector silhouette.
 - `public/brand/forms/{key}.svg` mirrors the final SVGs for runtime SDF/glass
-  rendering (this references/ folder itself is never deployed).
+  rendering. This `references/` folder itself is never deployed.
 
 Trace settings:
 
@@ -26,4 +29,6 @@ Trace settings:
 | 06 | branding | Branding & Positioning | 06-branding | public/brand/forms/branding.svg |
 | 07 | marketing | Marketing & Growth | 07-marketing | public/brand/forms/marketing.svg |
 
-Use `manifest.json` as the machine-readable map for AI/reference workflows.
+Use `manifest.json` as the machine-readable asset map. After changing or
+regenerating an endpoint, run `npm run endpoints`, `npm run forms:rest`, and
+`npm run forms:melts`; regeneration alone is not visual sign-off.

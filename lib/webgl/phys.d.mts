@@ -31,6 +31,7 @@ export declare const PHYS: {
   readonly AMBIENT_N: number;
   readonly AMBIENT_R: number;
   readonly AMBIENT_R_VAR: number;
+  readonly AMBIENT_Z: number;
 };
 
 export declare const VARY: number[];

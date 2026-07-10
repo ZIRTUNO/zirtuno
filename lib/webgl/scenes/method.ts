@@ -288,6 +288,12 @@ export function makeMethodScene(): SceneModule {
       return 0; // the method stage had no ambient family (parity with pre-R5)
     },
 
+    activity() {
+      // everything here is scroll-scrubbed (the conductor's velocity term
+      // covers motion) or slow (probe sweep, evolution orbits) — 30 Hz-safe
+      return 0;
+    },
+
     extras(ctx: SceneCtx, push) {
       if (probeW > 0.01 && EXW > 0.02 && rInW > 0.02)
         push(probeX, probeY, 0.02 * probeW * EXW * rInW);

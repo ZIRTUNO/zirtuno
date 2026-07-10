@@ -140,6 +140,7 @@ export function makeSiteScene(cbs: SiteCallbacks = {}): SceneModule {
   let hOx = 0;
   let hOy = 0;
   let hScale = 0.5;
+  let actW = 1; // governor activity — fast internal motion demands 60 Hz
   const formOut: FormState = {
     a: 0,
     b: 0,
@@ -471,6 +472,12 @@ export function makeSiteScene(cbs: SiteCallbacks = {}): SceneModule {
 
       // ambient calm — always alive, calmer where a composition must read
       ambW = (1 - 0.5 * smooth01(c) * (1 - SP)) * (1 - 0.35 * SP) * EXW;
+
+      // governor activity (R5-C): the hero melt, the gooey cursor and the
+      // services melt are the scene's FAST clocks — everything else is
+      // scroll-scrubbed (the conductor's velocity term covers it) or slow
+      // enough (wander, tendril march, warp) for the 30 Hz idle floor.
+      actW = Math.max(hPhase === "melt" ? 1 : 0, cursorOn, inSvcMelt ? 1 : 0);
     },
 
     target(i: number, ctx: SceneCtx, out: DropletOut) {
@@ -595,6 +602,10 @@ export function makeSiteScene(cbs: SiteCallbacks = {}): SceneModule {
 
     ambient() {
       return ambW;
+    },
+
+    activity() {
+      return actW;
     },
 
     extras(ctx: SceneCtx, push) {

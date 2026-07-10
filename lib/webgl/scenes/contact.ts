@@ -128,5 +128,11 @@ export function makeContactScene(): SceneModule {
     ambient() {
       return 0; // the contact stage had no ambient family (parity with pre-R5)
     },
+
+    activity() {
+      // the exhale burst is the one fast clock here; the 8 s breath is
+      // 30 Hz-safe
+      return e > 0.02 ? 1 : 0;
+    },
   };
 }

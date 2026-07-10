@@ -74,12 +74,14 @@ export type FormState = {
 };
 
 /** The cinematic score channels (Phase D consumers; merged by the conductor:
- *  veil/flash/vignette = max, exposure = product). */
+ *  veil/flash/vignette/key = max, exposure = product). exposure and key also
+ *  drive the R5-C in-shader grade (iExpo/iKey) each frame. */
 export type LightScore = {
   exposure: number; // 1 = neutral
   veil: number; // 0..1 black exposure veil
   flash: number; // 0..1 the white moment (Origin fusion ONLY)
   vignette: number; // 0..1
+  key: number; // 0..1 additive key-light boost (the key never re-aims)
 };
 
 export type SceneModule = {

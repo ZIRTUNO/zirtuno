@@ -15,7 +15,7 @@
 //   node scripts/verify-conductor.mjs
 
 import { makeConductor, EPS_FORM } from "../lib/webgl/conductor.mjs";
-import { N } from "../lib/webgl/phys.mjs";
+import { N, PHYS } from "../lib/webgl/phys.mjs";
 import { SDF_BALL_MAX, SDF_WARP_REST } from "../lib/webgl/sdf-glass-shader.mjs";
 
 const failures = [];
@@ -313,6 +313,99 @@ const mkJumpScene = (bind) => ({
   }
   ok(allFinite, "physics stress: non-finite output");
   ok(maxCount <= SDF_BALL_MAX, `physics stress: count ${maxCount} > ${SDF_BALL_MAX}`);
+}
+
+// ═══ OPTICS PLUMBING (R5-C: depth pack, energy, score passthrough) ════════════
+
+// ── O1: zBuf — every packed slot carries the right depth band ────────────────
+{
+  const A = mkScene("A", 0.3, 0);
+  A.target = (i, ctx, out) => {
+    out.x = 0.2 + 0.5 * ((i * 37) % 100) / 100;
+    out.y = 0.2 + 0.6 * ((i * 61) % 100) / 100;
+    out.r = 0.02;
+    out.bind = 0;
+    out.cluster = -1;
+    out.z = 0.55; // the scene stages its droplets mid-depth
+  };
+  A.extras = (ctx, push) => push(0.5, 0.5, 0.01);
+  const c = makeConductor([A]);
+  const zBuf = new Float32Array(SDF_BALL_MAX).fill(9); // poison — all must be written
+  c.raw.A.p = 1;
+  let t = 0;
+  let f = null;
+  for (let fr = 0; fr < 240; fr++) {
+    t += 16.7;
+    f = c.driver.frame(t, buf, 1.5, zBuf);
+  }
+  let droplets = 0;
+  let ambient = 0;
+  let bad = 0;
+  for (let s = 0; s < f.count; s++) {
+    const z = zBuf[s];
+    if (Math.abs(z - 0.55) < 1e-6) droplets++;
+    else if (Math.abs(z - PHYS.AMBIENT_Z) < 1e-6) ambient++;
+    else if (z !== 0) bad++; // satellites + extras pack near (0)
+  }
+  ok(bad === 0, `zBuf: ${bad} packed slots carry a stale/unknown depth`);
+  ok(droplets > 0, "zBuf: no droplet slot carries the scene depth");
+  ok(ambient > 0, `zBuf: ambient slots missing AMBIENT_Z (${PHYS.AMBIENT_Z})`);
+  ok(Math.abs(zBuf[0] - 0.55) < 1e-6, `zBuf[0] = ${zBuf[0]} (want the scene's 0.55)`);
+}
+
+// ── O2: energy — activity/scroll/pointer raise it; a calm scene idles low ───
+{
+  const calm = mkScene("A", 0.3, 0);
+  calm.activity = () => 0;
+  const c = makeConductor([calm]);
+  c.raw.A.p = 1;
+  let t = 0;
+  let f = null;
+  for (let fr = 0; fr < 300; fr++) {
+    t += 16.7;
+    f = c.driver.frame(t, buf, 1.5);
+  }
+  ok(f.energy < 0.05, `energy: calm scene idles at ${f.energy} (want < 0.05)`);
+  c.input.vel = 2; // a scroll flick
+  for (let fr = 0; fr < 60; fr++) {
+    t += 16.7;
+    f = c.driver.frame(t, buf, 1.5);
+  }
+  ok(f.energy > 0.2, `energy: scroll ignored (${f.energy})`);
+  c.input.vel = 0;
+  for (let fr = 0; fr < 600; fr++) {
+    t += 16.7;
+    f = c.driver.frame(t, buf, 1.5); // velocity decays back to idle
+  }
+  ok(f.energy < 0.05, `energy: no decay back to idle (${f.energy})`);
+  c.input.pon = 1;
+  c.input.pvx = 1;
+  t += 16.7;
+  f = c.driver.frame(t, buf, 1.5);
+  ok(f.energy > 0.2, `energy: pointer velocity ignored (${f.energy})`);
+  c.input.pon = 0;
+  // a scene WITHOUT an activity hook stays conservatively active
+  const legacy = mkScene("L", 0.4, 0);
+  const c2 = makeConductor([legacy]);
+  c2.raw.L.p = 1;
+  const f2 = c2.driver.frame(16.7, buf, 1.5);
+  ok(f2.energy > 0.9, `energy: activity-less scene not conservative (${f2.energy})`);
+}
+
+// ── O3: score → frame (iExpo/iKey passthrough; neutral without scores) ──────
+{
+  const A = mkScene("A", 0.3, 0);
+  A.score = () => ({ exposure: 0.8, key: 0.5 });
+  const c = makeConductor([A]);
+  c.raw.A.p = 1;
+  const f = c.driver.frame(16.7, buf, 1.5);
+  ok(Math.abs(f.expo - -0.2) < 1e-9, `score: expo ${f.expo} (want -0.2)`);
+  ok(Math.abs(f.key - 0.5) < 1e-9, `score: key ${f.key} (want 0.5)`);
+  const B = mkScene("B", 0.7, 0);
+  const c2 = makeConductor([B]);
+  c2.raw.B.p = 1;
+  const f2 = c2.driver.frame(16.7, buf, 1.5);
+  ok(f2.expo === 0 && f2.key === 0, `score: neutral frame carries expo=${f2.expo} key=${f2.key}`);
 }
 
 console.log(

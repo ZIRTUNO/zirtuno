@@ -1,0 +1,19 @@
+{
+  "note": "pre-R5-C reference at /en?feco=0.55&ftier=full, 1440x900 dsf1, breath-layer hidden",
+  "date": "2026-07-10T06:17:52.894Z",
+  "viewport": {
+    "w": 1440,
+    "h": 900
+  },
+  "crop": {
+    "x": 760,
+    "y": 510,
+    "w": 120,
+    "h": 120
+  },
+  "globalMean": 14.564,
+  "cropMean": 59.576,
+  "blackFrac": 0.9147,
+  "spreadGlobal": 0.141,
+  "spreadCrop": 6.688
+}

@@ -186,5 +186,10 @@ export function makeOriginScene(): SceneModule {
     ambient() {
       return 0; // the origin stage had no ambient family (parity with pre-R5)
     },
+
+    activity() {
+      // fully scroll-scrubbed beats + slow echo drift — 30 Hz-safe at rest
+      return 0;
+    },
   };
 }

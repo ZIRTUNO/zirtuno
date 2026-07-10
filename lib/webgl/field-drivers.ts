@@ -197,6 +197,9 @@ export type FieldFrame = {
   ox?: number; // form-domain offset (uv units; full-bleed staging)
   oy?: number;
   scale?: number; // form-domain scale (default 1)
+  expo?: number; // R5-C score-driven exposure DELTA (0 = neutral)
+  key?: number; // R5-C score-driven key-light boost (0 = neutral)
+  energy?: number; // R5-C cadence-governor energy (absent = always active)
 };
 export type FieldDriver = {
   /** SDF state indices to prefetch; forms[0] gates the first paint. */
@@ -204,8 +207,15 @@ export type FieldDriver = {
   /** Called by the stage as each form's SDF texture becomes drawable — drivers
    *  that retarget between forms (the hero autocycle) gate on this. */
   formReady?: (s: number) => void;
-  /** aspect = buffer width/height; the uv domain spans x ∈ [½−a/2, ½+a/2]. */
-  frame: (tMs: number, buf: Float32Array, aspect: number) => FieldFrame;
+  /** aspect = buffer width/height; the uv domain spans x ∈ [½−a/2, ½+a/2].
+   *  zBuf (R5-C, optional): parallel per-ball depth (0 near … 1 far) the stage
+   *  uploads as iBallZ — drivers that stage depth write every packed slot. */
+  frame: (
+    tMs: number,
+    buf: Float32Array,
+    aspect: number,
+    zBuf?: Float32Array,
+  ) => FieldFrame;
 };
 
 /** Callbacks the site scene surfaces to the shell. */

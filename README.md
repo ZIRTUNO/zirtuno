@@ -1,199 +1,269 @@
 # Zirtuno Website
 
 Business-first, visually distinctive website for Zirtuno, a Brazilian digital
-studio building connected digital ecosystems across software, AI, automation,
-data, branding, and marketing.
+studio that builds connected ecosystems across software, AI, automation, data,
+branding, and marketing.
 
-Primary language: PT-BR. Secondary language: EN.
+Primary language: PT-BR. Secondary language: EN. Both are authored, shipped,
+and verified independently.
 
-## Source Of Truth
+> Documentation and implementation status snapshot: 2026-07-10. Structural
+> unification (R5-A), fluid physics (R5-B), and optics (R5-C) are complete.
+> The cinematic cut and remaining scene work (R5-D) and final hardening
+> (R5-E) are still delivery phases, not shipped claims.
 
-- `AGENTS.md` - project rules, taste constraints, build order, and non-negotiables.
-- `build-spec.md` - full section-by-section product and design specification.
-- `references.md` - shader, animation, design, and technical references.
-- `lib/i18n/messages/pt.json` and `lib/i18n/messages/en.json` - shipped copy.
+## Read First: Documentation Authority
 
-Old one-off audits and outdated planning notes should not live at the repo root.
-Fold durable decisions into this README, `AGENTS.md`, or `build-spec.md`.
+Read these sources in order:
 
-## Current Stack
+1. `AGENTS.md` — mandatory rules, taste constraints, current priorities, and
+   the working/verification protocol for every agent session.
+2. `build-spec.md` — the complete v0.3 product, experience, chapter,
+   architecture, delivery, and acceptance specification.
+3. `metaball-morph-spec.md` — the focused v2 contract for the continuous
+   liquid, exact forms, conductor, physics, renderer, optics, and QA controls.
+4. `references.md` — approved technical and visual references mapped to the
+   v0.3 spec and R5 phases.
+5. `lib/i18n/messages/pt.json` and `lib/i18n/messages/en.json` — the only
+   source of shipped interface and conversion copy.
 
-- Next.js 16 App Router, TypeScript, Turbopack default
+When sources appear to conflict, use the most specific source above, but never
+override a non-negotiable in `AGENTS.md`. Code describes what exists today;
+the specs describe both the current baseline and the explicitly labeled target.
+
+One-off audits and redevelopment plans do not remain as parallel authorities.
+The decisions from `improvement-plan.md` and
+`tingly-frolicking-stream.md` were consolidated into the v0.3 documentation;
+Git history retains their historical context. New durable decisions must be
+folded into the authoritative files above rather than added as another root plan.
+
+## Product North Star
+
+Zirtuno must feel award-level without becoming an art piece that hides the
+offer. The balance is:
+
+- 70% strategic clarity and commercial strength.
+- 30% poetic brand atmosphere.
+
+The visitor must understand the offer before the poetic peak, see honest proof,
+and reach an obvious contact action. The liquid is not decoration: it proves the
+business argument by turning fragmentation into one connected organism.
+
+## The New Experience: Five Acts, One Liquid
+
+One persistent page-wide liquid runs from the first hero pixel through the
+footer. The canonical 48 droplets keep their identity across the whole journey.
+Chapter separation comes from choreography, spacing, and light—not repeated
+canvases or chapter hairlines.
+
+| Act | Chapters | Liquid narrative | Light narrative |
+|---|---|---|---|
+| I — Signal | Entry veil, Hero | wordmark assembly hands off to the living mark and seven forms | black, then the first cyan presence |
+| II — Argument | Problem, Ecosystem, Services | pour → fracture → seek → reunify → bloom through the seven service forms | exposure falls through the problem and rises at convergence |
+| III — Practice | Método, Work | the liquid rehearses the client transformation, then becomes a quiet current behind honest work | neutral and workmanlike, with an act boundary before Work |
+| IV — Soul | Origin, Studio | two brother-masses fuse into the mark; one controlled flash; echoes continue behind the studio | emotional peak, afterglow, then settle |
+| V — Invitation | Contact, Footer | every droplet gathers into the mark; submit exhales; one droplet releases beyond the footer | calm return to black |
+
+The ten named transitions are `assembly`, `pour`, `fracture`, `seek`,
+`bloom`, `rehearse`, `current`, `fuse + flash`, `gather`, and
+`release`. They are handoffs of one liquid, never visual swaps.
+
+## Implementation Status
+
+### Complete and protected
+
+- The nine-chapter business-first IA, bilingual copy, CTA intent system,
+  contact plumbing, portfolio routes, SEO/RSC foundation, static fallbacks,
+  and four-role typography.
+- Exact owner-traced mark plus seven form SVGs and their SDF/48-droplet
+  endpoints.
+- One WebGL2/OGL field engine everywhere; the Three.js/R3F raymarch and mesh
+  engines are retired and must not return.
+- R5-A: one `PageStage` canvas, one measurement loop, conductor-owned scene
+  blending, a form-slot arbiter, persistent droplet identity, footer inside the
+  homepage stage, and machine-checked handoff invariants.
+- R5-B: velocity-based fluid core with fixed substeps, goal-seek, repulsion,
+  cohesion, analytic curl drift, page-wide cursor forces, pinch-off satellites,
+  and the `bind` contract. `?fphys=0` preserves the legacy integrator for A/B
+  and rollback.
+- R5-C: the optics chain. An offscreen scene target (RGBA16F where the
+  context renders it, RGBA8 fallback) feeds a half-res bright pass,
+  separable gaussian ping-pong, and an opaque ink-black composite with
+  selective bloom, interleaved-gradient-noise dither (kills 8-bit banding in
+  the dark gradients), and luminance-gated film grain ≤2.5% — both noise
+  terms gated off flat black so empty canvas stays bit-zero against the
+  page. In the scene shader, identity-gated grade controls: `iExpo`/`iKey`
+  (light-score driven; neutral until R5-D scenes score), `iAbsorb`
+  (internal absorption — thick cores read dense), and `iBallZ[80]` +
+  `iDepthFx` depth bands (the ambient family packs at depth 0.62 and reads
+  as a dim sub-surface). All grade uniforms default to 0 = exact identity;
+  `?fgrade=0` bypasses everything, verified statistically against the
+  recorded pre-C baseline and byte-exactly via settled stills
+  (`verify-rest-exact.mjs`). The watchdog gains the `full-nofx` rung
+  (glass, no post), and the energy governor floors a truly idle page at
+  ~30 Hz draws — display-rate agnostic, waking within one vsync on any
+  input or scene activity (`?fgov=0` disables).
+- Current scene modules are transitional aggregates:
+  `site · method · origin · contact`. They reproduce the existing
+  choreography while R5-D is still pending.
+
+### Next, in this order
+
+1. **R5-D — Cinematic cut and remaining scenes:** light-score consumers,
+   exposure/flash/vignette veils, the single Origin flash, blur reveals,
+   act boundaries, dedicated Work/Studio/Footer behavior, and finer scene
+   modules for motivated transitions.
+2. **R5-E — Hardening:** device/battery/context-loss testing, full a11y and
+   i18n regression, conversion-path verification, dead-code sweep, and launch
+   content truth.
+
+Do not describe R5-D effects as implemented until their gates pass. The
+shader already consumes score exposure/key, but every scene still emits a
+neutral score — veils, the flash, and scene-authored light are R5-D.
+
+### External launch blockers
+
+- Replace prototype portfolio entries with at least three real projects, or
+  explicitly launch them as “Arquitetura selecionada / Selected architecture.”
+- Confirm verified outcomes; never invent metrics.
+- Confirm WhatsApp, domain email, site URL, and social handles.
+- Decide whether Studio remains an anonymous role grid or gains portraits.
+- Audio remains out of v1 unless explicitly scoped.
+
+## Locked Stack
+
+- Next.js 16 App Router, React 19, TypeScript, Turbopack
 - Tailwind CSS v4 with CSS variables
-- Raw WebGL2 + OGL (the unified liquid field — one engine for every visual)
-- GSAP ScrollTrigger, Motion, Lenis
-- next-intl, Sanity, react-hook-form, zod, Resend
+- Raw WebGL2 + OGL for the unified field and post-processing
+- GSAP + ScrollTrigger for scroll choreography
+- Motion for DOM micro-interactions
+- Lenis for calm smooth scrolling
+- next-intl for PT-BR and EN
+- Sanity for projects/editable content
+- react-hook-form + zod + Resend for contact
+- Vercel hosting/OG plus Vercel Analytics and Plausible as launch integrations
+
+Changing the stack, adding an unlisted dependency, or introducing a second
+homepage rendering engine requires owner approval.
+
+## Runtime Architecture
+
+```text
+RSC chapter copy and semantic DOM
+        │ measured anchors
+        ▼
+PageStage — one sticky page-wide canvas and one measurement loop
+        │
+        ▼
+Conductor — damping, presence, droplet handoffs, form arbiter, score
+        │
+        ├── scene targets (currently site / method / origin / contact)
+        ├── fluid-core (physics; ?fphys=0 legacy bypass)
+        └── shared 48-droplet identity + ambient/extras
+        │
+        ▼
+FieldStage + sdf-glass shader (identity-gated grade: expo/key/absorb/depth)
+        │
+        └── post-chain (R5-C): bright pass → bloom → opaque composite
+            (dither + grain) · full-nofx rung · ~30 Hz idle governor
+
+R5-D target: scene light scores → CinematicVeils + dedicated act scenes
+```
+
+Content remains server-rendered and crawlable. WebGL, measurements, and motion
+are client enhancements. Reduced motion, no-WebGL, and “none” tier paths keep
+the complete story and conversion path usable without the canvas.
 
 ## Project Layout
 
-- `app/` - routes, layouts, API route, metadata, sitemap, robots, proxy target pages.
-- `components/` - chapter UI, chrome, hero/WebGL, ecosystem, motion helpers.
-- `lib/` - animation utilities, i18n, content, forms, Sanity, WebGL state/render helpers.
-- `public/brand/` - deployed Zirtuno SVG assets used by the site.
-- `scripts/` - screenshot and verification scripts for visual/WebGL iteration.
-- `proxy.ts` - Next 16 proxy convention for locale routing.
-- `MORPHS_Blender_Reference/` - ignored local Blender reference kept for the
-  unresolved metaball form/morph redesign.
+- `app/[locale]/` — locale routes, page composition, work pages, metadata,
+  loading, 404, sitemap/robots integration.
+- `components/chapters/` — semantic chapter UI and contact/project surfaces.
+- `components/field/` — `PageStage` conductor shell and `FieldStage` renderer.
+- `components/hero/` — hero shell and deterministic form/morph QA renderers.
+- `components/chrome/` — navigation, CTAs, cursor, entry veil, footer, 404.
+- `lib/webgl/` — exact SDFs, symbols, driver kernel, conductor, physics,
+  renderer shaders, tiers, and scene modules.
+- `lib/i18n/messages/` — authoritative PT-BR and EN copy.
+- `lib/content/` and `lib/sanity/` — project fallbacks and CMS integration.
+- `public/brand/` — runtime mark, seven form SVGs, and baked form stills.
+- `references/morphs/` — owner originals, traced endpoints, previews, manifest.
+- `scripts/` — deterministic capture and machine-verification harnesses.
 
-Ignored/generated folders such as `.next/`, `node_modules/`, `captures/`, and
-`*.tsbuildinfo` are disposable. The screenshot scripts recreate `captures/`.
+Generated `.next/`, `captures/`, `artifacts/`, `node_modules/`, and
+`*.tsbuildinfo` are disposable local outputs unless a task explicitly asks to
+preserve review evidence.
 
 ## Commands
 
 ```bash
+npm install
 npm run dev
 npm run build
 npm run lint
 npx tsc --noEmit
 ```
 
-Visual QA harnesses (dev server must be running; `LOCALE=pt` for the PT pass):
+The visual harnesses launch or reuse a dev server:
 
 ```bash
-npm run forms:rest      # rest exactness sheet (every form vs its reference SVG)
-npm run forms:melts     # §3.3 bridge mid-frames + melt fps + keyboard smoke
-npm run forms:cursor    # cursor goo sheet (bulge → neck → merge)
-npm run chapters:sheet  # S3/S4/S5/S8/S10 × ftier full/lite/none
-npm run endpoints       # re-pack the 48-droplet morph endpoints from the SVGs
+npm run forms:rest       # exact form endpoints against owner SVG references
+npm run forms:melts      # bridge frames, melt fps, keyboard smoke
+npm run forms:cursor     # cursor bulge → neck → merge
+npm run chapters:sheet   # chapter sheet across field tiers/locales
+npm run endpoints        # regenerate registered 48-droplet endpoints
+
+node scripts/verify-conductor.mjs
+node scripts/verify-canvas-count.mjs
+node scripts/verify-cta.mjs
+node scripts/verify-entry-veil.mjs
+node scripts/verify-perf.mjs
+node scripts/verify-postfx.mjs        # optics gate (vs scripts/postfx-baseline.json)
+node scripts/verify-rest-exact.mjs    # settled-still byte gate (vs scripts/rest-exact.json)
+node scripts/capture-transition-diagnostics.mjs
 ```
 
-## Current State
+Use `LOCALE=pt` or `LOCALE=en` where a harness supports locale selection.
+Run browser-based capture scripts against a live dev server and review their
+images; a green process exit does not replace visual judgment.
 
-- The site builds on Next.js 16.2.7 with Turbopack.
-- **The hero is the owner's EXACT vector forms as living liquid glass, with a
-  gooey cursor** (`metaball-morph-spec.md` v1.7, default since R0): one unified
-  field (`FieldMorphHero` + `sdf-glass-shader.mjs`) sums each form's
-  signed-distance field with metaball droplets before a shared iso-surface,
-  through the locked glass shading. At rest the form is pixel-exact by
-  construction (`captures/rest-forms-sheet.png`) and alive (domain warp,
-  breath); the react-bits-style cursor droplet chain necks into and merges
-  with the liquid (`captures/cursor-merge-sheet.png`) — bounded influence,
-  detaches cleanly, off on touch. Melts are the v1.2 ball-bridge: the form
-  granulates into 48 traveling droplets (min-travel matching, stagger,
-  radius-leads) that fuse into the next exact form — one iso-surface, no
-  crossfade (`captures/morph-frames-sheet.png`). Tiers come from a runtime
-  probe (`lib/webgl/field-tier.ts`) with an FPS watchdog that downshifts
-  instead of freezing; reduced motion gets the static mark, no cursor. Hero QA
-  params: `?fstate=N` · `?fpair=a-b-m` · `?fcursor=x,y` · `?fcycle=1` ·
-  `?fflat=1` · `?ftier=`.
-- Intent CTAs on the homepage smooth-scroll to `#contact` via Lenis and set the
-  intent with `history.replaceState` (no router navigation); cross-page CTAs
-  keep the routed path. The labeled contact submit is canonical; the metaball
-  exhale is decorative.
-- **One engine everywhere (R1 done):** every chapter visual is a driver on the
-  same unified field (`components/field/FieldStage` + `lib/webgl/field-drivers`).
-  Tiered by the field probe: full = glass, lite = flat cyan at dpr 1 (mobile
-  gets LIVE liquid), none = static SVG. The legacy raymarch/mesh engines, their
-  gating (`gpu-tier`, `can-run-glass`, `?glass=`) and their capture scripts are
-  DELETED (three.js/@react-three removed); sheets:
-  `captures/chapters-sheet-{en,pt}.png`.
-- **THE WHOLE PAGE IS ONE LIQUID (R5-A, the conductor):** every chapter visual
-  renders on a single persistent page-wide canvas —
-  `components/field/PageStage` (one sticky layer, one rAF measurement loop)
-  conducting four SCENES (`lib/webgl/scenes/{site,method,origin,contact}`)
-  through `lib/webgl/conductor.mjs`. The conductor owns everything between
-  scenes: per-channel damping (the PHYS taus), presence weighting, per-droplet
-  target blending across handoffs, the form-slot ARBITER (the shader's two
-  form slots NEVER crossfade — ownership transfers only through droplet-only
-  states, machine-checked by `scripts/verify-conductor.mjs`), the shared
-  12-droplet ambient family, integration (per-droplet TAUP inertia — Phase B
-  replaces this block with real physics) and the light-score merge (Phase D).
-  The 48 droplets keep ONE identity from the hero's resting mark to the
-  contact form; scene handoffs complete off-screen (presence curves + entry/
-  exit envelopes author invisibility that canvas mounting used to imply). The
-  pure kernel (CLOUDS, PHYS, TAUP, scatter/orbital vocabulary) lives in
-  `lib/webgl/phys.mjs` — node-runnable, the sdf-core convention — and
-  `lib/webgl/field-drivers.ts` keeps the §3.3 melt implementation + the
-  FieldStage contract + the 404's `makeLoneDropDriver`. The 8 chapter
-  hairlines are gone (separation = liquid + spacing); the Footer renders
-  inside the page (the liquid reaches the true bottom). Colour is brand cyan
-  EVERYWHERE; the FPS watchdog only ever lowers resolution: the liquid never
-  freezes. QA: `?feco=c` freezes the S4 choreography; hero stills
-  (`?fstate`/`?fpair`/`?fcursor`) render on the standalone frozen path (rest
-  sheets stay byte-exact); `window.__scenes` exposes the live channels;
-  diagnostics: `scripts/capture-transition-diagnostics.mjs` (six
-  section-anchored ranges, filmstrips) → `captures/diagnostics-after/`.
-- **THE LIQUID HAS REAL PHYSICS (R5-B, fluid-core):** between the scene
-  targets and the render sits `lib/webgl/fluid-core.mjs` — velocity state,
-  fixed 8 ms substeps, a near-critically-damped spring per droplet (stiffness
-  from the SAME TAUP mass identity: heavy lags, now with genuine momentum),
-  soft-core pairwise REPULSION (loose liquid reads volumetric), cluster
-  COHESION toward group centroids (the fracture's chunks hold together like
-  liquid, the Método's three Construction masses ACCRETE by attraction, the
-  Origin's brother-masses travel as two coherent bodies), divergence-free
-  CURL drift (three analytic gyres replace sinusoidal wander for free
-  droplets), a page-wide CURSOR FORCE FIELD (radial push + vortex +
-  hand-drag, fine pointers only), and PINCH-OFF satellites (a straining free
-  droplet sheds 1–2 spray micro-droplets with inherited velocity, TTL
-  shrink-out, 14-droplet pool; ball budget 63 → 80). THE BIND CONTRACT keeps
-  the signed-off choreography exact: scenes emit bind ∈ [0,1] per droplet;
-  forces scale by (1−bind) and the output blends toward a byte-exact replica
-  of the legacy low-pass — at bind = 1 (§3.3 melts, resting footprints, the
-  exact mark) motion is IDENTICAL to pre-physics (machine-checked parity in
-  `verify-conductor.mjs`), at bind = 0 (pours, scatters, echoes) the liquid
-  is fully alive. `?fphys=0` routes the legacy integrator (A/B + escape
-  hatch). Feel constants: the FLUID table in fluid-core.mjs.
-- **S8 The Origin is the five scrubbed beats (R2, build-spec S8.3)** on the
-  page fluid (`lib/webgl/scenes/origin` since R5-A):
-  two brother-masses drift in from opposite sides, fuse into the EXACT mark
-  (three founding-pillar labels float beside its lobes — mono, muted, never
-  styled like the seven services), the mark holds breathing under the purpose
-  line, multiplies outward as the ecosystem echo, then drains while the CPU
-  particle wordmark assembles (shared engine:
-  `lib/animation/wordmark-particles`). Static tiers/reduced motion collapse
-  the runway to the plain reading column with the crisp mark.
-- **The loading moment (R2, S1.10) is the brand assembling:** `EntryVeil` in
-  the locale layout plays the wordmark particle convergence (~1.5 s) on the
-  FIRST visit of a session, then releases; return visits skip with no flash
-  (pre-paint script + `html[data-zveil]`), reduced motion and `?f*` QA
-  contexts never see it, and a hard cap guarantees it can never strand the
-  page (`scripts/verify-entry-veil.mjs` guards all three behaviors). The
-  route-segment pulse remains for in-app navigations.
-- **S6 Método is the liquid REHEARSING the client's transformation** (remake):
-  five phase states of the same 48 droplets on the page fluid
-  (`lib/webgl/scenes/method` since R5-A) — the fragmented
-  cloud examined by a sweeping probe droplet (Diagnóstico) → a jittered
-  liquid lattice (Estrutura) → three accreting masses (Construção) → the
-  EXACT mark resolves ("one organism" — Integração) → the mark grows and
-  sheds orbital satellites (Evolução). One phase per viewport, copy right /
-  liquid left on wide stages, the old drawn connector reborn as a vertical
-  thread that fills with progress; the line icons and the horizontal
-  timeline are deleted. Exit drain before the unstick. Diagnostics range:
-  `method-phases`. The shader's coverage AA is now CLAMPED
-  (`min(fwidth(d), 0.02)`) — unclamped, the reversed smoothstep degenerated
-  at every ball's bounded-influence edge and painted phantom ~0.5-alpha
-  discs (a dark film around dense droplet fields), site-wide fix.
-- **R3 polish (round 1):** work-card previews render the category's baked
-  SDF-glass form still (`scripts/build-form-stills.mjs` →
-  `public/brand/stills/`, mapped in `lib/content/form-stills.ts`) as
-  placeholder art until real media arrives; the 404 is a LIVE lone dispersed
-  droplet (`makeLoneDropDriver` + `LoneDroplet`, fractured-mark fallback);
-  the scrollbar wears the brand (thin, cyan-whisper on hover). The remaining
-  R3 rounds — morph feel, fracture readability, converge weight, origin
-  pacing — are owner-taste iterations on real hardware.
-- **Typography is a four-role system (R4 reform).** DISPLAY headlines (the hero
-  headline + every section `h2`) ride **Bricolage Grotesque** via `font-grotesk`
-  (`--font-grotesk`); **body, UI, nav, subheads, leads and forms ride Geist**
-  (`--font-sans`, the readable workhorse — a display/text split in the mould of
-  Google Sans vs Google Sans Text); **Instrument Serif italic** stays poetry-only
-  (eyebrow, pillar accents, Origin, Contact prompt, manifesto); **JetBrains Mono**
-  carries labels/numbers/counters/CTAs. One disciplined `--text-*` scale in
-  `globals.css` — display / title / lead / body / mono tiers, fluid clamps, tuned
-  tracking + leading per tier — and lifted secondary-text contrast
-  (`--color-paper-mute` 0.5 → 0.62). Fonts self-host via `next/font/google`.
-- Portfolio seed projects are prototypes only. Do not add fabricated metrics.
+### Current QA parameters
 
-## Open Decisions
+- `?fstate=N` — deterministic rest form.
+- `?fpair=a-b-m` — deterministic melt frame.
+- `?fcursor=x,y` — deterministic cursor merge.
+- `?fcycle=1` — shortened hero dwell.
+- `?fflat=1` — flat field/debug path.
+- `?ftier=full|lite|none` — tier override.
+- `?feco=c` — freeze ecosystem choreography at `c ∈ [0,1]`.
+- `?fphys=0` — bypass fluid physics through the legacy low-pass.
+- `?fgrade=0` — bypass the optics chain and grade (exact pre-optics output).
+- `?fgov=0` — disable the idle-cadence governor.
+- `window.__scenes` — live scene channels for diagnostics.
+- `window.__optics` — live optics state: post/fmt/tier/frames/gov +
+  `demote()` for watchdog-rung drills.
 
-- Portfolio: replace prototype projects with real projects and verified outcomes.
-- Contact/footer: confirm WhatsApp URL, email, domain, and social handles.
-- Studio: keep anonymous role grid or add portraits.
-- Ecosystem center: confirm unified metaball core plus label remains the final call.
-- Audio: default out for v1 unless explicitly scoped.
+## Content and Environment
 
-## Cleanup Policy
+Copy belongs only in the two locale message files. Do not hard-code shipped
+text in components. Sanity may fall back to prototype data during local
+development, and the contact endpoint may expose a clear configuration error,
+but production cannot launch on prototype facts, placeholder contact details,
+or unverified outcomes.
 
-Keep only durable source, specs, references, scripts, and shipped assets in the
-repo. Delete generated captures and local experiment outputs after they have been
-reviewed. If a visual insight matters, summarize it in this README, `build-spec.md`,
-or `AGENTS.md` rather than keeping dated audit files.
+See `.env.local.example` for the current variables. Treat its existing
+fallback values as development conveniences, not approved production content.
+
+## Cleanup and Decision Policy
+
+- Keep durable source, specs, references, scripts, and shipped assets.
+- Delete generated captures after review; summarize durable visual findings in
+  an authoritative document or code constant.
+- Keep historical experiments in Git history, not as competing root specs.
+- Record unresolved owner choices as `TODO(decision)` at the relevant code
+  boundary and in `build-spec.md`.
+- If a change affects exact forms, the one-canvas invariant, the form arbiter,
+  CTA intent, reduced motion, or honest portfolio proof, stop and re-run the
+  associated gate before proceeding.
+
+*Discreto. Preciso. Transformador. — e comercialmente forte.*
