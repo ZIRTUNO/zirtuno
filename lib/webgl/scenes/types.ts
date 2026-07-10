@@ -73,13 +73,16 @@ export type FormState = {
   warp: number;
 };
 
-/** The cinematic score channels (Phase D consumers; merged by the conductor:
- *  veil/flash/vignette/key = max, exposure = product). exposure and key also
- *  drive the R5-C in-shader grade (iExpo/iKey) each frame. */
+/** The cinematic score channels (R5-D; merged by the conductor:
+ *  veil/flash/vignette/key = max, exposure = product). exposure and key drive
+ *  the R5-C in-shader grade (iExpo/iKey); veil/vignette/flash drive the
+ *  CinematicVeils DOM layer via PageStage's CSS vars. A scene only RAISES the
+ *  raw flash channel — the conductor owns the once-per-load latch and the
+ *  ≤400 ms envelope, so no scene can ever double-fire the white moment. */
 export type LightScore = {
   exposure: number; // 1 = neutral
-  veil: number; // 0..1 black exposure veil
-  flash: number; // 0..1 the white moment (Origin fusion ONLY)
+  veil: number; // 0..1 black exposure veil (the two act-boundary fades)
+  flash: number; // 0..1 the white moment (Origin fusion ONLY; raw signal)
   vignette: number; // 0..1
   key: number; // 0..1 additive key-light boost (the key never re-aims)
 };
@@ -140,11 +143,13 @@ export type Conductor = {
   };
   /** The merged light score after each frame (stable object, mutated). */
   score: LightScore;
-  /** Diagnostics: arbiter violations, current holder, energy, active count. */
+  /** Diagnostics: arbiter violations, current holder, energy, active count,
+   *  and the number of latched Origin flashes (≤ 1 by construction). */
   stats: {
     violations: number;
     holderId: string | null;
     energy: number;
     active: number;
+    flashes: number;
   };
 };

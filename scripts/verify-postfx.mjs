@@ -8,7 +8,9 @@
 // across builds (time-driven warp, wandering ambient), so the `?fgrade=0`
 // stop-the-line rule ("bypass differs from pre-C pixels: stop", §14.3) is
 // enforced statistically against a pre-C baseline recorded by --baseline:
-// at a frozen choreography hold (?feco=0.55&ftier=full, no scroll) the
+// at a frozen choreography hold (?feco=0.55&ftier=full&fcine=0, no scroll;
+// fcine=0 keeps the R5-D light score neutral so this harness keeps
+// measuring the OPTICS chain in isolation against its pre-C baseline) the
 // mark-interior mean luma, the global mean luma and the pure-black pixel
 // fraction must match the pre-C values within tight tolerances, and the
 // post chain must report OFF.
@@ -134,7 +136,7 @@ const page = await ctx.newPage();
 
 if (baselineMode) {
   console.log("postfx --baseline: recording pre-C reference stats…");
-  await settle(page, "/en?feco=0.55&ftier=full");
+  await settle(page, "/en?feco=0.55&ftier=full&fcine=0");
   const s = await sampleShots(page, "baseline");
   const record = {
     note: "pre-R5-C reference at /en?feco=0.55&ftier=full, 1440x900 dsf1, breath-layer hidden",
@@ -158,7 +160,7 @@ const base = JSON.parse(fs.readFileSync(BASELINE_PATH, "utf8"));
 console.log("postfx verify vs baseline", base.date);
 
 // 1 · the ?fgrade=0 bypass matches the pre-C baseline
-await settle(page, "/en?feco=0.55&ftier=full&fgrade=0");
+await settle(page, "/en?feco=0.55&ftier=full&fgrade=0&fcine=0");
 const off = await sampleShots(page, "fgrade0");
 {
   const optics = await page.evaluate(() => window.__optics ?? null);
@@ -174,7 +176,7 @@ const off = await sampleShots(page, "fgrade0");
 }
 
 // 2 · default grade: post on, background exactly black, banding tamed, grain bounded
-await settle(page, "/en?feco=0.55&ftier=full");
+await settle(page, "/en?feco=0.55&ftier=full&fcine=0");
 const on = await sampleShots(page, "grade-on");
 {
   const optics = await page.evaluate(() => window.__optics ?? null);
@@ -240,7 +242,7 @@ const on = await sampleShots(page, "grade-on");
 
 // 4 · energy governor: idle cadence halves; input restores full cadence
 {
-  await settle(page, "/en?feco=0.55&ftier=full");
+  await settle(page, "/en?feco=0.55&ftier=full&fcine=0");
   await page.waitForTimeout(2500); // sustain window entry
   const idle = await page.evaluate(
     () =>
@@ -267,7 +269,7 @@ const on = await sampleShots(page, "grade-on");
     "governor: idle cadence drops (≈30Hz), input restores it",
     `idle=${idle}/2s active=${active}/2s`,
   );
-  await settle(page, "/en?feco=0.55&ftier=full&fgov=0");
+  await settle(page, "/en?feco=0.55&ftier=full&fgov=0&fcine=0");
   await page.waitForTimeout(1500);
   const ungov = await page.evaluate(
     () =>
@@ -283,7 +285,7 @@ const on = await sampleShots(page, "grade-on");
 {
   const errors = [];
   page.on("pageerror", (e) => errors.push(String(e)));
-  await settle(page, "/en?fphys=0&fgrade=0&ftier=full");
+  await settle(page, "/en?fphys=0&fgrade=0&ftier=full&fcine=0");
   const canvases = await page.evaluate(
     () => document.querySelectorAll(".journey-canvas canvas").length,
   );

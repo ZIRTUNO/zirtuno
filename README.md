@@ -8,9 +8,9 @@ Primary language: PT-BR. Secondary language: EN. Both are authored, shipped,
 and verified independently.
 
 > Documentation and implementation status snapshot: 2026-07-10. Structural
-> unification (R5-A), fluid physics (R5-B), and optics (R5-C) are complete.
-> The cinematic cut and remaining scene work (R5-D) and final hardening
-> (R5-E) are still delivery phases, not shipped claims.
+> unification (R5-A), fluid physics (R5-B), optics (R5-C), and the cinematic
+> cut (R5-D) are complete. Final hardening (R5-E) is still a delivery phase,
+> not a shipped claim.
 
 ## Read First: Documentation Authority
 
@@ -93,7 +93,7 @@ The ten named transitions are `assembly`, `pour`, `fracture`, `seek`,
   the dark gradients), and luminance-gated film grain ≤2.5% — both noise
   terms gated off flat black so empty canvas stays bit-zero against the
   page. In the scene shader, identity-gated grade controls: `iExpo`/`iKey`
-  (light-score driven; neutral until R5-D scenes score), `iAbsorb`
+  (light-score driven), `iAbsorb`
   (internal absorption — thick cores read dense), and `iBallZ[80]` +
   `iDepthFx` depth bands (the ambient family packs at depth 0.62 and reads
   as a dim sub-surface). All grade uniforms default to 0 = exact identity;
@@ -103,23 +103,31 @@ The ten named transitions are `assembly`, `pour`, `fracture`, `seek`,
   (glass, no post), and the energy governor floors a truly idle page at
   ~30 Hz draws — display-rate agnostic, waking within one vsync on any
   input or scene activity (`?fgov=0` disables).
-- Current scene modules are transitional aggregates:
-  `site · method · origin · contact`. They reproduce the existing
-  choreography while R5-D is still pending.
+- R5-D: the cinematic cut. Seven scene modules —
+  `site · method · work · origin · studio · contact · footer` — cover the
+  page with no liquid-dead bands: Método's evolution satellites become the
+  quiet work CURRENT (a slow gyre behind the grid, plus a five-droplet
+  meniscus that docks along the hovered project card's bottom edge), the
+  origin echo survives as sparse STUDIO orbits, Contact GATHERS whatever
+  still swims into the resting mark, and one droplet — the mark's lowest
+  point, the 404's lone-drop identity — RELEASES past the footer at the
+  page's true bottom. Scenes author the light score (act II exposure dip
+  through the fracture, first light-rise + key at convergence, origin
+  fusion key + afterglow, calm act V), consumed twice: in the liquid via the
+  R5-C grade, and on the page via `CinematicVeils` (black exposure veil,
+  vignette, flash; CSS-var driven at z-20 — above copy, below all chrome).
+  Exactly two act-boundary fades exist (Método→Work, Origin→Studio; peak
+  capped at 0.4, contrast-audited) and exactly ONE cyan-white Origin flash —
+  latched in the conductor once per page load, ≤400 ms by construction,
+  absent under reduced motion. `Reveal variant="blur"` gives the
+  Soul/Invitation copy its defocus reveal. `?fcine=0` disables the entire
+  cinematic layer; `verify-cinematics.mjs` is its machine gate.
 
 ### Next, in this order
 
-1. **R5-D — Cinematic cut and remaining scenes:** light-score consumers,
-   exposure/flash/vignette veils, the single Origin flash, blur reveals,
-   act boundaries, dedicated Work/Studio/Footer behavior, and finer scene
-   modules for motivated transitions.
-2. **R5-E — Hardening:** device/battery/context-loss testing, full a11y and
+1. **R5-E — Hardening:** device/battery/context-loss testing, full a11y and
    i18n regression, conversion-path verification, dead-code sweep, and launch
    content truth.
-
-Do not describe R5-D effects as implemented until their gates pass. The
-shader already consumes score exposure/key, but every scene still emits a
-neutral score — veils, the flash, and scene-authored light are R5-D.
 
 ### External launch blockers
 
@@ -157,17 +165,19 @@ PageStage — one sticky page-wide canvas and one measurement loop
         ▼
 Conductor — damping, presence, droplet handoffs, form arbiter, score
         │
-        ├── scene targets (currently site / method / origin / contact)
+        ├── scene targets + light scores (site / método / work / origin /
+        │                                  studio / contact / footer)
         ├── fluid-core (physics; ?fphys=0 legacy bypass)
         └── shared 48-droplet identity + ambient/extras
         │
         ▼
 FieldStage + sdf-glass shader (identity-gated grade: expo/key/absorb/depth)
         │
-        └── post-chain (R5-C): bright pass → bloom → opaque composite
-            (dither + grain) · full-nofx rung · ~30 Hz idle governor
-
-R5-D target: scene light scores → CinematicVeils + dedicated act scenes
+        ├── post-chain (R5-C): bright pass → bloom → opaque composite
+        │   (dither + grain) · full-nofx rung · ~30 Hz idle governor
+        │
+        └── CinematicVeils (R5-D): score → CSS vars → exposure veil ·
+            vignette · the ONE conductor-latched Origin flash (?fcine=0 off)
 ```
 
 Content remains server-rendered and crawlable. WebGL, measurements, and motion
@@ -220,7 +230,9 @@ node scripts/verify-entry-veil.mjs
 node scripts/verify-perf.mjs
 node scripts/verify-postfx.mjs        # optics gate (vs scripts/postfx-baseline.json)
 node scripts/verify-rest-exact.mjs    # settled-still byte gate (vs scripts/rest-exact.json)
+node scripts/verify-cinematics.mjs    # R5-D gate: one flash, two fades, no dead zones
 node scripts/capture-transition-diagnostics.mjs
+node scripts/record-liquid-motion.mjs # video + per-draw iBalls trace recordings
 ```
 
 Use `LOCALE=pt` or `LOCALE=en` where a harness supports locale selection.
@@ -239,9 +251,12 @@ images; a green process exit does not replace visual judgment.
 - `?fphys=0` — bypass fluid physics through the legacy low-pass.
 - `?fgrade=0` — bypass the optics chain and grade (exact pre-optics output).
 - `?fgov=0` — disable the idle-cadence governor.
+- `?fcine=0` — disable the cinematic layer (neutral score, no veils/flash).
 - `window.__scenes` — live scene channels for diagnostics.
 - `window.__optics` — live optics state: post/fmt/tier/frames/gov +
   `demote()` for watchdog-rung drills.
+- `window.__cine` — the merged light score + `stats.flashes` (the
+  one-flash gate reads it).
 
 ## Content and Environment
 

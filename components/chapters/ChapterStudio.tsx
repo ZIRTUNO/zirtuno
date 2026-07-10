@@ -51,7 +51,7 @@ export function ChapterStudio() {
       </div>
 
       {/* Why — closing line */}
-      <Reveal inView className="mt-20 max-w-3xl">
+      <Reveal inView variant="blur" className="mt-20 max-w-3xl">
         <h2 className="case-label">{t("whyLabel")}</h2>
         <p className="mt-4 text-display-m font-medium text-paper">
           {t("closingStatement")}{" "}

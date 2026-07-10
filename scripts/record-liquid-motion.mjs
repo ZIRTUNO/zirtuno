@@ -22,6 +22,9 @@ const WIDTH = Number(process.env.WIDTH || 1280);
 const HEIGHT = Number(process.env.HEIGHT || 720);
 const WHEEL_DELTA = Number(process.env.WHEEL_DELTA || 60);
 const WHEEL_MS = Number(process.env.WHEEL_MS || 80);
+const FOCUS = process.env.FOCUS || "full";
+const CAPTURE_INTERNALS =
+  FOCUS.endsWith("-reverse") && process.env.INTERNALS !== "0";
 
 const REQUESTED = new Set(
   (process.env.RUNS || "full,full-nogov,legacy-nogov").split(",").filter(Boolean),
@@ -56,11 +59,25 @@ for (const run of CASES) {
     recordVideo: { dir: OUT, size: { width: WIDTH, height: HEIGHT } },
   });
 
-  await context.addInitScript(() => {
+  await context.addInitScript(({ captureInternals }) => {
+    // Track the fixed 96-float (48 × xy) state arrays without touching source
+    // modules. Reverse diagnostics use these snapshots to preserve canonical
+    // identity even when the packed shader buffer skips a sub-pixel droplet.
+    const NativeFloat32Array = globalThis.Float32Array;
+    const tracked = [];
+    globalThis.Float32Array = new Proxy(NativeFloat32Array, {
+      construct(target, args, newTarget) {
+        const value = Reflect.construct(target, args, newTarget);
+        if (captureInternals && value.length === 48 * 2) tracked.push(value);
+        return value;
+      },
+    });
+
     const motion = {
       active: false,
       frames: [],
       pending: null,
+      phase: "idle",
       startT: 0,
       endT: 0,
     };
@@ -89,8 +106,12 @@ for (const run of CASES) {
         const frame = {
           t: performance.now(),
           y: window.scrollY,
+          phase: motion.phase,
           count: -1,
           balls: Array.from(value.slice(0, 48 * 3)),
+          internals: captureInternals
+            ? tracked.map((array) => Array.from(array))
+            : null,
           site: scenes?.site
             ? [
                 scenes.site.heroPhase,
@@ -109,7 +130,13 @@ for (const run of CASES) {
           method: scenes?.method
             ? [scenes.method.u, scenes.method.ex, scenes.method.on, scenes.method.rIn]
             : null,
+          work: scenes?.work
+            ? [scenes.work.on, scenes.work.rIn, scenes.work.bp]
+            : null,
           origin: scenes?.origin ? [scenes.origin.p, scenes.origin.on] : null,
+          studio: scenes?.studio
+            ? [scenes.studio.on, scenes.studio.rIn]
+            : null,
         };
         motion.frames.push(frame);
         motion.pending = frame;
@@ -124,7 +151,7 @@ for (const run of CASES) {
       }
       return uniform1i.call(this, location, value);
     };
-  });
+  }, { captureInternals: CAPTURE_INTERNALS });
 
   const page = await context.newPage();
   const errors = [];
@@ -162,17 +189,31 @@ for (const run of CASES) {
     };
   });
 
-  const startY = Math.max(0, Math.round((bounds.problem?.top ?? 0) - HEIGHT * 0.15));
-  const endY = Math.min(
+  let startY = Math.max(0, Math.round((bounds.problem?.top ?? 0) - HEIGHT * 0.15));
+  let endY = Math.min(
     bounds.scrollHeight - HEIGHT,
     Math.round((bounds.studio?.bottom ?? bounds.scrollHeight) + HEIGHT * 0.15),
   );
+  if (FOCUS === "method-reverse") {
+    startY = Math.max(0, Math.round((bounds.method?.top ?? 0) - HEIGHT * 0.25));
+    endY = Math.min(
+      bounds.scrollHeight - HEIGHT,
+      Math.round((bounds.work?.top ?? bounds.method?.bottom ?? 0) + HEIGHT * 0.5),
+    );
+  } else if (FOCUS === "origin-reverse") {
+    startY = Math.max(0, Math.round((bounds.origin?.top ?? 0) - HEIGHT * 0.25));
+    endY = Math.min(
+      bounds.scrollHeight - HEIGHT,
+      Math.round((bounds.studio?.top ?? bounds.origin?.bottom ?? 0) + HEIGHT * 0.5),
+    );
+  }
 
   await page.evaluate((y) => window.scrollTo(0, y), startY);
   await page.waitForTimeout(1_000);
   await page.evaluate(() => {
     window.__liquidMotion.frames.length = 0;
     window.__liquidMotion.startT = performance.now();
+    window.__liquidMotion.phase = "down";
     window.__liquidMotion.active = true;
   });
 
@@ -185,6 +226,20 @@ for (const run of CASES) {
     if (steps % 5 === 0) y = await page.evaluate(() => window.scrollY);
   }
   await page.waitForTimeout(1_400);
+
+  if (FOCUS.endsWith("-reverse")) {
+    await page.evaluate(() => {
+      window.__liquidMotion.phase = "up";
+    });
+    y = await page.evaluate(() => window.scrollY);
+    while (y > startY + 2 && steps < 2_000) {
+      await page.mouse.wheel(0, -WHEEL_DELTA);
+      await page.waitForTimeout(WHEEL_MS);
+      steps++;
+      if (steps % 5 === 0) y = await page.evaluate(() => window.scrollY);
+    }
+    await page.waitForTimeout(1_400);
+  }
 
   const trace = await page.evaluate(() => {
     window.__liquidMotion.active = false;
@@ -200,15 +255,16 @@ for (const run of CASES) {
   await page.close();
   if (video) {
     const source = await video.path();
-    const target = path.join(OUT, `${run.id}.webm`);
+    const suffix = FOCUS === "full" ? "" : `-${FOCUS}`;
+    const target = path.join(OUT, `${run.id}${suffix}.webm`);
     fs.rmSync(target, { force: true });
     fs.renameSync(source, target);
   }
   await context.close();
 
   fs.writeFileSync(
-    path.join(OUT, `${run.id}.json`),
-    JSON.stringify({ run, bounds, startY, endY, steps, errors, ...trace }),
+    path.join(OUT, `${run.id}${FOCUS === "full" ? "" : `-${FOCUS}`}.json`),
+    JSON.stringify({ run, focus: FOCUS, bounds, startY, endY, steps, errors, ...trace }),
   );
   console.log(
     `${run.id}: ${trace.frames.length} draws, ${steps} wheel steps, ` +

@@ -4,6 +4,9 @@ import type { SceneModule, Conductor } from "./scenes/types";
 
 export declare const EPS_PRESENCE: number;
 export declare const EPS_FORM: number;
+export declare const FLASH_ATTACK_MS: number;
+export declare const FLASH_DECAY_MS: number;
+export declare const FLASH_GLOW_MS: number;
 
 export declare function makeConductor(
   scenes: SceneModule[],
@@ -11,5 +14,7 @@ export declare function makeConductor(
     ballMax?: number;
     /** false = the legacy low-pass integrator (?fphys=0); default true. */
     physics?: boolean;
+    /** false = neutral score, no veils/flash (?fcine=0); default true. */
+    cine?: boolean;
   },
 ): Conductor;

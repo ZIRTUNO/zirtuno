@@ -20,12 +20,18 @@ type RevealProps = {
   className?: string;
   /** Static inline styles (e.g. per-item CSS custom properties). */
   style?: CSSProperties;
+  /** "rise" = fade + slide-up (default) · "blur" = the R5-D exposure reveal
+   *  (fade + rise + 8px→0 defocus) for the Soul/Invitation acts' copy. */
+  variant?: "rise" | "blur";
 };
 
 /**
- * Reusable enter animation (fade + slide-up). Honors reduced motion by
- * rendering the resting (visible) state with no animation — content is never
- * hidden behind motion (S1.14).
+ * Reusable enter animation (fade + slide-up; the "blur" variant adds an
+ * 8px→0 defocus — copy resolving like light finding focus). Honors reduced
+ * motion by rendering the resting (visible) state with no animation —
+ * content is never hidden behind motion (S1.14). The blur filter is animated
+ * once on entry and lands at exactly "blur(0px)"; Motion removes its inline
+ * value on completion, so settled copy pays no compositing cost.
  */
 export function Reveal({
   children,
@@ -37,6 +43,7 @@ export function Reveal({
   as = "div",
   className,
   style,
+  variant = "rise",
 }: RevealProps) {
   const reduced = useReducedMotion();
 
@@ -52,14 +59,21 @@ export function Reveal({
   // motion.div / motion.h1 / ... — dynamic tag lookup.
   const MotionTag = motion[as] as typeof motion.div;
   const transition = { duration, delay, ease: EASE_POINTS[ease] };
+  const blur = variant === "blur";
+  const hidden = blur
+    ? { opacity: 0, y, filter: "blur(8px)" }
+    : { opacity: 0, y };
+  const shown = blur
+    ? { opacity: 1, y: 0, filter: "blur(0px)" }
+    : { opacity: 1, y: 0 };
 
   if (inView) {
     return (
       <MotionTag
         className={className}
         style={style}
-        initial={{ opacity: 0, y }}
-        whileInView={{ opacity: 1, y: 0 }}
+        initial={hidden}
+        whileInView={shown}
         viewport={{ once: true, margin: "-12% 0px" }}
         transition={transition}
       >
@@ -72,8 +86,8 @@ export function Reveal({
     <MotionTag
       className={className}
       style={style}
-      initial={{ opacity: 0, y }}
-      animate={{ opacity: 1, y: 0 }}
+      initial={hidden}
+      animate={shown}
       transition={transition}
     >
       {children}

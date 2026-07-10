@@ -20,6 +20,7 @@ import type {
   SceneChannels,
   DropletOut,
   FormState,
+  LightScore,
 } from "./types";
 
 /** The exhale trigger event (dispatched by ContactForm on submit). */
@@ -31,11 +32,12 @@ export function makeContactScene(): SceneModule {
   const base = CLOUDS[0];
   const T = scatterFor(0);
 
-  // per-frame factors (tick → target/form)
+  // per-frame factors (tick → target/form/score)
   let e = 0; // exhale envelope
   let stOx = 0;
   let stOy = 0;
   let stScale = 0.3;
+  const scoreOut: Partial<LightScore> = { key: 0, vignette: 0 };
   const formOut: FormState = {
     a: 0,
     b: 0,
@@ -105,6 +107,12 @@ export function makeContactScene(): SceneModule {
       formOut.oy = stOy;
       formOut.scale = stScale * breath;
       formOut.warp = SDF_WARP_REST + 0.004 * e;
+
+      // ── act V light (R5-D): the invitation is CALM ─────────────────────────
+      // A quiet frame around the gathered mark; the exhale is the one glint —
+      // the submit briefly lifts the highlights the locked key already casts.
+      scoreOut.key = 0.3 * e;
+      scoreOut.vignette = 0.12 * smooth01(clamp01(ch.on));
     },
 
     target(i: number, ctx: SceneCtx, out: DropletOut) {
@@ -133,6 +141,10 @@ export function makeContactScene(): SceneModule {
       // the exhale burst is the one fast clock here; the 8 s breath is
       // 30 Hz-safe
       return e > 0.02 ? 1 : 0;
+    },
+
+    score() {
+      return scoreOut;
     },
   };
 }

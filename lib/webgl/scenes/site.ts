@@ -62,6 +62,7 @@ import type {
   SceneChannels,
   DropletOut,
   FormState,
+  LightScore,
 } from "./types";
 import { centersMid, coordAt } from "./geom";
 
@@ -141,6 +142,7 @@ export function makeSiteScene(cbs: SiteCallbacks = {}): SceneModule {
   let hOy = 0;
   let hScale = 0.5;
   let actW = 1; // governor activity — fast internal motion demands 60 Hz
+  const scoreOut: Partial<LightScore> = { exposure: 1, key: 0, vignette: 0 };
   const formOut: FormState = {
     a: 0,
     b: 0,
@@ -478,6 +480,19 @@ export function makeSiteScene(cbs: SiteCallbacks = {}): SceneModule {
       // scroll-scrubbed (the conductor's velocity term covers it) or slow
       // enough (wander, tendril march, warp) for the 30 Hz idle floor.
       actW = Math.max(hPhase === "melt" ? 1 : 0, cursorOn, inSvcMelt ? 1 : 0);
+
+      // ── act II light (R5-D): the argument told in exposure ────────────────
+      // The fracture pulls the light DOWN (the problem darkens the room) and
+      // the travel gives it back; convergence is the first light-rise — the
+      // reunified mark earns a key lift the dispersed field never had. Both
+      // are IN-the-liquid grades (iExpo/iKey); copy is never dimmed here —
+      // the DOM only feels the vignette breathing closed through Problem.
+      const dip = F * (1 - TR);
+      const rise = smooth01((clamp01(ctx.ch.converge) - 0.75) / 0.25) * (1 - SP);
+      scoreOut.exposure = 1 - 0.16 * dip + 0.06 * rise;
+      scoreOut.key =
+        0.3 * rise + (inSvcMelt ? 0.12 * Math.sin(Math.PI * mState) : 0);
+      scoreOut.vignette = 0.22 * dip;
     },
 
     target(i: number, ctx: SceneCtx, out: DropletOut) {
@@ -606,6 +621,10 @@ export function makeSiteScene(cbs: SiteCallbacks = {}): SceneModule {
 
     activity() {
       return actW;
+    },
+
+    score() {
+      return scoreOut;
     },
 
     extras(ctx: SceneCtx, push) {

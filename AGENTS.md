@@ -52,16 +52,20 @@ The site is in R5, “One Continuous Liquid.”
   watchdog rung, and the ~30 Hz idle energy governor. `?fgrade=0` is the exact
   optics bypass; `?fgov=0` disables the governor; `verify-postfx.mjs` and the
   `verify-rest-exact.mjs` byte gate protect it.
-- **R5-D follows:** cinematic veils/light score, the single Origin flash,
-  dedicated Work/Studio/Footer liquid behavior, finer scene modules, and the
-  complete five-act cut.
+- **R5-D is complete:** the cinematic cut. Seven scene modules
+  (site · método · work · origin · studio · contact · footer) leave no
+  liquid-dead band: the work CURRENT (Método's satellites as a slow gyre
+  behind the grid + the hovered-card meniscus), the studio ECHO orbits, the
+  contact GATHER, and the footer RELEASE (the mark's lowest droplet exits
+  past the page bottom). Scenes author the light score; it drives the R5-C
+  in-liquid grade AND `CinematicVeils` (exposure veil, vignette, flash).
+  Exactly two act-boundary fades (Método→Work, Origin→Studio; peak ≤ 0.4,
+  contrast-audited) and exactly ONE Origin flash — latched in the conductor
+  per page load, ≤400 ms by construction, absent under reduced motion.
+  `Reveal variant="blur"` carries the Soul/Invitation copy. `?fcine=0` is
+  the cinematic escape hatch; `verify-cinematics.mjs` is the machine gate.
 - **R5-E closes:** device, battery, context-loss, accessibility, locale,
   content-truth, conversion, and final regression hardening.
-
-Do not present planned R5-D behavior as implemented. The shader already
-consumes score exposure/key, but every scene still emits a neutral score, and
-droplet `z` is staged only by the ambient family — veils, the flash, and
-scene-authored light/depth are R5-D.
 
 ## 4. Non-Negotiable Rules
 
@@ -234,7 +238,9 @@ Ask before adding any dependency or substituting any layer.
 - `lib/webgl/sdf-glass-shader.mjs` owns the unified field and locked glass.
 - `lib/webgl/post-chain.ts` + `post-shaders.mjs` (R5-C) own the framebuffer
   pipeline beside the renderer; every grade control defaults to identity.
-- R5-D adds `CinematicVeils.tsx` and dedicated light scoring/scene modules.
+- `components/field/CinematicVeils.tsx` (R5-D) owns the page-light layer:
+  score-driven CSS-var veils at z-20 — above chapter copy, below all chrome.
+  The post chain grades the liquid; the veils grade the page. Keep the split.
 - `lib/webgl/field-drivers.ts` remains the shared §3.3 melt kernel, deterministic
   harness contract, and special-page driver home—not a second homepage brain.
 
@@ -271,14 +277,7 @@ Ask before:
 The old skeleton and R0–R4 build orders are complete or superseded, and
 R5-A/B/C have landed. Continue in this order:
 
-1. **R5-D Cinematic cut**
-   - score consumers and fixed veils;
-   - one Origin flash and two act-boundary fades;
-   - blur reveal variant;
-   - dedicated Work, Studio, and Footer liquid behavior;
-   - split aggregate scene modules where needed for motivated transitions;
-   - full-page owner review.
-2. **R5-E Hardening**
+1. **R5-E Hardening**
    - iOS sticky/svh, Android lite-live, desktop full/full-nofx;
    - 30-minute battery soak and telemetry;
    - context-loss drill;
@@ -336,8 +335,12 @@ Additional stop-the-line gates:
   `node scripts/verify-rest-exact.mjs` (settled-still byte gate — the machine
   teeth behind "rest must remain exact"; conscious re-baselines rerun its
   `--baseline` and commit `scripts/rest-exact.json`).
-- R5-D: exactly one flash per traversal; none under reduced motion; full
-  contrast and semantic reading audit.
+- Cinematic/scene/score change: `node scripts/verify-cinematics.mjs` —
+  exactly one flash per page load (never re-fired, never under reduced
+  motion or `?fcine=0`), exactly two act-fade bands on their seams (peak
+  ≤ 0.41, released at every reading rest), living liquid over Work/Studio/
+  the footer release, meniscus wiring, and the transient-contrast floor
+  (≥ 3.5:1 under the fade peak; standing reads are veil-free).
 
 A harness exit code does not sign off taste. A screenshot does not replace
 keyboard, locale, or machine verification.

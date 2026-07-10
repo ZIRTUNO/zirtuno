@@ -37,7 +37,7 @@ export function ChapterContact() {
           </Reveal>
         </div>
 
-        <Reveal inView delay={0.05}>
+        <Reveal inView delay={0.05} variant="blur">
           <p className="font-poetic mt-6 text-display-l text-paper">
             {t("prompt")}
           </p>

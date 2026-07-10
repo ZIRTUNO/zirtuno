@@ -632,13 +632,18 @@ section[id],
 }
 
 /* ===========================================================================
-   THE SITE FLUID (Hero → S3 → S4 → S5) — one persistent fluid renderer under
-   all four chapters. The layer is sticky full-viewport and spans the whole
-   wrapper (-100vh bottom margin); every chapter's copy scrolls over it, so
-   the liquid has no interior edge and is never dragged away as a block.
-   Deterministic layering: canvas z-0 (no pointer events) · copy z-10.
-   NEVER dimmed, faded or desaturated — one consistent cyan luminosity
-   everywhere (owner directive); legibility comes from composition.
+   THE PAGE FLUID — one persistent fluid renderer under every chapter. The
+   layer is sticky full-viewport and spans the whole wrapper (-100vh bottom
+   margin); every chapter's copy scrolls over it, so the liquid has no
+   interior edge and is never dragged away as a block.
+   Deterministic layering: canvas z-0 (no pointer events) · copy z-10 ·
+   cinematic veils z-20 · chrome ≥ 40.
+   The liquid itself is never per-chapter dimmed, faded or desaturated — one
+   material, one cyan, everywhere (owner directive); legibility comes from
+   composition. R5-D adds the sanctioned exceptions ON TOP of it: the merged
+   light score may grade exposure/key IN the material (hue never changes) and
+   the two act-boundary veils + one Origin flash live on the separate
+   .cine-veils layer — motivated act light, not a legibility dim hack.
    =========================================================================== */
 .liquid-journey {
   position: relative;
@@ -665,6 +670,57 @@ section[id],
 .liquid-journey[data-liquid="live"] .journey-static,
 .liquid-journey[data-liquid="live"] .journey-static.organism-fallback {
   display: none;
+}
+
+/* ===========================================================================
+   CINEMATIC VEILS (R5-D §10.3) — page light, conductor-scored. Three fixed
+   pointer-transparent sheets whose opacities are the CSS vars PageStage
+   writes once per frame from the merged light score. Everything defaults to
+   0 = invisible; the component never mounts on static/reduced/QA paths.
+   z-20: above chapter copy (z-10), below every piece of chrome (≥ 40) — an
+   act fade dims the story, never the controls.
+   =========================================================================== */
+.cine-veils {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  pointer-events: none;
+}
+.cine-veil,
+.cine-vignette,
+.cine-flash {
+  position: absolute;
+  inset: 0;
+  will-change: opacity;
+}
+/* the black exposure veil — the two act-boundary fades. The score caps at
+   0.4 in the scenes: body copy under the transient peak stays ≥ 4:1. */
+.cine-veil {
+  background: var(--color-ink);
+  opacity: var(--cine-veil, 0);
+}
+/* vignette — transparent to past half-radius so centred copy never sits
+   under it; the corners breathe closed through Problem and the Soul act. */
+.cine-vignette {
+  background: radial-gradient(
+    120% 90% at 50% 46%,
+    transparent 58%,
+    rgba(0, 0, 0, 0.62) 100%
+  );
+  opacity: var(--cine-vig, 0);
+}
+/* the ONE Origin flash — cyan-white, conductor-latched ≤400 ms envelope.
+   The 0.88 scale keeps the peak near 85% luminance (WCAG-reviewed); the hue
+   stays inside the brand cyan family (rule §4.8). */
+.cine-flash {
+  background: radial-gradient(
+    90% 70% at 50% 46%,
+    #eafdff 0%,
+    rgba(151, 240, 255, 0.9) 30%,
+    rgba(0, 227, 254, 0.42) 58%,
+    rgba(0, 227, 254, 0) 78%
+  );
+  opacity: calc(var(--cine-flash, 0) * 0.88);
 }
 
 /* S4's converge runway — the scroll distance the liquid choreography is

@@ -70,6 +70,12 @@ const anchors = await page.evaluate(() => {
     ? method.getBoundingClientRect().top + window.scrollY
     : null;
   const methodH = method ? method.getBoundingClientRect().height : 0;
+  const box = (sel) => {
+    const el = document.querySelector(sel);
+    if (!el) return null;
+    const r = el.getBoundingClientRect();
+    return { top: r.top + window.scrollY, h: r.height };
+  };
   return {
     problem: top("#problem"),
     ecosystem: top("#ecosystem"),
@@ -81,6 +87,10 @@ const anchors = await page.evaluate(() => {
     originH,
     methodTop,
     methodH,
+    work: box("#work"),
+    studio: box("#studio"),
+    contact: box("#contact"),
+    maxY: document.documentElement.scrollHeight - window.innerHeight,
     vh: window.innerHeight,
   };
 });
@@ -127,6 +137,30 @@ const RANGES = [
     start: (anchors.originTop ?? 0) - anchors.vh * 0.3,
     end: (anchors.originTop ?? 0) + (anchors.originH ?? 0),
     frames: 32,
+  },
+  {
+    // R5-D act boundary III + the CURRENT: método's satellites hand into the
+    // gyre behind the work grid, through the first fade-to-black beat
+    id: "work-current",
+    start: (anchors.work?.top ?? 0) - anchors.vh * 1.2,
+    end: (anchors.work?.top ?? 0) + (anchors.work?.h ?? 0) + anchors.vh * 0.3,
+    frames: 26,
+  },
+  {
+    // R5-D act boundary IV + the ECHOES: the origin resolution hands the
+    // surviving echo orbits behind the roles grid, through the second fade
+    id: "studio-echoes",
+    start: (anchors.studio?.top ?? 0) - anchors.vh * 1.2,
+    end: (anchors.studio?.top ?? 0) + (anchors.studio?.h ?? 0) + anchors.vh * 0.3,
+    frames: 26,
+  },
+  {
+    // R5-D act V: the echoes GATHER into the resting mark over the form,
+    // then the RELEASE — one droplet sinks past the footer at the true bottom
+    id: "contact-gather-release",
+    start: (anchors.contact?.top ?? 0) - anchors.vh * 0.8,
+    end: anchors.maxY,
+    frames: 26,
   },
 ];
 

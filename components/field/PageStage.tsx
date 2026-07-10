@@ -29,12 +29,16 @@ import {
   GROW_SPAN,
 } from "@/lib/webgl/scenes/site";
 import { makeMethodScene } from "@/lib/webgl/scenes/method";
+import { makeWorkScene } from "@/lib/webgl/scenes/work";
 import {
   makeOriginScene,
   PILLAR_ANCHORS,
   ORIGIN_OY,
 } from "@/lib/webgl/scenes/origin";
+import { makeStudioScene } from "@/lib/webgl/scenes/studio";
 import { makeContactScene, EXHALE_EVENT } from "@/lib/webgl/scenes/contact";
+import { makeFooterScene } from "@/lib/webgl/scenes/footer";
+import { CinematicVeils } from "./CinematicVeils";
 import { HeroLiquidContext, type HeroLiquid } from "./hero-liquid-context";
 
 // the unified liquid field is client-only (WebGL2) → lazy, no SSR.
@@ -95,19 +99,28 @@ export function PageStage({
     inViewRef.current = inView;
   }, [inView]);
 
-  const [conductor, scenes] = useMemo(() => {
+  const [conductor, scenes, cine] = useMemo(() => {
     // setHeroActive is a stable useState setter — safe to close over here
+    // (journey order: site → método → work → origin → studio → contact →
+    // footer — the R5-D scenes fill what were the liquid-dead bands)
     const scs: SceneModule[] = [
       makeSiteScene({ onHeroActive: setHeroActive }),
       makeMethodScene(),
+      makeWorkScene(),
       makeOriginScene(),
+      makeStudioScene(),
       makeContactScene(),
+      makeFooterScene(),
     ];
-    // ?fphys=0 routes the legacy low-pass integrator (A/B + escape hatch)
-    const physics =
-      typeof window === "undefined" ||
-      new URLSearchParams(window.location.search).get("fphys") !== "0";
-    return [makeConductor(scs, { physics }), scs] as const;
+    const sp =
+      typeof window === "undefined"
+        ? null
+        : new URLSearchParams(window.location.search);
+    // ?fphys=0 routes the legacy low-pass integrator (A/B + escape hatch);
+    // ?fcine=0 keeps the light score neutral (no veils/flash/score grade)
+    const physics = sp?.get("fphys") !== "0";
+    const cin = sp?.get("fcine") !== "0";
+    return [makeConductor(scs, { physics, cine: cin }), scs, cin] as const;
   }, []);
   const site = conductor.raw.site;
 
@@ -127,14 +140,19 @@ export function PageStage({
     );
   }, [site]);
 
-  // QA visibility: the live raw channels (read-only diagnostics)
+  // QA visibility: the live raw channels + the merged light score (read-only
+  // diagnostics; verify-cinematics reads __cine.stats.flashes for the
+  // one-flash gate — it exists on EVERY path, including reduced motion,
+  // where it must stay at zero because no frame ever runs)
   useEffect(() => {
     const w = window as unknown as {
       __liquid?: SceneChannels;
       __scenes?: Record<string, SceneChannels>;
+      __cine?: { score: typeof conductor.score; stats: typeof conductor.stats };
     };
     w.__liquid = site;
     w.__scenes = conductor.raw;
+    w.__cine = { score: conductor.score, stats: conductor.stats };
   }, [site, conductor]);
 
   const enabled = !reduced && !heroQA && (tier === "full" || tier === "lite");
@@ -240,6 +258,27 @@ export function PageStage({
       lastFlow = flow;
       wrap.style.setProperty("--method-flow", flow.toFixed(4));
     };
+    // R5-D: the merged light score → the veil CSS vars, once per frame (the
+    // conductor mutates `score` inside driver.frame from the render loop;
+    // reading it here is at most one frame behind — invisible at veil speeds)
+    let lastVeil = -1;
+    let lastVig = -1;
+    let lastFlash = -1;
+    const applyScore = () => {
+      const s = conductor.score;
+      if (Math.abs(s.veil - lastVeil) > 0.002) {
+        lastVeil = s.veil;
+        wrap.style.setProperty("--cine-veil", s.veil.toFixed(3));
+      }
+      if (Math.abs(s.vignette - lastVig) > 0.002) {
+        lastVig = s.vignette;
+        wrap.style.setProperty("--cine-vig", s.vignette.toFixed(3));
+      }
+      if (Math.abs(s.flash - lastFlash) > 0.002) {
+        lastFlash = s.flash;
+        wrap.style.setProperty("--cine-flash", s.flash.toFixed(3));
+      }
+    };
 
     // static paths / deterministic QA hold
     if (!enabled || fEco !== null) {
@@ -312,6 +351,27 @@ export function PageStage({
       heroSec.addEventListener("pointerenter", onEnter);
       heroSec.addEventListener("pointermove", onMove);
       heroSec.addEventListener("pointerleave", onLeave);
+    }
+
+    // the work meniscus (R5-D): delegated hover over the project cards → the
+    // work scene's raw `hov` channel (index into its measured card list —
+    // both sides query the same selector, so the order matches)
+    const workSec = document.getElementById("work");
+    const workCards = workSec
+      ? Array.from(workSec.querySelectorAll<HTMLElement>(".project-card"))
+      : [];
+    const onWorkOver = (e: PointerEvent) => {
+      const card = (e.target as HTMLElement).closest?.(".project-card");
+      conductor.raw.work.hov = card
+        ? workCards.indexOf(card as HTMLElement)
+        : -1;
+    };
+    const onWorkOut = () => {
+      conductor.raw.work.hov = -1;
+    };
+    if (canHover && workSec && workCards.length > 0) {
+      workSec.addEventListener("pointerover", onWorkOver, { passive: true });
+      workSec.addEventListener("pointerleave", onWorkOut);
     }
 
     // page-wide pointer → the cursor force field (R5-B; fine pointers only).
@@ -391,6 +451,7 @@ export function PageStage({
       applyEcoLabels(site.grow, site.svcPos);
       applyOriginLabels(conductor.raw.origin.p);
       applyMethodFlow(clamp01(conductor.raw.method.u / methodPhases));
+      applyScore();
     };
     update();
     return () => {
@@ -399,6 +460,10 @@ export function PageStage({
         heroSec.removeEventListener("pointerenter", onEnter);
         heroSec.removeEventListener("pointermove", onMove);
         heroSec.removeEventListener("pointerleave", onLeave);
+      }
+      if (canHover && workSec && workCards.length > 0) {
+        workSec.removeEventListener("pointerover", onWorkOver);
+        workSec.removeEventListener("pointerleave", onWorkOut);
       }
       if (canHover) {
         window.removeEventListener("pointermove", onPageMove);
@@ -463,6 +528,12 @@ export function PageStage({
             ))}
           </ul>
         </div>
+        {/* R5-D: the cinematic layer — a SIBLING of the sticky layer (which
+            is its own stacking context at z-0; nesting the fixed veils there
+            would trap them under the z-10 copy). Live path only: never under
+            reduced motion, static tiers, deterministic QA holds, or
+            ?fcine=0. */}
+        {enabled && cine && fEco === null && <CinematicVeils />}
         <div className="journey-content">{children}</div>
       </div>
     </HeroLiquidContext.Provider>

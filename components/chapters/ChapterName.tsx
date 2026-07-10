@@ -40,7 +40,7 @@ export function ChapterName() {
       <div className="origin-journey">
         {/* Beat 1 — Two brothers: a quiet opening; the two masses drift in */}
         <div className="origin-beat page-x">
-          <Reveal inView>
+          <Reveal inView variant="blur">
             <p className="font-poetic origin-open">{t("b1")}</p>
           </Reveal>
         </div>
@@ -58,21 +58,21 @@ export function ChapterName() {
               {pillars.join("   ·   ")}
             </p>
           </Reveal>
-          <Reveal inView>
+          <Reveal inView variant="blur">
             <p className="font-poetic name-word-text">{t("b2")}</p>
           </Reveal>
         </div>
 
         {/* Beat 3 — The purpose: the dominant line over the breathing mark */}
         <div className="origin-beat origin-beat--hold page-x">
-          <Reveal inView>
+          <Reveal inView variant="blur">
             <p className="font-poetic origin-statement">{t("b3")}</p>
           </Reveal>
         </div>
 
         {/* Beat 4 — The evolution: the mark multiplies (the ecosystem echo) */}
         <div className="origin-beat page-x">
-          <Reveal inView>
+          <Reveal inView variant="blur">
             <p className="font-poetic origin-coda">{t("b4")}</p>
           </Reveal>
         </div>
@@ -83,10 +83,10 @@ export function ChapterName() {
           <Reveal inView className="origin-wordmark-wrap">
             <OriginWordmark text={t("wordmark")} />
           </Reveal>
-          <Reveal inView>
+          <Reveal inView variant="blur">
             <p className="font-poetic origin-closing">{t("closing")}</p>
           </Reveal>
-          <Reveal inView>
+          <Reveal inView variant="blur">
             <p className="font-poetic origin-grace">{t("graceNote")}</p>
           </Reveal>
         </div>
@@ -95,7 +95,7 @@ export function ChapterName() {
       {/* Manifesto coda — tight sequence, after the resolution */}
       <div className="manifesto page-x mt-24 pb-28 md:mt-32 md:pb-40">
         {manifesto.map((line, i) => (
-          <Reveal inView key={i} delay={i * 0.1}>
+          <Reveal inView key={i} delay={i * 0.1} variant="blur">
             <p className="manifesto-line">{line}</p>
           </Reveal>
         ))}

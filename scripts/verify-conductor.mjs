@@ -14,7 +14,12 @@
 //   6. sticky gap   — all presences at 0: weights hold, output stays finite
 //   node scripts/verify-conductor.mjs
 
-import { makeConductor, EPS_FORM } from "../lib/webgl/conductor.mjs";
+import {
+  makeConductor,
+  EPS_FORM,
+  FLASH_ATTACK_MS,
+  FLASH_DECAY_MS,
+} from "../lib/webgl/conductor.mjs";
 import { N, PHYS } from "../lib/webgl/phys.mjs";
 import { SDF_BALL_MAX, SDF_WARP_REST } from "../lib/webgl/sdf-glass-shader.mjs";
 
@@ -367,7 +372,48 @@ const mkJumpScene = (bind) => ({
   }
 }
 
-// ── P5: physics stress — random everything, all finite, budget held ─────────
+// ── P5: negative field x is valid — never reuse it as an init sentinel ──────
+{
+  const makeLeftScene = () => ({
+    id: "X",
+    forms: [0],
+    channels: { p: 1, x: 0.05 },
+    damp: { p: false, x: false },
+    presence: (ctx) => ctx.ch.p,
+    target: (i, ctx, out) => {
+      out.x = ctx.ch.x;
+      out.y = 0.5;
+      out.r = i === 0 ? 0.02 : 0;
+      out.bind = 0;
+      out.cluster = -1;
+      out.z = 0;
+    },
+    form: () => null,
+    ambient: () => 0,
+    activity: () => 0,
+  });
+
+  for (const physics of [true, false]) {
+    const c = makeConductor([makeLeftScene()], { physics });
+    let t = 0;
+    let prev = 0;
+    let maxDelta = 0;
+    for (let fr = 0; fr < 180; fr++) {
+      if (fr === 30) c.raw.X.x = -0.2;
+      t += 16.7;
+      c.driver.frame(t, buf, 1.5);
+      const x = buf[0];
+      if (fr > 30) maxDelta = Math.max(maxDelta, Math.abs(x - prev));
+      prev = x;
+    }
+    ok(
+      maxDelta < 0.04,
+      `${physics ? "physics" : "legacy"} negative-x reset jumped ${maxDelta.toFixed(4)} ≥ 0.04`,
+    );
+  }
+}
+
+// ── P6: physics stress — random everything, all finite, budget held ─────────
 {
   const A = mkScene("A", 0.3, 0);
   const B = mkScene("B", 0.7, 3);
@@ -500,6 +546,119 @@ const mkJumpScene = (bind) => ({
   c2.raw.B.p = 1;
   const f2 = c2.driver.frame(16.7, buf, 1.5);
   ok(f2.expo === 0 && f2.key === 0, `score: neutral frame carries expo=${f2.expo} key=${f2.key}`);
+}
+
+// ═══ CINEMATICS (R5-D: score merge, the ONE flash, ?fcine=0) ═════════════════
+
+// a scene that raises the raw flash channel whenever its `p` sits inside the
+// fusion window — the origin scene's exact grammar, stubbed
+const mkFlashScene = () => ({
+  id: "F",
+  forms: [0],
+  channels: { p: 0 },
+  damp: { p: false },
+  presence: () => 1,
+  target: (i, ctx, out) => {
+    out.x = 0.5;
+    out.y = 0.5;
+    out.r = i === 0 ? 0.02 : 0;
+    out.bind = 0;
+    out.cluster = -1;
+    out.z = 0;
+  },
+  form: () => null,
+  ambient: () => 0,
+  activity: () => 0,
+  score: (ctx) => ({ flash: ctx.ch.p > 0.42 && ctx.ch.p < 0.62 ? 1 : 0 }),
+});
+
+// ── D1: the flash — exactly ONE ≤400 ms envelope, ever ───────────────────────
+{
+  const c = makeConductor([mkFlashScene()]);
+  let t = 0;
+  let onMs = 0;
+  let peak = 0;
+  let windows = 0;
+  let wasOn = false;
+  // TWO full traversals through the fusion window + a long park inside it —
+  // the raw channel rises three separate times; the envelope may fire once
+  const script = (fr) =>
+    fr < 60 ? 0 : fr < 120 ? 0.5 : fr < 180 ? 1 : fr < 240 ? 0.5 : fr < 300 ? 0 : 0.5;
+  for (let fr = 0; fr < 500; fr++) {
+    c.raw.F.p = script(fr);
+    t += 16.7;
+    c.driver.frame(t, buf, 1.5);
+    const fl = c.score.flash;
+    if (fl > 0) onMs += 16.7;
+    if (fl > peak) peak = fl;
+    if (fl > 0 && !wasOn) windows++;
+    wasOn = fl > 0;
+  }
+  ok(c.stats.flashes === 1, `flash: latched ${c.stats.flashes} times (want exactly 1)`);
+  ok(windows === 1, `flash: ${windows} visible windows (want 1 — re-scrub re-fired it)`);
+  ok(onMs <= 400, `flash: visible for ${onMs.toFixed(0)}ms (WCAG budget 400)`);
+  ok(peak > 0.9, `flash: envelope peak ${peak.toFixed(2)} never reached full`);
+  ok(
+    FLASH_ATTACK_MS + FLASH_DECAY_MS <= 400,
+    `flash: envelope constants sum to ${FLASH_ATTACK_MS + FLASH_DECAY_MS}ms > 400`,
+  );
+  ok(c.score.flash === 0, "flash: still lit long after the moment");
+}
+
+// ── D2: merge semantics + the afterglow ──────────────────────────────────────
+{
+  const mk = (id, sc) => ({
+    ...mkFlashScene(),
+    id,
+    channels: { p: 1 },
+    score: () => sc,
+  });
+  const A = mk("A", { veil: 0.3, vignette: 0.1, exposure: 0.9 });
+  const B = mk("B", { veil: 0.5, vignette: 0.05, exposure: 0.9, key: 0.4 });
+  const c = makeConductor([A, B]);
+  c.driver.frame(16.7, buf, 1.5);
+  ok(Math.abs(c.score.veil - 0.5) < 1e-9, `merge: veil ${c.score.veil} (want max 0.5)`);
+  ok(Math.abs(c.score.vignette - 0.1) < 1e-9, `merge: vignette ${c.score.vignette} (want max 0.1)`);
+  ok(Math.abs(c.score.exposure - 0.81) < 1e-9, `merge: exposure ${c.score.exposure} (want 0.9·0.9)`);
+  ok(Math.abs(c.score.key - 0.4) < 1e-9, `merge: key ${c.score.key} (want 0.4)`);
+
+  // afterglow: right after the latch the exposure lifts, then settles back
+  const c2 = makeConductor([mkFlashScene()]);
+  let t = 0;
+  for (let fr = 0; fr < 30; fr++) {
+    c2.raw.F.p = 0.5; // inside the window from frame 0 — latch immediately
+    t += 16.7;
+    c2.driver.frame(t, buf, 1.5);
+  }
+  ok(
+    c2.score.exposure > 1.02,
+    `afterglow: exposure ${c2.score.exposure.toFixed(3)} not lifted at +500ms`,
+  );
+  for (let fr = 0; fr < 60; fr++) {
+    t += 16.7;
+    c2.driver.frame(t, buf, 1.5);
+  }
+  ok(
+    Math.abs(c2.score.exposure - 1) < 1e-6,
+    `afterglow: exposure ${c2.score.exposure.toFixed(3)} never settled`,
+  );
+}
+
+// ── D3: ?fcine=0 — the score stays neutral, the flash can never fire ────────
+{
+  const c = makeConductor([mkFlashScene()], { cine: false });
+  let t = 0;
+  for (let fr = 0; fr < 200; fr++) {
+    c.raw.F.p = 0.5; // permanently inside the fusion window
+    t += 16.7;
+    const f = c.driver.frame(t, buf, 1.5);
+    ok(f.expo === 0 && f.key === 0, `fcine: frame ${fr} carries grade`);
+  }
+  ok(c.stats.flashes === 0, `fcine: flash latched ${c.stats.flashes} times with cine off`);
+  ok(
+    c.score.veil === 0 && c.score.flash === 0 && c.score.vignette === 0,
+    "fcine: veil channels not neutral",
+  );
 }
 
 console.log(

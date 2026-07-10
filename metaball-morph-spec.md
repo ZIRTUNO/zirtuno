@@ -6,9 +6,9 @@
 >
 > Version date: 2026-07-09.
 >
-> Current baseline: R5-A structural unification, R5-B physics, and R5-C optics
-> are complete. R5-D cinematic/scene completion and R5-E hardening are the
-> approved targets.
+> Current baseline: R5-A structural unification, R5-B physics, R5-C optics,
+> and R5-D cinematics/scene completion are complete. R5-E hardening is the
+> approved target.
 
 ## 0. Scope and Authority
 
@@ -279,9 +279,11 @@ turns scene targets into one field driver. Current aggregate scenes:
 - `origin`;
 - `contact`.
 
-R5-D may split these into chapter-specific modules to express Work, Studio,
-Footer, and fine act transitions. The split must preserve verified output before
-adding new behavior.
+R5-D added the three chapter scenes — `work`, `studio`, `footer` — beside
+them (droplet-only: they never claim the form slots). The remaining site
+aggregate stays deliberately unsplit: its hero→services choreography is
+signed off and byte-gated, and splitting it would risk the equivalence gates
+for zero behavioral benefit.
 
 ### 7.2 Per-droplet output
 
@@ -331,7 +333,13 @@ The conductor already merges optional scene values:
 - stats: current form holder, active count, violations.
 
 These are CURRENT data surfaces. R5-C consumes energy for cadence/effects.
-R5-D consumes score for fixed veils and the Origin flash.
+R5-D consumes score twice: exposure/key in the liquid grade, and
+veil/vignette/flash on the `CinematicVeils` page layer. The conductor also
+OWNS the flash: scenes only raise the raw channel; the first rising edge
+latches for the page load and plays a fixed 70 ms attack + 310 ms decay
+(≤400 ms total) with a ~900 ms exposure afterglow. `stats.flashes` counts
+latches (≤1 by construction) and `?fcine=0` (`opts.cine=false`) keeps the
+whole score neutral.
 
 ## 8. Fluid Physics v2 — CURRENT R5-B
 
@@ -469,15 +477,21 @@ Depth contract:
 - far droplets become dimmer sub-surface material, not a new hue;
 - depth cannot reduce legibility or make exact endpoints appear doubled.
 
-### 10.3 Cinematic consumer — TARGET R5-D
+### 10.3 Cinematic consumer — CURRENT R5-D
 
 The field does not directly paint page-wide white/black veils. Scene light
-scores feed `CinematicVeils`:
+scores feed `CinematicVeils` via CSS vars PageStage writes once per frame
+(`--cine-veil` / `--cine-vig` / `--cine-flash`, wrap-scoped):
 
-- black exposure veil;
-- one cyan-white Origin flash;
-- vignette;
-- CSS variable output once per frame.
+- black exposure veil — ONLY the two act-boundary fades (Método→Work,
+  Origin→Studio), scroll-scrubbed `sin(π·bp)`, peak `VEIL_ACT = 0.4`
+  (contrast-audited: standing reads are veil-free; every visible text node
+  clears 3.5:1 under the transient peak);
+- one cyan-white Origin flash — the conductor-latched envelope, rendered at
+  ≈85% peak luminance inside the brand cyan family;
+- vignette — a whisper (≤0.3) through Problem and the Soul act;
+- mounted only on the live path: never under reduced motion, static tiers,
+  deterministic QA holds, or `?fcine=0`; z-20 (above copy, below chrome).
 
 The post chain handles liquid optics. Cinematic veils handle page exposure and
 act boundaries. Keep those responsibilities separate.
@@ -492,11 +506,11 @@ act boundaries. Keep those responsibilities separate.
 | Seek/Ecosystem | mark emerges | cohesion pulls fragments inward | low → high | first exposure rise |
 | Services/Bloom | seven exact forms | scrubbed §3.3 bridges | high | no physics drift at endpoints |
 | Método/Rehearse | exact mark only at Integration | probe, lattice, clusters, satellites | phase-specific | three masses use cohesion |
-| Work/Current | no dominant form | calm current and hovered-card meniscus | low | TARGET R5-D |
+| Work/Current | no dominant form | Método's satellites become the gyre (i%3=0) + 5-droplet meniscus at the hovered card | low (0.12; meniscus 0.4) | CURRENT R5-D · z 0.55 sub-surface · act fade III |
 | Origin/Fuse | exact mark at fusion | two clusters → mark → echo | low → high → low | flash external to field |
-| Studio | no dominant form | quiet echo behind roles | low | TARGET R5-D |
+| Studio | no dominant form | origin echo survives as sparse orbits (i%6=0) | low (0.08) | CURRENT R5-D · z 0.6 · act fade IV |
 | Contact/Gather | exact mark | all droplets gather; submit exhale | low → high → low | labeled submit remains canonical |
-| Footer/Release | no form | one droplet exits | low | ends at true page bottom |
+| Footer/Release | no form | the mark's lowest droplet detaches and sinks out (overshot targets vs contact's held 50% blend) | low | CURRENT R5-D · ends at true page bottom |
 
 ## 12. Performance, Tiers, and Fallbacks
 
@@ -566,7 +580,7 @@ The renderer:
 | `components/hero/FieldMorphHero.tsx` | deterministic standalone hero QA path |
 | `lib/webgl/post-chain.ts` | R5-C framebuffer pipeline (scene target, bloom, composite) |
 | `lib/webgl/post-shaders.mjs` | R5-C bright/blur/composite shaders + POST dial-in |
-| `components/field/CinematicVeils.tsx` | TARGET R5-D score overlay |
+| `components/field/CinematicVeils.tsx` | R5-D page-light layer (veil/vignette/flash via CSS vars) |
 
 Retired architecture is not an alternate path. Do not create:
 
@@ -593,6 +607,7 @@ Retired architecture is not an alternate path. Do not create:
 | `?fphys=0` | legacy integrator bypass |
 | `?fgrade=0` | exact optics bypass (no post, grade uniforms at 0 identity) |
 | `?fgov=0` | idle-cadence governor bypass |
+| `?fcine=0` | cinematic bypass (neutral score, no veils, flash cannot latch) |
 
 ### 14.2 Required harnesses
 
@@ -616,8 +631,15 @@ rule: it hides animated overlays, polls each `?fstate` still until two
 consecutive element screenshots are byte-equal (the settled frame), and
 compares SHA-256 against `scripts/rest-exact.json`. `forms:rest` remains the
 human fidelity sheet; it is not run-reproducible (the breath overlay pulses
-above the canvas) and must not be hash-compared. R5-D extends diagnostics
-across Work, Studio, Contact gather, and Footer release.
+above the canvas) and must not be hash-compared. The diagnostics ranges now
+cover the full page (`work-current`, `studio-echoes`,
+`contact-gather-release` beside the six originals), and
+`verify-cinematics.mjs` is the R5-D machine gate: one flash per page load
+(held across a second traversal; zero under reduced motion and `?fcine=0`),
+exactly two act-fade bands on their seams with full release at reading
+rests, living liquid over Work/Studio/the release, meniscus wiring, and the
+transient contrast floor. `verify-postfx.mjs` runs its URLs with `fcine=0`
+so the optics chain stays measured in isolation against its pre-C baseline.
 
 ### 14.3 Stop-the-line rules
 

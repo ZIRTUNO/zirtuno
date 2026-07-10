@@ -22,6 +22,7 @@ import type {
   SceneChannels,
   DropletOut,
   FormState,
+  LightScore,
 } from "./types";
 
 export const ORIGIN_SCALE = 0.5; // the mark's half-extent ≈ 0.2 uv (same as the eco)
@@ -50,12 +51,18 @@ export function makeOriginScene(): SceneModule {
   let cachedAspect = -1;
   let T: OriginTarget[] = [];
 
-  // per-frame factors (tick → target/form)
+  // per-frame factors (tick → target/form/score)
   let p = 0;
   let q1 = 0;
   let q2 = 0;
   let q4 = 0;
   let q5 = 0;
+  const scoreOut: Partial<LightScore> = {
+    key: 0,
+    flash: 0,
+    vignette: 0,
+    exposure: 1,
+  };
   const formOut: FormState = {
     a: 0,
     b: 0,
@@ -130,6 +137,18 @@ export function makeOriginScene(): SceneModule {
       formOut.warp =
         SDF_WARP_REST +
         (SDF_WARP_MORPH - SDF_WARP_REST) * 0.6 * Math.sin(Math.PI * q2);
+
+      // ── act IV light (R5-D): the emotional peak ────────────────────────────
+      // The key lifts as the brothers fuse and stays lifted while the mark
+      // holds; the vignette closes over the approach (intimacy) and OPENS at
+      // the fusion. The flash channel is only the RAW signal — the scene says
+      // "the fusion is complete" across a scrub-proof window; the conductor
+      // owns the latch, the ≤400 ms envelope, and the afterglow. p is
+      // conductor-damped, so a hard scroll cannot tunnel past the window.
+      scoreOut.key = 0.55 * q2 * (1 - 0.8 * q5);
+      scoreOut.vignette = 0.2 * q1 * (1 - q2);
+      scoreOut.exposure = 1 + 0.06 * q2 * (1 - q5);
+      scoreOut.flash = p > 0.42 && p < 0.62 ? 1 : 0;
     },
 
     target(i: number, ctx: SceneCtx, out: DropletOut) {
@@ -190,6 +209,10 @@ export function makeOriginScene(): SceneModule {
     activity() {
       // fully scroll-scrubbed beats + slow echo drift — 30 Hz-safe at rest
       return 0;
+    },
+
+    score() {
+      return scoreOut;
     },
   };
 }
