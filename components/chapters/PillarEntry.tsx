@@ -48,7 +48,10 @@ export function PillarEntry({
 
       <p className="pillar-caps">
         {caps.map((c) => (
-          <span key={c} className="pillar-cap">
+          // inline-block: the capability and its ::after separator wrap as
+          // ONE unit — the trailing dot can no longer hang past the viewport
+          // edge on narrow stages (the 390px 4px-overflow drill, R5-E)
+          <span key={c} className="pillar-cap inline-block">
             {c}
           </span>
         ))}
@@ -59,6 +62,7 @@ export function PillarEntry({
           variant="ghost"
           href={`/work?category=${category}`}
           label={t("pillarCta", { category: categoryLabel })}
+          placement={`service_${pillarKey}`}
         />
       </div>
     </article>

@@ -623,6 +623,11 @@ node scripts/verify-canvas-count.mjs
 node scripts/verify-perf.mjs
 node scripts/verify-postfx.mjs
 node scripts/verify-rest-exact.mjs
+node scripts/verify-cinematics.mjs
+node scripts/verify-devices.mjs
+node scripts/verify-context-loss.mjs
+node scripts/verify-a11y.mjs
+SOAK_MIN=30 BASE_URL=http://localhost:3001 node scripts/verify-soak.mjs
 node scripts/capture-transition-diagnostics.mjs
 ```
 
@@ -640,6 +645,18 @@ exactly two act-fade bands on their seams with full release at reading
 rests, living liquid over Work/Studio/the release, meniscus wiring, and the
 transient contrast floor. `verify-postfx.mjs` runs its URLs with `fcine=0`
 so the optics chain stays measured in isolation against its pre-C baseline.
+
+The R5-E hardening gates: `verify-devices.mjs` is the emulated device matrix
+(iPhone-class live + static story, Android-class lite-MUST-be-live, the
+full-nofx rung, no horizontal overflow, sticky stage == 100svh == layout
+viewport); `verify-context-loss.mjs` drills §12.5 (the draw loop parks on a
+lost context — no zombie GL — and a restore rebuilds the stage and resumes
+the mid-page scene state); `verify-soak.mjs` measures the battery posture
+against a production build (the governor owns true idle, the watchdog never
+demotes a calm page, draws never stall, the heap stays flat);
+`verify-a11y.mjs` is the semantic/keyboard/contrast/locale floor. Emulation
+is the regression floor, not the sign-off — iOS URL-bar collapse, real GPU
+probes, and thermal behavior are validated on owner hardware.
 
 ### 14.3 Stop-the-line rules
 

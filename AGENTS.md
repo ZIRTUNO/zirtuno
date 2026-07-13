@@ -341,6 +341,19 @@ Additional stop-the-line gates:
   ≤ 0.41, released at every reading rest), living liquid over Work/Studio/
   the footer release, meniscus wiring, and the transient-contrast floor
   (≥ 3.5:1 under the fade peak; standing reads are veil-free).
+- Tier/viewport/renderer-lifecycle change (R5-E hardening gates):
+  `node scripts/verify-devices.mjs` (emulated matrix: iPhone-class live +
+  static, Android-class lite-must-be-live, full-nofx rung, no horizontal
+  overflow, stage == 100svh), `node scripts/verify-context-loss.mjs`
+  (§12.5: the loop parks on loss, restore resumes mid-page state), and —
+  for battery/cadence claims — `SOAK_MIN=30 node scripts/verify-soak.mjs`
+  against a production build (governor holds idle, no idle demotion, flat
+  heap, never frozen).
+- Copy/semantics/locale/chrome change: `node scripts/verify-a11y.mjs`
+  (landmarks, one h1, labels, skip link, keyboard menu, focus visibility,
+  effective-background contrast, pt/en key parity, reduced-motion story).
+- Emulation is the regression floor, not the sign-off: iOS URL-bar collapse,
+  real GPU probes, and thermal behavior still require the owner's hardware.
 
 A harness exit code does not sign off taste. A screenshot does not replace
 keyboard, locale, or machine verification.

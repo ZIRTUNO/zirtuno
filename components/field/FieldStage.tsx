@@ -72,8 +72,13 @@ export default function FieldStage({
     if (!layer) return; // no WebGL2 → shell's SVG fallback stays
     const gl = layer.gl;
 
+    // §12.5: on loss the loop PARKS (no zombie GL, no fake frame counts, no
+    // battery burn) while the conductor keeps its state warm in PageStage;
+    // restore bumps the epoch, which rebuilds this whole instance fresh.
+    let ctxLost = false;
     const onLost = (e: Event) => {
       e.preventDefault();
+      ctxLost = true;
       cb.current.onContextLost();
     };
     const onRestored = () => rebuild();
@@ -126,6 +131,7 @@ export default function FieldStage({
           : 0.5;
 
     const drawFrame = (tMs: number) => {
+      if (ctxLost) return null; // parked — every caller tolerates a skip
       const aspect =
         gl.drawingBufferHeight > 0
           ? gl.drawingBufferWidth / gl.drawingBufferHeight
