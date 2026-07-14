@@ -56,13 +56,13 @@ footer. The canonical 48 droplets keep their identity across the whole journey.
 Chapter separation comes from choreography, spacing, and light—not repeated
 canvases or chapter hairlines.
 
-| Act | Chapters | Liquid narrative | Light narrative |
-|---|---|---|---|
-| I — Signal | Entry veil, Hero | wordmark assembly hands off to the living mark and seven forms | black, then the first cyan presence |
-| II — Argument | Problem, Ecosystem, Services | pour → fracture → seek → reunify → bloom through the seven service forms | exposure falls through the problem and rises at convergence |
-| III — Practice | Método, Work | the liquid rehearses the client transformation, then becomes a quiet current behind honest work | neutral and workmanlike, with an act boundary before Work |
-| IV — Soul | Origin, Studio | two brother-masses fuse into the mark; one controlled flash; echoes continue behind the studio | emotional peak, afterglow, then settle |
-| V — Invitation | Contact, Footer | every droplet gathers into the mark; submit exhales; one droplet releases beyond the footer | calm return to black |
+| Act            | Chapters                     | Liquid narrative                                                                                | Light narrative                                             |
+| -------------- | ---------------------------- | ----------------------------------------------------------------------------------------------- | ----------------------------------------------------------- |
+| I — Signal     | Entry veil, Hero             | wordmark assembly hands off to the living mark and seven forms                                  | black, then the first cyan presence                         |
+| II — Argument  | Problem, Ecosystem, Services | pour → fracture → seek → reunify → bloom through the seven service forms                        | exposure falls through the problem and rises at convergence |
+| III — Practice | Método, Work                 | the liquid rehearses the client transformation, then becomes a quiet current behind honest work | neutral and workmanlike, with an act boundary before Work   |
+| IV — Soul      | Origin, Studio               | two brother-masses fuse into the mark; one controlled flash; echoes continue behind the studio  | emotional peak, afterglow, then settle                      |
+| V — Invitation | Contact, Footer              | every droplet gathers into the mark; submit exhales; one droplet releases beyond the footer     | calm return to black                                        |
 
 The ten named transitions are `assembly`, `pour`, `fracture`, `seek`,
 `bloom`, `rehearse`, `current`, `fuse + flash`, `gather`, and
@@ -250,11 +250,14 @@ images; a green process exit does not replace visual judgment.
 - `?ftier=full|lite|none` — tier override.
 - `?feco=c` — freeze ecosystem choreography at `c ∈ [0,1]`.
 - `?fphys=0` — bypass fluid physics through the legacy low-pass.
+- `?fphysv3=1` — enable the area-weighted/viscous physics review prototype.
+- `?fobstacles=1` — add cached typography/form avoidance to Physics v3.
+- `?fshape=1` — enable full-tier velocity-aligned free-droplet deformation.
 - `?fgrade=0` — bypass the optics chain and grade (exact pre-optics output).
 - `?fgov=0` — disable the idle-cadence governor.
 - `?fcine=0` — disable the cinematic layer (neutral score, no veils/flash).
 - `window.__scenes` — live scene channels for diagnostics.
-- `window.__optics` — live optics state: post/fmt/tier/frames/gov +
+- `window.__optics` — live optics/shape state: post/fmt/tier/frames/gov +
   `demote()` for watchdog-rung drills.
 - `window.__cine` — the merged light score + `stats.flashes` (the
   one-flash gate reads it).
@@ -266,7 +269,10 @@ text in components. Local concept studies are available only when
 `PORTFOLIO_DEMO_MODE=true` in a non-production environment. Missing or failed
 Sanity access in production fails closed to an honest empty portfolio; it
 never falls back to prototype proof. Contact reports success only after Resend
-confirms delivery. Safe retries reuse a stable per-submission identity and
+confirms delivery. A case study may optionally author a Sanity-hosted `.riv`
+file, localized semantic description, and real poster; the lazy Rive canvas is
+supplemental and never replaces the written case or its static fallback.
+Safe retries reuse a stable per-submission identity and
 byte-equivalent provider payload; accepted-but-unconfirmed mail keeps the form
 intact and is tracked to a signature-verified webhook for final delivery/bounce
 alerts. Both public contact endpoints enforce actual streamed-body ceilings.
@@ -292,4 +298,4 @@ as a review convenience, never as approved production proof.
   CTA intent, reduced motion, or honest portfolio proof, stop and re-run the
   associated gate before proceeding.
 
-*Discreto. Preciso. Transformador. — e comercialmente forte.*
+_Discreto. Preciso. Transformador. — e comercialmente forte._

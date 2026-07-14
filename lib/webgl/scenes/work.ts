@@ -42,6 +42,10 @@ export function makeWorkScene(): SceneModule {
   let hx = 0.5;
   let hy = 0.5;
   let hw = 0.1;
+  let gx = 0.5;
+  let gy = 0.46;
+  let gw = 0.42;
+  let gh = 0.26;
   const scoreOut: Partial<LightScore> = { veil: 0 };
 
   return {
@@ -56,6 +60,10 @@ export function makeWorkScene(): SceneModule {
       hx: 0.5,
       hy: 0.42,
       hw: 0.1,
+      gx: 0.5,
+      gy: 0.46,
+      gw: 0.42,
+      gh: 0.26,
     },
     // scroll envelopes and the shell-written selection are raw; the meniscus
     // geometry + gate ride the default tau so dock/undock/card-glide flow
@@ -83,6 +91,37 @@ export function makeWorkScene(): SceneModule {
       // is written by the shell's delegated pointer handlers; -1 keeps the
       // last geometry so the release glides instead of snapping.
       const cards = g.list("cards");
+      // Fit the current to the visible card grid. Its lanes then occupy the
+      // grid gutters instead of orbiting an unrelated stage centre.
+      let minL = g.vw;
+      let maxR = 0;
+      let minT = vh;
+      let maxB = 0;
+      let visible = 0;
+      for (let i = 0; i < cards.length; i++) {
+        const r = cards[i];
+        if (r.bottom < -vh * 0.08 || r.top > vh * 1.08) continue;
+        minL = Math.min(minL, Math.max(r.left, 0));
+        maxR = Math.max(maxR, Math.min(r.right, g.vw));
+        minT = Math.min(minT, Math.max(r.top, -vh * 0.08));
+        maxB = Math.max(maxB, Math.min(r.bottom, vh * 1.08));
+        visible++;
+      }
+      if (visible > 0) {
+        const md = Math.min(g.vw, vh);
+        out.gx = 0.5 + ((minL + maxR) * 0.5 - g.vw * 0.5) / md;
+        out.gy = 0.5 - ((minT + maxB) * 0.5 - vh * 0.5) / md;
+        out.gw = Math.max(0.12, Math.min(((maxR - minL) * 0.5) / md, 0.72));
+        out.gh = Math.max(0.1, Math.min(((maxB - minT) * 0.5) / md, 0.34));
+      } else {
+        // The truthful empty state is copy-led. Keep its current in the open
+        // right field on wide screens; mobile retains a centered live trace.
+        const wide = g.vw / vh >= 1.2;
+        out.gx = wide ? 0.87 : 0.5;
+        out.gy = 0.45;
+        out.gw = wide ? 0.18 : 0.2;
+        out.gh = 0.25;
+      }
       const hi = out.hov | 0;
       out.mOn = hi >= 0 && hi < cards.length ? 1 : 0;
       if (hi >= 0 && hi < cards.length) {
@@ -105,33 +144,41 @@ export function makeWorkScene(): SceneModule {
       hx = ctx.ch.hx;
       hy = ctx.ch.hy;
       hw = ctx.ch.hw;
+      gx = ctx.ch.gx;
+      gy = ctx.ch.gy;
+      gw = ctx.ch.gw;
+      gh = ctx.ch.gh;
       scoreOut.veil = VEIL_ACT * Math.sin(Math.PI * bp);
     },
 
     target(i: number, ctx: SceneCtx, out: DropletOut) {
       const t = ctx.t;
-      const aspect = ctx.aspect;
-      // the gyre: one shared slow rotation, but every droplet on its own
-      // ellipse (radius, flatness, speed, phase) — shear between the lanes
-      // is what reads as a current instead of a carousel
-      const spanX = Math.max(aspect - 0.25, 0.55) * 0.5;
-      const ax = (0.3 + 0.55 * hash(i, 90)) * spanX;
-      const ay = 0.055 + 0.075 * hash(i, 91);
       const om = 0.045 + 0.05 * hash(i, 92);
       const ph = hash(i, 93) * Math.PI * 2;
-      const cy = 0.4 + 0.1 * hash(i, 96);
-      let x = 0.5 + Math.cos(t * om + ph) * ax;
-      let y = cy + Math.sin(t * om + ph) * ay + 0.02 * Math.sin(t * 0.21 + i);
       const inCurrent = i % 3 === 0;
-      let r = inCurrent
-        ? (0.011 + 0.008 * hash(i, 95)) * rInW
-        : 0; // the rest of the family rides the paths invisibly (handoff mass)
+      const k = (i / 3) | 0;
+      const lane = k & 3;
+      const a = t * om + ph;
+      const lanePad = 0.014 + 0.008 * hash(i, 94);
+      let x: number;
+      let y: number;
+      // Four lanes trace the measured grid perimeter. The fluid core supplies
+      // the organic micro-motion; the scene supplies architectural direction.
+      if (lane < 2) {
+        const side = lane === 0 ? -1 : 1;
+        x = gx + side * (gw + lanePad);
+        y = gy + Math.sin(a) * gh * (0.72 + 0.28 * hash(i, 96));
+      } else {
+        const side = lane === 2 ? -1 : 1;
+        x = gx + Math.cos(a) * gw * (0.76 + 0.24 * hash(i, 96));
+        y = gy + side * (gh + lanePad);
+      }
+      let r = inCurrent ? (0.011 + 0.008 * hash(i, 95)) * rInW : 0; // the rest of the family rides the paths invisibly (handoff mass)
       let bind = 0.12; // free liquid — the fluid core swims it
-      let z = CURRENT_Z;
+      let z = CURRENT_Z + 0.12 * hash(i, 97);
 
       // the meniscus: five fixed identities dock along the hovered card's
       // bottom edge — centre fuller, corners climbing (surface tension)
-      const k = i / 3;
       if (inCurrent && k < MENISCUS_N && mOn > 0.003) {
         const off = (k - (MENISCUS_N - 1) / 2) / ((MENISCUS_N - 1) / 2); // -1..1
         const mx = hx + off * hw * 0.85;
@@ -157,8 +204,8 @@ export function makeWorkScene(): SceneModule {
     },
 
     ambient() {
-      // a whisper of atmosphere behind the grid; the current is the show
-      return 0.25;
+      // Keep the conductor atmosphere subordinate to the measured lanes.
+      return 0.08;
     },
 
     activity() {

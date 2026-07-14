@@ -33,14 +33,6 @@ export default function CustomCursor() {
     let rx = mx;
     let ry = my;
 
-    const onMove = (e: PointerEvent) => {
-      mx = e.clientX;
-      my = e.clientY;
-      if (dotRef.current) {
-        dotRef.current.style.transform = `translate3d(${mx}px, ${my}px, 0)`;
-      }
-    };
-
     const onOver = (e: PointerEvent) => {
       const target = e.target as HTMLElement | null;
       const hovering = !!target?.closest(
@@ -50,23 +42,64 @@ export default function CustomCursor() {
     };
 
     let raf = 0;
-    const tick = () => {
-      rx += (mx - rx) * 0.18;
-      ry += (my - ry) * 0.18;
-      if (ringRef.current) {
-        ringRef.current.style.transform = `translate3d(${rx}px, ${ry}px, 0)`;
-      }
+    let visible = !document.hidden;
+
+    const scheduleTick = () => {
+      if (!visible || raf !== 0) return;
       raf = requestAnimationFrame(tick);
     };
 
-    window.addEventListener("pointermove", onMove);
+    const tick = () => {
+      raf = 0;
+
+      const dx = mx - rx;
+      const dy = my - ry;
+      const settled = dx * dx + dy * dy < 0.04;
+
+      if (settled) {
+        rx = mx;
+        ry = my;
+      } else {
+        rx += dx * 0.18;
+        ry += dy * 0.18;
+      }
+
+      if (ringRef.current) {
+        ringRef.current.style.transform = `translate3d(${rx}px, ${ry}px, 0)`;
+      }
+
+      if (!settled) scheduleTick();
+    };
+
+    const onMove = (e: PointerEvent) => {
+      mx = e.clientX;
+      my = e.clientY;
+      if (dotRef.current) {
+        dotRef.current.style.transform = `translate3d(${mx}px, ${my}px, 0)`;
+      }
+      scheduleTick();
+    };
+
+    const onVisibilityChange = () => {
+      visible = !document.hidden;
+      if (!visible) {
+        cancelAnimationFrame(raf);
+        raf = 0;
+        return;
+      }
+      scheduleTick();
+    };
+
+    window.addEventListener("pointermove", onMove, { passive: true });
     window.addEventListener("pointerover", onOver);
-    raf = requestAnimationFrame(tick);
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    scheduleTick();
 
     return () => {
       cancelAnimationFrame(raf);
       window.removeEventListener("pointermove", onMove);
       window.removeEventListener("pointerover", onOver);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
       document.body.classList.remove("cursor-none");
       document.documentElement.classList.remove("cursor-hovering");
     };

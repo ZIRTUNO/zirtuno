@@ -59,11 +59,15 @@ export function CtaButton({
 
   const onClick = (e: MouseEvent<HTMLAnchorElement>) => {
     if (!intent || href || pathname !== "/") return; // routed path
-    if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
+    if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0)
+      return;
     const target = document.getElementById("contact");
     if (!target) return; // fall through to the routed navigation
     e.preventDefault();
     window.history.replaceState(null, "", `?intent=${intent}#contact`);
+    window.dispatchEvent(
+      new CustomEvent("zirtuno:intent", { detail: { intent } }),
+    );
     const lenis = getLenis();
     if (lenis) {
       lenis.scrollTo(target, {
@@ -90,7 +94,9 @@ export function CtaButton({
       onClick={onClick}
       className={cn(VARIANT_CLASS[variant], className)}
     >
-      {variant === "primary" && <span className="cta-fill" aria-hidden="true" />}
+      {variant === "primary" && (
+        <span className="cta-fill" aria-hidden="true" />
+      )}
       <span className="cta-label">{text}</span>
       {showArrow && (
         <span className="cta-arrow" aria-hidden="true">

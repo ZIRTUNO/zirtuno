@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useContext, useEffect, useState } from "react";
+import { useCallback, useContext, useEffect, useId, useState } from "react";
 import type { KeyboardEvent } from "react";
 import dynamic from "next/dynamic";
 import { useReducedMotion } from "@/lib/animation/reduced-motion";
@@ -18,7 +18,9 @@ import { PerfOverlay } from "./PerfOverlay";
 //   SdfGlassField   = the reduced-motion static glass mark.
 //   MetaballField   = the bare metaball layer (?fflat=1 debug).
 // All client-only (WebGL2) → lazy, no SSR.
-const FieldMorphHero = dynamic(() => import("./FieldMorphHero"), { ssr: false });
+const FieldMorphHero = dynamic(() => import("./FieldMorphHero"), {
+  ssr: false,
+});
 const SdfGlassField = dynamic(() => import("./SdfGlassField"), { ssr: false });
 const MetaballField = dynamic(() => import("./MetaballField"), { ssr: false });
 
@@ -26,7 +28,8 @@ const STATES = STATE_COUNT; // 0 = mark, 1-7 = the service pillars (lib/webgl/sy
 
 /**
  * Hero metaball shell (S2.3) — the STAGE: layout box, static fallback, a11y
- * (keyboard steps + aria-live), pillar indicator and the QA still renderers.
+ * (keyboard slider + authored instructions), pillar indicator and the QA still
+ * renderers.
  * The living liquid itself is the hero segment of the page fluid; this shell
  * registers its box with PageStage (the form is staged exactly over it) and
  * forwards keyboard retargets through HeroLiquidContext.
@@ -35,7 +38,20 @@ const STATES = STATE_COUNT; // 0 = mark, 1-7 = the service pillars (lib/webgl/sy
  * · ?fcursor=x,y (a merged cursor droplet on the still) · ?fflat=1 (bare flat
  * field) · ?fcycle=1 (short dwell — handled by PageStage) · ?ftier=….
  */
-export function MetaballCanvas({ pillarNames }: { pillarNames: string[] }) {
+interface MetaballCanvasProps {
+  pillarNames: string[];
+  controlLabel: string;
+  controlInstructions: string;
+  markLabel: string;
+}
+
+export function MetaballCanvas({
+  pillarNames,
+  controlLabel,
+  controlInstructions,
+  markLabel,
+}: MetaballCanvasProps) {
+  const instructionsId = useId();
   const reduced = useReducedMotion();
   const hero = useContext(HeroLiquidContext);
   const [tier, setTier] = useState<FieldTier | null>(null); // null until probed
@@ -58,7 +74,8 @@ export function MetaballCanvas({ pillarNames }: { pillarNames: string[] }) {
     // ?fcursor=x,y — freeze a merged cursor droplet at (x, y), page coords 0..1
     const fc = sp.get("fcursor")?.match(/^(\d*\.?\d+),(\d*\.?\d+)$/);
     if (fc) {
-      const x = Number(fc[1]), y = Number(fc[2]);
+      const x = Number(fc[1]),
+        y = Number(fc[2]);
       if (x >= 0 && x <= 1 && y >= 0 && y <= 1) setFCursor([x, y]);
     }
     setFFlat(sp.get("fflat") === "1");
@@ -72,13 +89,24 @@ export function MetaballCanvas({ pillarNames }: { pillarNames: string[] }) {
   // the deterministic QA stills and the reduced-motion static glass
   const siteLive = !!hero?.live && !deterministic;
   const ownCanvas =
-    !siteLive && (deterministic || (reduced && (tier === "full" || tier === "lite")));
+    !siteLive &&
+    (deterministic || (reduced && (tier === "full" || tier === "lite")));
 
   const active = hero?.active ?? -1;
 
   // keyboard control only when the live hero can respond to it — never
   // advertise inert shortcuts to assistive tech.
   const interactive = siteLive && !reduced;
+  const currentState = manual ?? (active >= 0 ? active + 1 : 0);
+  const currentStateLabel =
+    currentState === 0
+      ? markLabel
+      : (pillarNames[currentState - 1] ?? markLabel);
+  const setPaused = hero?.setPaused;
+
+  // Route/tier changes must not leave the shared hero machine paused if this
+  // focused shell unmounts before a native blur event can fire.
+  useEffect(() => () => setPaused?.(false), [setPaused]);
 
   const retarget = useCallback(
     (n: number | null) => {
@@ -91,7 +119,7 @@ export function MetaballCanvas({ pillarNames }: { pillarNames: string[] }) {
     (delta: number) =>
       setManual((m) => {
         const base = m != null ? m : active >= 0 ? active + 1 : 0;
-        const next = (base + delta + STATES) % STATES;
+        const next = Math.min(STATES - 1, Math.max(0, base + delta));
         hero?.setManual(next);
         return next;
       }),
@@ -128,10 +156,6 @@ export function MetaballCanvas({ pillarNames }: { pillarNames: string[] }) {
 
   const hideFallback = siteLive ? !!hero?.ready : ownCanvas && ready;
 
-  // announced only while the user is stepping manually (auto-cycle stays quiet)
-  const liveText =
-    manual == null ? "" : manual === 0 ? "Zirtuno" : (pillarNames[manual - 1] ?? "");
-
   const sharedProps = {
     onReady: () => setReady(true),
     onContextLost: () => setReady(false),
@@ -143,12 +167,29 @@ export function MetaballCanvas({ pillarNames }: { pillarNames: string[] }) {
         ref={(el) => hero?.registerStage(el)}
         className="metaball-stage"
         data-hero-metaball
-        role="img"
-        aria-label="Zirtuno"
+        role={interactive ? "slider" : "img"}
+        aria-label={interactive ? controlLabel : markLabel}
+        aria-describedby={interactive ? instructionsId : undefined}
+        aria-valuemin={interactive ? 0 : undefined}
+        aria-valuemax={interactive ? STATES - 1 : undefined}
+        aria-valuenow={interactive ? currentState : undefined}
+        aria-valuetext={interactive ? currentStateLabel : undefined}
         tabIndex={interactive ? 0 : undefined}
-        aria-keyshortcuts={interactive ? "ArrowRight ArrowLeft Home End" : undefined}
+        aria-keyshortcuts={
+          interactive
+            ? "ArrowRight ArrowLeft ArrowUp ArrowDown Home End"
+            : undefined
+        }
         onKeyDown={interactive ? onKeyDown : undefined}
-        onBlur={interactive ? () => retarget(null) : undefined}
+        onFocus={interactive ? () => setPaused?.(true) : undefined}
+        onBlur={
+          interactive
+            ? () => {
+                retarget(null);
+                setPaused?.(false);
+              }
+            : undefined
+        }
       >
         <LogoMark
           className="metaball-fallback"
@@ -178,8 +219,8 @@ export function MetaballCanvas({ pillarNames }: { pillarNames: string[] }) {
           </div>
         )}
       </div>
-      <span className="sr-only" aria-live="polite" aria-atomic="true">
-        {liveText}
+      <span id={instructionsId} className="sr-only">
+        {controlInstructions}
       </span>
       <PillarIndicator active={active} />
       <PerfOverlay />

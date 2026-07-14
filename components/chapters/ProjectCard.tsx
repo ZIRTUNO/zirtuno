@@ -69,7 +69,7 @@ export function ProjectCard({ project }: { project: Project }) {
 
       <div className="project-body">
         <p className="project-cats">{categories.join(" · ")}</p>
-        <h3 className="project-name text-display-m">{title}</h3>
+        <h3 className="project-name type-card-title">{title}</h3>
         <p className="project-line">{localize(project.challenge, locale)}</p>
         <p className="project-built">{localize(project.built, locale)}</p>
 

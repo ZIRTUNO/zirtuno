@@ -14,7 +14,21 @@ const projectFields = `
   liveUrl,
   featured,
   order,
-  "previewImage": previewMedia.asset->url
+  "previewImage": previewMedia.asset->url,
+  "riveExperience": select(
+    defined(riveExperience.file.asset) &&
+    defined(riveExperience.title.pt) &&
+    defined(riveExperience.title.en) &&
+    defined(riveExperience.description.pt) &&
+    defined(riveExperience.description.en) => {
+      "src": riveExperience.file.asset->url,
+      "artboard": riveExperience.artboard,
+      "stateMachine": riveExperience.stateMachine,
+      "title": riveExperience.title,
+      "description": riveExperience.description,
+      "posterImage": riveExperience.poster.asset->url
+    }
+  )
 `;
 
 export const allProjectsQuery = `*[_type == "project"] | order(order asc) { ${projectFields} }`;

@@ -182,8 +182,10 @@ export function makeOriginScene(): SceneModule {
       }
       // resolution: everything sinks and drains
       r *= 1 - q5;
-      // wander while loose; stills as it lands (the same drift family)
-      const wob = PHYS.DRIFT * loose * (1 - q5);
+      // The fluid core supplies loose-body curl. Keep the authored wander only
+      // on ?fphys=0 so the rollback remains alive without double-driving the
+      // normal physics path.
+      const wob = (ctx.physics ? 0 : PHYS.DRIFT) * loose * (1 - q5);
       x += wob * Math.sin(t * (0.5 + hash(i, 62)) + i * 1.7);
       y += wob * Math.cos(t * (0.45 + hash(i, 63)) + i * 2.3);
 

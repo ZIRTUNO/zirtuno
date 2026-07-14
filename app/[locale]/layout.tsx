@@ -7,20 +7,19 @@ import {
   getTranslations,
   getMessages,
 } from "next-intl/server";
-import {
-  Bricolage_Grotesque,
-  Geist,
-  Instrument_Serif,
-  JetBrains_Mono,
-} from "next/font/google";
 import { routing } from "@/lib/i18n/config";
+import {
+  bricolage,
+  geist,
+  instrument,
+  jetbrains,
+} from "@/lib/typography/fonts";
 import CustomCursor from "@/components/chrome/CustomCursor";
 import LenisProvider from "@/components/motion/LenisProvider";
 import { BreathLayer } from "@/components/ui/BreathLayer";
 import { TopBar } from "@/components/chrome/TopBar";
 import { EntryVeil } from "@/components/chrome/EntryVeil";
 import { SiteAnalytics } from "@/components/analytics/SiteAnalytics";
-import "../globals.css";
 
 // Pre-paint skip for the entry veil (S1.10): return visitors in the same
 // session must never see it flash — the attribute lands BEFORE the veil
@@ -28,35 +27,17 @@ import "../globals.css";
 const VEIL_SKIP =
   'try{if(sessionStorage.getItem("zveil"))document.documentElement.dataset.zveil="seen"}catch(e){}';
 const VEIL_SKIP_MARKUP = `<script>${VEIL_SKIP}</script>`;
-
-// Self-hosted at build time by next/font (no runtime third-party requests).
-// Typography system (display/text split, R4):
-//   grotesk = Bricolage → DISPLAY headlines only (hero + section h2s)
-//   text    = Geist     → body, UI, nav, subheads, forms (the workhorse)
-//   serif   = Instrument Serif italic → poetry accents ONLY
-//   mono    = JetBrains Mono → labels, numbers, CTAs
-const bricolage = Bricolage_Grotesque({
-  subsets: ["latin"],
-  variable: "--font-bricolage",
-  display: "swap",
-});
-const geist = Geist({
-  subsets: ["latin"],
-  variable: "--font-geist",
-  display: "swap",
-});
-const instrument = Instrument_Serif({
-  subsets: ["latin"],
-  weight: "400",
-  style: ["normal", "italic"],
-  variable: "--font-instrument",
-  display: "swap",
-});
-const jetbrains = JetBrains_Mono({
-  subsets: ["latin"],
-  variable: "--font-jetbrains",
-  display: "swap",
-});
+const NO_SCRIPT_CSS = `
+  .entry-veil,
+  .page-wipe,
+  .custom-cursor { display: none !important; }
+  .page-transition-content,
+  [data-reveal] {
+    opacity: 1 !important;
+    transform: none !important;
+    filter: none !important;
+  }
+`;
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://zirtuno.com";
 
@@ -117,6 +98,9 @@ export default async function LocaleLayout({
       suppressHydrationWarning
     >
       <body>
+        <noscript>
+          <style>{NO_SCRIPT_CSS}</style>
+        </noscript>
         {/* must precede EntryVeil in DOM order (pre-paint skip) */}
         <div
           aria-hidden="true"

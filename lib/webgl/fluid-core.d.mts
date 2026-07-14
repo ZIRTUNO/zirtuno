@@ -3,8 +3,10 @@
 export declare const FLUID: {
   readonly H_MS: number;
   readonly OMEGA_K: number;
+  readonly DAMP_Z: number;
   readonly REP_RANGE: number;
   readonly REP_A: number;
+  readonly REP_D_MIN: number;
   readonly COH_A: number;
   readonly CURL_V: number;
   readonly CURSOR_RADIUS: number;
@@ -19,7 +21,19 @@ export declare const FLUID: {
   readonly SAT_TTL_MIN: number;
   readonly SAT_TTL_VAR: number;
   readonly SAT_R: number;
+  readonly V3_VISC_RANGE: number;
+  readonly V3_VISC_A: number;
+  readonly V3_ATTR_START: number;
+  readonly V3_ATTR_RANGE: number;
+  readonly V3_ATTR_A: number;
+  readonly V3_SPREAD_A: number;
+  readonly V3_SPREAD_MAX: number;
+  readonly OBSTACLE_MARGIN: number;
+  readonly OBSTACLE_A: number;
 };
+
+export declare const FLUID_OBSTACLE_MAX: number;
+export declare const FLUID_OBSTACLE_STRIDE: number;
 
 export type FluidEnv = {
   px: number;
@@ -28,6 +42,16 @@ export type FluidEnv = {
   pvy: number;
   pon: boolean;
   vel: number;
+  /** cx, cy, half-width, half-height, weight; fixed-stride field-space data. */
+  obstacles?: Float32Array;
+  obstacleCount?: number;
+};
+
+export type FluidCoreOptions = {
+  /** Enable the opt-in area/viscosity/footprint physics review path. */
+  v3?: boolean;
+  /** Enable cached typography/card obstacle flow; requires v3. */
+  obstacles?: boolean;
 };
 
 export type FluidCore = {
@@ -51,4 +75,4 @@ export type FluidCore = {
   ): number;
 };
 
-export declare function makeFluidCore(): FluidCore;
+export declare function makeFluidCore(opts?: FluidCoreOptions): FluidCore;

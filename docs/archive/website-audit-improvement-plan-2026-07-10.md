@@ -1,9 +1,9 @@
-# Zirtuno Website — Updated Audit & Improvement Plan
+# Zirtuno Website — Archived Audit & Improvement Plan
 
 **Update date:** 10 July 2026  
 **Previous audit:** 9 July 2026  
 **Current delivery state:** R5-A, R5-B, R5-C, and R5-D complete; R5-E remains  
-**Review type:** targeted change review, not a complete re-audit
+**Review type:** archived targeted change review, not a complete re-audit
 
 ---
 

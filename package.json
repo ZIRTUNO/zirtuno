@@ -18,6 +18,7 @@
   "dependencies": {
     "@gsap/react": "^2.1.2",
     "@hookform/resolvers": "^5.4.0",
+    "@rive-app/react-webgl2": "^4.29.5",
     "@sanity/client": "^7.23.0",
     "clsx": "^2.1.1",
     "gsap": "^3.15.0",

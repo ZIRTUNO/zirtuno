@@ -53,16 +53,16 @@ machine plus visual gates.
 
 `lib/webgl/symbols.ts` is the ordered runtime registry:
 
-| State | Key | Meaning | Runtime endpoint |
-|---|---|---|---|
-| 0 | `mark` | Zirtuno mark | `public/brand/zirtuno-logo-mark.svg` |
-| 1 | `web` | Web Design & Digital Experience | `public/brand/forms/web.svg` |
-| 2 | `software` | Software & App Development | `public/brand/forms/software.svg` |
-| 3 | `ai` | Artificial Intelligence | `public/brand/forms/ai.svg` |
-| 4 | `automation` | Automation & Integrations | `public/brand/forms/automation.svg` |
-| 5 | `data` | Data & Dashboards | `public/brand/forms/data.svg` |
-| 6 | `branding` | Branding & Positioning | `public/brand/forms/branding.svg` |
-| 7 | `marketing` | Marketing & Growth | `public/brand/forms/marketing.svg` |
+| State | Key          | Meaning                         | Runtime endpoint                     |
+| ----- | ------------ | ------------------------------- | ------------------------------------ |
+| 0     | `mark`       | Zirtuno mark                    | `public/brand/zirtuno-logo-mark.svg` |
+| 1     | `web`        | Web Design & Digital Experience | `public/brand/forms/web.svg`         |
+| 2     | `software`   | Software & App Development      | `public/brand/forms/software.svg`    |
+| 3     | `ai`         | Artificial Intelligence         | `public/brand/forms/ai.svg`          |
+| 4     | `automation` | Automation & Integrations       | `public/brand/forms/automation.svg`  |
+| 5     | `data`       | Data & Dashboards               | `public/brand/forms/data.svg`        |
+| 6     | `branding`   | Branding & Positioning          | `public/brand/forms/branding.svg`    |
+| 7     | `marketing`  | Marketing & Growth              | `public/brand/forms/marketing.svg`   |
 
 Every consumer—the hero machine, pillar indicator, Services, captures, stills,
 and scene targets—uses this order. Do not duplicate the state list.
@@ -250,13 +250,13 @@ blend the target of that identity; they do not replace the array.
 
 The shader loop supports 80 balls:
 
-| Family | Maximum/purpose |
-|---|---|
-| Canonical | 48 persistent journey droplets |
-| Ambient | 12 site-wide slow droplets |
-| Physics satellites | 14 pinch-off droplets |
-| Hero cursor | lead + 2 trail droplets where active |
-| Scene extras | probe/margin within the remaining budget |
+| Family             | Maximum/purpose                          |
+| ------------------ | ---------------------------------------- |
+| Canonical          | 48 persistent journey droplets           |
+| Ambient            | 12 site-wide slow droplets               |
+| Physics satellites | 14 pinch-off droplets                    |
+| Hero cursor        | lead + 2 trail droplets where active     |
+| Scene extras       | probe/margin within the remaining budget |
 
 The conductor enforces the total. A scene may not silently exceed the pack
 budget. If a new extra needs capacity, prove its value and rebalance explicitly.
@@ -294,9 +294,9 @@ Every scene target call writes:
   x: number;
   y: number;
   r: number;
-  bind: number;    // 0 free physics → 1 exact legacy shadow
+  bind: number; // 0 free physics → 1 exact legacy shadow
   cluster: number; // cohesion group, -1 for none
-  z: number;       // 0 near → 1 far, consumed by R5-C
+  z: number; // 0 near → 1 far, consumed by R5-C
 }
 ```
 
@@ -395,6 +395,22 @@ per-droplet low-pass. Keep the bypass until R5-E. The conductor harness checks:
 - finite state over long simulation;
 - satellite budget;
 - arbiter invariants.
+
+Physics-v3 is an opt-in signature-visual study (`?fphysv3=1`), not a silent
+replacement for the signed-off R5-B path. Its area-weighted response, local
+viscosity/attraction, and bounded cluster-footprint correction must still obey
+the same bind contract. `?fobstacles=1` adds at most twelve cached field-space
+reading bounds; only free droplets respond. Exact forms, §3.3 melts, and
+`?fphys=0` remain unchanged. Promotion to the default requires capture review
+and real-hardware feel sign-off.
+
+`?fshape=1` is the paired renderer study for full-tier free liquid. It compiles
+a separate shader variant, derives a filtered velocity direction from the
+already packed droplet state, and preserves projected area while stretching.
+It resolves to circular droplets for exact forms, staged bridges, reduced
+motion, lower tiers, watchdog demotion, and every anonymous transient family;
+stable canonical ids—not packed slot positions—own velocity history. The
+default shader stays unchanged.
 
 ## 9. Interaction
 
@@ -498,19 +514,19 @@ act boundaries. Keep those responsibilities separate.
 
 ## 11. Journey State Map
 
-| Transition/chapter | Form use | Droplet behavior | Bind tendency | Physics/optics note |
-|---|---|---|---|---|
-| Assembly/Hero | exact mark and seven forms | §3.3 bridges + cursor extras | high for forms/bridge | exact material first |
-| Pour | form drains | canonical droplets spill into page | high → low | scroll shear may stir |
-| Problem/Fracture | no solid form at exit | seven coherent chunks separate | mostly low | muted, volumetric |
-| Seek/Ecosystem | mark emerges | cohesion pulls fragments inward | low → high | first exposure rise |
-| Services/Bloom | seven exact forms | scrubbed §3.3 bridges | high | no physics drift at endpoints |
-| Método/Rehearse | exact mark only at Integration | probe, lattice, clusters, satellites | phase-specific | three masses use cohesion |
-| Work/Current | no dominant form | Método's satellites become the gyre (i%3=0) + 5-droplet meniscus at the hovered card | low (0.12; meniscus 0.4) | CURRENT R5-D · z 0.55 sub-surface · act fade III |
-| Origin/Fuse | exact mark at fusion | two clusters → mark → echo | low → high → low | flash external to field |
-| Studio | no dominant form | origin echo survives as sparse orbits (i%6=0) | low (0.08) | CURRENT R5-D · z 0.6 · act fade IV |
-| Contact/Gather | exact mark | all droplets gather; submit exhale | low → high → low | labeled submit remains canonical |
-| Footer/Release | no form | the mark's lowest droplet detaches and sinks out (overshot targets vs contact's held 50% blend) | low | CURRENT R5-D · ends at true page bottom |
+| Transition/chapter | Form use                       | Droplet behavior                                                                                | Bind tendency            | Physics/optics note                              |
+| ------------------ | ------------------------------ | ----------------------------------------------------------------------------------------------- | ------------------------ | ------------------------------------------------ |
+| Assembly/Hero      | exact mark and seven forms     | §3.3 bridges + cursor extras                                                                    | high for forms/bridge    | exact material first                             |
+| Pour               | form drains                    | canonical droplets spill into page                                                              | high → low               | scroll shear may stir                            |
+| Problem/Fracture   | no solid form at exit          | seven coherent chunks separate                                                                  | mostly low               | muted, volumetric                                |
+| Seek/Ecosystem     | mark emerges                   | cohesion pulls fragments inward                                                                 | low → high               | first exposure rise                              |
+| Services/Bloom     | seven exact forms              | scrubbed §3.3 bridges                                                                           | high                     | no physics drift at endpoints                    |
+| Método/Rehearse    | exact mark only at Integration | probe, lattice, clusters, satellites                                                            | phase-specific           | three masses use cohesion                        |
+| Work/Current       | no dominant form               | Método's satellites become the gyre (i%3=0) + 5-droplet meniscus at the hovered card            | low (0.12; meniscus 0.4) | CURRENT R5-D · z 0.55 sub-surface · act fade III |
+| Origin/Fuse        | exact mark at fusion           | two clusters → mark → echo                                                                      | low → high → low         | flash external to field                          |
+| Studio             | no dominant form               | origin echo survives as sparse orbits (i%6=0)                                                   | low (0.08)               | CURRENT R5-D · z 0.6 · act fade IV               |
+| Contact/Gather     | exact mark                     | all droplets gather; submit exhale                                                              | low → high → low         | labeled submit remains canonical                 |
+| Footer/Release     | no form                        | the mark's lowest droplet detaches and sinks out (overshot targets vs contact's held 50% blend) | low                      | CURRENT R5-D · ends at true page bottom          |
 
 ## 12. Performance, Tiers, and Fallbacks
 
@@ -562,25 +578,25 @@ The renderer:
 
 ## 13. File Ownership
 
-| File | Responsibility |
-|---|---|
-| `lib/webgl/symbols.ts` | ordered eight-state registry and runtime SVG URLs |
-| `lib/webgl/symbols.data.mjs` | registered 48-droplet endpoint clouds |
-| `lib/webgl/sdf-core.mjs` | deterministic EDT/blur |
-| `lib/webgl/sdf.ts` | browser SVG rasterization/SDF build |
-| `lib/webgl/sdf-gl.ts` | WebGL layer and SDF texture utilities |
-| `lib/webgl/sdf-glass-shader.mjs` | unified field, exact glass, shared constants |
-| `lib/webgl/field-drivers.ts` | §3.3 bridge, driver contract, 404 lone-drop driver |
-| `lib/webgl/phys.mjs` | canonical identities, targets, physics tables, ambient family |
-| `lib/webgl/fluid-core.mjs` | R5-B dynamics and satellite pool |
-| `lib/webgl/conductor.mjs` | scene state, handoffs, arbiter, integration, score, energy |
-| `lib/webgl/scenes/*.ts` | geometry-to-target choreography |
-| `components/field/PageStage.tsx` | measurements, inputs, scene assembly, one canvas |
-| `components/field/FieldStage.tsx` | WebGL resource lifecycle and draw loop |
-| `components/hero/FieldMorphHero.tsx` | deterministic standalone hero QA path |
-| `lib/webgl/post-chain.ts` | R5-C framebuffer pipeline (scene target, bloom, composite) |
-| `lib/webgl/post-shaders.mjs` | R5-C bright/blur/composite shaders + POST dial-in |
-| `components/field/CinematicVeils.tsx` | R5-D page-light layer (veil/vignette/flash via CSS vars) |
+| File                                  | Responsibility                                                |
+| ------------------------------------- | ------------------------------------------------------------- |
+| `lib/webgl/symbols.ts`                | ordered eight-state registry and runtime SVG URLs             |
+| `lib/webgl/symbols.data.mjs`          | registered 48-droplet endpoint clouds                         |
+| `lib/webgl/sdf-core.mjs`              | deterministic EDT/blur                                        |
+| `lib/webgl/sdf.ts`                    | browser SVG rasterization/SDF build                           |
+| `lib/webgl/sdf-gl.ts`                 | WebGL layer and SDF texture utilities                         |
+| `lib/webgl/sdf-glass-shader.mjs`      | unified field, exact glass, shared constants                  |
+| `lib/webgl/field-drivers.ts`          | §3.3 bridge, driver contract, 404 lone-drop driver            |
+| `lib/webgl/phys.mjs`                  | canonical identities, targets, physics tables, ambient family |
+| `lib/webgl/fluid-core.mjs`            | R5-B dynamics and satellite pool                              |
+| `lib/webgl/conductor.mjs`             | scene state, handoffs, arbiter, integration, score, energy    |
+| `lib/webgl/scenes/*.ts`               | geometry-to-target choreography                               |
+| `components/field/PageStage.tsx`      | measurements, inputs, scene assembly, one canvas              |
+| `components/field/FieldStage.tsx`     | WebGL resource lifecycle and draw loop                        |
+| `components/hero/FieldMorphHero.tsx`  | deterministic standalone hero QA path                         |
+| `lib/webgl/post-chain.ts`             | R5-C framebuffer pipeline (scene target, bloom, composite)    |
+| `lib/webgl/post-shaders.mjs`          | R5-C bright/blur/composite shaders + POST dial-in             |
+| `components/field/CinematicVeils.tsx` | R5-D page-light layer (veil/vignette/flash via CSS vars)      |
 
 Retired architecture is not an alternate path. Do not create:
 
@@ -595,19 +611,22 @@ Retired architecture is not an alternate path. Do not create:
 
 ### 14.1 Deterministic controls
 
-| Control | Contract |
-|---|---|
-| `?fstate=N` | freeze exact form state |
-| `?fpair=a-b-m` | freeze bridge A → B at progress m |
-| `?fcursor=x,y` | freeze cursor merge at coordinates |
-| `?fcycle=1` | shorten hero dwell |
-| `?fflat=1` | flat/debug output |
-| `?ftier=full|lite|none` | tier override |
-| `?feco=c` | ecosystem choreography progress |
-| `?fphys=0` | legacy integrator bypass |
-| `?fgrade=0` | exact optics bypass (no post, grade uniforms at 0 identity) |
-| `?fgov=0` | idle-cadence governor bypass |
-| `?fcine=0` | cinematic bypass (neutral score, no veils, flash cannot latch) |
+| Control                   | Contract                                                       |
+| ------------------------- | -------------------------------------------------------------- |
+| `?fstate=N`               | freeze exact form state                                        |
+| `?fpair=a-b-m`            | freeze bridge A → B at progress m                              |
+| `?fcursor=x,y`            | freeze cursor merge at coordinates                             |
+| `?fcycle=1`               | shorten hero dwell                                             |
+| `?fflat=1`                | flat/debug output                                              |
+| `?ftier=full\|lite\|none` | tier override                                                  |
+| `?feco=c`                 | ecosystem choreography progress                                |
+| `?fphys=0`                | legacy integrator bypass                                       |
+| `?fphysv3=1`              | opt-in area/viscosity/footprint physics review                 |
+| `?fobstacles=1`           | opt-in cached typography/form flow; requires Physics v3        |
+| `?fshape=1`               | opt-in full-tier velocity-aligned free-droplet shape review    |
+| `?fgrade=0`               | exact optics bypass (no post, grade uniforms at 0 identity)    |
+| `?fgov=0`                 | idle-cadence governor bypass                                   |
+| `?fcine=0`                | cinematic bypass (neutral score, no veils, flash cannot latch) |
 
 ### 14.2 Required harnesses
 
@@ -703,4 +722,4 @@ The liquid system is complete when:
 - full, full-nofx, lite, half, and static behavior communicate one brand;
 - all review captures and owner taste checkpoints are complete.
 
-*The liquid is the proof: what was dispersed becomes one connected organism.*
+_The liquid is the proof: what was dispersed becomes one connected organism._

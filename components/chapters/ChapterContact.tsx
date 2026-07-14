@@ -1,5 +1,5 @@
-import { Suspense } from "react";
 import { useTranslations } from "next-intl";
+import type { ContactIntent } from "@/lib/forms/contact";
 import { Reveal } from "@/components/ui/Reveal";
 import { ContactForm } from "./ContactForm";
 import { ContactMetaball } from "./ContactMetaball";
@@ -15,7 +15,13 @@ const CONTACT_EMAIL = process.env.NEXT_PUBLIC_CONTACT_EMAIL?.trim();
  * the metaball (placeholder; Phase 2 "exhale") is decoration above a clear,
  * labeled form. Submit is always the canonical labeled button.
  */
-export function ChapterContact() {
+export function ChapterContact({
+  initialIntent,
+  initialStatus,
+}: {
+  initialIntent: ContactIntent;
+  initialStatus?: string;
+}) {
   const t = useTranslations("contact");
   const hasDirectChannel = Boolean(
     WHATSAPP_URL || CONTACT_EMAIL || INSTAGRAM_URL,
@@ -37,20 +43,23 @@ export function ChapterContact() {
         </div>
 
         <Reveal inView delay={0.05} variant="blur">
-          <p className="font-poetic mt-6 text-display-l text-paper">
+          <h2 className="type-section-title mx-auto mt-[var(--type-space-label-title)] text-paper">
             {t("prompt")}
-          </p>
+          </h2>
         </Reveal>
 
         <Reveal inView delay={0.1}>
-          <p className="mt-4 text-body-l text-paper-mute">{t("subPrompt")}</p>
+          <p className="mx-auto mt-[var(--type-space-title-lead)] max-w-[42ch] text-body-l text-paper-mute">
+            {t("subPrompt")}
+          </p>
         </Reveal>
       </div>
 
       <div className="mx-auto mt-14 max-w-xl">
-        <Suspense fallback={null}>
-          <ContactForm />
-        </Suspense>
+        <ContactForm
+          initialIntent={initialIntent}
+          initialStatus={initialStatus}
+        />
 
         {hasDirectChannel && (
           <div className="contact-secondary">

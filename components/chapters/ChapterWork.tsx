@@ -23,20 +23,20 @@ export async function ChapterWork() {
       </Reveal>
 
       <Reveal inView delay={0.05}>
-        <h2 className="mt-6 text-display-l font-grotesk font-medium text-paper">
+        <h2 className="type-section-title mt-[var(--type-space-label-title)] text-paper">
           {t("headline")}
         </h2>
       </Reveal>
 
       <Reveal inView delay={0.1}>
-        <p className="mt-5 max-w-2xl text-lead text-paper-mute">
+        <p className="type-lead-copy mt-[var(--type-space-title-lead)] text-paper-mute">
           {t("lead")}
         </p>
       </Reveal>
 
       {projects.length > 0 ? (
         <>
-          <div className="mt-12 grid gap-8 sm:grid-cols-2">
+          <div className="mt-16 grid gap-10 sm:grid-cols-2">
             {projects.map((project, index) => (
               <Reveal
                 inView

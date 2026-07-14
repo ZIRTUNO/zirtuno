@@ -30,18 +30,22 @@ export function ChapterName() {
       id="name"
       data-chapter
       className="relative"
+      aria-labelledby="name-title"
     >
       <div className="page-x pt-28 md:pt-40">
         <Reveal inView as="p" className="chapter-label">
           {t("chapterLabel")}
         </Reveal>
+        <h2 id="name-title" className="sr-only font-grotesk">
+          {t("headline")}
+        </h2>
       </div>
 
       <div className="origin-journey">
         {/* Beat 1 — Two brothers: a quiet opening; the two masses drift in */}
         <div className="origin-beat page-x">
           <Reveal inView variant="blur">
-            <p className="font-poetic origin-open">{t("b1")}</p>
+            <p className="origin-open">{t("b1")}</p>
           </Reveal>
         </div>
 
@@ -59,21 +63,21 @@ export function ChapterName() {
             </p>
           </Reveal>
           <Reveal inView variant="blur">
-            <p className="font-poetic name-word-text">{t("b2")}</p>
+            <p className="name-word-text">{t("b2")}</p>
           </Reveal>
         </div>
 
         {/* Beat 3 — The purpose: the dominant line over the breathing mark */}
         <div className="origin-beat origin-beat--hold page-x">
           <Reveal inView variant="blur">
-            <p className="font-poetic origin-statement">{t("b3")}</p>
+            <p className="origin-statement">{t("b3")}</p>
           </Reveal>
         </div>
 
         {/* Beat 4 — The evolution: the mark multiplies (the ecosystem echo) */}
         <div className="origin-beat page-x">
           <Reveal inView variant="blur">
-            <p className="font-poetic origin-coda">{t("b4")}</p>
+            <p className="origin-coda">{t("b4")}</p>
           </Reveal>
         </div>
 

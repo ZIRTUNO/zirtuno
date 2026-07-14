@@ -11,11 +11,7 @@ export const runtime = "nodejs";
 export const maxDuration = 15;
 
 type ContactError =
-  | "invalid"
-  | "validation"
-  | "configuration"
-  | "rate_limit"
-  | "send";
+  "invalid" | "validation" | "configuration" | "rate_limit" | "send";
 
 type ContactResponseBody =
   | { ok: true; delivered: true }
@@ -54,7 +50,10 @@ async function beforeDeadline<T>(promise: Promise<T>, deadlineAt: number) {
     return await Promise.race([
       promise,
       new Promise<never>((_, reject) => {
-        timer = setTimeout(() => reject(new ProviderDeadlineError()), remaining);
+        timer = setTimeout(
+          () => reject(new ProviderDeadlineError()),
+          remaining,
+        );
       }),
     ]);
   } finally {
@@ -79,6 +78,35 @@ function contactResponse(
       },
     },
   );
+}
+
+function contactFormResponse(
+  req: Request,
+  requestId: string,
+  body: ContactResponseBody,
+  extraHeaders: Record<string, string> = {},
+) {
+  const requestUrl = new URL(req.url);
+  const locale = requestUrl.searchParams.get("locale") === "pt" ? "pt" : "en";
+  const destination = new URL(`/${locale}`, requestUrl.origin);
+  const state =
+    body.ok && "delivered" in body && body.delivered
+      ? "success"
+      : body.ok && "pending" in body && body.pending
+        ? "pending"
+        : !body.ok && body.error === "rate_limit"
+          ? "rate_limit"
+          : "error";
+  destination.searchParams.set("contact", state);
+  destination.hash = "contact";
+  return NextResponse.redirect(destination, {
+    status: 303,
+    headers: {
+      "Cache-Control": "no-store",
+      "X-Request-Id": requestId,
+      ...extraHeaders,
+    },
+  });
 }
 
 function takeRateLimit(req: Request): number | null {
@@ -185,12 +213,10 @@ function providerErrorContext(error: unknown) {
 export async function POST(req: Request) {
   const requestId = crypto.randomUUID();
   const providerDeadlineAt = Date.now() + PROVIDER_DEADLINE_MS;
-  if (
-    !req.headers
-      .get("content-type")
-      ?.toLowerCase()
-      .startsWith("application/json")
-  ) {
+  const contentType = req.headers.get("content-type")?.toLowerCase() ?? "";
+  const isJson = contentType.startsWith("application/json");
+  const isForm = contentType.startsWith("application/x-www-form-urlencoded");
+  if (!isJson && !isForm) {
     logContactEvent("warn", "request_content_type_rejected", requestId);
     return contactResponse(
       requestId,
@@ -198,42 +224,51 @@ export async function POST(req: Request) {
       415,
     );
   }
+  const respond = (
+    body: ContactResponseBody,
+    status: number,
+    extraHeaders: Record<string, string> = {},
+  ) =>
+    isForm
+      ? contactFormResponse(req, requestId, body, extraHeaders)
+      : contactResponse(requestId, body, status, extraHeaders);
   if (!requestOriginAllowed(req)) {
     logContactEvent("warn", "request_origin_rejected", requestId);
-    return contactResponse(
-      requestId,
-      { ok: false, delivered: false, error: "invalid" },
-      403,
-    );
+    return respond({ ok: false, delivered: false, error: "invalid" }, 403);
   }
   const retryAfter = takeRateLimit(req);
   if (retryAfter !== null) {
     logContactEvent("warn", "request_rate_limited", requestId);
-    return contactResponse(
-      requestId,
-      { ok: false, delivered: false, error: "rate_limit" },
-      429,
-      { "Retry-After": String(retryAfter) },
-    );
+    return respond({ ok: false, delivered: false, error: "rate_limit" }, 429, {
+      "Retry-After": String(retryAfter),
+    });
   }
   let body: unknown;
   try {
-    body = JSON.parse(await readLimitedText(req, FORM_MAX_BYTES));
+    const raw = await readLimitedText(req, FORM_MAX_BYTES);
+    if (isJson) {
+      body = JSON.parse(raw);
+    } else {
+      const fields = new URLSearchParams(raw);
+      body = {
+        name: fields.get("name") ?? "",
+        email: fields.get("email") ?? "",
+        company: fields.get("company") ?? "",
+        message: fields.get("message") ?? "",
+        intent: fields.get("intent") ?? "general",
+        website: fields.get("website") ?? "",
+        submissionId: crypto.randomUUID(),
+      };
+    }
   } catch (error) {
     if (error instanceof RequestBodyTooLargeError) {
       logContactEvent("warn", "request_too_large", requestId);
-      return contactResponse(
-        requestId,
-        { ok: false, delivered: false, error: "invalid" },
-        413,
-      );
+      return respond({ ok: false, delivered: false, error: "invalid" }, 413);
     }
-    logContactEvent("warn", "request_invalid_json", requestId);
-    return contactResponse(
-      requestId,
-      { ok: false, delivered: false, error: "invalid" },
-      400,
-    );
+    logContactEvent("warn", "request_invalid_payload", requestId, {
+      encoding: isJson ? "json" : "form",
+    });
+    return respond({ ok: false, delivered: false, error: "invalid" }, 400);
   }
 
   const parsed = contactApiSchema.safeParse(body);
@@ -247,11 +282,7 @@ export async function POST(req: Request) {
         ),
       ],
     });
-    return contactResponse(
-      requestId,
-      { ok: false, delivered: false, error: "validation" },
-      422,
-    );
+    return respond({ ok: false, delivered: false, error: "validation" }, 422);
   }
 
   const { name, email, company, message, intent, submissionId } = parsed.data;
@@ -262,8 +293,7 @@ export async function POST(req: Request) {
       production: process.env.NODE_ENV === "production",
       intent,
     });
-    return contactResponse(
-      requestId,
+    return respond(
       { ok: false, delivered: false, error: "configuration" },
       503,
     );
@@ -306,22 +336,19 @@ export async function POST(req: Request) {
         intent,
         ...providerErrorContext(error),
       });
-      return contactResponse(
-        requestId,
-        { ok: false, delivered: false, error: "send" },
-        502,
-      );
+      return respond({ ok: false, delivered: false, error: "send" }, 502);
     }
 
     if (!data?.id) {
-      logContactEvent("error", "delivery_provider_response_invalid", requestId, {
-        intent,
-      });
-      return contactResponse(
+      logContactEvent(
+        "error",
+        "delivery_provider_response_invalid",
         requestId,
-        { ok: false, delivered: false, error: "send" },
-        502,
+        {
+          intent,
+        },
       );
+      return respond({ ok: false, delivered: false, error: "send" }, 502);
     }
 
     logContactEvent("info", "delivery_accepted", requestId, {
@@ -339,26 +366,21 @@ export async function POST(req: Request) {
         intent,
         providerMessageId: data.id,
       });
-      return contactResponse(requestId, { ok: true, delivered: true }, 200);
+      return respond({ ok: true, delivered: true }, 200);
     }
     if (deliveryState === "failed") {
       logContactEvent("error", "delivery_terminal_failure", requestId, {
         intent,
         providerMessageId: data.id,
       });
-      return contactResponse(
-        requestId,
-        { ok: false, delivered: false, error: "send" },
-        502,
-      );
+      return respond({ ok: false, delivered: false, error: "send" }, 502);
     }
 
     logContactEvent("warn", "delivery_confirmation_pending", requestId, {
       intent,
       providerMessageId: data.id,
     });
-    return contactResponse(
-      requestId,
+    return respond(
       { ok: true, accepted: true, delivered: false, pending: true },
       202,
     );
@@ -367,10 +389,6 @@ export async function POST(req: Request) {
       intent,
       ...providerErrorContext(error),
     });
-    return contactResponse(
-      requestId,
-      { ok: false, delivered: false, error: "send" },
-      502,
-    );
+    return respond({ ok: false, delivered: false, error: "send" }, 502);
   }
 }

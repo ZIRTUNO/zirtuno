@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
+import { createPortal } from "react-dom";
 import dynamic from "next/dynamic";
 import { useReducedMotion } from "@/lib/animation/reduced-motion";
 import { useInView } from "@/lib/animation/use-in-view";
@@ -17,6 +18,10 @@ import {
   smooth01,
 } from "@/lib/webgl/field-drivers";
 import { makeConductor } from "@/lib/webgl/conductor.mjs";
+import {
+  FLUID_OBSTACLE_MAX,
+  FLUID_OBSTACLE_STRIDE,
+} from "@/lib/webgl/fluid-core.mjs";
 import type {
   SceneChannels,
   SceneGeom,
@@ -48,11 +53,68 @@ const FieldStage = dynamic(() => import("@/components/field/FieldStage"), {
 
 export type EcoNode = { name: string; tooltip: string };
 
+// The v3 review path lets free liquid acknowledge a deliberately small set of
+// business-critical reading surfaces. Bounds are cached outside the frame
+// loop; weight controls influence without changing the authored composition.
+const FLOW_OBSTACLES = [
+  ["#hero .type-hero-title", 1],
+  ["#hero .type-lead-copy", 0.72],
+  ["#problem .type-section-title", 0.9],
+  ["#ecosystem .type-section-title", 0.82],
+  ["#services .type-section-title", 0.9],
+  ["#method .type-section-title", 0.82],
+  ["#work .type-section-title", 0.82],
+  ["#name .origin-statement", 0.9],
+  ["#name .origin-closing", 0.72],
+  ["#studio .type-feature-title", 0.72],
+  ["#contact .type-section-title", 0.9],
+  ["#contact .contact-form", 1],
+] as const;
+
+function makeJourneyRuntime(
+  onHeroActive: (active: number) => void,
+  search: URLSearchParams | null,
+) {
+  // journey order: site → método → work → origin → studio → contact →
+  // footer — the R5-D scenes fill what were the liquid-dead bands
+  const scenes: SceneModule[] = [
+    makeSiteScene({ onHeroActive }),
+    makeMethodScene(),
+    makeWorkScene(),
+    makeOriginScene(),
+    makeStudioScene(),
+    makeContactScene(),
+    makeFooterScene(),
+  ];
+  // ?fphys=0 routes the legacy low-pass integrator (A/B + escape hatch);
+  // ?fphysv3=1 enables the approved force prototype and ?fobstacles=1 adds
+  // cached type/form avoidance. Both remain opt-in through visual review.
+  // ?fcine=0 keeps the light score neutral (no veils/flash/score grade).
+  const physics = search?.get("fphys") !== "0";
+  const physicsV3 = physics && search?.get("fphysv3") === "1";
+  const obstacleFlow = physicsV3 && search?.get("fobstacles") === "1";
+  const cine = search?.get("fcine") !== "0";
+
+  return [
+    makeConductor(scenes, {
+      physics,
+      physicsV3,
+      obstacleFlow,
+      cine,
+    }),
+    scenes,
+    cine,
+    physics ? (physicsV3 ? "v3" : "v2") : "legacy",
+    obstacleFlow,
+  ] as const;
+}
+
 /**
  * PageStage (R5-A) — the CONDUCTOR's shell: ONE persistent fluid renderer for
  * the ENTIRE page. One sticky full-viewport canvas under every chapter, one
- * rAF measurement loop, four scenes (site · method · origin · contact) whose
- * 48 droplets are the SAME 48 droplets end to end — the conductor damps every
+ * rAF measurement loop, seven scenes (site · method · work · origin · studio ·
+ * contact · footer) whose 48 droplets are the SAME 48 droplets end to end —
+ * the conductor damps every
  * channel, blends per-droplet targets across scene handoffs, arbitrates the
  * two form slots (ownership transfers only through droplet-only states) and
  * packs the one shared field. No per-chapter canvases, no handoffs-as-swaps.
@@ -60,14 +122,15 @@ export type EcoNode = { name: string; tooltip: string };
  * DOM choreography also lives here (in the sticky layer): the ecosystem
  * orbital labels, the origin founding-pillar labels, and the method progress
  * thread (--method-flow). Deterministic layering: canvas z-0 (pointer-events
- * none), copy z-10. Reduced-motion / "none" tier / hero QA stills render no
+ * none), copy z-10, Ecosystem controls z-12. Reduced-motion / "none" tier /
+ * hero QA stills render no
  * canvas and flag the wrapper `data-liquid="static"` so every chapter's
  * static fallback shows instead.
  *
  * QA: ?feco=c freezes the S4 choreography at c ∈ [0,1]; ?fcycle=1 shortens
  * the hero dwell; ?fstate/?fpair/?fcursor/?fflat switch the hero to its
  * deterministic standalone renderers (page canvas off). window.__liquid
- * exposes the site scene's raw channels; window.__scenes exposes all four.
+ * exposes the site scene's raw channels; window.__scenes exposes all seven.
  */
 export function PageStage({
   nodes,
@@ -90,39 +153,42 @@ export function PageStage({
   const [heroQA, setHeroQA] = useState(false);
   const [heroReady, setHeroReady] = useState(false);
   const [heroActive, setHeroActive] = useState(-1);
+  const [ecoInteractive, setEcoInteractive] = useState(false);
+  const [ecoKeyboardEnabled, setEcoKeyboardEnabled] = useState(false);
+  const [openEcoNode, setOpenEcoNode] = useState<number | null>(null);
+  const [ecoHost, setEcoHost] = useState<HTMLElement | null>(null);
   const nodeEls = useRef<(HTMLLIElement | null)[]>([]);
   const centerEl = useRef<HTMLSpanElement>(null);
   const pillarEls = useRef<(HTMLLIElement | null)[]>([]);
   const stageEl = useRef<HTMLElement | null>(null);
+  const ecoLayerEl = useRef<HTMLDivElement | null>(null);
+  const ecoInteractiveRef = useRef(false);
+  const heroPointerActive = useRef(false);
+  const heroFocusActive = useRef(false);
   const inViewRef = useRef(true);
   useEffect(() => {
     inViewRef.current = inView;
   }, [inView]);
 
-  const [conductor, scenes, cine] = useMemo(() => {
-    // setHeroActive is a stable useState setter — safe to close over here
-    // (journey order: site → método → work → origin → studio → contact →
-    // footer — the R5-D scenes fill what were the liquid-dead bands)
-    const scs: SceneModule[] = [
-      makeSiteScene({ onHeroActive: setHeroActive }),
-      makeMethodScene(),
-      makeWorkScene(),
-      makeOriginScene(),
-      makeStudioScene(),
-      makeContactScene(),
-      makeFooterScene(),
-    ];
-    const sp =
-      typeof window === "undefined"
-        ? null
-        : new URLSearchParams(window.location.search);
-    // ?fphys=0 routes the legacy low-pass integrator (A/B + escape hatch);
-    // ?fcine=0 keeps the light score neutral (no veils/flash/score grade)
-    const physics = sp?.get("fphys") !== "0";
-    const cin = sp?.get("fcine") !== "0";
-    return [makeConductor(scs, { physics, cine: cin }), scs, cin] as const;
-  }, []);
+  // Client components are also rendered on the server. Build an SSR-safe
+  // default bundle, then replace it from the real browser query before the
+  // tier probe can mount the canvas. This keeps hydration deterministic while
+  // making review/rollback flags effective in production.
+  const [runtime, setRuntime] = useState(() =>
+    makeJourneyRuntime(setHeroActive, null),
+  );
+  const [conductor, scenes, cine, physicsMode, obstacleFlow] = runtime;
   const site = conductor.raw.site;
+  const enabled = !reduced && !heroQA && (tier === "full" || tier === "lite");
+
+  useEffect(() => {
+    setRuntime(
+      makeJourneyRuntime(
+        setHeroActive,
+        new URLSearchParams(window.location.search),
+      ),
+    );
+  }, []);
 
   useEffect(() => {
     setTier(detectFieldTier());
@@ -140,6 +206,23 @@ export function PageStage({
     );
   }, [site]);
 
+  // Keep the focusable organism controls in Chapter Ecosystem's DOM order
+  // while PageStage retains their shared choreography and geometry.
+  useEffect(() => {
+    setEcoHost(document.getElementById("ecosystem-interactions-host"));
+  }, []);
+
+  // Keep the desktop orbit in the document's keyboard order for the whole
+  // live experience. Its visual/pointer envelope may follow the choreography,
+  // but focus must never disappear merely because focusing caused a scroll.
+  useEffect(() => {
+    const desktop = window.matchMedia("(min-width: 1024px)");
+    const sync = () => setEcoKeyboardEnabled(enabled && desktop.matches);
+    sync();
+    desktop.addEventListener("change", sync);
+    return () => desktop.removeEventListener("change", sync);
+  }, [enabled]);
+
   // QA visibility: the live raw channels + the merged light score (read-only
   // diagnostics; verify-cinematics reads __cine.stats.flashes for the
   // one-flash gate — it exists on EVERY path, including reduced motion,
@@ -155,13 +238,22 @@ export function PageStage({
     w.__cine = { score: conductor.score, stats: conductor.stats };
   }, [site, conductor]);
 
-  const enabled = !reduced && !heroQA && (tier === "full" || tier === "lite");
-
   const setManual = useCallback(
     (n: number | null) => {
       site.heroManual = n === null ? -1 : n;
     },
     [site],
+  );
+  const syncHeroPause = useCallback(() => {
+    site.heroHover =
+      heroPointerActive.current || heroFocusActive.current ? 1 : 0;
+  }, [site]);
+  const setPaused = useCallback(
+    (paused: boolean) => {
+      heroFocusActive.current = paused;
+      syncHeroPause();
+    },
+    [syncHeroPause],
   );
   const registerStage = useCallback((el: HTMLElement | null) => {
     stageEl.current = el;
@@ -172,9 +264,10 @@ export function PageStage({
       ready: heroReady,
       active: heroActive,
       setManual,
+      setPaused,
       registerStage,
     }),
-    [enabled, heroReady, heroActive, setManual, registerStage],
+    [enabled, heroReady, heroActive, setManual, setPaused, registerStage],
   );
 
   // the exhale gesture (ContactForm dispatches on submit) → the contact scene
@@ -195,11 +288,18 @@ export function PageStage({
       const r = layer.getBoundingClientRect();
       if (r.width < 2 || r.height < 2) return;
       const aspect = r.width / r.height;
+      const topbarBottom =
+        document.querySelector<HTMLElement>(".topbar")?.getBoundingClientRect()
+          .bottom ?? 0;
       nodeEls.current.forEach((el, i) => {
         if (!el) return;
         const p = ecoNodePos(i, aspect);
+        const halfH = el.offsetHeight / 2;
+        const minY = Math.max(0, topbarBottom - r.top) + halfH + 8;
+        const maxY = r.height - halfH - 12;
+        const y = Math.min(Math.max((1 - p.y) * r.height, minY), maxY);
         el.style.left = `${(((p.x - 0.5) / aspect + 0.5) * 100).toFixed(2)}%`;
-        el.style.top = `${((1 - p.y) * 100).toFixed(2)}%`;
+        el.style.top = `${y.toFixed(1)}px`;
       });
       pillarEls.current.forEach((el, i) => {
         if (!el) return;
@@ -212,7 +312,7 @@ export function PageStage({
     const ro = new ResizeObserver(layout);
     ro.observe(layer);
     return () => ro.disconnect();
-  }, [nodes.length, pillars.length]);
+  }, [nodes.length, pillars.length, ecoHost]);
 
   // ── the ONE measurement loop (all scenes' channels + DOM choreography) ─────
   useEffect(() => {
@@ -220,14 +320,37 @@ export function PageStage({
     const wrap = wrapRef.current;
     if (!wrap) return;
 
+    const ecoDesktop = window.matchMedia("(min-width: 1024px)");
     let lastG = -1;
     let lastS = -1;
+    let lastEcoDesktop = ecoDesktop.matches;
+    let lastEcoInteractive = ecoInteractiveRef.current;
     const applyEcoLabels = (grow: number, svcPos: number) => {
-      if (Math.abs(grow - lastG) < 0.002 && Math.abs(svcPos - lastS) < 0.002)
+      const desktop = ecoDesktop.matches;
+      if (
+        Math.abs(grow - lastG) < 0.002 &&
+        Math.abs(svcPos - lastS) < 0.002 &&
+        desktop === lastEcoDesktop
+      )
         return;
       lastG = grow;
       lastS = svcPos;
+      lastEcoDesktop = desktop;
       const fade = 1 - smooth01(svcPos);
+      // The orbit becomes keyboard-operable only after every tendril has
+      // arrived. Before/after that beat it leaves the tab order; the semantic
+      // stack remains available on mobile and every static path.
+      const interactive = enabled && desktop && grow >= 0.88 && fade >= 0.55;
+      if (interactive !== lastEcoInteractive) {
+        lastEcoInteractive = interactive;
+        ecoInteractiveRef.current = interactive;
+        if (
+          !interactive &&
+          !ecoLayerEl.current?.contains(document.activeElement)
+        )
+          setOpenEcoNode(null);
+        setEcoInteractive(interactive);
+      }
       nodeEls.current.forEach((el, i) => {
         if (!el) return;
         const e = ecoNodeEnv(grow, i) * fade;
@@ -306,15 +429,24 @@ export function PageStage({
       for (const [key, sel] of Object.entries(sc.anchors ?? {}))
         anchorEls.set(key, document.querySelector(sel));
       const listEls = new Map<string, HTMLElement[]>();
-      for (const [key, sel] of Object.entries(sc.lists ?? {}))
-        listEls.set(key, Array.from(wrap.querySelectorAll<HTMLElement>(sel)));
+      const listRects = new Map<string, DOMRect[]>();
+      for (const [key, sel] of Object.entries(sc.lists ?? {})) {
+        const els = Array.from(wrap.querySelectorAll<HTMLElement>(sel));
+        listEls.set(key, els);
+        listRects.set(key, new Array<DOMRect>(els.length));
+      }
       const g: SceneGeom = {
         vh: 0,
         vw: 0,
         scrollY: 0,
         rect: (key) => anchorEls.get(key)?.getBoundingClientRect() ?? null,
-        list: (key) =>
-          (listEls.get(key) ?? []).map((el) => el.getBoundingClientRect()),
+        list: (key) => {
+          const els = listEls.get(key) ?? [];
+          const rects = listRects.get(key) ?? [];
+          for (let i = 0; i < els.length; i++)
+            rects[i] = els[i].getBoundingClientRect();
+          return rects;
+        },
       };
       return g;
     });
@@ -322,6 +454,96 @@ export function PageStage({
       wrap.querySelectorAll("#method .method-phase").length - 1,
       1,
     );
+
+    // Physics-v3 obstacle source geometry is document-relative and refreshed
+    // only when layout can change. The rAF path merely translates cached
+    // bounds into the fixed field, avoiding getBoundingClientRect/layout work.
+    const obstacleDoc = new Float32Array(
+      FLUID_OBSTACLE_MAX * FLUID_OBSTACLE_STRIDE,
+    );
+    const obstacleSources = obstacleFlow
+      ? FLOW_OBSTACLES.map(([selector, weight]) => ({
+          el: wrap.querySelector<HTMLElement>(selector),
+          weight,
+        }))
+      : [];
+    let obstacleDocCount = 0;
+    const cacheObstacleGeometry = () => {
+      obstacleDocCount = 0;
+      if (!obstacleFlow) return;
+      const scrollX = window.scrollX;
+      const scrollY = window.scrollY;
+      for (let i = 0; i < obstacleSources.length; i++) {
+        const source = obstacleSources[i];
+        if (!source.el || obstacleDocCount >= FLUID_OBSTACLE_MAX) continue;
+        const rect = source.el.getBoundingClientRect();
+        if (rect.width < 2 || rect.height < 2) continue;
+        const off = obstacleDocCount * FLUID_OBSTACLE_STRIDE;
+        obstacleDoc[off] = rect.left + scrollX;
+        obstacleDoc[off + 1] = rect.top + scrollY;
+        obstacleDoc[off + 2] = rect.width;
+        obstacleDoc[off + 3] = rect.height;
+        obstacleDoc[off + 4] = source.weight;
+        obstacleDocCount++;
+      }
+    };
+    cacheObstacleGeometry();
+    let obstacleRefresh = 0;
+    let obstacleDisposed = false;
+    const queueObstacleGeometry = () => {
+      if (!obstacleFlow || obstacleDisposed || obstacleRefresh) return;
+      obstacleRefresh = window.requestAnimationFrame(() => {
+        obstacleRefresh = 0;
+        cacheObstacleGeometry();
+      });
+    };
+    const obstacleResize = obstacleFlow
+      ? new ResizeObserver(queueObstacleGeometry)
+      : null;
+    for (const source of obstacleSources)
+      if (source.el) obstacleResize?.observe(source.el);
+    if (obstacleFlow)
+      window.addEventListener("resize", queueObstacleGeometry, {
+        passive: true,
+      });
+    let obstacleWarmup = 0;
+    if (obstacleFlow) {
+      obstacleWarmup = window.setTimeout(cacheObstacleGeometry, 1400);
+      void document.fonts?.ready.then(queueObstacleGeometry);
+    }
+
+    const applyObstacleFlow = (
+      vh: number,
+      vw: number,
+      md: number,
+      y: number,
+    ) => {
+      if (!obstacleFlow) {
+        conductor.input.obstacleCount = 0;
+        return;
+      }
+      const out = conductor.input.obstacles;
+      const scrollX = window.scrollX;
+      const overscan = Math.min(vh * 0.14, 120);
+      const padding = Math.min(Math.max(md * 0.018, 12), 24);
+      let count = 0;
+      for (let i = 0; i < obstacleDocCount && count < FLUID_OBSTACLE_MAX; i++) {
+        const src = i * FLUID_OBSTACLE_STRIDE;
+        const left = obstacleDoc[src] - scrollX;
+        const top = obstacleDoc[src + 1] - y;
+        const width = obstacleDoc[src + 2];
+        const height = obstacleDoc[src + 3];
+        if (top + height < -overscan || top > vh + overscan) continue;
+        const dst = count * FLUID_OBSTACLE_STRIDE;
+        out[dst] = 0.5 + (left + width * 0.5 - vw * 0.5) / md;
+        out[dst + 1] = 0.5 - (top + height * 0.5 - vh * 0.5) / md;
+        out[dst + 2] = (width * 0.5 + padding) / md;
+        out[dst + 3] = (height * 0.5 + padding) / md;
+        out[dst + 4] = obstacleDoc[src + 4];
+        count++;
+      }
+      conductor.input.obstacleCount = count;
+    };
 
     // gooey cursor + autocycle hover-pause: the WHOLE hero section is the
     // pointer surface (the liquid has no interior edge to clip against)
@@ -335,7 +557,8 @@ export function PageStage({
       site.heroPy = 0.5 - (e.clientY - window.innerHeight / 2) / md;
     };
     const onEnter = (e: PointerEvent) => {
-      site.heroHover = 1;
+      heroPointerActive.current = true;
+      syncHeroPause();
       toFieldUv(e);
       site.heroCursorOn = 1;
     };
@@ -344,7 +567,8 @@ export function PageStage({
       site.heroCursorOn = 1;
     };
     const onLeave = () => {
-      site.heroHover = 0;
+      heroPointerActive.current = false;
+      syncHeroPause();
       site.heroCursorOn = 0;
     };
     if (canHover && heroSec) {
@@ -360,18 +584,66 @@ export function PageStage({
     const workCards = workSec
       ? Array.from(workSec.querySelectorAll<HTMLElement>(".project-card"))
       : [];
+    const workCardFrom = (target: EventTarget | null) =>
+      target instanceof Element
+        ? target.closest<HTMLElement>(".project-card")
+        : null;
+    const setWorkCard = (card: HTMLElement | null) => {
+      conductor.raw.work.hov = card ? workCards.indexOf(card) : -1;
+    };
+    let workHoverCard: HTMLElement | null = null;
+    let workFocusCard: HTMLElement | null = null;
+    let workTouchCard: HTMLElement | null = null;
+    const syncWorkCard = () => {
+      setWorkCard(workFocusCard ?? workTouchCard ?? workHoverCard);
+    };
     const onWorkOver = (e: PointerEvent) => {
-      const card = (e.target as HTMLElement).closest?.(".project-card");
-      conductor.raw.work.hov = card
-        ? workCards.indexOf(card as HTMLElement)
-        : -1;
+      workHoverCard = workCardFrom(e.target);
+      syncWorkCard();
     };
     const onWorkOut = () => {
-      conductor.raw.work.hov = -1;
+      workHoverCard = null;
+      syncWorkCard();
+    };
+    const onWorkFocusIn = (e: FocusEvent) => {
+      workFocusCard = workCardFrom(e.target);
+      syncWorkCard();
+    };
+    const onWorkFocusOut = (e: FocusEvent) => {
+      workFocusCard = workCardFrom(e.relatedTarget);
+      syncWorkCard();
+    };
+    let workTouchRelease = 0;
+    const onWorkPointerDown = (e: PointerEvent) => {
+      if (e.pointerType !== "touch" && e.pointerType !== "pen") return;
+      if (workTouchRelease) window.clearTimeout(workTouchRelease);
+      workTouchCard = workCardFrom(e.target);
+      syncWorkCard();
+    };
+    const releaseWorkTouch = (e: PointerEvent) => {
+      if (e.pointerType !== "touch" && e.pointerType !== "pen") return;
+      if (workTouchRelease) window.clearTimeout(workTouchRelease);
+      workTouchRelease = window.setTimeout(() => {
+        workTouchCard = null;
+        syncWorkCard();
+      }, 420);
     };
     if (canHover && workSec && workCards.length > 0) {
       workSec.addEventListener("pointerover", onWorkOver, { passive: true });
       workSec.addEventListener("pointerleave", onWorkOut);
+    }
+    if (workSec && workCards.length > 0) {
+      workSec.addEventListener("focusin", onWorkFocusIn);
+      workSec.addEventListener("focusout", onWorkFocusOut);
+      workSec.addEventListener("pointerdown", onWorkPointerDown, {
+        passive: true,
+      });
+      workSec.addEventListener("pointerup", releaseWorkTouch, {
+        passive: true,
+      });
+      workSec.addEventListener("pointercancel", releaseWorkTouch, {
+        passive: true,
+      });
     }
 
     // page-wide pointer → the cursor force field (R5-B; fine pointers only).
@@ -427,6 +699,7 @@ export function PageStage({
       // pointer velocity decays between move events (a resting hand lets go)
       conductor.input.pvx *= 0.82;
       conductor.input.pvy *= 0.82;
+      applyObstacleFlow(vh, vw, md, y);
 
       // hero staging: the liquid form sits exactly over the stage box and
       // rides with it — while the POUR sheds its droplets into the fixed field
@@ -456,15 +729,33 @@ export function PageStage({
     update();
     return () => {
       if (raf) cancelAnimationFrame(raf);
+      obstacleDisposed = true;
+      conductor.input.obstacleCount = 0;
+      obstacleResize?.disconnect();
+      if (obstacleRefresh) cancelAnimationFrame(obstacleRefresh);
+      if (obstacleWarmup) window.clearTimeout(obstacleWarmup);
+      if (obstacleFlow)
+        window.removeEventListener("resize", queueObstacleGeometry);
       if (canHover && heroSec) {
         heroSec.removeEventListener("pointerenter", onEnter);
         heroSec.removeEventListener("pointermove", onMove);
         heroSec.removeEventListener("pointerleave", onLeave);
       }
+      heroPointerActive.current = false;
+      syncHeroPause();
       if (canHover && workSec && workCards.length > 0) {
         workSec.removeEventListener("pointerover", onWorkOver);
         workSec.removeEventListener("pointerleave", onWorkOut);
       }
+      if (workSec && workCards.length > 0) {
+        workSec.removeEventListener("focusin", onWorkFocusIn);
+        workSec.removeEventListener("focusout", onWorkFocusOut);
+        workSec.removeEventListener("pointerdown", onWorkPointerDown);
+        workSec.removeEventListener("pointerup", releaseWorkTouch);
+        workSec.removeEventListener("pointercancel", releaseWorkTouch);
+      }
+      if (workTouchRelease) window.clearTimeout(workTouchRelease);
+      setWorkCard(null);
       if (canHover) {
         window.removeEventListener("pointermove", onPageMove);
         document.documentElement.removeEventListener(
@@ -473,7 +764,17 @@ export function PageStage({
         );
       }
     };
-  }, [enabled, tier, fEco, conductor, scenes, site, wrapRef]);
+  }, [
+    enabled,
+    tier,
+    fEco,
+    conductor,
+    scenes,
+    site,
+    obstacleFlow,
+    syncHeroPause,
+    wrapRef,
+  ]);
 
   return (
     <HeroLiquidContext.Provider value={heroCtx}>
@@ -483,6 +784,8 @@ export function PageStage({
         data-liquid={enabled ? "live" : "static"}
         data-field-ready={heroReady ? "true" : "false"}
         data-hero-qa={heroQA ? "true" : "false"}
+        data-fluid-physics={physicsMode}
+        data-fluid-obstacles={obstacleFlow ? "true" : "false"}
       >
         <div className="journey-layer" ref={layerRef}>
           {enabled && seen && (
@@ -497,23 +800,6 @@ export function PageStage({
               />
             </div>
           )}
-          <span className="organism-center" ref={centerEl}>
-            {centerLabel}
-          </span>
-          <ul className="organism-nodes" aria-label={ecosystemLabel}>
-            {nodes.map((n, i) => (
-              <li
-                key={n.name}
-                className="organism-node"
-                ref={(el) => {
-                  nodeEls.current[i] = el;
-                }}
-              >
-                <span className="organism-node-name">{n.name}</span>
-                <span className="organism-node-cap">{n.tooltip}</span>
-              </li>
-            ))}
-          </ul>
           {/* decorative founding-pillar labels (S8 beat 2) — the accessible
               pillar line lives in the beat-2 copy block (static path) */}
           <ul className="origin-pillar-labels" aria-hidden="true">
@@ -535,6 +821,62 @@ export function PageStage({
             would trap them under the z-10 copy). Live path only: never under
             reduced motion, static tiers, deterministic QA holds, or
             ?fcine=0. */}
+        {/* The organism controls sit above chapter copy while the canvas stays
+            below it. Only visible controls opt back into hit testing. */}
+        {ecoHost &&
+          createPortal(
+            <div
+              className="journey-interactions"
+              ref={ecoLayerEl}
+              data-interactive={ecoInteractive ? "true" : "false"}
+              aria-hidden={!ecoKeyboardEnabled}
+              onBlur={(event) => {
+                if (!event.currentTarget.contains(event.relatedTarget as Node))
+                  setOpenEcoNode(null);
+              }}
+            >
+              <span className="organism-center" ref={centerEl}>
+                {centerLabel}
+              </span>
+              <ul className="organism-nodes" aria-label={ecosystemLabel}>
+                {nodes.map((n, i) => {
+                  const descriptionId = `ecosystem-node-${i}-description`;
+                  const open = openEcoNode === i;
+                  return (
+                    <li
+                      key={n.name}
+                      className="organism-node"
+                      data-open={open ? "true" : "false"}
+                      ref={(el) => {
+                        nodeEls.current[i] = el;
+                      }}
+                    >
+                      <button
+                        type="button"
+                        className="organism-node-trigger"
+                        tabIndex={ecoKeyboardEnabled ? 0 : -1}
+                        aria-expanded={open}
+                        aria-controls={descriptionId}
+                        aria-describedby={descriptionId}
+                        onClick={() => setOpenEcoNode(open ? null : i)}
+                      >
+                        <span className="organism-node-name">{n.name}</span>
+                      </button>
+                      <span
+                        id={descriptionId}
+                        className="organism-node-cap"
+                        role="tooltip"
+                      >
+                        {n.tooltip}
+                      </span>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>,
+            ecoHost,
+          )}
+        {/* Score-driven light stays above both story layers and below chrome. */}
         {enabled && cine && fEco === null && <CinematicVeils />}
         <div className="journey-content">{children}</div>
       </div>

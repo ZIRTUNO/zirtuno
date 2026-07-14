@@ -12,7 +12,10 @@
 // CONSECUTIVE element screenshots are byte-equal — the settled still. The
 // settled stills are deterministic (proven at R5-C1: byte-identical across
 // reruns AND across the pre/post-optics trees), so SHA-256 equality against
-// the recorded baseline is a true pixel-identity assertion.
+// the recorded baseline is a true pixel-identity assertion. The page remains
+// laid out normally, but only the deterministic stage is made visible during
+// capture: fixed chrome and scene labels can overlap its rectangle and must
+// not turn an unrelated typography/layout change into a false shader failure.
 //
 // The hashes are machine/driver-specific: record and compare on the same
 // hardware (the owner QA machine). A CONSCIOUS visual re-baseline (an
@@ -40,7 +43,12 @@ const hashes = [];
 for (let i = 0; i < STATES; i++) {
   await page.goto(`${BASE}/en?fstate=${i}&ftier=full`, { waitUntil: "networkidle" });
   await page.addStyleTag({
-    content: ".breath-layer{display:none !important}",
+    content: `
+      body * { visibility: hidden !important; }
+      [data-hero-metaball],
+      [data-hero-metaball] * { visibility: visible !important; }
+      .breath-layer { display: none !important; }
+    `,
   });
   const stage = page.locator("[data-hero-metaball]");
   await stage.waitFor({ state: "visible", timeout: 15000 });

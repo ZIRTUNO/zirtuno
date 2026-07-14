@@ -34,7 +34,7 @@ export function MobileMenu() {
   const closeMenu = useCallback(() => setOpen(false), []);
 
   useEffect(() => {
-    const desktopQuery = window.matchMedia("(min-width: 768px)");
+    const desktopQuery = window.matchMedia("(min-width: 1024px)");
     const closeAtDesktop = (event: MediaQueryListEvent) => {
       if (event.matches) closeMenu();
     };
@@ -180,7 +180,7 @@ export function MobileMenu() {
       : null;
 
   return (
-    <div className="md:hidden">
+    <div className="lg:hidden">
       <button
         ref={triggerRef}
         type="button"

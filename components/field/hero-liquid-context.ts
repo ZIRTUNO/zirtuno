@@ -11,6 +11,7 @@ export type HeroLiquid = {
   ready: boolean; // the hero form has painted (hide the fallback)
   active: number; // -1 = mark, 0-6 = pillars
   setManual: (n: number | null) => void;
+  setPaused: (paused: boolean) => void;
   registerStage: (el: HTMLElement | null) => void;
 };
 export const HeroLiquidContext = createContext<HeroLiquid | null>(null);

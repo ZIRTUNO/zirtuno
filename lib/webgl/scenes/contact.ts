@@ -27,6 +27,9 @@ import type {
 export const EXHALE_EVENT = "zirtuno:exhale";
 
 const EXHALE_MS = 1500;
+const GATHER_PRE_Y = 0.24;
+const GATHER_PRE_SCALE = 0.36;
+const GATHER_CLUSTER = 7;
 
 export function makeContactScene(): SceneModule {
   const base = CLOUDS[0];
@@ -34,6 +37,7 @@ export function makeContactScene(): SceneModule {
 
   // per-frame factors (tick → target/form/score)
   let e = 0; // exhale envelope
+  let gather = 0;
   let stOx = 0;
   let stOy = 0;
   let stScale = 0.3;
@@ -54,7 +58,14 @@ export function makeContactScene(): SceneModule {
   return {
     id: "contact",
     forms: [0],
-    channels: { on: 0, stOx: 0, stOy: 0, stScale: 0.3, exhaleAt: -1 },
+    channels: {
+      on: 0,
+      gather: 0,
+      stOx: 0,
+      stOy: 0,
+      stScale: 0.3,
+      exhaleAt: -1,
+    },
     damp: {
       on: false,
       stOx: false,
@@ -75,6 +86,9 @@ export function makeContactScene(): SceneModule {
         // grip + entry: the mark grows from its skeleton as the stage
         // approaches the viewport (no exit — the page ends here)
         out.on = clamp01((vh * 1.5 - st.top) / (vh * 0.4));
+        // Presence starts early for the Studio handoff; the visible gather
+        // resolves while the stage itself enters the viewport.
+        out.gather = clamp01((vh * 1.18 - st.top) / (vh * 1.02));
       }
     },
 
@@ -87,6 +101,7 @@ export function makeContactScene(): SceneModule {
       stOx = ch.stOx;
       stOy = ch.stOy;
       stScale = ch.stScale;
+      gather = smooth01(clamp01(ch.gather));
 
       // the exhale: a one-shot pulse (sin π) — additive decoration only
       const at = ch.exhaleAt;
@@ -98,9 +113,12 @@ export function makeContactScene(): SceneModule {
 
       // the 8 s breath (was .sdf-glass-breath: scale 1 → 1.02, ease-in-out)
       const breath =
-        1 + 0.01 + 0.01 * Math.sin((ctx.t / (DURATIONS.breath / 1000)) * Math.PI * 2);
+        1 +
+        0.01 +
+        0.01 * Math.sin((ctx.t / (DURATIONS.breath / 1000)) * Math.PI * 2);
 
-      const [w, ero] = formPresence(smooth01(clamp01(ch.on)));
+      // The exact form appears only after the canonical droplets converge.
+      const [w, ero] = formPresence(smooth01((gather - 0.68) / 0.32));
       formOut.fa = w;
       formOut.ea = ero;
       formOut.ox = stOx;
@@ -116,8 +134,32 @@ export function makeContactScene(): SceneModule {
     },
 
     target(i: number, ctx: SceneCtx, out: DropletOut) {
-      // droplets exist only during the exhale — the form is the resting visual
+      // The same 48 identities remain visible through the gather, then drain
+      // into the exact SDF before the optional exhale.
       const b = base[i];
+      const gi = smooth01((gather - 0.18 * (i / base.length)) / 0.82);
+      const fx = 0.5 + stOx + (b[0] - 0.5) * stScale;
+      const fy = 0.5 + stOy + (b[1] - 0.5) * stScale;
+
+      // Studio's sparse echoes first collect into a loose lower-viewport
+      // basin, then every identity travels into its exact mark footprint.
+      const px = 0.5 + (b[0] - 0.5) * GATHER_PRE_SCALE;
+      const py = GATHER_PRE_Y + (b[1] - 0.5) * GATHER_PRE_SCALE;
+      // Radius handoff is global: the assembled cloud does not disappear
+      // before the exact field begins rising beneath it.
+      const drain = 1 - smooth01((gather - 0.7) / 0.27);
+      const rScale = GATHER_PRE_SCALE + (stScale - GATHER_PRE_SCALE) * gi;
+      out.x = px + (fx - px) * gi;
+      out.y = py + (fy - py) * gi;
+      out.r = b[2] * rScale * (0.5 + 0.5 * smooth01(gi / 0.34)) * drain;
+      out.bind = 0.08 + 0.92 * smooth01((gi - 0.52) / 0.44);
+      out.cluster = gi < 0.82 && out.r > 0.0012 ? GATHER_CLUSTER : -1;
+      out.z = 0.48 * (1 - gi);
+
+      if (e <= 0.0001) return;
+
+      // Confirmed delivery exhales from the settled endpoint. This stays
+      // additive feedback; it never owns the submit interaction.
       const s = T[i];
       const lx = b[0] + (s.tx - b[0]) * 0.6 * e;
       const ly = b[1] + (s.ty - b[1]) * 0.6 * e;

@@ -1,5 +1,6 @@
 {
-  "note": "pre-R5-C reference at /en?feco=0.55&ftier=full, 1440x900 dsf1, breath-layer hidden",
+  "note": "pre-R5-C reference at /en?feco=0.55&ftier=full, 1440x900 dsf1; liquid-field metrics were derived from the original reference PNG so DOM typography is excluded",
+  "referencePngSha256": "eaf0cfdb25c51b7624dd959f8648034dc1725658e18b508c2e250881ac9d810f",
   "date": "2026-07-10T06:17:52.894Z",
   "viewport": {
     "w": 1440,
@@ -11,8 +12,16 @@
     "w": 120,
     "h": 120
   },
+  "field": {
+    "x": 620,
+    "y": 120,
+    "w": 320,
+    "h": 600
+  },
   "globalMean": 14.564,
   "cropMean": 59.576,
+  "fieldMean": 52.397,
+  "fieldBlackFrac": 0.7173,
   "blackFrac": 0.9147,
   "spreadGlobal": 0.141,
   "spreadCrop": 6.688

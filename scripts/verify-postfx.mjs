@@ -11,9 +11,9 @@
 // at a frozen choreography hold (?feco=0.55&ftier=full&fcine=0, no scroll;
 // fcine=0 keeps the R5-D light score neutral so this harness keeps
 // measuring the OPTICS chain in isolation against its pre-C baseline) the
-// mark-interior mean luma, the global mean luma and the pure-black pixel
-// fraction must match the pre-C values within tight tolerances, and the
-// post chain must report OFF.
+// mark-interior mean and a DOM-free liquid-field sample must match the pre-C
+// values within tight tolerances, and the post chain must report OFF. The
+// whole-page mean remains diagnostic only because typography is not optics.
 //
 // With the grade ON (default) it asserts the R5-C additions behave: the post
 // chain reports on, the flat background stays EXACTLY black (the dither is
@@ -42,6 +42,10 @@ const VH = 900;
 // mark-interior probe: offset from centre so the organism-center DOM label
 // (which sits exactly at the stage centre at this hold) never enters the crop
 const CROP = { x: VW / 2 + 40, y: VH / 2 + 60, w: 120, h: 120 };
+// DOM-free renderer samples. FIELD contains the hero liquid in both the
+// original pre-C reference and the current layout; BACKGROUND is known-empty.
+const FIELD = { x: 620, y: 120, w: 320, h: 600 };
+const BACKGROUND = { x: 1000, y: 120, w: 150, h: 100 };
 const SHOTS = 6;
 const SHOT_GAP = 350;
 
@@ -52,6 +56,19 @@ const check = (ok, label, detail) => {
 };
 
 const luma = (d, i) => 0.2126 * d[i] + 0.7152 * d[i + 1] + 0.0722 * d[i + 2];
+
+function regionStats(d, width, box) {
+  let sum = 0;
+  let black = 0;
+  const total = box.w * box.h;
+  for (let y = box.y; y < box.y + box.h; y++)
+    for (let x = box.x; x < box.x + box.w; x++) {
+      const i = (y * width + x) * 4;
+      sum += luma(d, i);
+      if (d[i] === 0 && d[i + 1] === 0 && d[i + 2] === 0) black++;
+    }
+  return { mean: sum / total, blackFrac: black / total };
+}
 
 function statsOf(buf) {
   const png = PNG.sync.read(buf);
@@ -64,13 +81,15 @@ function statsOf(buf) {
     gSum += l;
     if (d[p * 4] === 0 && d[p * 4 + 1] === 0 && d[p * 4 + 2] === 0) black++;
   }
-  let cSum = 0;
-  for (let y = CROP.y; y < CROP.y + CROP.h; y++)
-    for (let x = CROP.x; x < CROP.x + CROP.w; x++)
-      cSum += luma(d, (y * png.width + x) * 4);
+  const crop = regionStats(d, png.width, CROP);
+  const field = regionStats(d, png.width, FIELD);
+  const background = regionStats(d, png.width, BACKGROUND);
   return {
     globalMean: gSum / total,
-    cropMean: cSum / (CROP.w * CROP.h),
+    cropMean: crop.mean,
+    fieldMean: field.mean,
+    fieldBlackFrac: field.blackFrac,
+    backgroundBlackFrac: background.blackFrac,
     blackFrac: black / total,
     png,
   };
@@ -99,9 +118,13 @@ async function sampleShots(page, tag) {
   return {
     globalMean: avg("globalMean"),
     cropMean: avg("cropMean"),
+    fieldMean: avg("fieldMean"),
+    fieldBlackFrac: avg("fieldBlackFrac"),
+    backgroundBlackFrac: avg("backgroundBlackFrac"),
     blackFrac: avg("blackFrac"),
     spreadGlobal: spread("globalMean"),
     spreadCrop: spread("cropMean"),
+    spreadField: spread("fieldMean"),
     last: shots[shots.length - 1].png,
   };
 }
@@ -114,7 +137,7 @@ function maxBandRun(png, y) {
   let run = 0;
   let best = 0;
   let prev = -1;
-  for (let x = 0; x < png.width; x++) {
+  for (let x = FIELD.x; x < FIELD.x + FIELD.w; x++) {
     const l = Math.round(luma(d, (y * png.width + x) * 4));
     if (l >= 2 && l <= 60) {
       run = l === prev ? run + 1 : 1;
@@ -135,19 +158,25 @@ const ctx = await browser.newContext({
 const page = await ctx.newPage();
 
 if (baselineMode) {
-  console.log("postfx --baseline: recording pre-C reference stats…");
-  await settle(page, "/en?feco=0.55&ftier=full&fcine=0");
+  console.log("postfx --baseline: recording grade-bypass reference stats…");
+  // A future deliberate baseline records the exact grade-bypass renderer, not
+  // whatever the default optics implementation happens to be at that time.
+  await settle(page, "/en?feco=0.55&ftier=full&fgrade=0&fcine=0");
   const s = await sampleShots(page, "baseline");
   const record = {
-    note: "pre-R5-C reference at /en?feco=0.55&ftier=full, 1440x900 dsf1, breath-layer hidden",
+    note: "grade-bypass reference at /en?feco=0.55&ftier=full&fgrade=0, 1440x900 dsf1; renderer-only field sample",
     date: new Date().toISOString(),
     viewport: { w: VW, h: VH },
     crop: CROP,
+    field: FIELD,
     globalMean: +s.globalMean.toFixed(3),
     cropMean: +s.cropMean.toFixed(3),
+    fieldMean: +s.fieldMean.toFixed(3),
+    fieldBlackFrac: +s.fieldBlackFrac.toFixed(4),
     blackFrac: +s.blackFrac.toFixed(4),
     spreadGlobal: +s.spreadGlobal.toFixed(3),
     spreadCrop: +s.spreadCrop.toFixed(3),
+    spreadField: +s.spreadField.toFixed(3),
   };
   fs.writeFileSync(BASELINE_PATH, JSON.stringify(record, null, 2) + "\n");
   console.log("  wrote", BASELINE_PATH, JSON.stringify(record));
@@ -165,14 +194,14 @@ const off = await sampleShots(page, "fgrade0");
 {
   const optics = await page.evaluate(() => window.__optics ?? null);
   check(optics && optics.post === 0, "fgrade=0: post chain reports OFF", JSON.stringify(optics));
-  const dG = Math.abs(off.globalMean - base.globalMean);
+  const dF = Math.abs(off.fieldMean - base.fieldMean);
   const dC = Math.abs(off.cropMean - base.cropMean);
-  const dB = Math.abs(off.blackFrac - base.blackFrac);
-  const tolG = Math.max(1.2, base.globalMean * 0.08, base.spreadGlobal * 2);
+  const dFB = Math.abs(off.fieldBlackFrac - base.fieldBlackFrac);
+  const tolF = Math.max(1.2, base.fieldMean * 0.04, (base.spreadField ?? 0) * 2);
   const tolC = Math.max(3.5, base.cropMean * 0.05, base.spreadCrop * 2);
-  check(dG <= tolG, "fgrade=0: global mean matches pre-C", `Δ=${dG.toFixed(3)} tol=${tolG.toFixed(3)}`);
+  check(dF <= tolF, "fgrade=0: liquid-field mean matches pre-C", `Δ=${dF.toFixed(3)} tol=${tolF.toFixed(3)}`);
   check(dC <= tolC, "fgrade=0: mark-interior mean matches pre-C", `Δ=${dC.toFixed(3)} tol=${tolC.toFixed(3)}`);
-  check(dB <= 0.05, "fgrade=0: pure-black fraction matches pre-C", `Δ=${dB.toFixed(4)}`);
+  check(dFB <= 0.03, "fgrade=0: liquid footprint matches pre-C", `black-fraction Δ=${dFB.toFixed(4)}`);
 }
 
 // 2 · default grade: post on, background exactly black, banding tamed, grain bounded
@@ -184,17 +213,17 @@ const on = await sampleShots(page, "grade-on");
   if (optics?.post === 1) {
     check(true, `post chain ON (${optics.fmt})`);
     check(
-      on.blackFrac >= base.blackFrac - 0.12,
+      on.backgroundBlackFrac >= 0.9999,
       "flat background stays black under the opaque composite",
-      `blackFrac ${on.blackFrac.toFixed(4)} vs pre-C ${base.blackFrac.toFixed(4)}`,
+      `empty-region blackFrac=${on.backgroundBlackFrac.toFixed(4)}`,
     );
-    // the grade may shift the global mean either way (absorption/depth take,
+    // the grade may shift the liquid field either way (absorption/depth take,
     // bloom gives) — but only subtly: it is a grade, not a re-light
-    const ratio = on.globalMean / Math.max(off.globalMean, 1e-6);
+    const ratio = on.fieldMean / Math.max(off.fieldMean, 1e-6);
     check(
       ratio >= 0.85 && ratio <= 1.3,
-      "grade shifts global luminance only subtly",
-      `on=${on.globalMean.toFixed(2)} off=${off.globalMean.toFixed(2)} ratio=${ratio.toFixed(3)}`,
+      "grade shifts liquid-field luminance only subtly",
+      `on=${on.fieldMean.toFixed(2)} off=${off.fieldMean.toFixed(2)} ratio=${ratio.toFixed(3)}`,
     );
     const run = maxBandRun(on.last, Math.round(VH / 2 + 10));
     check(run <= 64, "no wide 8-bit banding runs across the halo", `max identical-luma run=${run}px`);

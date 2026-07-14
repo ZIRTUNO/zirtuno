@@ -1,7 +1,7 @@
 // Morph QA (metaball-morph-spec §12 checkpoint): capture deterministic
 // MID-FRAMES of every autocycle transition (?fpair=a-b-m — all liquid, no
 // pops), measure fps DURING a live melt (?fcycle=1 short dwell), and smoke-test
-// the keyboard stepping (focus + ArrowRight → aria-live announces, melt starts).
+// the keyboard stepping (focus + ArrowRight → slider value updates, melt starts).
 // Dev server must be running:  node scripts/capture-morph-frames.mjs
 // Writes captures/morph-frames-sheet.png (rows = transitions, cols = m).
 
@@ -14,7 +14,16 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const OUT = path.join(__dirname, "..", "captures");
 const BASE = process.env.BASE || "http://localhost:3000";
 const LOCALE = process.env.LOCALE || "en";
-const KEYS = ["mark", "web", "software", "ai", "automation", "data", "branding", "marketing"];
+const KEYS = [
+  "mark",
+  "web",
+  "software",
+  "ai",
+  "automation",
+  "data",
+  "branding",
+  "marketing",
+];
 const TRANSITIONS = KEYS.map((_, i) => [i, (i + 1) % KEYS.length]);
 // 0.12 / 0.88 sit inside the BRIDGE handoff windows (form ⇄ droplets — where the
 // retired crossfade double-exposed); 0.3 / 0.5 / 0.7 cover the droplet travel.
@@ -41,7 +50,10 @@ const ctx = await browser.newContext({
 });
 const page = await ctx.newPage();
 page.on("pageerror", (e) => console.error("PAGE ERROR:", e.message));
-page.on("console", (m) => m.type() === "error" && console.error("CONSOLE:", m.text()));
+page.on(
+  "console",
+  (m) => m.type() === "error" && console.error("CONSOLE:", m.text()),
+);
 
 // ── 1. deterministic mid-frames for every transition ──────────────────────────
 const rows = [];
@@ -75,14 +87,18 @@ await sheet.setContent(
    </div></body></html>`,
 );
 await sheet.waitForTimeout(300);
-await sheet.locator("body").screenshot({ path: path.join(OUT, "morph-frames-sheet.png") });
+await sheet
+  .locator("body")
+  .screenshot({ path: path.join(OUT, "morph-frames-sheet.png") });
 await sheet.close();
 
 // ── 2. fps of the LIVE liquid (rest renders per-frame too since v1.5 — the
 // rest jitter and the melt cost the same draw, so sample once the loop runs).
 // NOTE: headless Chrome rasterises WebGL in software here — run HEADLESS=false on
 // the target machine for a real-GPU number.
-await page.goto(`${BASE}/${LOCALE}?fcycle=1&ftier=full`, { waitUntil: "networkidle" });
+await page.goto(`${BASE}/${LOCALE}?fcycle=1&ftier=full`, {
+  waitUntil: "networkidle",
+});
 await page.waitForSelector(".journey-canvas canvas", { timeout: 20000 });
 await page.waitForTimeout(1200); // let the machine start its loop
 const fps = await page.evaluate(
@@ -100,7 +116,7 @@ const fps = await page.evaluate(
 );
 console.log(`fps of the live liquid: ~${fps}`);
 
-// ── 3. keyboard smoke test: focus → ArrowRight announces the next pillar ──────
+// ── 3. keyboard smoke test: focus → ArrowRight exposes the next pillar ────────
 await page.goto(`${BASE}/${LOCALE}?ftier=full`, { waitUntil: "networkidle" });
 await page.waitForSelector(".journey-canvas canvas", { timeout: 20000 });
 await page.waitForTimeout(800);
@@ -108,10 +124,17 @@ await page.focus("[data-hero-metaball]");
 await page.keyboard.press("ArrowRight");
 await page.waitForTimeout(500);
 const kb = await page.evaluate(() => {
-  const live = document.querySelector("span.sr-only[aria-live]");
-  return { announced: live?.textContent ?? "" };
+  const control = document.querySelector("[data-hero-metaball]");
+  return {
+    role: control?.getAttribute("role"),
+    value: control?.getAttribute("aria-valuenow"),
+    text: control?.getAttribute("aria-valuetext") ?? "",
+    described: Boolean(control?.getAttribute("aria-describedby")),
+  };
 });
-console.log(`keyboard: announced "${kb.announced}" (expect the first pillar name)`);
+if (kb.role !== "slider" || kb.value !== "1" || !kb.text || !kb.described)
+  throw new Error(`keyboard slider contract failed: ${JSON.stringify(kb)}`);
+console.log(`keyboard: slider 1 = "${kb.text}" (instructions linked)`);
 
 await browser.close();
 console.log("→ captures/morph-frames-sheet.png");

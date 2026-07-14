@@ -62,8 +62,12 @@ export const BRIDGE = 0.38; // p-window where a form hands off to / from droplet
 
 /** Standard cubic-bezier easing evaluator (Newton + bisection fallback). */
 function cubicBezier(p1x: number, p1y: number, p2x: number, p2y: number) {
-  const cx = 3 * p1x, bx = 3 * (p2x - p1x) - cx, ax = 1 - cx - bx;
-  const cy = 3 * p1y, by = 3 * (p2y - p1y) - cy, ay = 1 - cy - by;
+  const cx = 3 * p1x,
+    bx = 3 * (p2x - p1x) - cx,
+    ax = 1 - cx - bx;
+  const cy = 3 * p1y,
+    by = 3 * (p2y - p1y) - cy,
+    ay = 1 - cy - by;
   const X = (t: number) => ((ax * t + bx) * t + cx) * t;
   const Y = (t: number) => ((ay * t + by) * t + cy) * t;
   const DX = (t: number) => (3 * ax * t + 2 * bx) * t + cx;
@@ -78,25 +82,31 @@ function cubicBezier(p1x: number, p1y: number, p2x: number, p2y: number) {
       if (Math.abs(d) < 1e-6) break;
       t -= e / d;
     }
-    let lo = 0, hi = 1;
+    let lo = 0,
+      hi = 1;
     t = x;
     while (hi - lo > 1e-5) {
       t = (lo + hi) / 2;
-      if (X(t) < x) lo = t; else hi = t;
+      if (X(t) < x) lo = t;
+      else hi = t;
     }
     return Y(t);
   };
 }
 export const arrive = cubicBezier(
-  ...(EASE_POINTS.arrive as readonly number[] as [number, number, number, number]),
+  ...(EASE_POINTS.arrive as readonly number[] as [
+    number,
+    number,
+    number,
+    number,
+  ]),
 );
 
 export function bridgeRadiusEnvelope(p: number): number {
   const rPad = BRIDGE * 0.35;
   const rWin = BRIDGE * 0.55;
   return (
-    smooth01((p - rPad) / rWin) *
-    (1 - smooth01((p - (1 - rPad - rWin)) / rWin))
+    smooth01((p - rPad) / rWin) * (1 - smooth01((p - (1 - rPad - rWin)) / rWin))
   );
 }
 
@@ -105,7 +115,8 @@ export function matchClouds(A: Ball[], B: Ball[]): number[] {
   const pairs: [number, number, number][] = [];
   for (let i = 0; i < N; i++)
     for (let j = 0; j < N; j++) {
-      const dx = A[i][0] - B[j][0], dy = A[i][1] - B[j][1];
+      const dx = A[i][0] - B[j][0],
+        dy = A[i][1] - B[j][1];
       pairs.push([dx * dx + dy * dy, i, j]);
     }
   pairs.sort((a, b) => a[0] - b[0]);
@@ -152,7 +163,8 @@ export function packBridge(
     const lt = clamp01(p * (1 + STAGGER) - STAGGER * stag[i]);
     const tp = arrive(lt);
     const tr = arrive(clamp01(lt * RADIUS_LEAD));
-    const a = A[i], b = B[perm[i]];
+    const a = A[i],
+      b = B[perm[i]];
     const j = (offset + i) * 3;
     buf[j] = a[0] + (b[0] - a[0]) * tp;
     buf[j + 1] = a[1] + (b[1] - a[1]) * tp;
@@ -175,9 +187,12 @@ export const formPresence = (q: number): [number, number] => [
 ];
 
 /** Both forms' [weight, erosion] across a melt (A hands off, B lands). */
-export function formPhase(
-  p: number,
-): { wA: number; eA: number; wB: number; eB: number } {
+export function formPhase(p: number): {
+  wA: number;
+  eA: number;
+  wB: number;
+  eB: number;
+} {
   const [wA, eA] = formPresence(1 - smooth01(p / BRIDGE));
   const [wB, eB] = formPresence(smooth01((p - (1 - BRIDGE)) / BRIDGE));
   return { wA, eA, wB, eB };
@@ -215,6 +230,10 @@ export type FieldDriver = {
     buf: Float32Array,
     aspect: number,
     zBuf?: Float32Array,
+    /** Optional packed identity channel for velocity-aware review renderers.
+     *  Canonical droplets use stable non-negative ids; transient families use
+     *  -1 and therefore stay circular. */
+    idBuf?: Int16Array,
   ) => FieldFrame;
 };
 

@@ -88,7 +88,14 @@ check(fl1 === fl0, "draw loop parks during the loss (no zombie GL)", `frames ${f
 
 // ── the restore ───────────────────────────────────────────────────────────────
 await page.evaluate(() => window.__ext.restoreContext());
-await page.waitForTimeout(3500); // rebuild: context, program, SDF textures, post
+// Observe the rebuilt pipeline as soon as it produces a valid frame. A fixed
+// multi-second sleep can confuse a successful rebuild with a later, legitimate
+// watchdog demotion on a heavily loaded test host.
+await page.waitForFunction(
+  () => window.__optics?.post === 1 && (window.__optics?.frames ?? 0) > 0,
+  { timeout: 10000 },
+);
+await page.waitForTimeout(1000); // remaining SDF uploads + stable motion sample
 
 const after = await stateAt();
 check(after.canvases === 1, "exactly ONE liquid canvas after restore", `${after.canvases}`);
@@ -109,14 +116,15 @@ const optics = await page.evaluate(() => ({
 check(optics.post === 1, "post chain rebuilt on the fresh context", JSON.stringify(optics));
 
 // visible motion: two lossless captures — the liquid is truly back on screen
-const s1 = await page.screenshot({ type: "png" });
+const liquidCanvas = page.locator(".journey-canvas canvas");
+const s1 = await liquidCanvas.screenshot({ type: "png" });
 await page.waitForTimeout(1200);
-const s2 = await page.screenshot({ type: "png" });
+const s2 = await liquidCanvas.screenshot({ type: "png" });
 const p1 = PNG.sync.read(s1);
 const p2 = PNG.sync.read(s2);
 let delta = 0;
 for (let i = 0; i < p1.data.length; i += 16) delta += Math.abs(p1.data[i] - p2.data[i]);
-check(delta > 500, "liquid visibly moving after restore", `delta=${delta}`);
+check(delta > 500, "liquid visibly moving after restore", `canvas delta=${delta}`);
 check(errors.length === 0, "zero errors across the whole drill", errors[0]);
 
 await browser.close();

@@ -29,7 +29,7 @@ export function PillarEntry({
 
       <p className="pillar-counter">{t("counter", { n: num })}</p>
       <p className="font-poetic pillar-accent">{t(`${base}.accent`)}</p>
-      <h3 className="pillar-name text-display-m">{t(`${base}.name`)}</h3>
+      <h3 className="pillar-name type-feature-title">{t(`${base}.name`)}</h3>
 
       <dl className="pillar-blocks">
         <div className="pillar-block">

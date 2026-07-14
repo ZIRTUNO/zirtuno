@@ -24,6 +24,7 @@ export default function Template({ children }: { children: ReactNode }) {
         transition={{ duration: 0.7, ease: EASE_POINTS.depart }}
       />
       <motion.div
+        className="page-transition-content"
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.12, ease: EASE_POINTS.arrive }}

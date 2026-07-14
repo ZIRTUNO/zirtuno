@@ -142,7 +142,12 @@ export function makeSiteScene(cbs: SiteCallbacks = {}): SceneModule {
   let hOy = 0;
   let hScale = 0.5;
   let actW = 1; // governor activity — fast internal motion demands 60 Hz
-  const scoreOut: Partial<LightScore> = { exposure: 1, key: 0, vignette: 0 };
+  const scoreOut: Partial<LightScore> = {
+    exposure: 1,
+    key: 0,
+    vignette: 0,
+    mute: 0,
+  };
   const formOut: FormState = {
     a: 0,
     b: 0,
@@ -493,6 +498,9 @@ export function makeSiteScene(cbs: SiteCallbacks = {}): SceneModule {
       scoreOut.key =
         0.3 * rise + (inSvcMelt ? 0.12 * Math.sin(Math.PI * mState) : 0);
       scoreOut.vignette = 0.22 * dip;
+      // Problem's fractured liquid loses some of its brand energy, then
+      // regains cyan through the seek. Keep enough chroma for continuity.
+      scoreOut.mute = 0.28 * dip;
     },
 
     target(i: number, ctx: SceneCtx, out: DropletOut) {
@@ -537,7 +545,9 @@ export function makeSiteScene(cbs: SiteCallbacks = {}): SceneModule {
       // fully disperses / travels — the same anchor pick as clusterTargets
       if (TR < 0.6 && F < 0.85 && lt > 0.5)
         clusJ = Math.min((hash(i, 11) * 4) | 0, 3);
-      const drift = PHYS.DRIFT * lt;
+      // The fluid core owns free-liquid micro-motion. Preserve the authored
+      // drift only for the exact ?fphys=0 rollback, where no curl field exists.
+      const drift = ctx.physics ? 0 : PHYS.DRIFT * lt;
       let jx = hx2 + (tx - hx2) * lt + drift * Math.sin(t * dis.f1 + i * 1.7);
       let jy =
         hy2 +

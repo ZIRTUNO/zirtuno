@@ -226,7 +226,8 @@ export function makeMethodScene(): SceneModule {
       formOut.ox = mOx;
       formOut.oy = mOy;
       formOut.warp =
-        SDF_WARP_REST + (SDF_WARP_MORPH - SDF_WARP_REST) * 0.5 * Math.sin(Math.PI * fw);
+        SDF_WARP_REST +
+        (SDF_WARP_MORPH - SDF_WARP_REST) * 0.5 * Math.sin(Math.PI * fw);
 
       // the probe (Diagnosis only): a slow horizontal sweep, examining
       probeW = 1 - smooth01((sEff - 0.45) / 0.35);
@@ -264,7 +265,12 @@ export function makeMethodScene(): SceneModule {
       }
       // life: restless while fragmented, stiller as order takes hold
       const act = ACT[k0] + (ACT[k1] - ACT[k0]) * fi;
-      const wob = PHYS.DRIFT * act;
+      const bind = BINDS[k0] + (BINDS[k1] - BINDS[k0]) * fi;
+      // Curl supplies life to free droplets. Bound choreography retains only
+      // the authored share that physics intentionally suppresses; the legacy
+      // rollback keeps the original target motion in full.
+      const authored = ctx.physics ? bind : 1;
+      const wob = PHYS.DRIFT * act * authored;
       x += wob * Math.sin(t * (0.5 + hash(i, 80)) + i * 1.7);
       y += wob * Math.cos(t * (0.44 + hash(i, 81)) + i * 2.3);
       r *= EXW * rInW; // exit drain · entry swell
@@ -274,7 +280,7 @@ export function makeMethodScene(): SceneModule {
       out.r = r;
       // physics attributes (R5-B): per-state bind; Construction's three
       // masses share cluster ids so cohesion makes the accretion REAL
-      out.bind = BINDS[k0] + (BINDS[k1] - BINDS[k0]) * fi;
+      out.bind = bind;
       const st = fi > 0.5 ? k1 : k0;
       out.cluster = st === 2 ? i % 3 : -1;
       out.z = 0;

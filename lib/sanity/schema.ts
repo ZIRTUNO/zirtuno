@@ -16,6 +16,8 @@ const CATEGORY_OPTIONS = [
   { title: "Marketing", value: "marketing" },
 ];
 
+const required = (rule: { required: () => unknown }) => rule.required();
+
 export const localeString = {
   name: "localeString",
   title: "Localized string",
@@ -91,9 +93,70 @@ export const project = {
       type: "array",
       of: [{ type: "image", options: { hotspot: true } }],
     },
+    {
+      name: "riveExperience",
+      title: "Rive case-study experience",
+      type: "object",
+      description:
+        "Optional enhancement for the project detail page only. Publish it only with a real .riv export, localized semantic copy, and a static poster. It never replaces the written case study.",
+      fields: [
+        {
+          name: "file",
+          title: "Rive file",
+          type: "file",
+          options: { accept: ".riv,application/octet-stream" },
+          validation: required,
+          description:
+            "Upload the production .riv export here. External arbitrary URLs are not accepted by the site content model.",
+        },
+        {
+          name: "artboard",
+          title: "Artboard name",
+          type: "string",
+          description: "Leave empty to use the file's default artboard.",
+        },
+        {
+          name: "stateMachine",
+          title: "State machine name",
+          type: "string",
+          description:
+            "Leave empty for a non-interactive file. Prefer an idle state that stops computing when no transition is active.",
+        },
+        {
+          name: "title",
+          title: "Accessible title",
+          type: "localeString",
+          validation: required,
+          description:
+            "Required in both languages. This remains visible and server-rendered without Rive.",
+        },
+        {
+          name: "description",
+          title: "Accessible description",
+          type: "localeText",
+          validation: required,
+          description:
+            "Required in both languages. Describe the system or relationship conveyed by the animation.",
+        },
+        {
+          name: "poster",
+          title: "Static poster",
+          type: "image",
+          options: { hotspot: true },
+          validation: required,
+          description:
+            "Required production fallback for reduced motion, unavailable WebGL2, loading, and runtime errors.",
+        },
+      ],
+    },
     { name: "credits", title: "Credits", type: "localeText" },
     { name: "liveUrl", title: "Live URL", type: "url" },
-    { name: "featured", title: "Featured on homepage", type: "boolean", initialValue: false },
+    {
+      name: "featured",
+      title: "Featured on homepage",
+      type: "boolean",
+      initialValue: false,
+    },
     { name: "order", title: "Order", type: "number" },
   ],
   preview: {

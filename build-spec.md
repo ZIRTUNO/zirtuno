@@ -48,17 +48,17 @@ or comment mentions it.
 
 ### 1.1 What is preserved
 
-| Area | Preserved contract |
-|---|---|
-| Brand | pure black, Zirtuno cyan family, exact owner-traced mark and seven forms, liquid-glass material |
-| Business | complete digital ecosystems across software, AI, automation, data, branding, and marketing |
-| IA | nine business-first chapters, with the poetic Origin after proof and before Contact |
-| Content | authored PT-BR/EN copy, seven service pillars, five method phases, CTA/intent system |
-| Truth | no fabricated metrics; verified outcome, honest narrative, or selected architecture |
-| Platform | Next.js RSC/SEO, Sanity, Resend, accessibility, reduced-motion and static fallbacks |
-| Visual substrate | SDF pipeline, unified field shader, exact form assets, §3.3 liquid bridge, runtime tier probe |
-| Choreography vocabulary | assembly, pour, fracture, seek, bloom, rehearse, current, fuse, gather, release |
-| QA | deterministic forms, melts, cursor, chapter sheets, conductor simulation, CTA and canvas checks |
+| Area                    | Preserved contract                                                                              |
+| ----------------------- | ----------------------------------------------------------------------------------------------- |
+| Brand                   | pure black, Zirtuno cyan family, exact owner-traced mark and seven forms, liquid-glass material |
+| Business                | complete digital ecosystems across software, AI, automation, data, branding, and marketing      |
+| IA                      | nine business-first chapters, with the poetic Origin after proof and before Contact             |
+| Content                 | authored PT-BR/EN copy, seven service pillars, five method phases, CTA/intent system            |
+| Truth                   | no fabricated metrics; verified outcome, honest narrative, or selected architecture             |
+| Platform                | Next.js RSC/SEO, Sanity, Resend, accessibility, reduced-motion and static fallbacks             |
+| Visual substrate        | SDF pipeline, unified field shader, exact form assets, §3.3 liquid bridge, runtime tier probe   |
+| Choreography vocabulary | assembly, pour, fracture, seek, bloom, rehearse, current, fuse, gather, release                 |
+| QA                      | deterministic forms, melts, cursor, chapter sheets, conductor simulation, CTA and canvas checks |
 
 ### 1.2 What is rebuilt
 
@@ -145,13 +145,13 @@ One `PageStage` canvas extends from Hero through the Footer. The canonical 48
 droplets retain identity throughout. Sections remain semantic DOM chapters;
 the liquid and light compose them into acts.
 
-| Act | Chapter span | Business job | Liquid behavior | Light behavior |
-|---|---|---|---|---|
-| I — Signal | Entry veil → Hero | establish the brand and offer immediately | particles assemble the wordmark, hand off to the mark, then cycle the seven forms | black field, first cyan bloom |
-| II — Argument | Problem → Ecosystem → Services | name fragmentation, prove connection, show capabilities | mark pours, fractures by symptom, seeks itself, reunifies, blooms through the seven forms | slow dip through Problem, rise at convergence |
-| III — Practice | Método → Work | show strategic process and proof | five rehearsal states become a quiet current behind the work grid; hovered card receives a meniscus | neutral/workmanlike; fade-to-black boundary before Work |
-| IV — Soul | Origin → Studio | reveal the true origin and human reason | two brother-masses fuse into the exact mark, echo into satellites, remain behind the role grid | one cyan-white flash, afterglow, settle; boundary into Studio |
-| V — Invitation | Contact → Footer | convert and close the narrative | all droplets gather into the mark, submit exhales, one droplet releases beyond the footer | calm and final return to black |
+| Act            | Chapter span                   | Business job                                            | Liquid behavior                                                                                     | Light behavior                                                |
+| -------------- | ------------------------------ | ------------------------------------------------------- | --------------------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
+| I — Signal     | Entry veil → Hero              | establish the brand and offer immediately               | particles assemble the wordmark, hand off to the mark, then cycle the seven forms                   | black field, first cyan bloom                                 |
+| II — Argument  | Problem → Ecosystem → Services | name fragmentation, prove connection, show capabilities | mark pours, fractures by symptom, seeks itself, reunifies, blooms through the seven forms           | slow dip through Problem, rise at convergence                 |
+| III — Practice | Método → Work                  | show strategic process and proof                        | five rehearsal states become a quiet current behind the work grid; hovered card receives a meniscus | neutral/workmanlike; fade-to-black boundary before Work       |
+| IV — Soul      | Origin → Studio                | reveal the true origin and human reason                 | two brother-masses fuse into the exact mark, echo into satellites, remain behind the role grid      | one cyan-white flash, afterglow, settle; boundary into Studio |
+| V — Invitation | Contact → Footer               | convert and close the narrative                         | all droplets gather into the mark, submit exhales, one droplet releases beyond the footer           | calm and final return to black                                |
 
 ### 3.1 Named transitions
 
@@ -192,16 +192,16 @@ separating the cinematic page.
 
 ```css
 --color-ink: #000000;
---color-surface: #0A0A0C;
---color-cyan: #00E3FE;
---color-cyan-glow: #4DECFF;
---color-cyan-deep: #00B6CC;
---color-paper: #F2F0EB;
---color-paper-mute: rgba(242,240,235,0.56);
---color-paper-soft: rgba(242,240,235,0.42);
---color-paper-dim: rgba(242,240,235,0.30);
---color-paper-faint: rgba(242,240,235,0.10);
---color-warn: #FF6B5C;
+--color-surface: #0a0a0c;
+--color-cyan: #00e3fe;
+--color-cyan-glow: #4decff;
+--color-cyan-deep: #00b6cc;
+--color-paper: #f2f0eb;
+--color-paper-mute: rgba(242, 240, 235, 0.56);
+--color-paper-soft: rgba(242, 240, 235, 0.42);
+--color-paper-dim: rgba(242, 240, 235, 0.3);
+--color-paper-faint: rgba(242, 240, 235, 0.1);
+--color-warn: #ff6b5c;
 ```
 
 `globals.css` is the executable token source. The cyan family is the entire
@@ -213,12 +213,12 @@ permanent outer neon halo around every form.
 
 ### 4.2 Typography
 
-| Role | Family/utility | Required use |
-|---|---|---|
-| Display | Bricolage Grotesque / `font-grotesk` | hero headline and every chapter `h2` |
-| Text | Geist / `font-sans` | body, UI, nav, leads, subheads, forms, card and phase titles |
-| Poetry | Instrument Serif italic / `font-display` | approved poetic accents only |
-| System | JetBrains Mono / `font-mono` | labels, counters, numbers, CTA text, metadata |
+| Role    | Family/utility                           | Required use                                                 |
+| ------- | ---------------------------------------- | ------------------------------------------------------------ |
+| Display | Bricolage Grotesque / `font-grotesk`     | hero headline and every chapter `h2`                         |
+| Text    | Geist / `font-sans`                      | body, UI, nav, leads, subheads, forms, card and phase titles |
+| Poetry  | Instrument Serif italic / `font-display` | approved poetic accents only                                 |
+| System  | JetBrains Mono / `font-mono`             | labels, counters, numbers, CTA text, metadata                |
 
 Use the fluid `--text-*` tiers in `globals.css`:
 
@@ -226,6 +226,21 @@ Use the fluid `--text-*` tiers in `globals.css`:
 - title: `title`;
 - text: `poetic`, `lead`, `body-l`, `body`, `body-s`;
 - mono: `mono`, `mono-sm`.
+
+The executable system also binds those tiers into semantic roles:
+
+- `type-hero-title`: the commercial hero statement, Bricolage 600;
+- `type-section-title` / `type-page-title`: chapter and route-level display;
+- `type-feature-title`: high-emphasis Geist statements and phase/service names;
+- `type-card-title`: constrained card and next-project titles;
+- `type-lead-copy`: the shared lead measure and reading rhythm;
+- `type-poetic-title`: the narrow exception for genuinely poetic titles.
+
+Display tiers use compressed desktop leading and optical negative tracking;
+mobile leading opens slightly for stacked PT-BR copy and accented capitals.
+Hero, display, editorial, lead, and reading measures are character-based tokens,
+not arbitrary per-component widths. Card titles never inherit the feature tier,
+and scene/chrome labels remain on the compact mono tiers.
 
 Business headlines never use the serif. Bricolage is not body or mid-title text.
 Instrument Serif is not a general “premium” decoration.
@@ -290,19 +305,19 @@ Rules:
 
 ### 5.1 Locked stack
 
-| Layer | Choice |
-|---|---|
-| Framework | Next.js 16 App Router, React 19, RSC, Turbopack |
-| Language | TypeScript |
-| Styling | Tailwind CSS v4, CSS variables |
-| Field/rendering | raw WebGL2 + OGL |
-| Scroll motion | GSAP + ScrollTrigger |
-| DOM motion | Motion |
-| Smooth scroll | Lenis |
-| i18n | next-intl |
-| CMS | Sanity |
-| Forms/email | react-hook-form, zod, server route/action boundary, Resend |
-| Hosting/measurement | Vercel, Vercel Analytics, Plausible |
+| Layer               | Choice                                                     |
+| ------------------- | ---------------------------------------------------------- |
+| Framework           | Next.js 16 App Router, React 19, RSC, Turbopack            |
+| Language            | TypeScript                                                 |
+| Styling             | Tailwind CSS v4, CSS variables                             |
+| Field/rendering     | raw WebGL2 + OGL                                           |
+| Scroll motion       | GSAP + ScrollTrigger                                       |
+| DOM motion          | Motion                                                     |
+| Smooth scroll       | Lenis                                                      |
+| i18n                | next-intl                                                  |
+| CMS                 | Sanity                                                     |
+| Forms/email         | react-hook-form, zod, server route/action boundary, Resend |
+| Hosting/measurement | Vercel, Vercel Analytics, Plausible                        |
 
 ### 5.2 Server/client boundary
 
@@ -415,6 +430,14 @@ output = mix(physics_body, byte_exact_legacy_shadow, bind)
 `?fphys=0` bypasses the core and runs the pure Phase-A low-pass. Keep it until
 R5-E regression sign-off.
 
+The approved Physics-v3 study is reviewable with `?fphysv3=1`. It adds
+area-weighted pair response, a bounded attraction/viscosity band, and
+cluster-footprint correction without changing the default R5-B path. Add
+`?fobstacles=1` to let free droplets deflect around a cached, fixed-budget set
+of essential headings and conversion surfaces. Both switches are off by
+default until owner capture review; both preserve the exact bind=1 output, and
+`?fphys=0` remains the master rollback.
+
 ### 5.7 Field renderer — CURRENT R5-A/B
 
 The renderer combines exact SDF form fields and bounded inverse-square
@@ -428,6 +451,13 @@ lighting. It supports:
 - context-loss recovery;
 - runtime resolution downshift;
 - transparent canvas over the ink-black page.
+
+`?fshape=1` compiles a separate full-tier review shader that gives free
+droplets a bounded, area-preserving velocity stretch. It is suppressed under
+reduced motion, watchdog demotion, exact forms, and staged §3.3 bridges. The
+default/lite shaders keep their original uniform budget and circular field
+math. Stable canonical ids carry velocity history; satellites, ambience, and
+scene extras remain circular so packed-slot changes cannot create false motion.
 
 The exact math, state registry, bridge behavior, and assets live in
 `metaball-morph-spec.md`.
@@ -779,12 +809,12 @@ droplet past the footer and completes the page fade to black.
 
 ### 7.1 Canonical CTA set
 
-| Key | PT-BR | EN | Variant | Action/intent |
-|---|---|---|---|---|
-| `cta.analysis` | Solicitar análise inicial | Request initial analysis | primary | Contact, `analysis` |
-| `cta.portfolio` | Ver portfólio | See portfolio | secondary | `/work` |
-| `cta.structure` | Estruturar meu digital | Structure my digital | primary | Contact, `structure` |
-| `cta.talk` | Falar com a Zirtuno | Talk to Zirtuno | ghost/secondary | Contact or approved WhatsApp |
+| Key             | PT-BR                     | EN                       | Variant         | Action/intent                |
+| --------------- | ------------------------- | ------------------------ | --------------- | ---------------------------- |
+| `cta.analysis`  | Solicitar análise inicial | Request initial analysis | primary         | Contact, `analysis`          |
+| `cta.portfolio` | Ver portfólio             | See portfolio            | secondary       | `/work`                      |
+| `cta.structure` | Estruturar meu digital    | Structure my digital     | primary         | Contact, `structure`         |
+| `cta.talk`      | Falar com a Zirtuno       | Talk to Zirtuno          | ghost/secondary | Contact or approved WhatsApp |
 
 ### 7.2 CTA placement map — LOCKED
 
@@ -1039,19 +1069,22 @@ protected by `verify-cinematics.mjs` and the full-page transition diagnostics.
 
 ### 10.3 Current query API
 
-| Parameter | Purpose |
-|---|---|
-| `?fstate=N` | deterministic rest form |
-| `?fpair=a-b-m` | deterministic §3.3 bridge frame |
-| `?fcursor=x,y` | deterministic cursor merge |
-| `?fcycle=1` | short hero dwell |
-| `?fflat=1` | flat/debug field |
-| `?ftier=full|lite|none` | tier override |
-| `?feco=c` | freeze ecosystem progress `c ∈ [0,1]` |
-| `?fphys=0` | legacy integrator bypass |
-| `?fgrade=0` | exact optics/grade bypass |
-| `?fgov=0` | disable the idle energy governor for QA |
-| `?fcine=0` | disable cinematic scoring, veils, and flash |
+| Parameter                 | Purpose                                                     |
+| ------------------------- | ----------------------------------------------------------- |
+| `?fstate=N`               | deterministic rest form                                     |
+| `?fpair=a-b-m`            | deterministic §3.3 bridge frame                             |
+| `?fcursor=x,y`            | deterministic cursor merge                                  |
+| `?fcycle=1`               | short hero dwell                                            |
+| `?fflat=1`                | flat/debug field                                            |
+| `?ftier=full\|lite\|none` | tier override                                               |
+| `?feco=c`                 | freeze ecosystem progress `c ∈ [0,1]`                       |
+| `?fphys=0`                | legacy integrator bypass                                    |
+| `?fphysv3=1`              | opt-in area/viscosity/footprint physics review              |
+| `?fobstacles=1`           | opt-in cached type/form avoidance; requires Physics v3      |
+| `?fshape=1`               | opt-in full-tier velocity-aligned free-droplet shape review |
+| `?fgrade=0`               | exact optics/grade bypass                                   |
+| `?fgov=0`                 | disable the idle energy governor for QA                     |
+| `?fcine=0`                | disable cinematic scoring, veils, and flash                 |
 
 `window.__liquid` exposes current site channels and `window.__scenes` exposes
 all live scene channels for diagnostics.
@@ -1113,16 +1146,16 @@ a second visual engine, or a replacement renderer.
 
 ## 12. Open Decisions and Defaults
 
-| Decision | Current default | Blocks |
-|---|---|---|
-| Ecosystem center | unified mark/core + small business label | final S4 taste sign-off |
-| Portfolio content | form-still placeholders in dev; real work or explicit selected architectures at launch | launch credibility |
-| Verified outcomes | use narrative until source/owner verifies a metric | metric claims |
-| Studio people | anonymous role grid | portrait production |
-| Origin founders | anonymous brothers | names/portrait beat |
-| Three founding pillars | broad “forces that move business and life” framing | sharper Origin copy |
-| Contact/footer facts | environment-backed real values required | production launch |
-| Audio | out | any audio design/dependency |
+| Decision               | Current default                                                                        | Blocks                      |
+| ---------------------- | -------------------------------------------------------------------------------------- | --------------------------- |
+| Ecosystem center       | unified mark/core + small business label                                               | final S4 taste sign-off     |
+| Portfolio content      | form-still placeholders in dev; real work or explicit selected architectures at launch | launch credibility          |
+| Verified outcomes      | use narrative until source/owner verifies a metric                                     | metric claims               |
+| Studio people          | anonymous role grid                                                                    | portrait production         |
+| Origin founders        | anonymous brothers                                                                     | names/portrait beat         |
+| Three founding pillars | broad “forces that move business and life” framing                                     | sharper Origin copy         |
+| Contact/footer facts   | environment-backed real values required                                                | production launch           |
+| Audio                  | out                                                                                    | any audio design/dependency |
 
 ## 13. Whole-Site Definition of Done
 
@@ -1143,4 +1176,4 @@ The redeveloped site is done when:
 - no obsolete engine, plan, or contradictory instruction remains in the
   working documentation.
 
-*Discreto. Preciso. Transformador. — one liquid, one system, one story.*
+_Discreto. Preciso. Transformador. — one liquid, one system, one story._

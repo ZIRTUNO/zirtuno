@@ -25,10 +25,10 @@ export function ChapterStudio() {
         {/* Where */}
         <Reveal inView>
           <h2 className="case-label">{t("whereLabel")}</h2>
-          <p className="mt-4 text-display-m font-medium text-paper">
+          <p className="type-feature-title mt-5 text-paper">
             {t("city")}
           </p>
-          <p className="mt-2 font-mono text-mono uppercase tracking-wide text-paper-mute">
+          <p className="mt-2 font-mono text-mono uppercase text-paper-mute">
             {t("coordinates")}
           </p>
         </Reveal>
@@ -36,7 +36,7 @@ export function ChapterStudio() {
         {/* Who — anonymous role grid */}
         <Reveal inView delay={0.05}>
           <h2 className="case-label">{t("whoLabel")}</h2>
-          <p className="mt-4 max-w-md text-body-l text-paper-mute">
+          <p className="mt-5 max-w-[38ch] text-body-l text-paper-mute">
             {t("whoLead")}
           </p>
           <ul className="studio-roles mt-6">
@@ -53,7 +53,7 @@ export function ChapterStudio() {
       {/* Why — closing line */}
       <Reveal inView variant="blur" className="mt-20 max-w-3xl">
         <h2 className="case-label">{t("whyLabel")}</h2>
-        <p className="mt-4 text-display-m font-medium text-paper">
+        <p className="type-feature-title mt-5 text-paper">
           {t("closingStatement")}{" "}
           <span className="font-poetic text-paper-mute">
             {t("closingItalic")}

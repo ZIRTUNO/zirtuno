@@ -41,8 +41,8 @@ const mkScene = (id, x, form, opts = {}) => ({
   target: (i, ctx, out) => {
     // realistic composition: droplets spread on a small disc (scenes never
     // stack 48 live droplets on one point — footprints distribute them)
-    out.x = x + 0.1 * Math.cos(i * 2.4) * (0.3 + 0.7 * ((i * 7) % 10) / 10);
-    out.y = 0.5 + 0.1 * Math.sin(i * 2.4) * (0.3 + 0.7 * ((i * 7) % 10) / 10);
+    out.x = x + 0.1 * Math.cos(i * 2.4) * (0.3 + (0.7 * ((i * 7) % 10)) / 10);
+    out.y = 0.5 + 0.1 * Math.sin(i * 2.4) * (0.3 + (0.7 * ((i * 7) % 10)) / 10);
     out.r = 0.012 * ctx.ch.p;
     out.bind = 0;
     out.cluster = -1;
@@ -69,9 +69,44 @@ const mkScene = (id, x, form, opts = {}) => ({
 
 const buf = new Float32Array(SDF_BALL_MAX * 3);
 const finiteFrame = (f) =>
-  [f.a, f.b, f.fa, f.fb, f.ea, f.eb, f.ox, f.oy, f.scale, f.warp, f.count].every(
-    Number.isFinite,
+  [
+    f.a,
+    f.b,
+    f.fa,
+    f.fb,
+    f.ea,
+    f.eb,
+    f.ox,
+    f.oy,
+    f.scale,
+    f.warp,
+    f.count,
+  ].every(Number.isFinite);
+
+// Packed identity metadata is optional and renderer-only: canonical droplets
+// keep their stable 0…47 ids even when transient families shift packed slots;
+// satellites, ambience, and scene extras stay explicitly anonymous (-1).
+{
+  const scene = mkScene("identity", 0.5, 0);
+  const c = makeConductor([scene]);
+  const ids = new Int16Array(SDF_BALL_MAX);
+  let t = 0;
+  let frame;
+  c.raw.identity.p = 1;
+  for (let i = 0; i < 30; i++) {
+    ids.fill(-9);
+    t += 16.7;
+    frame = c.driver.frame(t, buf, 1.5, undefined, ids);
+  }
+  ok(
+    frame.count >= N,
+    `identity: only ${frame.count}/${N} canonical droplets packed`,
   );
+  for (let i = 0; i < N; i++)
+    ok(ids[i] === i, `identity: packed canonical slot ${i} reports ${ids[i]}`);
+  for (let i = N; i < frame.count; i++)
+    ok(ids[i] === -1, `identity: transient slot ${i} reports ${ids[i]}`);
+}
 
 // ── 1+2: continuity + arbiter across a scripted handoff ──────────────────────
 {
@@ -121,11 +156,23 @@ const finiteFrame = (f) =>
   }
   // no-teleport ceiling: physics moves faster than the old filter (velocity-
   // limited glide ≤ V_MAX), but a step input must never render as a jump
-  ok(maxDelta < 0.04, `continuity: max per-frame droplet delta ${maxDelta.toFixed(4)} ≥ 0.04`);
+  ok(
+    maxDelta < 0.04,
+    `continuity: max per-frame droplet delta ${maxDelta.toFixed(4)} ≥ 0.04`,
+  );
   ok(granted === "AB", `arbiter: holder sequence "${granted}" (want "AB")`);
-  ok(!switchedWhileHot, "arbiter: a texture slot index changed while rendering");
-  ok(c.stats.violations === 0, `arbiter: ${c.stats.violations} violations on a correct script`);
-  ok(c.stats.holderId === "B", `arbiter: final holder ${c.stats.holderId} (want B)`);
+  ok(
+    !switchedWhileHot,
+    "arbiter: a texture slot index changed while rendering",
+  );
+  ok(
+    c.stats.violations === 0,
+    `arbiter: ${c.stats.violations} violations on a correct script`,
+  );
+  ok(
+    c.stats.holderId === "B",
+    `arbiter: final holder ${c.stats.holderId} (want B)`,
+  );
 }
 
 // ── 3: violation suppression ──────────────────────────────────────────────────
@@ -143,7 +190,10 @@ const finiteFrame = (f) =>
     f = c.driver.frame(t, buf, 1.5);
   }
   ok(c.stats.violations > 0, "suppression: violating claim not counted");
-  ok(c.stats.holderId === "A", `suppression: holder stolen by violator (${c.stats.holderId})`);
+  ok(
+    c.stats.holderId === "A",
+    `suppression: holder stolen by violator (${c.stats.holderId})`,
+  );
   ok(f.a === 0, `suppression: output form ${f.a} (want holder's 0)`);
 }
 
@@ -172,7 +222,10 @@ const finiteFrame = (f) =>
     if (f.count > maxCount) maxCount = f.count;
   }
   ok(allFinite, "stress: non-finite output");
-  ok(maxCount <= SDF_BALL_MAX, `stress: count ${maxCount} > budget ${SDF_BALL_MAX}`);
+  ok(
+    maxCount <= SDF_BALL_MAX,
+    `stress: count ${maxCount} > budget ${SDF_BALL_MAX}`,
+  );
 }
 
 // ── 5: extras budget ──────────────────────────────────────────────────────────
@@ -198,7 +251,8 @@ const finiteFrame = (f) =>
     t += 16.7;
     const f = c.driver.frame(t, buf, 1.5);
     ok(finiteFrame(f), `gap frame ${fr} not finite`);
-    if (fr === 119) ok(f.fa < EPS_FORM, `gap: form still rendering (fa=${f.fa})`);
+    if (fr === 119)
+      ok(f.fa < EPS_FORM, `gap: form still rendering (fa=${f.fa})`);
   }
 }
 
@@ -249,7 +303,10 @@ const mkJumpScene = (bind) => ({
     `settle: free droplet took ${settledAt}ms (want < 1500)`,
   );
   // a whisper of slosh on a hard 0.4-uv jump is liquid; ringing is not
-  ok(overshoot < 0.025, `settle: overshoot ${overshoot.toFixed(4)} ≥ 0.025 (ringing)`);
+  ok(
+    overshoot < 0.025,
+    `settle: overshoot ${overshoot.toFixed(4)} ≥ 0.025 (ringing)`,
+  );
 }
 
 // ── P2: bind=1 parity — bound droplets move EXACTLY like the legacy path ────
@@ -268,7 +325,9 @@ const mkJumpScene = (bind) => ({
     cPhys.driver.frame(t, buf, 1.5);
     cLeg.driver.frame(t, buf2, 1.5);
     for (let i = 0; i < 8; i++) {
-      const d = Math.abs(buf[i * 3] - buf2[i * 3]) + Math.abs(buf[i * 3 + 1] - buf2[i * 3 + 1]);
+      const d =
+        Math.abs(buf[i * 3] - buf2[i * 3]) +
+        Math.abs(buf[i * 3 + 1] - buf2[i * 3 + 1]);
       if (d > maxDiff) maxDiff = d;
     }
   }
@@ -419,8 +478,8 @@ const mkJumpScene = (bind) => ({
   const B = mkScene("B", 0.7, 3);
   // free-liquid targets so all forces + spawning paths run
   A.target = (i, ctx, out) => {
-    out.x = 0.2 + 0.5 * ((i * 37) % 100) / 100;
-    out.y = 0.2 + 0.6 * ((i * 61) % 100) / 100;
+    out.x = 0.2 + (0.5 * ((i * 37) % 100)) / 100;
+    out.y = 0.2 + (0.6 * ((i * 61) % 100)) / 100;
     out.r = 0.02;
     out.bind = 0;
     out.cluster = i % 4;
@@ -452,7 +511,104 @@ const mkJumpScene = (bind) => ({
     if (f.count > maxCount) maxCount = f.count;
   }
   ok(allFinite, "physics stress: non-finite output");
-  ok(maxCount <= SDF_BALL_MAX, `physics stress: count ${maxCount} > ${SDF_BALL_MAX}`);
+  ok(
+    maxCount <= SDF_BALL_MAX,
+    `physics stress: count ${maxCount} > ${SDF_BALL_MAX}`,
+  );
+}
+
+// ── P7: physics-v3 review path — exact bind, obstacle response, finite stress
+{
+  // The experimental force path must still collapse to the sacred legacy
+  // trajectory at bind=1, including when obstacle data is present.
+  const v3Bound = makeConductor([mkJumpScene(1)], {
+    physicsV3: true,
+    obstacleFlow: true,
+  });
+  const legacyBound = makeConductor([mkJumpScene(1)], { physics: false });
+  const legacyBuf = new Float32Array(SDF_BALL_MAX * 3);
+  v3Bound.input.obstacles.set([0.5, 0.5, 0.08, 0.08, 1]);
+  v3Bound.input.obstacleCount = 1;
+  let t = 0;
+  let parity = true;
+  for (let fr = 0; fr < 180; fr++) {
+    if (fr === 30) {
+      v3Bound.raw.J.jump = 1;
+      legacyBound.raw.J.jump = 1;
+    }
+    t += 16.7;
+    v3Bound.driver.frame(t, buf, 1.5);
+    legacyBound.driver.frame(t, legacyBuf, 1.5);
+    if (buf[0] !== legacyBuf[0] || buf[1] !== legacyBuf[1]) parity = false;
+  }
+  ok(parity, "physics-v3: bind=1 diverged from the legacy trajectory");
+
+  const obstacleScene = {
+    ...mkJumpScene(0),
+    ambient: () => 0,
+    activity: () => 0,
+    target: (i, ctx, out) => {
+      out.x = 0.5;
+      out.y = 0.5;
+      out.r = i === 0 ? 0.02 : 0;
+      out.bind = 0;
+      out.cluster = -1;
+      out.z = 0;
+    },
+  };
+  const clear = makeConductor([obstacleScene], { physicsV3: true });
+  const avoided = makeConductor([obstacleScene], {
+    physicsV3: true,
+    obstacleFlow: true,
+  });
+  avoided.input.obstacles.set([0.5, 0.5, 0.04, 0.04, 1]);
+  avoided.input.obstacleCount = 1;
+  const clearBuf = new Float32Array(SDF_BALL_MAX * 3);
+  t = 0;
+  for (let fr = 0; fr < 180; fr++) {
+    t += 16.7;
+    clear.driver.frame(t, clearBuf, 1.5);
+    avoided.driver.frame(t, buf, 1.5);
+  }
+  ok(
+    Math.hypot(buf[0] - clearBuf[0], buf[1] - clearBuf[1]) > 0.002,
+    "physics-v3: cached obstacle produced no measurable free-liquid response",
+  );
+
+  const A = mkScene("V3", 0.5, 0);
+  A.target = (i, ctx, out) => {
+    out.x = 0.18 + 0.64 * (((i * 37 + ctx.ch.p * 11) % 100) / 100);
+    out.y = 0.18 + 0.64 * (((i * 61 + ctx.ch.p * 7) % 100) / 100);
+    out.r = 0.009 + 0.016 * ((i % 7) / 6);
+    out.bind = i % 9 === 0 ? 1 : 0;
+    out.cluster = i % 4;
+    out.z = 0.4;
+  };
+  A.form = () => null;
+  A.ambient = () => 0;
+  const stress = makeConductor([A], {
+    physicsV3: true,
+    obstacleFlow: true,
+  });
+  stress.raw.V3.p = 1;
+  stress.input.obstacles.set([
+    0.36, 0.48, 0.1, 0.07, 0.8, 0.66, 0.58, 0.12, 0.08, 1,
+  ]);
+  stress.input.obstacleCount = 2;
+  t = 0;
+  let allFinite = true;
+  for (let fr = 0; fr < 2500; fr++) {
+    stress.raw.V3.p = 0.5 + 0.5 * Math.sin(fr * 0.017);
+    stress.input.px = 0.5 + 0.3 * Math.sin(fr * 0.023);
+    stress.input.py = 0.5 + 0.25 * Math.cos(fr * 0.019);
+    stress.input.pon = fr % 90 < 45 ? 1 : 0;
+    t += fr % 113 === 0 ? 88 : 16.7;
+    const frame = stress.driver.frame(t, buf, 1.5);
+    if (!finiteFrame(frame)) allFinite = false;
+    for (let i = 0; i < frame.count * 3; i++)
+      if (!Number.isFinite(buf[i])) allFinite = false;
+  }
+  ok(allFinite, "physics-v3: non-finite output under force/obstacle stress");
 }
 
 // ═══ OPTICS PLUMBING (R5-C: depth pack, energy, score passthrough) ════════════
@@ -461,8 +617,8 @@ const mkJumpScene = (bind) => ({
 {
   const A = mkScene("A", 0.3, 0);
   A.target = (i, ctx, out) => {
-    out.x = 0.2 + 0.5 * ((i * 37) % 100) / 100;
-    out.y = 0.2 + 0.6 * ((i * 61) % 100) / 100;
+    out.x = 0.2 + (0.5 * ((i * 37) % 100)) / 100;
+    out.y = 0.2 + (0.6 * ((i * 61) % 100)) / 100;
     out.r = 0.02;
     out.bind = 0;
     out.cluster = -1;
@@ -490,7 +646,10 @@ const mkJumpScene = (bind) => ({
   ok(bad === 0, `zBuf: ${bad} packed slots carry a stale/unknown depth`);
   ok(droplets > 0, "zBuf: no droplet slot carries the scene depth");
   ok(ambient > 0, `zBuf: ambient slots missing AMBIENT_Z (${PHYS.AMBIENT_Z})`);
-  ok(Math.abs(zBuf[0] - 0.55) < 1e-6, `zBuf[0] = ${zBuf[0]} (want the scene's 0.55)`);
+  ok(
+    Math.abs(zBuf[0] - 0.55) < 1e-6,
+    `zBuf[0] = ${zBuf[0]} (want the scene's 0.55)`,
+  );
 }
 
 // ── O2: energy — activity/scroll/pointer raise it; a calm scene idles low ───
@@ -529,7 +688,10 @@ const mkJumpScene = (bind) => ({
   const c2 = makeConductor([legacy]);
   c2.raw.L.p = 1;
   const f2 = c2.driver.frame(16.7, buf, 1.5);
-  ok(f2.energy > 0.9, `energy: activity-less scene not conservative (${f2.energy})`);
+  ok(
+    f2.energy > 0.9,
+    `energy: activity-less scene not conservative (${f2.energy})`,
+  );
 }
 
 // ── O3: score → frame (iExpo/iKey passthrough; neutral without scores) ──────
@@ -545,7 +707,10 @@ const mkJumpScene = (bind) => ({
   const c2 = makeConductor([B]);
   c2.raw.B.p = 1;
   const f2 = c2.driver.frame(16.7, buf, 1.5);
-  ok(f2.expo === 0 && f2.key === 0, `score: neutral frame carries expo=${f2.expo} key=${f2.key}`);
+  ok(
+    f2.expo === 0 && f2.key === 0,
+    `score: neutral frame carries expo=${f2.expo} key=${f2.key}`,
+  );
 }
 
 // ═══ CINEMATICS (R5-D: score merge, the ONE flash, ?fcine=0) ═════════════════
@@ -583,7 +748,17 @@ const mkFlashScene = () => ({
   // TWO full traversals through the fusion window + a long park inside it —
   // the raw channel rises three separate times; the envelope may fire once
   const script = (fr) =>
-    fr < 60 ? 0 : fr < 120 ? 0.5 : fr < 180 ? 1 : fr < 240 ? 0.5 : fr < 300 ? 0 : 0.5;
+    fr < 60
+      ? 0
+      : fr < 120
+        ? 0.5
+        : fr < 180
+          ? 1
+          : fr < 240
+            ? 0.5
+            : fr < 300
+              ? 0
+              : 0.5;
   for (let fr = 0; fr < 500; fr++) {
     c.raw.F.p = script(fr);
     t += 16.7;
@@ -594,8 +769,14 @@ const mkFlashScene = () => ({
     if (fl > 0 && !wasOn) windows++;
     wasOn = fl > 0;
   }
-  ok(c.stats.flashes === 1, `flash: latched ${c.stats.flashes} times (want exactly 1)`);
-  ok(windows === 1, `flash: ${windows} visible windows (want 1 — re-scrub re-fired it)`);
+  ok(
+    c.stats.flashes === 1,
+    `flash: latched ${c.stats.flashes} times (want exactly 1)`,
+  );
+  ok(
+    windows === 1,
+    `flash: ${windows} visible windows (want 1 — re-scrub re-fired it)`,
+  );
   ok(onMs <= 400, `flash: visible for ${onMs.toFixed(0)}ms (WCAG budget 400)`);
   ok(peak > 0.9, `flash: envelope peak ${peak.toFixed(2)} never reached full`);
   ok(
@@ -617,10 +798,22 @@ const mkFlashScene = () => ({
   const B = mk("B", { veil: 0.5, vignette: 0.05, exposure: 0.9, key: 0.4 });
   const c = makeConductor([A, B]);
   c.driver.frame(16.7, buf, 1.5);
-  ok(Math.abs(c.score.veil - 0.5) < 1e-9, `merge: veil ${c.score.veil} (want max 0.5)`);
-  ok(Math.abs(c.score.vignette - 0.1) < 1e-9, `merge: vignette ${c.score.vignette} (want max 0.1)`);
-  ok(Math.abs(c.score.exposure - 0.81) < 1e-9, `merge: exposure ${c.score.exposure} (want 0.9·0.9)`);
-  ok(Math.abs(c.score.key - 0.4) < 1e-9, `merge: key ${c.score.key} (want 0.4)`);
+  ok(
+    Math.abs(c.score.veil - 0.5) < 1e-9,
+    `merge: veil ${c.score.veil} (want max 0.5)`,
+  );
+  ok(
+    Math.abs(c.score.vignette - 0.1) < 1e-9,
+    `merge: vignette ${c.score.vignette} (want max 0.1)`,
+  );
+  ok(
+    Math.abs(c.score.exposure - 0.81) < 1e-9,
+    `merge: exposure ${c.score.exposure} (want 0.9·0.9)`,
+  );
+  ok(
+    Math.abs(c.score.key - 0.4) < 1e-9,
+    `merge: key ${c.score.key} (want 0.4)`,
+  );
 
   // afterglow: right after the latch the exposure lifts, then settles back
   const c2 = makeConductor([mkFlashScene()]);
@@ -654,7 +847,10 @@ const mkFlashScene = () => ({
     const f = c.driver.frame(t, buf, 1.5);
     ok(f.expo === 0 && f.key === 0, `fcine: frame ${fr} carries grade`);
   }
-  ok(c.stats.flashes === 0, `fcine: flash latched ${c.stats.flashes} times with cine off`);
+  ok(
+    c.stats.flashes === 0,
+    `fcine: flash latched ${c.stats.flashes} times with cine off`,
+  );
   ok(
     c.score.veil === 0 && c.score.flash === 0 && c.score.vignette === 0,
     "fcine: veil channels not neutral",
@@ -663,7 +859,11 @@ const mkFlashScene = () => ({
 
 console.log(
   "CONDUCTOR_CHECK " +
-    JSON.stringify({ droplets: N, ballMax: SDF_BALL_MAX, failures: failures.length }),
+    JSON.stringify({
+      droplets: N,
+      ballMax: SDF_BALL_MAX,
+      failures: failures.length,
+    }),
 );
 if (failures.length) {
   for (const f of failures) console.error("FAIL " + f);

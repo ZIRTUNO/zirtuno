@@ -22,6 +22,22 @@ export interface LocaleString {
   en: string;
 }
 
+/**
+ * Optional, authored Rive layer for a case study. The source is projected from
+ * a Sanity file asset; arbitrary third-party URLs are intentionally excluded
+ * from the content contract. Title and description remain ordinary localized
+ * content so the case is understandable when canvas, JavaScript, or motion is
+ * unavailable.
+ */
+export interface ProjectRiveExperience {
+  src: string;
+  artboard?: string;
+  stateMachine?: string;
+  title: LocaleString;
+  description: LocaleString;
+  posterImage?: string;
+}
+
 export interface Project {
   _id?: string;
   slug: string;
@@ -36,6 +52,8 @@ export interface Project {
   credits?: LocaleString;
   /** Sanity image asset ref/url; undefined for seed → CSS preview fallback. */
   previewImage?: string;
+  /** Optional case-only Rive enhancement. Never used by the homepage field. */
+  riveExperience?: ProjectRiveExperience | null;
   liveUrl?: string;
   featured?: boolean;
   order?: number;

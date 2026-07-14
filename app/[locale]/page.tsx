@@ -12,20 +12,28 @@ import { ChapterStudio } from "@/components/chapters/ChapterStudio";
 import { ChapterContact } from "@/components/chapters/ChapterContact";
 import { SideIndex } from "@/components/chrome/SideIndex";
 import { JsonLd } from "@/components/seo/JsonLd";
+import { resolveContactIntent } from "@/lib/forms/contact";
 
 // Homepage — composes the 9 chapters in business-first order (S16).
 // Chapters are added incrementally; Hero (S2) first.
 export default async function HomePage({
   params,
+  searchParams,
 }: {
   params: Promise<{ locale: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const { locale } = await params;
+  const query = await searchParams;
   setRequestLocale(locale);
   const tEco = await getTranslations("ecosystem");
   const tName = await getTranslations("name");
   const ecoNodes = tEco.raw("nodes") as EcoNode[];
   const pillars = tName.raw("pillars") as string[];
+  const first = (value: string | string[] | undefined) =>
+    Array.isArray(value) ? value[0] : value;
+  const initialIntent = resolveContactIntent(first(query.intent));
+  const initialStatus = first(query.contact);
 
   return (
     <main id="content">
@@ -50,7 +58,10 @@ export default async function HomePage({
         <ChapterWork />
         <ChapterName />
         <ChapterStudio />
-        <ChapterContact />
+        <ChapterContact
+          initialIntent={initialIntent}
+          initialStatus={initialStatus}
+        />
         <Footer />
       </PageStage>
     </main>

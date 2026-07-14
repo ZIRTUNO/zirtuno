@@ -3,21 +3,14 @@
 import { useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useSearchParams } from "next/navigation";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import {
   contactSchema,
-  CONTACT_INTENTS,
+  resolveContactIntent,
   type ContactInput,
   type ContactIntent,
 } from "@/lib/forms/contact";
 import { trackEvent } from "@/lib/analytics/client";
-
-function resolveIntent(value: string | null): ContactIntent {
-  return (CONTACT_INTENTS as readonly string[]).includes(value ?? "")
-    ? (value as ContactIntent)
-    : "general";
-}
 
 function isConfirmedDelivery(value: unknown): boolean {
   if (!value || typeof value !== "object") return false;
@@ -47,26 +40,42 @@ type SubmissionAttempt = {
   fingerprint: string;
 };
 
+type ContactStatus = "idle" | "success" | "pending" | "error";
+
+function resolveFallbackStatus(value: string | null): ContactStatus {
+  if (value === "success" || value === "pending") return value;
+  if (value === "error" || value === "rate_limit") return "error";
+  return "idle";
+}
+
 /**
  * S10 — contact form. The labeled submit ("Solicitar análise inicial") is the
  * canonical, always-present action (the metaball exhale is additive, Phase 2).
  * The entry-intent tag arrives via the ?intent= search param (set by the CTAs)
  * and is captured in a hidden field that reaches the team email.
  */
-export function ContactForm() {
+export function ContactForm({
+  initialIntent,
+  initialStatus,
+}: {
+  initialIntent: ContactIntent;
+  initialStatus?: string | null;
+}) {
   const t = useTranslations("contact");
-  const searchParams = useSearchParams();
-  const intent = resolveIntent(searchParams.get("intent"));
-  const [status, setStatus] = useState<
-    "idle" | "success" | "pending" | "error"
-  >("idle");
+  const locale = useLocale();
+  const [intent, setIntent] = useState(initialIntent);
+  const fallbackStatus = initialStatus ?? null;
+  const [status, setStatus] = useState<ContactStatus>(() =>
+    resolveFallbackStatus(fallbackStatus),
+  );
   const [errorKind, setErrorKind] = useState<"generic" | "rate_limit">(
-    "generic",
+    fallbackStatus === "rate_limit" ? "rate_limit" : "generic",
   );
   const [website, setWebsite] = useState("");
   const [submissionAttempt, setSubmissionAttempt] =
     useState<SubmissionAttempt | null>(null);
   const started = useRef(false);
+  const formRef = useRef<HTMLFormElement>(null);
 
   const {
     register,
@@ -82,6 +91,32 @@ export function ContactForm() {
   useEffect(() => {
     setValue("intent", intent);
   }, [intent, setValue]);
+
+  useEffect(() => {
+    const syncFromUrl = () => {
+      setIntent(
+        resolveContactIntent(
+          new URLSearchParams(window.location.search).get("intent"),
+        ),
+      );
+    };
+    const onIntent = (event: Event) => {
+      const next = (event as CustomEvent<{ intent?: string }>).detail?.intent;
+      setIntent(resolveContactIntent(next));
+    };
+    window.addEventListener("popstate", syncFromUrl);
+    window.addEventListener("zirtuno:intent", onIntent);
+    return () => {
+      window.removeEventListener("popstate", syncFromUrl);
+      window.removeEventListener("zirtuno:intent", onIntent);
+    };
+  }, []);
+
+  // Native constraints protect the no-JS form. Once enhanced, React/Zod own
+  // localized validation and error announcements instead of browser bubbles.
+  useEffect(() => {
+    if (formRef.current) formRef.current.noValidate = true;
+  }, []);
 
   async function onSubmit(values: ContactInput) {
     setStatus("idle");
@@ -152,6 +187,9 @@ export function ContactForm() {
 
   return (
     <form
+      ref={formRef}
+      action={`/api/contact?locale=${locale}`}
+      method="post"
       onSubmit={handleSubmit(onSubmit, (fieldErrors) => {
         trackEvent("contact_validation_failed", {
           fields: Object.keys(fieldErrors).sort().join(","),
@@ -164,10 +202,9 @@ export function ContactForm() {
         trackEvent("contact_start", { intent });
       }}
       className="contact-form"
-      noValidate
       aria-busy={isSubmitting}
     >
-      <input type="hidden" {...register("intent")} />
+      <input type="hidden" defaultValue={intent} {...register("intent")} />
       <div className="contact-honeypot" aria-hidden="true">
         <label htmlFor="contact-website">{t("fields.websiteTrap")}</label>
         <input
@@ -195,6 +232,8 @@ export function ContactForm() {
           placeholder={t("fields.namePlaceholder")}
           aria-invalid={!!errors.name}
           aria-describedby={errors.name ? ERROR_IDS.name : undefined}
+          required
+          minLength={2}
           maxLength={120}
           {...register("name")}
         />
@@ -214,6 +253,7 @@ export function ContactForm() {
           placeholder={t("fields.emailPlaceholder")}
           aria-invalid={!!errors.email}
           aria-describedby={errors.email ? ERROR_IDS.email : undefined}
+          required
           maxLength={254}
           {...register("email")}
         />
@@ -243,6 +283,8 @@ export function ContactForm() {
           placeholder={t("fields.messagePlaceholder")}
           aria-invalid={!!errors.message}
           aria-describedby={errors.message ? ERROR_IDS.message : undefined}
+          required
+          minLength={10}
           maxLength={4000}
           {...register("message")}
         />

@@ -38,7 +38,10 @@
     "chapterLabel": "01 — Zirtuno",
     "eyebrow": "Algumas forças não precisam ser barulhentas para transformar.",
     "headline": "Criamos ecossistemas digitais completos.",
-    "subline": "Software, IA, automação, dados, branding e marketing — conectados em uma só estrutura, feita para o seu negócio crescer."
+    "subline": "Software, IA, automação, dados, branding e marketing — conectados em uma só estrutura, feita para o seu negócio crescer.",
+    "liquidControlLabel": "Formas do ecossistema Zirtuno",
+    "liquidControlInstructions": "Use as setas para explorar a marca e os sete pilares. Use Início e Fim para ir ao primeiro ou ao último estado.",
+    "liquidMarkLabel": "Marca Zirtuno"
   },
   "problem": {
     "chapterLabel": "02 — O Problema",
@@ -46,11 +49,23 @@
     "lead": "Cada peça funciona sozinha — e nenhuma funciona junta. Site de um lado, dados de outro, atendimento no improviso, processos no manual. O resultado é esforço sem escala.",
     "symptoms": [
       { "label": "Site fraco", "desc": "Bonito, mas não converte." },
-      { "label": "Processos manuais", "desc": "Tarefas repetitivas consomem o time." },
-      { "label": "Ferramentas desconectadas", "desc": "Sistemas que não se falam." },
-      { "label": "Atendimento lento", "desc": "Oportunidades perdidas fora do horário." },
+      {
+        "label": "Processos manuais",
+        "desc": "Tarefas repetitivas consomem o time."
+      },
+      {
+        "label": "Ferramentas desconectadas",
+        "desc": "Sistemas que não se falam."
+      },
+      {
+        "label": "Atendimento lento",
+        "desc": "Oportunidades perdidas fora do horário."
+      },
       { "label": "Dados espalhados", "desc": "Decisões tomadas no escuro." },
-      { "label": "Posicionamento frágil", "desc": "Uma marca que não é lembrada." },
+      {
+        "label": "Posicionamento frágil",
+        "desc": "Uma marca que não é lembrada."
+      },
       { "label": "Sem ecossistema", "desc": "Nada cresce de forma integrada." }
     ]
   },
@@ -60,14 +75,20 @@
     "lead": "Tudo conectado em torno do seu negócio. Cada parte fortalece as outras: a marca alimenta o site, o site alimenta o tráfego, o tráfego alimenta o CRM, a IA acelera o atendimento, a automação conecta os processos e os dashboards mostram tudo em tempo real.",
     "centerLabel": "Seu negócio",
     "nodes": [
-      { "name": "Marca", "tooltip": "A base de tudo — como o negócio é percebido." },
+      {
+        "name": "Marca",
+        "tooltip": "A base de tudo — como o negócio é percebido."
+      },
       { "name": "Site", "tooltip": "O centro da presença digital." },
       { "name": "Tráfego", "tooltip": "O fluxo de novas oportunidades." },
       { "name": "CRM", "tooltip": "A memória de cada relacionamento." },
       { "name": "IA", "tooltip": "Inteligência que atende e acelera." },
       { "name": "Automação", "tooltip": "O trabalho que acontece sozinho." },
       { "name": "Dashboards", "tooltip": "A visão clara dos números." },
-      { "name": "Sistemas internos", "tooltip": "A operação que sustenta o negócio." },
+      {
+        "name": "Sistemas internos",
+        "tooltip": "A operação que sustenta o negócio."
+      },
       { "name": "Atendimento", "tooltip": "A experiência em cada contato." },
       { "name": "Conteúdo", "tooltip": "A voz que mantém a marca presente." }
     ]
@@ -89,7 +110,14 @@
         "is": "Sites institucionais, landing pages e interfaces focadas em conversão.",
         "solves": "Sites bonitos que não convertem e estruturas confusas que afastam clientes.",
         "creates": "Uma presença que comunica com clareza, gera confiança e transforma visitantes em clientes.",
-        "caps": ["Landing pages", "Sites institucionais", "Design de interface", "Usabilidade", "Responsividade", "Conversão"]
+        "caps": [
+          "Landing pages",
+          "Sites institucionais",
+          "Design de interface",
+          "Usabilidade",
+          "Responsividade",
+          "Conversão"
+        ]
       },
       "software": {
         "accent": "Forma para a função.",
@@ -98,7 +126,13 @@
         "is": "Plataformas sob medida, sistemas internos, dashboards e aplicativos.",
         "solves": "Processos manuais, planilhas soltas e ferramentas que não conversam.",
         "creates": "Operações mais rápidas, organizadas e escaláveis, com tecnologia feita para o negócio.",
-        "caps": ["Plataformas web", "Sistemas internos", "Dashboards", "Apps mobile", "Multiplataforma"]
+        "caps": [
+          "Plataformas web",
+          "Sistemas internos",
+          "Dashboards",
+          "Apps mobile",
+          "Multiplataforma"
+        ]
       },
       "ai": {
         "accent": "A inteligência que não dorme.",
@@ -107,7 +141,13 @@
         "is": "Agentes de IA, chatbots, automações inteligentes e atendimento automatizado.",
         "solves": "Atendimento lento, equipe sobrecarregada e oportunidades perdidas fora do horário.",
         "creates": "Atendimento e operações que funcionam 24/7, com inteligência que escala.",
-        "caps": ["Agentes de IA", "Chatbots", "Automações inteligentes", "Atendimento 24/7", "Modelos para negócios"]
+        "caps": [
+          "Agentes de IA",
+          "Chatbots",
+          "Automações inteligentes",
+          "Atendimento 24/7",
+          "Modelos para negócios"
+        ]
       },
       "automation": {
         "accent": "Movimento que não exige presença.",
@@ -116,7 +156,13 @@
         "is": "Automação de processos, integrações com CRM e conexão entre ferramentas.",
         "solves": "Tarefas repetitivas, retrabalho e dados que se perdem entre sistemas.",
         "creates": "Um fluxo conectado onde a informação circula sozinha e nada se perde.",
-        "caps": ["Automação de processos", "Integrações CRM", "Conexão de ferramentas", "Fluxos automáticos", "APIs"]
+        "caps": [
+          "Automação de processos",
+          "Integrações CRM",
+          "Conexão de ferramentas",
+          "Fluxos automáticos",
+          "APIs"
+        ]
       },
       "data": {
         "accent": "O caos lido em silêncio.",
@@ -125,7 +171,13 @@
         "is": "Organização de dados, BI, relatórios e dashboards de decisão.",
         "solves": "Decisões no escuro, dados espalhados e falta de visão dos números.",
         "creates": "Visão clara e em tempo real para decidir com dados, não com achismo.",
-        "caps": ["Organização de dados", "Business intelligence", "Relatórios", "Dashboards", "Métricas em tempo real"]
+        "caps": [
+          "Organização de dados",
+          "Business intelligence",
+          "Relatórios",
+          "Dashboards",
+          "Métricas em tempo real"
+        ]
       },
       "branding": {
         "accent": "A presença que se reconhece de longe.",
@@ -134,7 +186,13 @@
         "is": "Identidade visual, estratégia de marca, comunicação e posicionamento.",
         "solves": "Marca genérica, sem diferenciação, que não é lembrada.",
         "creates": "Uma marca forte, coerente e memorável que constrói autoridade.",
-        "caps": ["Identidade visual", "Estratégia de marca", "Comunicação", "Storytelling", "Autoridade digital"]
+        "caps": [
+          "Identidade visual",
+          "Estratégia de marca",
+          "Comunicação",
+          "Storytelling",
+          "Autoridade digital"
+        ]
       },
       "marketing": {
         "accent": "Alcance sem barulho.",
@@ -143,7 +201,13 @@
         "is": "Tráfego pago, estratégia de conteúdo, campanhas e performance.",
         "solves": "Investimento sem retorno claro e crescimento estagnado.",
         "creates": "Crescimento previsível e mensurável, conectado a toda a estrutura.",
-        "caps": ["Tráfego pago", "Estratégia de conteúdo", "Campanhas", "Estratégia digital", "Performance"]
+        "caps": [
+          "Tráfego pago",
+          "Estratégia de conteúdo",
+          "Campanhas",
+          "Estratégia digital",
+          "Performance"
+        ]
       }
     }
   },
@@ -152,11 +216,26 @@
     "headline": "O Método Zirtuno.",
     "lead": "Não começamos pelo que é bonito. Começamos pelo que está quebrado.",
     "phases": [
-      { "name": "Diagnóstico", "desc": "Entendemos o negócio, mapeamos a estrutura atual e identificamos o que está fragmentado, manual ou ausente." },
-      { "name": "Estrutura", "desc": "Desenhamos a arquitetura do ecossistema: o que construir, em que ordem e como tudo se conecta." },
-      { "name": "Construção", "desc": "Desenvolvemos cada peça com padrão premium — site, software, marca, automações." },
-      { "name": "Integração", "desc": "Conectamos tudo: CRM, IA, automações, dados e sistemas operam como um organismo único." },
-      { "name": "Evolução", "desc": "Medimos, otimizamos e expandimos. O ecossistema cresce junto com o negócio." }
+      {
+        "name": "Diagnóstico",
+        "desc": "Entendemos o negócio, mapeamos a estrutura atual e identificamos o que está fragmentado, manual ou ausente."
+      },
+      {
+        "name": "Estrutura",
+        "desc": "Desenhamos a arquitetura do ecossistema: o que construir, em que ordem e como tudo se conecta."
+      },
+      {
+        "name": "Construção",
+        "desc": "Desenvolvemos cada peça com padrão premium — site, software, marca, automações."
+      },
+      {
+        "name": "Integração",
+        "desc": "Conectamos tudo: CRM, IA, automações, dados e sistemas operam como um organismo único."
+      },
+      {
+        "name": "Evolução",
+        "desc": "Medimos, otimizamos e expandimos. O ecossistema cresce junto com o negócio."
+      }
     ]
   },
   "work": {
@@ -204,6 +283,7 @@
   },
   "name": {
     "chapterLabel": "07 — A Origem",
+    "headline": "A origem da Zirtuno.",
     "b1": "Tudo começou com dois irmãos e uma mesma inquietação: e se construíssemos o que ainda não existe?",
     "b2": "De uma só visão nasceram três pilares — social, saúde e finanças. As forças que movem cada negócio e cada vida.",
     "pillars": ["Social", "Saúde", "Finanças"],

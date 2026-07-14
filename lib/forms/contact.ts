@@ -10,6 +10,14 @@ export const CONTACT_INTENTS = [
 
 export type ContactIntent = (typeof CONTACT_INTENTS)[number];
 
+export function resolveContactIntent(
+  value: string | null | undefined,
+): ContactIntent {
+  return (CONTACT_INTENTS as readonly string[]).includes(value ?? "")
+    ? (value as ContactIntent)
+    : "general";
+}
+
 // Shared by the client form and the API route. Localized validation messages
 // are applied in the component; zod's defaults are the server-side fallback.
 export const contactSchema = z.object({

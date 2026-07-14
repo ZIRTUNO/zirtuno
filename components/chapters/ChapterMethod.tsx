@@ -32,13 +32,13 @@ export function ChapterMethod() {
         </Reveal>
 
         <Reveal inView delay={0.05}>
-          <h2 className="mt-6 text-display-l font-grotesk font-medium text-paper">
+          <h2 className="type-section-title mt-[var(--type-space-label-title)] text-paper">
             {t("headline")}
           </h2>
         </Reveal>
 
         <Reveal inView delay={0.1}>
-          <p className="font-poetic mt-5 max-w-2xl text-poetic text-paper-mute">
+          <p className="font-poetic mt-[var(--type-space-title-lead)] max-w-2xl text-poetic text-paper-mute">
             {t("lead")}
           </p>
         </Reveal>
@@ -51,7 +51,7 @@ export function ChapterMethod() {
               <span className="method-num">
                 {String(i + 1).padStart(2, "0")} / {String(phases.length).padStart(2, "0")}
               </span>
-              <h3 className="method-name text-display-m">{p.name}</h3>
+              <h3 className="method-name type-feature-title">{p.name}</h3>
               <p className="method-desc">{p.desc}</p>
             </Reveal>
           ))}

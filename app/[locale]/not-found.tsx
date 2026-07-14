@@ -20,10 +20,10 @@ export default function NotFound() {
       >
         <div className="max-w-xl">
           <LoneDroplet />
-          <p className="mt-8 font-mono text-mono uppercase tracking-wide text-cyan">
+          <p className="mt-8 font-mono text-mono uppercase text-cyan">
             {t("code")}
           </p>
-          <h1 className="font-poetic mt-3 text-display-l text-paper">
+          <h1 className="type-poetic-title mx-auto mt-4 text-paper">
             {t("title")}
           </h1>
           <p className="mt-4 text-body-l text-paper-mute">{t("body")}</p>

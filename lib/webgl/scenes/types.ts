@@ -55,6 +55,7 @@ export type SceneCtx = {
   aspect: number; // drawing-buffer aspect (uv x spans [½−a/2, ½+a/2])
   ch: SceneChannels;
   scrollVel: number; // viewport-heights/s, damped at PHYS.TAU_VEL
+  physics: boolean; // false only for the exact ?fphys=0 rollback path
 };
 
 /** A form-slot claim: the full form staging for this frame. A scene may only
@@ -73,9 +74,9 @@ export type FormState = {
   warp: number;
 };
 
-/** The cinematic score channels (R5-D; merged by the conductor:
- *  veil/flash/vignette/key = max, exposure = product). exposure and key drive
- *  the R5-C in-shader grade (iExpo/iKey); veil/vignette/flash drive the
+/** The cinematic/material score channels (R5-D; merged by the conductor:
+ *  veil/flash/vignette/key/mute = max, exposure = product). Exposure, key and
+ *  mute drive the in-shader material; veil/vignette/flash drive the
  *  CinematicVeils DOM layer via PageStage's CSS vars. A scene only RAISES the
  *  raw flash channel — the conductor owns the once-per-load latch and the
  *  ≤400 ms envelope, so no scene can ever double-fire the white moment. */
@@ -85,6 +86,7 @@ export type LightScore = {
   flash: number; // 0..1 the white moment (Origin fusion ONLY; raw signal)
   vignette: number; // 0..1
   key: number; // 0..1 additive key-light boost (the key never re-aims)
+  mute: number; // 0..1 controlled cyan desaturation (Problem only)
 };
 
 export type SceneModule = {
@@ -118,7 +120,10 @@ export type SceneModule = {
   /** Activity hint for the energy governor (default 1 while present). */
   activity?(ctx: SceneCtx): number;
   /** Extra droplets beyond the canonical 48 (cursor chain, probe, spray). */
-  extras?(ctx: SceneCtx, push: (x: number, y: number, r: number) => void): void;
+  extras?(
+    ctx: SceneCtx,
+    push: (x: number, y: number, r: number, z?: number) => void,
+  ): void;
   /** Cinematic contribution (Phase D). */
   score?(ctx: SceneCtx): Partial<LightScore>;
   /** Form SDF texture became drawable (the hero autocycle gates on this). */
@@ -140,6 +145,9 @@ export type Conductor = {
     pvx: number;
     pvy: number;
     pon: number;
+    /** Fixed-stride field-space avoidance bounds for the opt-in v3 review. */
+    obstacles: Float32Array;
+    obstacleCount: number;
   };
   /** The merged light score after each frame (stable object, mutated). */
   score: LightScore;

@@ -29,19 +29,27 @@ export function ChapterEcosystem() {
         </Reveal>
 
         <Reveal inView delay={0.05}>
-          <h2 className="mt-6 max-w-4xl text-balance text-display-l font-grotesk font-medium text-paper">
+          <h2 className="type-section-title mt-[var(--type-space-label-title)] text-paper">
             {t("headline")}
           </h2>
         </Reveal>
 
         <Reveal inView delay={0.1}>
-          <p className="mt-6 max-w-3xl text-lead text-paper-mute">{t("lead")}</p>
+          <p className="type-lead-copy mt-[var(--type-space-title-lead)] text-paper-mute">
+            {t("lead")}
+          </p>
         </Reveal>
       </div>
 
       {/* the converge runway — the sticky liquid layer plays across this
           scroll distance; static tiers see the resolved mark instead */}
       <div className="eco-runway" data-organism>
+        {/* PageStage portals the live orbital controls here so their keyboard
+            order remains Problem -> Ecosystem nodes -> Ecosystem CTAs. */}
+        <div
+          id="ecosystem-interactions-host"
+          className="ecosystem-interactions-host"
+        />
         <div className="journey-static organism-fallback">
           <LogoMark ariaLabel={t("centerLabel")} />
         </div>

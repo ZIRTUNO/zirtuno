@@ -39,6 +39,7 @@ export function SideIndex() {
             <a
               href={`#${c.id}`}
               className={cn("side-index-link", active === c.id && "is-active")}
+              aria-current={active === c.id ? "location" : undefined}
               data-cursor="hover"
             >
               <span className="side-index-label">{t(`chapters.${c.key}`)}</span>

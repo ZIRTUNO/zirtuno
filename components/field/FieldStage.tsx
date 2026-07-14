@@ -19,6 +19,7 @@ import { useEffect, useReducer, useRef } from "react";
 import {
   SDF_GLASS_VERT,
   SDF_GLASS_FRAG,
+  SDF_GLASS_FRAG_SHAPE,
   SDF_BALL_MAX,
   SDF_THICK,
   SDF_RES,
@@ -68,7 +69,18 @@ export default function FieldStage({
     if (!container) return;
     let disposed = false;
 
-    const layer = makeLayer(container, SDF_GLASS_VERT, SDF_GLASS_FRAG);
+    // Compile the extra packed-velocity uniforms only for an explicit,
+    // motion-capable full-tier review. Lite/reduced paths retain the original
+    // shader budget even when the URL flag was carried across devices.
+    const shapeRequested = /[?&]fshape=1(?:&|$)/.test(window.location.search);
+    const motionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const shapeShaderActive =
+      shapeRequested && tier === "full" && !motionQuery.matches;
+    const layer = makeLayer(
+      container,
+      SDF_GLASS_VERT,
+      shapeShaderActive ? SDF_GLASS_FRAG_SHAPE : SDF_GLASS_FRAG,
+    );
     if (!layer) return; // no WebGL2 → shell's SVG fallback stays
     const gl = layer.gl;
 
@@ -94,10 +106,14 @@ export default function FieldStage({
     // ?fgrade=0 — the R5-C exact optics bypass (spec §14.1): no post chain,
     // every grade uniform at its 0 identity → pre-C pixels.
     const gradeOn = !/[?&]fgrade=0/.test(window.location.search);
+    // Signature-visual review path only. The uniform remains exactly 0 unless
+    // explicitly requested, the renderer is still at the full tier, motion is
+    // allowed, and the frame is a free droplet-only composition.
+    let motionReduced = motionQuery.matches;
     // the R5-C post chain (bloom/dither/grain) — full tier only; null means
     // the direct path (= full-nofx rendering) for lite starts, bypass, or
     // contexts without a renderable offscreen format
-    const post = gradeOn && tier === "full" ? makePostChain(gl) : null;
+    let post = gradeOn && tier === "full" ? makePostChain(gl) : null;
 
     gl.uniform1f(layer.U("iThick"), SDF_THICK);
     gl.uniform2f(layer.U("iTexel"), 1 / SDF_RES, 1 / SDF_RES);
@@ -107,7 +123,137 @@ export default function FieldStage({
     const textures: (WebGLTexture | null)[] = new Array(STATE_COUNT).fill(null);
     const ballBuf = new Float32Array(SDF_BALL_MAX * 3);
     const zBuf = new Float32Array(SDF_BALL_MAX); // per-ball depth (iBallZ)
+    const ballIds = new Int16Array(SDF_BALL_MAX);
+    ballIds.fill(-1);
+    // `iBallVelocity` is packed as two xy vectors per vec4. Every history and
+    // filter buffer is allocated once; the render loop only mutates them.
+    // Velocity history is keyed by canonical droplet identity, never by packed
+    // slot: satellites, ambient beads, and extras may enter/leave or shift the
+    // packing order and must never inherit another particle's stretch.
+    const ballVelocity = new Float32Array(SDF_BALL_MAX * 2);
+    const identityVelocity = new Float32Array(SDF_BALL_MAX * 2);
+    const previousIdentityBalls = new Float32Array(SDF_BALL_MAX * 3);
+    const identitySeen = new Uint8Array(SDF_BALL_MAX);
+    const identitySeenNow = new Uint8Array(SDF_BALL_MAX);
+    let lastPackedCount = 0;
+    let previousVelocityTime = -1;
+    const resetVelocityHistory = (count: number, tMs: number) => {
+      const safeCount = Math.min(count, SDF_BALL_MAX);
+      ballVelocity.fill(0);
+      identityVelocity.fill(0);
+      identitySeen.fill(0);
+      for (let slot = 0; slot < safeCount; slot++) {
+        const id = ballIds[slot];
+        if (id < 0 || id >= SDF_BALL_MAX) continue;
+        const packed = slot * 3;
+        const identity = id * 3;
+        previousIdentityBalls[identity] = ballBuf[packed];
+        previousIdentityBalls[identity + 1] = ballBuf[packed + 1];
+        previousIdentityBalls[identity + 2] = ballBuf[packed + 2];
+        identitySeen[id] = 1;
+      }
+      lastPackedCount = safeCount;
+      previousVelocityTime = tMs;
+      return 0;
+    };
+    const sampleBallVelocity = (count: number, tMs: number) => {
+      const safeCount = Math.min(count, SDF_BALL_MAX);
+      if (previousVelocityTime < 0) return resetVelocityHistory(safeCount, tMs);
+      const dtMs = tMs - previousVelocityTime;
+      // Resize paints can arrive almost on top of a scheduled frame; tab
+      // stalls produce the opposite extreme. Neither is physical velocity.
+      if (dtMs < 4) return resetVelocityHistory(safeCount, tMs);
+      if (dtMs > 120) return resetVelocityHistory(safeCount, tMs);
+
+      const dt = dtMs / 1000;
+      const filter = 1 - Math.exp(-dtMs / 65);
+      let peak = 0;
+      identitySeenNow.fill(0);
+      for (let slot = 0; slot < safeCount; slot++) {
+        const packed = slot * 3;
+        const packedVelocity = slot * 2;
+        const id = ballIds[slot];
+        if (id < 0 || id >= SDF_BALL_MAX) {
+          ballVelocity[packedVelocity] = 0;
+          ballVelocity[packedVelocity + 1] = 0;
+          continue;
+        }
+        const identity = id * 3;
+        const identityV = id * 2;
+        const x = ballBuf[packed];
+        const y = ballBuf[packed + 1];
+        const r = ballBuf[packed + 2];
+        const px = previousIdentityBalls[identity];
+        const py = previousIdentityBalls[identity + 1];
+        const pr = previousIdentityBalls[identity + 2];
+        const dx = x - px;
+        const dy = y - py;
+        const travel = Math.hypot(dx, dy);
+        const stableSlot =
+          identitySeen[id] === 1 &&
+          Math.abs(r - pr) < Math.max(0.014, Math.max(r, pr) * 0.65) &&
+          travel < Math.max(0.16, (r + pr) * 4.5);
+
+        let vx = 0;
+        let vy = 0;
+        if (stableSlot) {
+          vx = dx / dt;
+          vy = dy / dt;
+          const rawSpeed = Math.hypot(vx, vy);
+          if (rawSpeed < 0.025) {
+            vx = 0;
+            vy = 0;
+          } else if (rawSpeed > 1.4) {
+            const limit = 1.4 / rawSpeed;
+            vx *= limit;
+            vy *= limit;
+          }
+        }
+
+        if (stableSlot) {
+          identityVelocity[identityV] +=
+            (vx - identityVelocity[identityV]) * filter;
+          identityVelocity[identityV + 1] +=
+            (vy - identityVelocity[identityV + 1]) * filter;
+        } else {
+          identityVelocity[identityV] = 0;
+          identityVelocity[identityV + 1] = 0;
+        }
+        ballVelocity[packedVelocity] = identityVelocity[identityV];
+        ballVelocity[packedVelocity + 1] = identityVelocity[identityV + 1];
+        const speed = Math.hypot(
+          ballVelocity[packedVelocity],
+          ballVelocity[packedVelocity + 1],
+        );
+        if (speed > peak) peak = speed;
+        previousIdentityBalls[identity] = x;
+        previousIdentityBalls[identity + 1] = y;
+        previousIdentityBalls[identity + 2] = r;
+        identitySeenNow[id] = 1;
+      }
+      ballVelocity.fill(0, safeCount * 2);
+      for (let id = 0; id < SDF_BALL_MAX; id++) {
+        if (identitySeenNow[id] === 1) continue;
+        identityVelocity[id * 2] = 0;
+        identityVelocity[id * 2 + 1] = 0;
+      }
+      identitySeen.set(identitySeenNow);
+      lastPackedCount = safeCount;
+      previousVelocityTime = tMs;
+      return peak;
+    };
+    const onMotionPreference = (event: MediaQueryListEvent) => {
+      motionReduced = event.matches;
+      resetVelocityHistory(lastPackedCount, performance.now());
+    };
+    motionQuery.addEventListener("change", onMotionPreference);
     let announced = false;
+    // Shader compilation, framebuffer allocation, and the first SDF upload are
+    // transient startup costs, not evidence that the steady-state field is too
+    // expensive. A restored context rebuilds all three before its first valid
+    // frame, so the watchdog starts only after a short clean runway.
+    const WATCHDOG_READY_GRACE_MS = 2500;
+    let watchdogReadyAt = Number.POSITIVE_INFINITY;
 
     // R5-C optics diagnostics (QA surface for verify-postfx): post/fmt/tier
     // track the live pipeline, frames counts REAL draws (the governor gate
@@ -118,6 +264,11 @@ export default function FieldStage({
       tier: liveTier as string,
       frames: 0,
       gov: 0,
+      shapeRequested: shapeRequested ? 1 : 0,
+      shapeShader: shapeShaderActive ? 1 : 0,
+      shape: 0,
+      shapeSpeed: 0,
+      shapeReduced: motionReduced ? 1 : 0,
       demote: () => {},
     };
     (window as unknown as { __optics?: typeof diag }).__optics = diag;
@@ -136,16 +287,25 @@ export default function FieldStage({
         gl.drawingBufferHeight > 0
           ? gl.drawingBufferWidth / gl.drawingBufferHeight
           : 1;
-      const f = driverRef.current.frame(tMs, ballBuf, aspect, zBuf);
+      if (shapeRequested) ballIds.fill(-1);
+      const f = driverRef.current.frame(
+        tMs,
+        ballBuf,
+        aspect,
+        zBuf,
+        shapeRequested ? ballIds : undefined,
+      );
       const ta = textures[f.a];
       if (!ta) return f; // the driver's form isn't built yet — fallback stays
       const tb = textures[f.b] ?? ta;
+      const formBWeight = textures[f.b] ? f.fb : 0;
       const glass = liveTier === "full" || liveTier === "fullnofx";
-      const usePost = !!post && liveTier === "full";
+      const postChain = post;
+      const usePost = postChain !== null && liveTier === "full";
       diag.post = usePost ? 1 : 0;
       diag.tier = liveTier;
       if (usePost) {
-        post.begin(gl.drawingBufferWidth, gl.drawingBufferHeight);
+        postChain.begin(gl.drawingBufferWidth, gl.drawingBufferHeight);
         gl.disable(gl.BLEND); // store exact straight alpha in the target
       } else {
         gl.bindFramebuffer(gl.FRAMEBUFFER, null);
@@ -156,10 +316,14 @@ export default function FieldStage({
       gl.activeTexture(gl.TEXTURE1);
       gl.bindTexture(gl.TEXTURE_2D, tb);
       gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
-      gl.uniform2f(layer.U("iRes"), gl.drawingBufferWidth, gl.drawingBufferHeight);
+      gl.uniform2f(
+        layer.U("iRes"),
+        gl.drawingBufferWidth,
+        gl.drawingBufferHeight,
+      );
       gl.uniform1f(layer.U("iTime"), tMs / 1000);
       gl.uniform1f(layer.U("iFormA"), f.fa);
-      gl.uniform1f(layer.U("iFormB"), textures[f.b] ? f.fb : 0);
+      gl.uniform1f(layer.U("iFormB"), formBWeight);
       gl.uniform1f(layer.U("iEroA"), f.ea);
       gl.uniform1f(layer.U("iEroB"), f.eb);
       gl.uniform2f(layer.U("iFormOff"), f.ox ?? 0, f.oy ?? 0);
@@ -169,6 +333,22 @@ export default function FieldStage({
       gl.uniform1f(layer.U("iGlass"), glass ? 1 : 0);
       gl.uniform3fv(layer.U("iBalls"), ballBuf);
       gl.uniform1i(layer.U("iBallCount"), f.count);
+      const shapeTierActive =
+        shapeShaderActive && !motionReduced && liveTier === "full";
+      const speed = shapeTierActive ? sampleBallVelocity(f.count, tMs) : 0;
+      // EPS_FORM mirrors the conductor's material-presence boundary. A/B
+      // staging remains a second hard guard so the droplet-only middle of a
+      // §3.3 bridge also retains the signed-off circular field byte-for-byte.
+      const shape =
+        shapeTierActive && f.fa < 0.002 && formBWeight < 0.002 && f.a === f.b
+          ? 1
+          : 0;
+      if (shapeShaderActive)
+        gl.uniform4fv(layer.U("iBallVelocity"), ballVelocity);
+      gl.uniform1f(layer.U("iBallShape"), shape);
+      diag.shape = shape;
+      diag.shapeSpeed = speed;
+      diag.shapeReduced = motionReduced ? 1 : 0;
       // R5-C grade: score-driven light + stage absorption/depth. All exact
       // identity at 0 — ?fgrade=0 and the flat tiers render pre-C pixels.
       const grade = gradeOn && glass;
@@ -181,12 +361,13 @@ export default function FieldStage({
       gl.clear(gl.COLOR_BUFFER_BIT);
       gl.drawArrays(gl.TRIANGLES, 0, 3);
       if (usePost) {
-        post.end(tMs / 1000); // bright → blur → opaque composite
+        postChain.end(tMs / 1000); // bright → blur → opaque composite
         gl.enable(gl.BLEND); // the direct path composites over the page
       }
       diag.frames++;
       if (!announced) {
         announced = true;
+        watchdogReadyAt = tMs + WATCHDOG_READY_GRACE_MS;
         cb.current.onReady();
       }
       return f;
@@ -216,7 +397,14 @@ export default function FieldStage({
     const markInput = () => {
       lastInput = performance.now();
     };
-    const INPUT_EVENTS = ["pointermove", "pointerdown", "wheel", "touchmove", "keydown", "scroll"] as const;
+    const INPUT_EVENTS = [
+      "pointermove",
+      "pointerdown",
+      "wheel",
+      "touchmove",
+      "keydown",
+      "scroll",
+    ] as const;
     for (const ev of INPUT_EVENTS)
       window.addEventListener(ev, markInput, { passive: true });
     const downshift = () => {
@@ -226,6 +414,12 @@ export default function FieldStage({
         // R5-C rung: shed the post chain first — glass survives (§12.3).
         // Runtime-only (not persisted): a fresh session retries full.
         liveTier = "fullnofx";
+        // No rung promotes this instance back to full. Release the framebuffer
+        // targets now instead of retaining their GPU memory until unmount; a
+        // fresh context or session will build a fresh chain.
+        post?.dispose();
+        post = null;
+        diag.fmt = "none";
         resize();
       } else if (liveTier === "fullnofx") {
         liveTier = "lite";
@@ -253,7 +447,8 @@ export default function FieldStage({
       lastDraw = now;
       const dt = now - lastTick;
       lastTick = now;
-      if (++wdWarm > 5 && !governed) {
+      const watchdogReady = announced && now >= watchdogReadyAt;
+      if (watchdogReady && ++wdWarm > 5 && !governed) {
         // missing 2+ vsyncs counts up; smooth frames pay it back down
         // (governed frames are INTENTIONALLY ~33 ms — never counted)
         if (dt > 34) {
@@ -261,6 +456,9 @@ export default function FieldStage({
         } else {
           wdSlow = Math.max(0, wdSlow - 2);
         }
+      } else if (!watchdogReady) {
+        wdWarm = 0;
+        wdSlow = 0;
       }
       const f = drawFrame(now);
       const e = f?.energy ?? 1;
@@ -319,6 +517,7 @@ export default function FieldStage({
       ro.disconnect();
       layer.canvas.removeEventListener("webglcontextlost", onLost);
       layer.canvas.removeEventListener("webglcontextrestored", onRestored);
+      motionQuery.removeEventListener("change", onMotionPreference);
       for (const ev of INPUT_EVENTS) window.removeEventListener(ev, markInput);
       post?.dispose();
       const w = window as unknown as { __optics?: typeof diag };

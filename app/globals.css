@@ -30,10 +30,12 @@
      h2s). sans = Geist → body, UI, nav, subheads, forms (the workhorse).
      display = Instrument Serif → poetry italic ONLY. mono = JetBrains →
      labels, numbers, CTAs. --- */
-  --font-sans: var(--font-geist), ui-sans-serif, system-ui, -apple-system,
-    "Segoe UI", sans-serif;
-  --font-grotesk: var(--font-bricolage), var(--font-geist), ui-sans-serif,
-    system-ui, sans-serif;
+  --font-sans:
+    var(--font-geist), ui-sans-serif, system-ui, -apple-system, "Segoe UI",
+    sans-serif;
+  --font-grotesk:
+    var(--font-bricolage), var(--font-geist), ui-sans-serif, system-ui,
+    sans-serif;
   --font-display: var(--font-instrument), Georgia, "Times New Roman", serif;
   --font-mono: var(--font-jetbrains), ui-monospace, "SFMono-Regular", monospace;
 
@@ -43,57 +45,60 @@
      near-zero tracking, engineered for reading); the LABEL tier rides the mono
      (open tracking, uppercase). Contrast between tiers is deliberate. --- */
 
-  /* DISPLAY — Bricolage grotesk (headlines opt in via .font-grotesk) */
-  --text-hero: clamp(2.4rem, 1.62rem + 3.5vw, 4rem);
-  --text-hero--line-height: 1.03;
-  --text-hero--letter-spacing: -0.028em;
+  /* DISPLAY — Bricolage grotesk (headlines opt in via .font-grotesk).
+     The steep scale contrast and compressed leading create the editorial
+     authority; the mobile floors keep that character without viewport hacks. */
+  --text-hero: clamp(3.25rem, 2.05rem + 4.3vw, 5.75rem);
+  --text-hero--line-height: 0.93;
+  --text-hero--letter-spacing: -0.042em;
 
-  --text-display-xl: clamp(3rem, 0.9rem + 8.6vw, 6.5rem);
-  --text-display-xl--line-height: 0.95;
-  --text-display-xl--letter-spacing: -0.03em;
+  --text-display-xl: clamp(4rem, 2.1rem + 7.4vw, 8.75rem);
+  --text-display-xl--line-height: 0.9;
+  --text-display-xl--letter-spacing: -0.045em;
 
-  --text-display-l: clamp(2.15rem, 1.52rem + 2.8vw, 3.5rem);
-  --text-display-l--line-height: 1.05;
-  --text-display-l--letter-spacing: -0.022em;
+  --text-display-l: clamp(2.75rem, 1.42rem + 5.7vw, 6.5rem);
+  --text-display-l--line-height: 0.94;
+  --text-display-l--letter-spacing: -0.035em;
 
-  --text-display-m: clamp(1.55rem, 1.24rem + 1.4vw, 2.25rem);
-  --text-display-m--line-height: 1.14;
-  --text-display-m--letter-spacing: -0.015em;
+  --text-display-m: clamp(1.875rem, 1.42rem + 1.85vw, 3rem);
+  --text-display-m--line-height: 1.03;
+  --text-display-m--letter-spacing: -0.022em;
 
   /* TITLE — mid headings (card/service/phase names, studio roles). Geist. */
-  --text-title: clamp(1.2rem, 1.06rem + 0.62vw, 1.5rem);
-  --text-title--line-height: 1.25;
-  --text-title--letter-spacing: -0.01em;
+  --text-title: clamp(1.25rem, 1.05rem + 0.8vw, 1.75rem);
+  --text-title--line-height: 1.16;
+  --text-title--letter-spacing: -0.016em;
 
-  /* TEXT — Geist (serif only for --text-poetic) */
-  --text-poetic: clamp(1.2rem, 1rem + 0.85vw, 1.6rem);
-  --text-poetic--line-height: 1.4;
-  --text-poetic--letter-spacing: 0em;
+  /* TEXT — Geist (serif only for --text-poetic). Reading tiers deliberately
+     grow much less than display tiers, preserving a calm 20–22px rhythm. */
+  --text-poetic: clamp(1.35rem, 1.1rem + 1vw, 2rem);
+  --text-poetic--line-height: 1.32;
+  --text-poetic--letter-spacing: -0.006em;
 
-  --text-lead: clamp(1.15rem, 1.02rem + 0.58vw, 1.375rem);
-  --text-lead--line-height: 1.55;
-  --text-lead--letter-spacing: -0.006em;
+  --text-lead: clamp(1.25rem, 1.04rem + 0.9vw, 1.75rem);
+  --text-lead--line-height: 1.42;
+  --text-lead--letter-spacing: -0.012em;
 
-  --text-body-l: clamp(1.0625rem, 1rem + 0.3vw, 1.1875rem);
-  --text-body-l--line-height: 1.6;
-  --text-body-l--letter-spacing: -0.004em;
+  --text-body-l: clamp(1.125rem, 1.03rem + 0.45vw, 1.375rem);
+  --text-body-l--line-height: 1.5;
+  --text-body-l--letter-spacing: -0.008em;
 
-  --text-body: clamp(1rem, 0.97rem + 0.14vw, 1.0625rem);
-  --text-body--line-height: 1.65;
-  --text-body--letter-spacing: -0.002em;
+  --text-body: clamp(1rem, 0.95rem + 0.27vw, 1.125rem);
+  --text-body--line-height: 1.58;
+  --text-body--letter-spacing: -0.004em;
 
-  --text-body-s: 0.875rem;
+  --text-body-s: clamp(0.875rem, 0.84rem + 0.14vw, 0.9375rem);
   --text-body-s--line-height: 1.5;
   --text-body-s--letter-spacing: 0em;
 
   /* LABEL — JetBrains mono (uppercase, open tracking) */
-  --text-mono: 0.8125rem;
-  --text-mono--line-height: 1.4;
-  --text-mono--letter-spacing: 0.08em;
+  --text-mono: clamp(0.75rem, 0.71rem + 0.18vw, 0.875rem);
+  --text-mono--line-height: 1.35;
+  --text-mono--letter-spacing: 0.1em;
 
-  --text-mono-sm: 0.75rem;
+  --text-mono-sm: clamp(0.6875rem, 0.66rem + 0.12vw, 0.75rem);
   --text-mono-sm--line-height: 1.45;
-  --text-mono-sm--letter-spacing: 0.1em;
+  --text-mono-sm--letter-spacing: 0.11em;
 }
 
 /* Tokens consumed from CSS/JS but NOT turned into Tailwind utilities */
@@ -120,6 +125,54 @@
   --section-gap: 8rem;
   --chapter-min-h: 100svh;
   --topbar-h: 4.5rem;
+
+  /* Editorial measures and relationships. These are deliberately expressed
+     in characters so PT-BR and EN retain the same visual cadence. */
+  --measure-hero: 11.5ch;
+  --measure-display: 18ch;
+  --measure-display-wide: 20ch;
+  --measure-editorial: 28ch;
+  --measure-lead: 43ch;
+  --measure-reading: 62ch;
+  --text-wordmark: min(var(--text-display-xl), 17vw);
+  --type-space-label-title: clamp(1.25rem, 1rem + 1vw, 2rem);
+  --type-space-title-lead: clamp(1.25rem, 1rem + 0.8vw, 1.75rem);
+  --type-space-eyebrow-title: clamp(0.75rem, 0.6rem + 0.6vw, 1.125rem);
+  --hero-label-space: var(--type-space-label-title);
+  --hero-action-space: 2.5rem;
+  --tracking-label-dense: 0.04em;
+  --tracking-label: 0.08em;
+  --tracking-label-open: 0.12em;
+  --tracking-label-wide: 0.14em;
+}
+
+/* The desktop display voice is intentionally compressed. Small screens gain
+   a touch more leading for stacked PT-BR copy and accented capitals. */
+@media (max-width: 767px) {
+  :root {
+    --text-hero--line-height: 0.97;
+    --text-display-xl--line-height: 0.94;
+    --text-display-l--line-height: 0.98;
+  }
+}
+
+/* Compact phones need whole editorial words, never arbitrary mid-word breaks. */
+@media (max-width: 359px) {
+  :root {
+    --text-hero: 2.75rem;
+    --text-display-l: 2.625rem;
+    --text-display-m: 1.75rem;
+  }
+}
+
+/* Short desktop and tablet-landscape stages preserve the conversion action
+   above the fold while normal-height desktops retain the full display scale. */
+@media (min-width: 1024px) and (max-height: 800px) {
+  :root {
+    --text-hero: min(4.375rem, 7vw);
+    --hero-label-space: 1.5rem;
+    --hero-action-space: 2rem;
+  }
 }
 
 @media (min-width: 768px) {
@@ -152,7 +205,7 @@
     overflow-x: hidden;
   }
 
-  /* long-form copy gets balanced rag; headings balance per component */
+  /* Long-form copy gets a deliberate rag; headings balance per component. */
   p {
     text-wrap: pretty;
   }
@@ -185,30 +238,125 @@
     border: 3px solid var(--color-ink);
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: color-mix(in srgb, var(--color-cyan) 45%, var(--color-paper-faint));
+    background: color-mix(
+      in srgb,
+      var(--color-cyan) 45%,
+      var(--color-paper-faint)
+    );
   }
 
-  /* Headings default to the TEXT face (Geist) — clean and readable. The large
-     DISPLAY headlines (hero + section h2s) opt into Bricolage via .font-grotesk.
-     Poetry opts into the serif via .font-poetic. */
-  h1, h2, h3, h4, h5, h6 {
+  /* Headings default to the TEXT face (Geist) — clean and readable. The
+     semantic display roles below bind hero, page, and section headings to
+     Bricolage. Poetry opts into the serif via .font-poetic. */
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
     font-family: var(--font-sans);
     font-weight: 500;
-    line-height: 1.15;
-    letter-spacing: -0.01em;
+    line-height: var(--text-title--line-height);
+    letter-spacing: var(--text-title--letter-spacing);
+    font-kerning: normal;
+    font-optical-sizing: auto;
     text-wrap: balance;
   }
 }
 
 @layer components {
   /* --- The type-role mechanism, codified (S1.2 · R4) --- */
-  /* Bricolage = DISPLAY voice (hero headline + every section h2): applied in
-     markup as `font-grotesk` (the utility generated from --font-grotesk) with
-     an explicit weight. Instrument Serif italic = poetry ONLY: */
+  /* Bricolage = DISPLAY voice through the semantic title roles below.
+     Instrument Serif italic = poetry ONLY: */
   .font-poetic {
     font-family: var(--font-display);
     font-style: italic;
     font-weight: 400;
+  }
+
+  /* Semantic type roles. Each class binds face, tier, measure, wrapping, and
+     optical behavior so hierarchy cannot drift between chapters. */
+  .type-hero-title,
+  .type-section-title,
+  .type-page-title,
+  .type-feature-title,
+  .type-card-title {
+    font-kerning: normal;
+    font-optical-sizing: auto;
+    font-variant-ligatures: common-ligatures contextual;
+    overflow-wrap: normal;
+    text-wrap: balance;
+  }
+
+  .type-hero-title {
+    max-inline-size: var(--measure-hero);
+    font-family: var(--font-grotesk);
+    font-size: var(--text-hero);
+    font-weight: 600;
+    line-height: var(--text-hero--line-height);
+    letter-spacing: var(--text-hero--letter-spacing);
+  }
+
+  .type-section-title {
+    max-inline-size: var(--measure-display);
+    font-family: var(--font-grotesk);
+    font-size: var(--text-display-l);
+    font-weight: 600;
+    line-height: var(--text-display-l--line-height);
+    letter-spacing: var(--text-display-l--letter-spacing);
+  }
+
+  .type-page-title {
+    max-inline-size: var(--measure-display-wide);
+    font-family: var(--font-grotesk);
+    font-size: var(--text-display-l);
+    font-weight: 600;
+    line-height: var(--text-display-l--line-height);
+    letter-spacing: var(--text-display-l--letter-spacing);
+  }
+
+  .type-feature-title {
+    max-inline-size: var(--measure-editorial);
+    font-family: var(--font-sans);
+    font-size: var(--text-display-m);
+    font-weight: 550;
+    line-height: var(--text-display-m--line-height);
+    letter-spacing: var(--text-display-m--letter-spacing);
+  }
+
+  .type-card-title {
+    max-inline-size: var(--measure-editorial);
+    font-family: var(--font-sans);
+    font-size: var(--text-title);
+    font-weight: 550;
+    line-height: var(--text-title--line-height);
+    letter-spacing: var(--text-title--letter-spacing);
+  }
+
+  .type-lead-copy {
+    max-inline-size: var(--measure-lead);
+    font-family: var(--font-sans);
+    font-size: var(--text-lead);
+    line-height: var(--text-lead--line-height);
+    letter-spacing: var(--text-lead--letter-spacing);
+    text-wrap: pretty;
+  }
+
+  .type-reading-copy {
+    max-inline-size: var(--measure-reading);
+    font-family: var(--font-sans);
+    text-wrap: pretty;
+  }
+
+  .type-poetic-title {
+    max-inline-size: var(--measure-display);
+    font-family: var(--font-display);
+    font-size: var(--text-display-l);
+    font-style: italic;
+    font-weight: 400;
+    line-height: var(--text-display-l--line-height);
+    letter-spacing: var(--text-display-l--letter-spacing);
+    text-wrap: balance;
   }
 
   /* Page horizontal padding helper */
@@ -297,6 +445,8 @@ html.lenis body {
   display: inline-flex;
   align-items: center;
   font-family: var(--font-mono);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums lining-nums;
   text-transform: uppercase;
   text-decoration: none;
   cursor: pointer;
@@ -318,12 +468,17 @@ button.cta {
 .cta-primary {
   position: relative;
   overflow: hidden;
+  max-width: 100%;
+  min-height: 48px;
   gap: 0.5rem;
   padding: 1rem 2rem;
   border: 1px solid var(--color-cyan);
   color: var(--color-paper);
   font-size: var(--text-mono);
-  letter-spacing: 0.08em;
+  line-height: var(--text-mono--line-height);
+  letter-spacing: var(--text-mono--letter-spacing);
+  text-align: center;
+  white-space: normal;
   transition: box-shadow 200ms var(--ease-arrive);
 }
 .cta-primary .cta-fill {
@@ -357,7 +512,8 @@ button.cta {
   gap: 0.5rem;
   color: var(--color-paper);
   font-size: var(--text-mono);
-  letter-spacing: 0.08em;
+  line-height: var(--text-mono--line-height);
+  letter-spacing: var(--text-mono--letter-spacing);
 }
 .cta-secondary,
 .cta-ghost {
@@ -386,12 +542,21 @@ button.cta {
   gap: 0.4rem;
   color: var(--color-paper-mute);
   font-size: var(--text-mono-sm);
-  letter-spacing: 0.1em;
+  line-height: var(--text-mono-sm--line-height);
+  letter-spacing: var(--text-mono-sm--letter-spacing);
   transition: color 200ms var(--ease-arrive);
 }
 .cta-ghost:hover,
 .cta-ghost:focus-visible {
   color: var(--color-cyan);
+}
+
+@media (max-width: 420px) {
+  .cta-primary {
+    width: 100%;
+    justify-content: center;
+    padding-inline: clamp(1rem, 6vw, 1.5rem);
+  }
 }
 
 /* Shared arrow nudge */
@@ -417,7 +582,10 @@ button.cta {
   gap: 0.75rem;
   font-family: var(--font-mono);
   font-size: var(--text-mono);
-  letter-spacing: 0.08em;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums lining-nums;
+  line-height: var(--text-mono--line-height);
+  letter-spacing: var(--text-mono--letter-spacing);
   text-transform: uppercase;
   color: var(--color-paper-mute);
 }
@@ -515,11 +683,18 @@ section[id],
   will-change: transform;
 }
 @keyframes sdf-glass-breath {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.02); }
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.02);
+  }
 }
 @media (prefers-reduced-motion: reduce) {
-  .sdf-glass-breath { animation: none; }
+  .sdf-glass-breath {
+    animation: none;
+  }
 }
 
 /* Perf HUD (?perf=1) — measure the live glass fps/dpr/resolution on real devices. */
@@ -534,7 +709,8 @@ section[id],
   border-radius: 4px;
   font-family: var(--font-mono);
   font-size: var(--text-mono-sm);
-  letter-spacing: 0.04em;
+  line-height: var(--text-mono-sm--line-height);
+  letter-spacing: var(--tracking-label-dense);
   color: var(--color-cyan);
   pointer-events: none;
 }
@@ -667,6 +843,11 @@ section[id],
   pointer-events: none;
   overflow: hidden;
 }
+.journey-interactions {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
 @supports (height: 100svh) {
   .journey-layer {
     height: 100svh;
@@ -692,6 +873,25 @@ section[id],
 .liquid-journey[data-liquid="live"][data-field-ready="true"]
   .journey-static.organism-fallback {
   display: none;
+}
+
+/* Mobile reading apertures: the live field remains visible around the copy,
+   while a page-black feather prevents high-energy droplets from crossing the
+   two densest commercial statements. This is composition, not liquid dimming. */
+@media (max-width: 767px) {
+  .liquid-journey #hero :is(.type-hero-title, .type-lead-copy),
+  .liquid-journey
+    :where(#problem, #services)
+    :is(.type-section-title, .type-lead-copy),
+  .liquid-journey #services :is(.pillar-accent, .pillar-name) {
+    background: rgb(0 0 0 / 0.86);
+    box-shadow: 0 0 1.1rem 0.8rem rgb(0 0 0 / 0.86);
+  }
+
+  .liquid-journey #services .pillar-accent {
+    width: fit-content;
+    max-width: 100%;
+  }
 }
 
 /* ===========================================================================
@@ -751,6 +951,19 @@ section[id],
   position: relative;
   height: 230vh;
 }
+.ecosystem-interactions-host {
+  position: sticky;
+  top: 0;
+  z-index: 12;
+  height: 100vh;
+  overflow: hidden;
+  pointer-events: none;
+}
+@supports (height: 100svh) {
+  .ecosystem-interactions-host {
+    height: 100svh;
+  }
+}
 .eco-runway .organism-fallback {
   position: sticky;
   top: 25vh;
@@ -763,6 +976,9 @@ section[id],
 .liquid-journey[data-liquid="static"] .eco-runway {
   height: auto;
   padding-block: clamp(3rem, 10vw, 6rem);
+}
+.liquid-journey[data-liquid="static"] .ecosystem-interactions-host {
+  display: none;
 }
 .liquid-journey[data-liquid="static"] .eco-runway .organism-fallback {
   position: relative;
@@ -805,6 +1021,9 @@ section[id],
 .symptom-num {
   font-family: var(--font-mono);
   font-size: var(--text-mono);
+  font-variant-numeric: tabular-nums lining-nums;
+  line-height: var(--text-mono--line-height);
+  letter-spacing: var(--text-mono--letter-spacing);
   color: var(--color-cyan);
 }
 .symptom-label {
@@ -818,6 +1037,7 @@ section[id],
   margin-top: 0.5rem;
   font-size: var(--text-body);
   line-height: var(--text-body--line-height);
+  letter-spacing: var(--text-body--letter-spacing);
   color: var(--color-paper-mute);
   max-width: 22rem;
 }
@@ -834,7 +1054,9 @@ section[id],
   transform: translateX(-50%);
   font-family: var(--font-mono);
   font-size: var(--text-mono-sm);
-  letter-spacing: 0.14em;
+  font-weight: 500;
+  line-height: var(--text-mono-sm--line-height);
+  letter-spacing: var(--tracking-label-wide);
   text-transform: uppercase;
   color: var(--color-cyan);
   white-space: nowrap;
@@ -854,7 +1076,7 @@ section[id],
   transform: translate(-50%, -50%);
   text-align: center;
   opacity: 0; /* arrives with its tendril (imperative) */
-  pointer-events: auto;
+  pointer-events: none;
 }
 /* the orbital labels need real room — below lg the eco-stack carries the
    capabilities instead (in-app browsers and tablets included) */
@@ -863,31 +1085,78 @@ section[id],
     display: flex;
   }
 }
+.journey-interactions[data-interactive="true"] .organism-node {
+  pointer-events: auto;
+}
+.organism-node:focus-within {
+  opacity: 1 !important;
+  transform: translate(-50%, -50%) !important;
+  pointer-events: auto;
+}
+.organism-node-trigger {
+  display: inline-flex;
+  min-width: 44px;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  padding: 0.7rem 0.85rem;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--color-ink) 78%, transparent);
+  color: inherit;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    border-color 200ms var(--ease-arrive),
+    background 200ms var(--ease-arrive),
+    box-shadow 200ms var(--ease-arrive);
+}
+.organism-node-trigger:hover,
+.organism-node-trigger:focus-visible,
+.organism-node[data-open="true"] .organism-node-trigger {
+  border-color: color-mix(in srgb, var(--color-cyan) 54%, transparent);
+  background: color-mix(in srgb, var(--color-ink) 92%, transparent);
+  box-shadow: 0 0 22px -12px var(--color-cyan-glow);
+}
+.organism-node-trigger:focus-visible {
+  outline-offset: 3px;
+}
 .organism-node-name {
   font-family: var(--font-mono);
   font-size: var(--text-mono-sm);
-  letter-spacing: 0.1em;
+  font-weight: 500;
+  line-height: var(--text-mono-sm--line-height);
+  letter-spacing: var(--text-mono-sm--letter-spacing);
   text-transform: uppercase;
   white-space: nowrap;
   color: var(--color-paper-mute);
   transition: color 200ms var(--ease-arrive);
 }
-.organism-node:hover .organism-node-name {
+.organism-node:hover .organism-node-name,
+.organism-node:focus-within .organism-node-name,
+.organism-node[data-open="true"] .organism-node-name {
   color: var(--color-paper);
 }
 .organism-node-cap {
   max-width: 13rem;
   font-family: var(--font-sans);
-  font-size: var(--text-mono-sm);
-  line-height: 1.4;
+  font-size: var(--text-body-s);
+  line-height: var(--text-body-s--line-height);
+  letter-spacing: var(--text-body-s--letter-spacing);
   color: var(--color-paper-mute);
+  padding: 0.55rem 0.7rem;
+  border: 1px solid var(--color-paper-faint);
+  background: color-mix(in srgb, var(--color-ink) 94%, transparent);
+  box-shadow: 0 8px 30px rgb(0 0 0 / 0.45);
   opacity: 0;
   transform: translateY(3px);
   transition:
     opacity 220ms var(--ease-arrive),
     transform 220ms var(--ease-arrive);
 }
-.organism-node:hover .organism-node-cap {
+.organism-node:hover .organism-node-cap,
+.organism-node:focus-within .organism-node-cap,
+.organism-node[data-open="true"] .organism-node-cap {
   opacity: 1;
   transform: translateY(0);
 }
@@ -919,7 +1188,9 @@ section[id],
   padding-bottom: 1rem;
   font-family: var(--font-mono);
   font-size: var(--text-mono);
-  letter-spacing: 0.12em;
+  font-weight: 500;
+  line-height: var(--text-mono--line-height);
+  letter-spacing: var(--tracking-label-open);
   text-transform: uppercase;
   color: var(--color-cyan);
 }
@@ -943,11 +1214,16 @@ section[id],
   opacity: 0.5;
 }
 .eco-stack-name {
-  font-weight: 500;
+  font-size: var(--text-title);
+  font-weight: 550;
+  line-height: var(--text-title--line-height);
+  letter-spacing: var(--text-title--letter-spacing);
   color: var(--color-paper);
 }
 .eco-stack-cap {
   font-size: var(--text-body);
+  line-height: var(--text-body--line-height);
+  letter-spacing: var(--text-body--letter-spacing);
   color: var(--color-paper-mute);
 }
 
@@ -986,9 +1262,12 @@ section[id],
   right: 0;
   z-index: 0;
   font-family: var(--font-mono);
-  font-size: clamp(2.75rem, 6vw, 4.5rem);
-  line-height: 1;
-  opacity: 0.6;
+  font-size: var(--text-display-l);
+  font-variant-numeric: tabular-nums lining-nums;
+  font-weight: 500;
+  line-height: var(--text-display-l--line-height);
+  letter-spacing: var(--text-display-l--letter-spacing);
+  opacity: 0.45;
   color: var(--color-paper-faint);
   pointer-events: none;
   user-select: none;
@@ -996,17 +1275,20 @@ section[id],
 .pillar-counter {
   font-family: var(--font-mono);
   font-size: var(--text-mono);
-  letter-spacing: 0.08em;
+  font-variant-numeric: tabular-nums lining-nums;
+  line-height: var(--text-mono--line-height);
+  letter-spacing: var(--text-mono--letter-spacing);
   color: var(--color-paper-mute);
 }
 .pillar-accent {
   margin-top: 0.75rem;
   font-size: var(--text-poetic);
+  line-height: var(--text-poetic--line-height);
+  letter-spacing: var(--text-poetic--letter-spacing);
   color: var(--color-paper-mute);
 }
 .pillar-name {
   margin-top: 0.35rem;
-  font-weight: 500;
   color: var(--color-paper);
 }
 .pillar-blocks {
@@ -1024,7 +1306,9 @@ section[id],
 .pillar-label {
   font-family: var(--font-mono);
   font-size: var(--text-mono);
-  letter-spacing: 0.08em;
+  font-weight: 500;
+  line-height: var(--text-mono--line-height);
+  letter-spacing: var(--text-mono--letter-spacing);
   text-transform: uppercase;
   color: var(--color-cyan);
 }
@@ -1038,7 +1322,7 @@ section[id],
   max-width: 42rem;
   font-family: var(--font-mono);
   font-size: var(--text-mono-sm);
-  letter-spacing: 0.04em;
+  letter-spacing: var(--tracking-label-dense);
   line-height: 1.9;
   color: var(--color-paper-mute);
 }
@@ -1113,23 +1397,29 @@ section[id],
   .method-runway::before,
   .method-runway::after {
     left: auto;
-    right: calc(var(--page-padding, 1.5rem) + clamp(2rem, 9vw, 9rem) + 24rem + 1.75rem);
+    right: calc(
+      var(--page-padding, 1.5rem) + clamp(2rem, 9vw, 9rem) + 24rem + 1.75rem
+    );
   }
 }
 .method-num {
   font-family: var(--font-mono);
   font-size: var(--text-mono);
-  letter-spacing: 0.08em;
+  font-variant-numeric: tabular-nums lining-nums;
+  line-height: var(--text-mono--line-height);
+  letter-spacing: var(--text-mono--letter-spacing);
   color: var(--color-cyan);
 }
 .method-name {
   margin-top: 0.5rem;
-  font-weight: 500;
   color: var(--color-paper);
 }
 .method-desc {
   margin-top: 0.75rem;
   max-width: 22rem;
+  font-size: var(--text-body-l);
+  line-height: var(--text-body-l--line-height);
+  letter-spacing: var(--text-body-l--letter-spacing);
   color: var(--color-paper-mute);
 }
 /* static path: the runway collapses to the clean numbered list (the
@@ -1156,7 +1446,11 @@ section[id],
 .project-card {
   display: flex;
   flex-direction: column;
+  min-width: 0;
   text-decoration: none;
+}
+.project-card:focus-visible {
+  outline-offset: 7px;
 }
 .project-preview {
   position: relative;
@@ -1172,7 +1466,9 @@ section[id],
   );
   transition: border-color 200ms var(--ease-arrive);
 }
-.project-card:hover .project-preview {
+.project-card:hover .project-preview,
+.project-card:focus-visible .project-preview,
+.project-card:active .project-preview {
   border-color: var(--color-cyan);
 }
 /* the category's SDF-glass form as placeholder ART (R3) — contained with
@@ -1182,13 +1478,17 @@ section[id],
   padding: 9%;
   transition: transform 500ms var(--ease-arrive);
 }
-.project-card:hover .project-preview-form {
+.project-card:hover .project-preview-form,
+.project-card:focus-visible .project-preview-form,
+.project-card:active .project-preview-form {
   transform: scale(1.04);
 }
 .project-preview-cat {
   font-family: var(--font-mono);
   font-size: var(--text-mono-sm);
-  letter-spacing: 0.12em;
+  font-weight: 500;
+  line-height: var(--text-mono-sm--line-height);
+  letter-spacing: var(--tracking-label-open);
   text-transform: uppercase;
   color: var(--color-paper-mute);
 }
@@ -1199,23 +1499,31 @@ section[id],
   bottom: 0.85rem;
 }
 .project-body {
+  min-width: 0;
   padding-top: 1.25rem;
 }
 .project-cats {
   font-family: var(--font-mono);
   font-size: var(--text-mono);
-  letter-spacing: 0.08em;
+  font-weight: 500;
+  line-height: var(--text-mono--line-height);
+  letter-spacing: var(--text-mono--letter-spacing);
   text-transform: uppercase;
   color: var(--color-cyan);
 }
 .project-name {
   margin-top: 0.5rem;
-  font-weight: 500;
+  overflow-wrap: anywhere;
   color: var(--color-paper);
-  transition: color 200ms var(--ease-arrive);
+  transition:
+    color 200ms var(--ease-arrive),
+    transform 200ms var(--ease-arrive);
 }
-.project-card:hover .project-name {
+.project-card:hover .project-name,
+.project-card:focus-visible .project-name,
+.project-card:active .project-name {
   color: var(--color-cyan-glow);
+  transform: translateX(0.2rem);
 }
 .project-line {
   margin-top: 0.6rem;
@@ -1229,7 +1537,8 @@ section[id],
   margin-top: 0.75rem;
   font-family: var(--font-mono);
   font-size: var(--text-mono-sm);
-  letter-spacing: 0.06em;
+  line-height: var(--text-mono-sm--line-height);
+  letter-spacing: var(--tracking-label-dense);
   color: var(--color-paper-mute);
 }
 .project-outcome {
@@ -1240,7 +1549,9 @@ section[id],
   padding: 0.3rem 0.6rem;
   font-family: var(--font-mono);
   font-size: var(--text-mono-sm);
-  letter-spacing: 0.08em;
+  font-weight: 500;
+  line-height: var(--text-mono-sm--line-height);
+  letter-spacing: var(--tracking-label);
   text-transform: uppercase;
   color: var(--color-cyan);
   border: 1px solid color-mix(in srgb, var(--color-cyan) 40%, transparent);
@@ -1261,10 +1572,13 @@ section[id],
 .work-filter {
   display: inline-flex;
   align-items: center;
+  min-height: 44px;
   padding: 0.45rem 0.8rem;
   font-family: var(--font-mono);
   font-size: var(--text-mono-sm);
-  letter-spacing: 0.08em;
+  font-weight: 500;
+  line-height: var(--text-mono-sm--line-height);
+  letter-spacing: var(--tracking-label);
   text-transform: uppercase;
   text-decoration: none;
   color: var(--color-paper-mute);
@@ -1298,11 +1612,22 @@ section[id],
   );
 }
 .case-label {
-  font-family: var(--font-mono);
-  font-size: var(--text-mono);
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--color-cyan);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.65rem;
+  font-family: var(--font-grotesk);
+  font-size: var(--text-title);
+  font-weight: 600;
+  line-height: var(--text-title--line-height);
+  letter-spacing: var(--text-title--letter-spacing);
+  color: var(--color-paper);
+}
+.case-label::before {
+  content: "";
+  width: 1rem;
+  height: 1px;
+  flex: none;
+  background: var(--color-cyan);
 }
 .case-next {
   text-decoration: none;
@@ -1310,12 +1635,14 @@ section[id],
 .case-next-label {
   font-family: var(--font-mono);
   font-size: var(--text-mono);
-  letter-spacing: 0.08em;
+  font-weight: 500;
+  line-height: var(--text-mono--line-height);
+  letter-spacing: var(--text-mono--letter-spacing);
   text-transform: uppercase;
   color: var(--color-paper-mute);
 }
 .case-next-name {
-  font-weight: 500;
+  overflow-wrap: anywhere;
   color: var(--color-paper);
   transition: color 200ms var(--ease-arrive);
 }
@@ -1327,20 +1654,22 @@ section[id],
    The Name — etymology + manifesto (S8)
    =========================================================================== */
 .name-word {
-  font-family: var(--font-display);
-  font-style: italic;
-  font-weight: 400;
-  font-size: var(--text-display-xl);
-  line-height: 0.98;
-  letter-spacing: -0.02em;
+  font-family: var(--font-grotesk);
+  font-style: normal;
+  font-weight: 600;
+  font-size: var(--text-wordmark);
+  line-height: var(--text-display-xl--line-height);
+  letter-spacing: var(--text-display-xl--letter-spacing);
   text-transform: uppercase;
   color: var(--color-paper);
 }
 .name-word-text {
   margin-top: 1rem;
   margin-inline: auto;
-  max-width: 34rem;
-  font-size: var(--text-poetic);
+  max-width: var(--measure-lead);
+  font-size: var(--text-lead);
+  line-height: var(--text-lead--line-height);
+  letter-spacing: var(--text-lead--letter-spacing);
   color: var(--color-paper-mute);
 }
 .manifesto {
@@ -1355,6 +1684,8 @@ section[id],
   font-style: italic;
   font-weight: 400;
   font-size: var(--text-display-m);
+  line-height: 1.12;
+  letter-spacing: var(--text-display-m--letter-spacing);
   color: var(--color-paper);
 }
 .manifesto-line:last-child {
@@ -1384,7 +1715,8 @@ section[id],
 .origin-open {
   max-width: 32rem;
   font-size: var(--text-poetic);
-  line-height: 1.25;
+  line-height: var(--text-poetic--line-height);
+  letter-spacing: var(--text-poetic--letter-spacing);
   color: var(--color-paper-mute);
 }
 /* Beat 2 — the mark forms on the stage; the pillar line reads beneath it */
@@ -1399,7 +1731,8 @@ section[id],
 .origin-statement {
   max-width: 26rem;
   font-size: var(--text-display-m);
-  line-height: 1.16;
+  line-height: 1.12;
+  letter-spacing: var(--text-display-m--letter-spacing);
   color: var(--color-paper);
   text-shadow: 0 0 24px rgb(0 0 0 / 0.55); /* legible over the liquid */
 }
@@ -1407,7 +1740,8 @@ section[id],
 .origin-coda {
   max-width: 36rem;
   font-size: var(--text-body-l);
-  line-height: 1.5;
+  line-height: var(--text-body-l--line-height);
+  letter-spacing: var(--text-body-l--letter-spacing);
   color: var(--color-paper-mute);
 }
 /* Beat 5 — the resolution: the wordmark assembles as the liquid drains */
@@ -1439,7 +1773,9 @@ section[id],
   transform: translate(-50%, -50%);
   font-family: var(--font-mono);
   font-size: var(--text-mono-sm);
-  letter-spacing: 0.14em;
+  font-weight: 500;
+  line-height: var(--text-mono-sm--line-height);
+  letter-spacing: var(--tracking-label-wide);
   text-transform: uppercase;
   color: var(--color-paper-mute);
   white-space: nowrap;
@@ -1459,18 +1795,24 @@ section[id],
   margin-top: 1.75rem;
   font-family: var(--font-mono);
   font-size: var(--text-mono-sm);
-  letter-spacing: 0.14em;
+  font-weight: 500;
+  line-height: var(--text-mono-sm--line-height);
+  letter-spacing: var(--tracking-label-wide);
   text-transform: uppercase;
   color: var(--color-paper-mute);
 }
 .origin-closing {
   margin-top: 2.25rem;
   font-size: var(--text-display-m);
+  line-height: 1.12;
+  letter-spacing: var(--text-display-m--letter-spacing);
   color: var(--color-paper);
 }
 .origin-grace {
   margin-top: 1.25rem;
   font-size: var(--text-body);
+  line-height: var(--text-body--line-height);
+  letter-spacing: var(--text-body--letter-spacing);
   color: var(--color-paper-mute);
 }
 
@@ -1479,14 +1821,15 @@ section[id],
    =========================================================================== */
 .studio-roles {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: 1fr;
   gap: 1px;
   border: 1px solid var(--color-paper-faint);
   background: var(--color-paper-faint);
 }
 .studio-role {
   background: var(--color-ink);
-  padding: 1.5rem;
+  min-width: 0;
+  padding: clamp(1.1rem, 4vw, 1.5rem);
   font-size: var(--text-title);
   line-height: var(--text-title--line-height);
   letter-spacing: var(--text-title--letter-spacing);
@@ -1498,8 +1841,15 @@ section[id],
   margin-bottom: 0.4rem;
   font-family: var(--font-mono);
   font-size: var(--text-mono-sm);
-  letter-spacing: 0.08em;
+  font-variant-numeric: tabular-nums lining-nums;
+  line-height: var(--text-mono-sm--line-height);
+  letter-spacing: var(--tracking-label);
   color: var(--color-cyan);
+}
+@media (min-width: 420px) {
+  .studio-roles {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 @media (min-width: 768px) {
   .studio-roles {
@@ -1527,7 +1877,9 @@ section[id],
 .contact-intent {
   font-family: var(--font-mono);
   font-size: var(--text-mono-sm);
-  letter-spacing: 0.08em;
+  font-weight: 500;
+  line-height: var(--text-mono-sm--line-height);
+  letter-spacing: var(--tracking-label);
   text-transform: uppercase;
   color: var(--color-cyan);
 }
@@ -1539,18 +1891,24 @@ section[id],
 .field label {
   font-family: var(--font-mono);
   font-size: var(--text-mono);
-  letter-spacing: 0.08em;
+  font-weight: 500;
+  line-height: var(--text-mono--line-height);
+  letter-spacing: var(--text-mono--letter-spacing);
   text-transform: uppercase;
   color: var(--color-paper-mute);
 }
 .field input,
 .field textarea {
+  width: 100%;
+  min-width: 0;
   padding: 0.85rem 1rem;
   background: transparent;
   border: 1px solid var(--color-paper-faint);
   color: var(--color-paper);
   font-family: var(--font-sans);
   font-size: var(--text-body);
+  line-height: var(--text-body--line-height);
+  letter-spacing: var(--text-body--letter-spacing);
   transition: border-color 200ms var(--ease-arrive);
 }
 .field textarea {
@@ -1578,26 +1936,37 @@ section[id],
 .field-error,
 .contact-error,
 .contact-pending {
-  font-family: var(--font-mono);
-  font-size: var(--text-mono-sm);
-  letter-spacing: 0.04em;
+  font-family: var(--font-sans);
+  font-size: var(--text-body-s);
+  line-height: var(--text-body-s--line-height);
+  letter-spacing: var(--text-body-s--letter-spacing);
   color: var(--color-warn);
 }
 .contact-pending {
   color: var(--color-paper-mute);
 }
 .contact-form button[type="submit"] {
+  max-width: 100%;
   align-self: flex-start;
   margin-top: 0.25rem;
+}
+@media (max-width: 420px) {
+  .contact-form button[type="submit"] {
+    width: 100%;
+    align-self: stretch;
+    justify-content: center;
+  }
 }
 .contact-success {
   padding: 3rem 0;
   text-align: center;
 }
 .contact-success-title {
-  font-family: var(--font-display);
-  font-style: italic;
-  font-size: var(--text-display-m);
+  font-family: var(--font-sans);
+  font-size: var(--text-title);
+  font-weight: 550;
+  line-height: var(--text-title--line-height);
+  letter-spacing: var(--text-title--letter-spacing);
   color: var(--color-cyan);
 }
 .contact-secondary {
@@ -1609,7 +1978,9 @@ section[id],
   margin-top: 2.5rem;
   font-family: var(--font-mono);
   font-size: var(--text-mono-sm);
-  letter-spacing: 0.08em;
+  font-weight: 500;
+  line-height: var(--text-mono-sm--line-height);
+  letter-spacing: var(--tracking-label);
   text-transform: uppercase;
   color: var(--color-paper-mute);
 }
@@ -1638,8 +2009,10 @@ section[id],
   color: var(--color-ink);
   font-family: var(--font-mono);
   font-size: var(--text-mono-sm);
+  font-weight: 500;
+  line-height: var(--text-mono-sm--line-height);
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: var(--tracking-label);
   transition: top 200ms var(--ease-arrive);
 }
 .skip-link:focus {
@@ -1667,10 +2040,19 @@ section[id],
   align-items: center;
   font-family: var(--font-sans);
   font-weight: 600;
-  font-size: 1.1rem;
-  letter-spacing: -0.01em;
+  font-size: var(--text-body-l);
+  line-height: var(--text-body-l--line-height);
+  letter-spacing: var(--text-body-l--letter-spacing);
   color: var(--color-paper);
   text-decoration: none;
+  transition:
+    color 200ms var(--ease-arrive),
+    letter-spacing 200ms var(--ease-arrive);
+}
+.wordmark:hover,
+.wordmark:focus-visible {
+  color: var(--color-cyan);
+  letter-spacing: 0.01em;
 }
 .topbar-desktop {
   display: flex;
@@ -1680,7 +2062,9 @@ section[id],
 .topbar-location {
   font-family: var(--font-mono);
   font-size: var(--text-mono-sm);
-  letter-spacing: 0.08em;
+  font-weight: 500;
+  line-height: var(--text-mono-sm--line-height);
+  letter-spacing: var(--tracking-label);
   text-transform: uppercase;
   color: var(--color-paper-mute);
 }
@@ -1698,7 +2082,9 @@ section[id],
   cursor: pointer;
   font-family: var(--font-mono);
   font-size: var(--text-mono-sm);
-  letter-spacing: 0.08em;
+  font-weight: 500;
+  line-height: var(--text-mono-sm--line-height);
+  letter-spacing: var(--tracking-label);
   color: var(--color-paper-mute);
   transition: color 200ms var(--ease-arrive);
 }
@@ -1709,7 +2095,7 @@ section[id],
   color: var(--color-cyan);
 }
 
-@media (max-width: 767px) {
+@media (max-width: 1023px) {
   .topbar-desktop {
     display: none;
   }
@@ -1751,7 +2137,9 @@ section[id],
 .side-index-label {
   font-family: var(--font-mono);
   font-size: var(--text-mono-sm);
-  letter-spacing: 0.06em;
+  font-weight: 500;
+  line-height: var(--text-mono-sm--line-height);
+  letter-spacing: var(--tracking-label-dense);
   text-transform: uppercase;
   white-space: nowrap;
   color: var(--color-paper-mute);
@@ -1868,7 +2256,8 @@ section[id],
   font-family: var(--font-sans);
   font-size: var(--text-body-l);
   font-weight: 600;
-  letter-spacing: -0.01em;
+  line-height: var(--text-body-l--line-height);
+  letter-spacing: var(--text-body-l--letter-spacing);
   color: var(--color-paper);
 }
 .mobile-menu-close {
@@ -1926,7 +2315,7 @@ section[id],
   border-bottom: 1px solid var(--color-paper-faint);
   font-family: var(--font-sans);
   font-size: var(--text-title);
-  font-weight: 500;
+  font-weight: 550;
   line-height: var(--text-title--line-height);
   letter-spacing: var(--text-title--letter-spacing);
   color: var(--color-paper);
@@ -2001,6 +2390,7 @@ section[id],
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   gap: 1.5rem;
   padding: 2rem var(--page-padding);
   border-top: 1px solid var(--color-paper-faint);
@@ -2008,12 +2398,16 @@ section[id],
 .footer-copy {
   font-family: var(--font-mono);
   font-size: var(--text-mono-sm);
-  letter-spacing: 0.08em;
+  font-weight: 500;
+  line-height: var(--text-mono-sm--line-height);
+  letter-spacing: var(--tracking-label);
   color: var(--color-paper-mute);
 }
 .footer-right {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
+  justify-content: center;
   gap: 1.5rem;
 }
 .footer-link {
@@ -2022,7 +2416,9 @@ section[id],
   align-items: center;
   font-family: var(--font-mono);
   font-size: var(--text-mono-sm);
-  letter-spacing: 0.08em;
+  font-weight: 500;
+  line-height: var(--text-mono-sm--line-height);
+  letter-spacing: var(--tracking-label);
   text-transform: uppercase;
   color: var(--color-paper);
   text-decoration: none;
@@ -2082,8 +2478,9 @@ section[id],
 .loading-word {
   font-family: var(--font-sans);
   font-weight: 600;
-  font-size: 2rem;
-  letter-spacing: 0.02em;
+  font-size: var(--text-title);
+  line-height: var(--text-title--line-height);
+  letter-spacing: var(--text-title--letter-spacing);
   color: var(--color-paper);
   animation: loading-pulse 1.4s var(--ease-breath) infinite;
 }
