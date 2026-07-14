@@ -62,7 +62,7 @@ export function ChapterStudio() {
       </Reveal>
 
       <Reveal inView className="mt-14 flex">
-        <CtaTalk variant="secondary" />
+        <CtaTalk variant="secondary" placement="studio" />
       </Reveal>
     </section>
   );

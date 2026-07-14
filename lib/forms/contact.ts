@@ -14,7 +14,7 @@ export type ContactIntent = (typeof CONTACT_INTENTS)[number];
 // are applied in the component; zod's defaults are the server-side fallback.
 export const contactSchema = z.object({
   name: z.string().trim().min(2).max(120),
-  email: z.email(),
+  email: z.email().max(254),
   company: z.string().trim().max(160).optional(),
   message: z.string().trim().min(10).max(4000),
   // Required (the form always supplies it; defaults to "general" client-side).
@@ -23,3 +23,10 @@ export const contactSchema = z.object({
 });
 
 export type ContactInput = z.infer<typeof contactSchema>;
+
+// API-only abuse trap. It stays outside ContactInput so browser autofill can
+// never create an invisible client-side validation dead end.
+export const contactApiSchema = contactSchema.extend({
+  website: z.string().max(0).optional(),
+  submissionId: z.uuid(),
+});

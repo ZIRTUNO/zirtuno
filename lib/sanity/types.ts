@@ -1,5 +1,5 @@
 // Normalized portfolio types (S7.4). Shared by the Sanity schema, the GROQ
-// result shape, and the local seed fallback.
+// result shape, and the explicit local concept source.
 
 export type ProjectCategory =
   | "web-design"

@@ -18,7 +18,32 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: "work" });
-  return { title: t("indexTitle"), description: t("indexLead") };
+  const title = t("indexTitle");
+  const description = t("indexLead");
+  const canonical = `/${locale}/work`;
+  return {
+    title,
+    description,
+    alternates: {
+      canonical,
+      languages: { "pt-BR": "/pt/work", en: "/en/work" },
+    },
+    openGraph: {
+      type: "website",
+      siteName: "Zirtuno",
+      locale: locale === "pt" ? "pt_BR" : "en_US",
+      url: canonical,
+      title,
+      description,
+      images: [{ url: `/${locale}/opengraph-image`, alt: title }],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: [`/${locale}/opengraph-image`],
+    },
+  };
 }
 
 export default async function WorkPage({
@@ -71,7 +96,9 @@ export default async function WorkPage({
       </nav>
 
       {projects.length === 0 ? (
-        <p className="mt-16 text-body-l text-paper-mute">{t("empty")}</p>
+        <p className="mt-16 max-w-2xl text-body-l text-paper-mute">
+          {t(category ? "empty" : "emptyPortfolio")}
+        </p>
       ) : (
         <div className="mt-10 grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
           {projects.map((p) => (

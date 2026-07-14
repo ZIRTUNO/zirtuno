@@ -23,6 +23,8 @@ export function LanguageToggle() {
           className={cn("lang-opt", l === locale && "is-active")}
           aria-current={l === locale ? "true" : undefined}
           data-cursor="hover"
+          data-analytics-event={l === locale ? undefined : "locale_switch"}
+          data-analytics-locale={l}
         >
           {l.toUpperCase()}
         </button>

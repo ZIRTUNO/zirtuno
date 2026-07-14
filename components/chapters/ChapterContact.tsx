@@ -4,15 +4,11 @@ import { Reveal } from "@/components/ui/Reveal";
 import { ContactForm } from "./ContactForm";
 import { ContactMetaball } from "./ContactMetaball";
 
-// Secondary contact paths (S10.5). TODO(content): the defaults below are
-// PLACEHOLDERS until the real WhatsApp number, email, and social handles are
-// supplied — override via env (NEXT_PUBLIC_WHATSAPP_URL, CONTACT_EMAIL_TO,
-// NEXT_PUBLIC_INSTAGRAM_URL) or replace here once confirmed.
-const WHATSAPP_URL =
-  process.env.NEXT_PUBLIC_WHATSAPP_URL ?? "https://wa.me/5532991641200";
-const INSTAGRAM_URL =
-  process.env.NEXT_PUBLIC_INSTAGRAM_URL ?? "https://www.instagram.com/zirtuno/";
-const CONTACT_EMAIL = process.env.CONTACT_EMAIL_TO ?? "zirtuno@gmail.com";
+// TODO(decision): only owner-approved public channels render. The public
+// mailbox remains separate from the private delivery recipient by design.
+const WHATSAPP_URL = process.env.NEXT_PUBLIC_WHATSAPP_URL?.trim();
+const INSTAGRAM_URL = process.env.NEXT_PUBLIC_INSTAGRAM_URL?.trim();
+const CONTACT_EMAIL = process.env.NEXT_PUBLIC_CONTACT_EMAIL?.trim();
 
 /**
  * S10 · Contact — the conversion endpoint. Artistic but unmistakably usable:
@@ -21,6 +17,9 @@ const CONTACT_EMAIL = process.env.CONTACT_EMAIL_TO ?? "zirtuno@gmail.com";
  */
 export function ChapterContact() {
   const t = useTranslations("contact");
+  const hasDirectChannel = Boolean(
+    WHATSAPP_URL || CONTACT_EMAIL || INSTAGRAM_URL,
+  );
 
   return (
     <section
@@ -53,28 +52,45 @@ export function ChapterContact() {
           <ContactForm />
         </Suspense>
 
-        <div className="contact-secondary">
-          <span>{t("secondaryLead")}</span>
-          <a
-            href={WHATSAPP_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            data-cursor="hover"
-          >
-            {t("whatsapp")}
-          </a>
-          <a href={`mailto:${CONTACT_EMAIL}`} data-cursor="hover">
-            {t("email")}
-          </a>
-          <a
-            href={INSTAGRAM_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            data-cursor="hover"
-          >
-            {t("instagram")}
-          </a>
-        </div>
+        {hasDirectChannel && (
+          <div className="contact-secondary">
+            <span>{t("secondaryLead")}</span>
+            {WHATSAPP_URL && (
+              <a
+                href={WHATSAPP_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                data-cursor="hover"
+                data-analytics-event="direct_contact"
+                data-analytics-channel="whatsapp"
+              >
+                {t("whatsapp")}
+              </a>
+            )}
+            {CONTACT_EMAIL && (
+              <a
+                href={`mailto:${CONTACT_EMAIL}`}
+                data-cursor="hover"
+                data-analytics-event="direct_contact"
+                data-analytics-channel="email"
+              >
+                {t("email")}
+              </a>
+            )}
+            {INSTAGRAM_URL && (
+              <a
+                href={INSTAGRAM_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                data-cursor="hover"
+                data-analytics-event="direct_contact"
+                data-analytics-channel="instagram"
+              >
+                {t("instagram")}
+              </a>
+            )}
+          </div>
+        )}
       </div>
     </section>
   );

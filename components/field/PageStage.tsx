@@ -481,6 +481,8 @@ export function PageStage({
         ref={wrapRef}
         className="liquid-journey"
         data-liquid={enabled ? "live" : "static"}
+        data-field-ready={heroReady ? "true" : "false"}
+        data-hero-qa={heroQA ? "true" : "false"}
       >
         <div className="journey-layer" ref={layerRef}>
           {enabled && seen && (

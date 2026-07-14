@@ -45,7 +45,7 @@ export function ChapterServices() {
         </div>
 
         <Reveal inView className="mt-16 flex">
-          <CtaAnalysis />
+          <CtaAnalysis placement="services" />
         </Reveal>
       </div>
     </section>

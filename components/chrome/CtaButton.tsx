@@ -26,6 +26,8 @@ type CtaButtonProps = {
   labelKey?: "analysis" | "portfolio" | "structure" | "talk";
   /** Literal label override (skips i18n). */
   label?: string;
+  /** Privacy-safe source label for conversion attribution. */
+  placement?: string;
   className?: string;
 };
 
@@ -46,6 +48,7 @@ export function CtaButton({
   href,
   labelKey,
   label,
+  placement,
   className,
 }: CtaButtonProps) {
   const t = useTranslations("cta");
@@ -81,6 +84,9 @@ export function CtaButton({
     <Link
       href={destination}
       data-cursor="hover"
+      data-analytics-event={intent ? "cta_intent" : "cta_navigation"}
+      data-analytics-intent={intent}
+      data-analytics-placement={placement ?? pathname}
       onClick={onClick}
       className={cn(VARIANT_CLASS[variant], className)}
     >
@@ -99,9 +105,11 @@ export function CtaButton({
 
 export function CtaAnalysis({
   variant = "primary",
+  placement,
   className,
 }: {
   variant?: CtaVariant;
+  placement?: string;
   className?: string;
 }) {
   return (
@@ -109,6 +117,7 @@ export function CtaAnalysis({
       variant={variant}
       intent="analysis"
       labelKey="analysis"
+      placement={placement}
       className={className}
     />
   );
@@ -117,10 +126,12 @@ export function CtaAnalysis({
 export function CtaPortfolio({
   variant = "secondary",
   href = "/work",
+  placement,
   className,
 }: {
   variant?: CtaVariant;
   href?: string;
+  placement?: string;
   className?: string;
 }) {
   return (
@@ -128,6 +139,7 @@ export function CtaPortfolio({
       variant={variant}
       href={href}
       labelKey="portfolio"
+      placement={placement}
       className={className}
     />
   );
@@ -135,9 +147,11 @@ export function CtaPortfolio({
 
 export function CtaStructure({
   variant = "primary",
+  placement,
   className,
 }: {
   variant?: CtaVariant;
+  placement?: string;
   className?: string;
 }) {
   return (
@@ -145,6 +159,7 @@ export function CtaStructure({
       variant={variant}
       intent="structure"
       labelKey="structure"
+      placement={placement}
       className={className}
     />
   );
@@ -152,9 +167,11 @@ export function CtaStructure({
 
 export function CtaTalk({
   variant = "primary",
+  placement,
   className,
 }: {
   variant?: CtaVariant;
+  placement?: string;
   className?: string;
 }) {
   return (
@@ -162,6 +179,7 @@ export function CtaTalk({
       variant={variant}
       intent="talk"
       labelKey="talk"
+      placement={placement}
       className={className}
     />
   );

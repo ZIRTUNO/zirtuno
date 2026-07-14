@@ -32,7 +32,7 @@ export function SideIndex() {
   }, []);
 
   return (
-    <nav className="side-index" aria-label="Chapters">
+    <nav className="side-index" aria-label={t("chapterNavigation")}>
       <ul>
         {CHAPTERS.map((c) => (
           <li key={c.id}>

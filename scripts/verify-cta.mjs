@@ -61,19 +61,92 @@ await page.route("**/api/contact", async (route) => {
   await route.fulfill({
     status: 200,
     contentType: "application/json",
-    body: JSON.stringify({ ok: true }),
+    body: JSON.stringify({ ok: true, delivered: true }),
   });
 });
-await page.goto(`${BASE}/en?intent=analysis#contact`, {
+await page.goto(`${BASE}/en?intent=analysis&qa=confirmed#contact`, {
   waitUntil: "domcontentloaded",
 });
+await page.waitForSelector("#contact-name", { timeout: 20000 });
 await page.fill("#contact-name", "QA Test");
 await page.fill("#contact-email", "qa@example.com");
 await page.fill("#contact-message", "Conversion-path QA test message.");
 await page.click('button[type="submit"]');
 await page.waitForTimeout(1800);
+const confirmed = {
+  success: await page.locator(".contact-success").isVisible().catch(() => false),
+  submittedIntent: submitted?.intent ?? null,
+  honeypot: submitted?.website ?? null,
+  submissionId: submitted?.submissionId ?? null,
+};
 
-// 4) same-page path (R0): clicking an intent CTA on the homepage must NOT
+// 4) accepted is not delivered: show a truthful pending state and retain every
+// entered value. This guards the audit's false-success regression directly.
+await page.unroute("**/api/contact");
+await page.route("**/api/contact", (route) =>
+  route.fulfill({
+    status: 202,
+    contentType: "application/json",
+    body: JSON.stringify({
+      ok: true,
+      accepted: true,
+      delivered: false,
+      pending: true,
+    }),
+  }),
+);
+await page.goto(`${BASE}/en?intent=analysis&qa=pending#contact`, {
+  waitUntil: "domcontentloaded",
+});
+await page.waitForSelector("#contact-name", { timeout: 20000 });
+await page.fill("#contact-name", "Pending QA");
+await page.fill("#contact-email", "pending@example.com");
+await page.fill("#contact-message", "Pending delivery must retain this message.");
+await page.click('button[type="submit"]');
+await page.waitForSelector(".contact-pending", { timeout: 10000 });
+const pending = {
+  name: await page.inputValue("#contact-name"),
+  email: await page.inputValue("#contact-email"),
+  message: await page.inputValue("#contact-message"),
+  submitDisabled: await page.isDisabled('button[type="submit"]'),
+  falseSuccess: await page.locator(".contact-success").isVisible().catch(() => false),
+};
+await page.unroute("**/api/contact");
+
+// 5) an ambiguous/failed attempt can be retried without creating a second
+// provider operation: unchanged form content must reuse the submission id.
+const retryBodies = [];
+await page.route("**/api/contact", async (route) => {
+  retryBodies.push(JSON.parse(route.request().postData() || "{}"));
+  const firstAttempt = retryBodies.length === 1;
+  await route.fulfill({
+    status: firstAttempt ? 502 : 200,
+    contentType: "application/json",
+    body: JSON.stringify(
+      firstAttempt
+        ? { ok: false, delivered: false, error: "send" }
+        : { ok: true, delivered: true },
+    ),
+  });
+});
+await page.goto(`${BASE}/en?intent=talk&qa=retry#contact`, {
+  waitUntil: "domcontentloaded",
+});
+await page.waitForSelector("#contact-name", { timeout: 20000 });
+await page.fill("#contact-name", "Retry QA");
+await page.fill("#contact-email", "retry@example.com");
+await page.fill("#contact-message", "Safe retry must reuse this exact request.");
+await page.click('button[type="submit"]');
+await page.waitForSelector(".contact-error", { timeout: 10000 });
+await page.click('button[type="submit"]');
+await page.waitForSelector(".contact-success", { timeout: 10000 });
+const retry = {
+  submissionIds: retryBodies.map((body) => body.submissionId ?? null),
+  success: await page.locator(".contact-success").isVisible().catch(() => false),
+};
+await page.unroute("**/api/contact");
+
+// 6) same-page path (R0): clicking an intent CTA on the homepage must NOT
 // navigate — it sets the intent via history.replaceState and Lenis-scrolls to
 // #contact. A window marker survives only if no reload happened.
 await page.goto(`${BASE}/en`, { waitUntil: "domcontentloaded" });
@@ -107,9 +180,57 @@ const samePage = await page.evaluate(() => {
 console.log(
   "CTA " +
     JSON.stringify(
-      { ctas, results, submittedIntent: submitted?.intent, samePage },
+      { ctas, results, confirmed, pending, retry, samePage },
       null,
       2,
     ),
 );
+
+const requiredIntents = ["analysis", "structure", "talk"];
+const failures = [];
+for (const intent of intents) {
+  if (results[intent]?.field !== intent)
+    failures.push(`intent ${intent} did not reach the hidden field`);
+}
+for (const intent of requiredIntents) {
+  if (!ctas.some((cta) => cta.href?.includes(`intent=${intent}`)))
+    failures.push(`missing ${intent} CTA`);
+}
+if (!confirmed.success || confirmed.submittedIntent !== "analysis")
+  failures.push("confirmed delivery did not produce the canonical success state");
+if (confirmed.honeypot !== "") failures.push("honeypot was not submitted empty");
+if (
+  typeof confirmed.submissionId !== "string" ||
+  !/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+    confirmed.submissionId,
+  )
+)
+  failures.push("contact request did not include a valid stable submission id");
+if (
+  pending.name !== "Pending QA" ||
+  pending.email !== "pending@example.com" ||
+  pending.message !== "Pending delivery must retain this message."
+)
+  failures.push("pending delivery did not retain the entered values");
+if (!pending.submitDisabled || pending.falseSuccess)
+  failures.push("pending delivery exposed a duplicate submit or false success");
+if (
+  !retry.success ||
+  retry.submissionIds.length !== 2 ||
+  !retry.submissionIds[0] ||
+  retry.submissionIds[0] !== retry.submissionIds[1]
+)
+  failures.push("unchanged retry did not reuse its stable submission id");
+if (
+  !samePage.noReload ||
+  samePage.intentField !== "structure" ||
+  !samePage.contactInView
+)
+  failures.push("same-page CTA intent/scroll contract failed");
+
 await browser.close();
+if (failures.length > 0) {
+  for (const failure of failures) console.error(`FAIL ${failure}`);
+  process.exit(1);
+}
+console.log("CTA and contact delivery semantics: all checks passed");

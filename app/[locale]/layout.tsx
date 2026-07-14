@@ -19,6 +19,7 @@ import LenisProvider from "@/components/motion/LenisProvider";
 import { BreathLayer } from "@/components/ui/BreathLayer";
 import { TopBar } from "@/components/chrome/TopBar";
 import { EntryVeil } from "@/components/chrome/EntryVeil";
+import { SiteAnalytics } from "@/components/analytics/SiteAnalytics";
 import "../globals.css";
 
 // Pre-paint skip for the entry veil (S1.10): return visitors in the same
@@ -110,7 +111,7 @@ export default async function LocaleLayout({
 
   return (
     <html
-      lang={locale}
+      lang={locale === "pt" ? "pt-BR" : "en"}
       className={`${geist.variable} ${bricolage.variable} ${instrument.variable} ${jetbrains.variable}`}
       data-scroll-behavior="smooth"
       suppressHydrationWarning
@@ -124,6 +125,7 @@ export default async function LocaleLayout({
         />
         <EntryVeil label={tCommon("loading")} />
         <BreathLayer />
+        <SiteAnalytics />
         <NextIntlClientProvider locale={locale} messages={messages}>
           <a href="#content" className="skip-link">
             {tCommon("skipToContent")}

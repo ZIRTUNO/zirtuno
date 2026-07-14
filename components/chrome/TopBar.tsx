@@ -20,7 +20,7 @@ export function TopBar() {
       <div className="topbar-desktop">
         <span className="topbar-location">{t("location")}</span>
         <LanguageToggle />
-        <CtaTalk variant="ghost" />
+        <CtaTalk variant="ghost" placement="topbar" />
       </div>
 
       <MobileMenu />

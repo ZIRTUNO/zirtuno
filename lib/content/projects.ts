@@ -1,10 +1,9 @@
 import type { Project } from "@/lib/sanity/types";
 
-// TODO(decision): These are 6 PROTOTYPE projects for layout/launch. Replace
-// with real verified content via Sanity. Per AGENTS.md rule #3 no metrics are
-// invented — every outcome is "architecture" (Arquitetura selecionada) or an
-// honest non-numeric "narrative". No project uses outcomeType "metric" until
-// real, verified numbers exist.
+// TODO(decision): These are six concept studies for explicit local demo mode.
+// They are never a production CMS fallback. Every entry is marked both as a
+// prototype and a selected architecture so any consuming surface can fail
+// safely. Replace them with owner-approved, verified content via Sanity.
 
 export const SEED_PROJECTS: Project[] = [
   {
@@ -17,12 +16,12 @@ export const SEED_PROJECTS: Project[] = [
       en: "An operation split between physical and digital, with systems that didn't talk.",
     },
     built: {
-      pt: "Uma plataforma única que conecta vendas, estoque e atendimento, com automações entre as ferramentas e um painel central de decisão.",
-      en: "A single platform connecting sales, inventory, and service, with automations between tools and a central decision dashboard.",
+      pt: "Proposta de uma plataforma única para conectar vendas, estoque e atendimento, com automações entre as ferramentas e um painel central de decisão.",
+      en: "A proposal for one platform connecting sales, inventory, and service, with automations between tools and a central decision dashboard.",
     },
     outcome: {
-      pt: "Arquitetura de ecossistema conectando operação, dados e atendimento.",
-      en: "An ecosystem architecture connecting operations, data, and service.",
+      pt: "Proposta de ecossistema conectando operação, dados e atendimento.",
+      en: "A proposed ecosystem connecting operations, data, and service.",
     },
     outcomeType: "architecture",
     featured: true,
@@ -39,14 +38,14 @@ export const SEED_PROJECTS: Project[] = [
       en: "A generic brand and a digital presence that didn't convey trust.",
     },
     built: {
-      pt: "Uma identidade coerente e um site que organiza serviços e agendamento em uma só experiência.",
-      en: "A coherent identity and a site that organizes services and scheduling into one experience.",
+      pt: "Proposta de uma identidade coerente e um site para organizar serviços e agendamento em uma só experiência.",
+      en: "A proposal for a coherent identity and a site organizing services and scheduling into one experience.",
     },
     outcome: {
-      pt: "Centralizou marca e agendamento em uma presença única e clara.",
-      en: "Unified brand and scheduling into one clear presence.",
+      pt: "Direção de sistema para reunir marca e agendamento em uma presença única e clara.",
+      en: "A system direction designed to unite brand and scheduling in one clear presence.",
     },
-    outcomeType: "narrative",
+    outcomeType: "architecture",
     featured: true,
     order: 2,
     prototype: true,
@@ -61,12 +60,12 @@ export const SEED_PROJECTS: Project[] = [
       en: "Overloaded service and opportunities lost after hours.",
     },
     built: {
-      pt: "Um agente de IA integrado ao CRM que atende, qualifica e encaminha — disponível 24/7.",
-      en: "An AI agent integrated with the CRM that serves, qualifies, and routes — available 24/7.",
+      pt: "Proposta de um agente de IA integrado ao CRM para atender, qualificar e encaminhar contatos em fluxo contínuo.",
+      en: "A proposal for an AI agent integrated with the CRM to serve, qualify, and route contacts continuously.",
     },
     outcome: {
-      pt: "Arquitetura de atendimento inteligente conectada ao CRM.",
-      en: "An intelligent service architecture connected to the CRM.",
+      pt: "Proposta de atendimento inteligente conectado ao CRM.",
+      en: "A proposed intelligent service flow connected to the CRM.",
     },
     outcomeType: "architecture",
     featured: true,
@@ -83,14 +82,14 @@ export const SEED_PROJECTS: Project[] = [
       en: "Decisions made in the dark, with data scattered across spreadsheets and tools.",
     },
     built: {
-      pt: "Um painel que reúne as fontes de dados do negócio em uma visão clara e atualizada.",
-      en: "A dashboard that brings the business's data sources into one clear, up-to-date view.",
+      pt: "Proposta de um painel para reunir as fontes de dados do negócio em uma visão clara e atualizada.",
+      en: "A proposal for a dashboard bringing the business's data sources into one clear, current view.",
     },
     outcome: {
-      pt: "Unificou fontes de dados dispersas em um só painel de decisão.",
-      en: "Unified scattered data sources into a single decision dashboard.",
+      pt: "Direção de dados para reunir fontes dispersas em um só painel de decisão.",
+      en: "A data direction designed to bring scattered sources into one decision dashboard.",
     },
-    outcomeType: "narrative",
+    outcomeType: "architecture",
     featured: true,
     order: 4,
     prototype: true,
@@ -105,12 +104,12 @@ export const SEED_PROJECTS: Project[] = [
       en: "Marketing spend with no clear return and stagnant growth.",
     },
     built: {
-      pt: "Uma estrutura de aquisição e conteúdo conectada a dashboards de performance.",
-      en: "An acquisition and content structure connected to performance dashboards.",
+      pt: "Proposta de uma estrutura de aquisição e conteúdo conectada a dashboards de performance.",
+      en: "A proposal for an acquisition and content structure connected to performance dashboards.",
     },
     outcome: {
-      pt: "Arquitetura de crescimento conectada à estrutura digital.",
-      en: "A growth architecture connected to the digital structure.",
+      pt: "Proposta de crescimento conectada à estrutura digital.",
+      en: "A proposed growth system connected to the digital structure.",
     },
     outcomeType: "architecture",
     order: 5,
@@ -126,12 +125,12 @@ export const SEED_PROJECTS: Project[] = [
       en: "Repetitive tasks and rework draining the team every day.",
     },
     built: {
-      pt: "Fluxos automáticos que conectam as ferramentas e fazem a informação circular sozinha.",
-      en: "Automatic flows connecting the tools so information moves on its own.",
+      pt: "Proposta de fluxos automáticos para conectar ferramentas e fazer a informação circular sem repasses manuais.",
+      en: "A proposal for automated flows connecting tools so information moves without manual handoffs.",
     },
     outcome: {
-      pt: "Arquitetura de automação conectando processos e sistemas.",
-      en: "An automation architecture connecting processes and systems.",
+      pt: "Proposta de automação conectando processos e sistemas.",
+      en: "A proposed automation system connecting processes and platforms.",
     },
     outcomeType: "architecture",
     order: 6,

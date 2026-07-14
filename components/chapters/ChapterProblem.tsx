@@ -57,7 +57,7 @@ export function ChapterProblem() {
         </ul>
 
         <Reveal inView className="mt-[12vh] flex">
-          <CtaStructure />
+          <CtaStructure placement="problem" />
         </Reveal>
       </div>
     </section>

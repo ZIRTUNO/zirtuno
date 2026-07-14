@@ -61,8 +61,8 @@ export function ChapterEcosystem() {
         </ul>
 
         <Reveal inView className="flex flex-wrap items-center gap-x-8 gap-y-4">
-          <CtaStructure />
-          <CtaPortfolio />
+          <CtaStructure placement="ecosystem" />
+          <CtaPortfolio placement="ecosystem" />
         </Reveal>
       </div>
     </section>

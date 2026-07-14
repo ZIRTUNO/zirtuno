@@ -2,8 +2,8 @@
  * Sanity schema for the portfolio (S7.4). Authored as plain objects, which are
  * valid Studio schema types. To mount an editing Studio at /studio you'll add
  * `sanity` + `next-sanity` (NOT in the locked S0.2 deps — ask before adding)
- * and pass `schemaTypes` to defineConfig. Until then the site reads from the
- * seed in lib/content/projects.ts.
+ * and pass `schemaTypes` to defineConfig. Without configured Sanity content,
+ * production portfolio surfaces deliberately render an honest empty state.
  */
 
 const CATEGORY_OPTIONS = [

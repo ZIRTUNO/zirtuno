@@ -52,8 +52,8 @@ export function Hero() {
         </Reveal>
 
         <Reveal delay={1.1} y={12} duration={0.7} className="mt-10 flex flex-wrap items-center gap-x-8 gap-y-4">
-          <CtaAnalysis />
-          <CtaPortfolio />
+          <CtaAnalysis placement="hero" />
+          <CtaPortfolio placement="hero" />
         </Reveal>
       </div>
 

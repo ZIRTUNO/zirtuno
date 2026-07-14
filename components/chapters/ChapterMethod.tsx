@@ -60,8 +60,8 @@ export function ChapterMethod() {
 
       <div className="page-x pb-24 md:pb-32">
         <Reveal inView className="flex flex-wrap items-center gap-x-8 gap-y-4">
-          <CtaAnalysis />
-          <CtaTalk variant="secondary" />
+          <CtaAnalysis placement="method" />
+          <CtaTalk variant="secondary" placement="method" />
         </Reveal>
       </div>
     </section>

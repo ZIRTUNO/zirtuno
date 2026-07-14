@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "prebuild": "node scripts/verify-production-env.mjs --if-production",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
@@ -11,13 +12,13 @@
     "forms:melts": "node scripts/capture-morph-frames.mjs",
     "forms:cursor": "node scripts/capture-cursor-merge.mjs",
     "chapters:sheet": "node scripts/capture-chapters.mjs",
-    "endpoints": "node scripts/generate-morph-endpoints.mjs"
+    "endpoints": "node scripts/generate-morph-endpoints.mjs",
+    "verify:production": "node scripts/verify-production-env.mjs"
   },
   "dependencies": {
     "@gsap/react": "^2.1.2",
     "@hookform/resolvers": "^5.4.0",
     "@sanity/client": "^7.23.0",
-    "@sanity/image-url": "^2.1.1",
     "clsx": "^2.1.1",
     "gsap": "^3.15.0",
     "lenis": "^1.3.25",

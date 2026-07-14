@@ -2,8 +2,7 @@ import { useTranslations } from "next-intl";
 import { PILLARS } from "@/lib/content/services";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://zirtuno.com";
-const INSTAGRAM =
-  process.env.NEXT_PUBLIC_INSTAGRAM_URL ?? "https://www.instagram.com/zirtuno/";
+const INSTAGRAM = process.env.NEXT_PUBLIC_INSTAGRAM_URL?.trim();
 const escapeJsonForScript = (value: string) =>
   value
     .replace(/</g, "\\u003c")
@@ -24,7 +23,7 @@ export function JsonLd({ locale }: { locale: string }) {
     name: "Zirtuno",
     url: `${SITE_URL}/${locale}`,
     description: tm("description"),
-    sameAs: [INSTAGRAM],
+    ...(INSTAGRAM ? { sameAs: [INSTAGRAM] } : {}),
     address: {
       "@type": "PostalAddress",
       addressLocality: "Curitiba",

@@ -34,17 +34,29 @@ export async function ChapterWork() {
         </p>
       </Reveal>
 
-      <div className="mt-12 grid gap-8 sm:grid-cols-2">
-        {projects.map((p, i) => (
-          <Reveal inView key={p.slug} delay={Math.min(i, 3) * 0.05}>
-            <ProjectCard project={p} />
-          </Reveal>
-        ))}
-      </div>
+      {projects.length > 0 ? (
+        <>
+          <div className="mt-12 grid gap-8 sm:grid-cols-2">
+            {projects.map((project, index) => (
+              <Reveal
+                inView
+                key={project.slug}
+                delay={Math.min(index, 3) * 0.05}
+              >
+                <ProjectCard project={project} />
+              </Reveal>
+            ))}
+          </div>
 
-      <Reveal inView className="mt-12 flex">
-        <CtaPortfolio />
-      </Reveal>
+          <Reveal inView className="mt-12 flex">
+            <CtaPortfolio placement="work" />
+          </Reveal>
+        </>
+      ) : (
+        <Reveal inView as="p" className="mt-12 max-w-2xl text-body-l text-paper-mute">
+          {t("emptyPortfolio")}
+        </Reveal>
+      )}
     </section>
   );
 }

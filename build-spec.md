@@ -3,11 +3,11 @@
 > Product, experience, architecture, and delivery specification for the
 > redeveloped “One Continuous Liquid” website.
 >
-> Version date: 2026-07-09.
+> Version date: 2026-07-10.
 >
-> Current implementation baseline: R5-A and R5-B complete. R5-C, R5-D, and
-> R5-E remain delivery work. This document describes the final target while
-> labeling current and planned states explicitly.
+> Current implementation baseline: R5-A, R5-B, R5-C, and R5-D are complete.
+> R5-E hardening and launch truth remain active delivery work. This document
+> describes both the protected implementation and unfinished acceptance work.
 
 ## 0. How to Use This Document
 
@@ -67,8 +67,8 @@ conductor owns the same droplets from Hero through Footer. The visual system
 gains real fluid dynamics, then R5-C optics and R5-D cinematic scoring.
 
 The old `LiquidSite`, `MethodFlow`, `OriginFlow`, and contact canvas model is
-retired. Current aggregate scene modules reproduce their choreography inside
-the conductor while the final scene split is still pending.
+retired. Seven coordinated scene modules now carry the choreography through
+the true page bottom inside the conductor.
 
 ### 1.3 What is discarded
 
@@ -264,7 +264,7 @@ cinematic language. R5-D’s `Reveal variant="blur"` is reserved for Soul and
 Invitation copy; it fades opacity, translates gently, and resolves blur
 8px → 0. Reduced motion removes transform, blur, scrub, and flash.
 
-### 4.5 Cinematic light score — TARGET R5-D
+### 4.5 Cinematic light score — CURRENT R5-D
 
 The conductor merges scene contributions into:
 
@@ -361,13 +361,11 @@ Scene rules:
 - adjacent scenes overlap only through explicit presence windows;
 - scene form claims honor the arbiter instead of assuming availability.
 
-**CURRENT transitional modules:** `site`, `method`, `origin`, `contact`.
-
-**TARGET R5-D modules:** shared `types`/`targets` vocabulary plus
-`hero`, `problem`, `ecosystem`, `services`, `method`, `work`,
-`origin`, `studio`, `contact`, and `footer` where finer ownership materially
-improves the ten transitions. Split behavior, not merely files: preserve the
-current verified choreography while moving one transition at a time.
+**CURRENT modules:** `site`, `method`, `work`, `origin`, `studio`, `contact`,
+and `footer`. The aggregate `site` scene owns Hero through Services; dedicated
+modules take over where the later acts need independent geometry and score.
+This split is behavior-led rather than chapter-count-led and is protected by
+the conductor and cinematic verification harnesses.
 
 ### 5.5 Conductor — CURRENT R5-A
 
@@ -434,9 +432,9 @@ lighting. It supports:
 The exact math, state registry, bridge behavior, and assets live in
 `metaball-morph-spec.md`.
 
-### 5.8 Optics v2 — TARGET R5-C
+### 5.8 Optics v2 — CURRENT R5-C
 
-Add a post chain beside the existing renderer:
+The renderer includes a post chain beside the direct path:
 
 ```text
 scene → RGBA16F when supported, otherwise RGBA8
@@ -466,16 +464,9 @@ New shader controls, identity by default:
 A true key-light re-aim requires an explicit owner decision and new exact visual
 baseline.
 
-### 5.9 Tiers and energy — CURRENT plus TARGET
+### 5.9 Tiers and energy — CURRENT R5-C
 
-**CURRENT selection:**
-
-- full: glass, DPR up to 2;
-- lite: flat cyan, DPR 1;
-- none: no WebGL2 or probe failure, static SVG;
-- runtime watchdog may lower full → lite → half-resolution while staying live.
-
-**TARGET after R5-C:**
+**Current ladder:**
 
 - full: glass + post + depth;
 - full-nofx: glass without post;
@@ -664,13 +655,15 @@ Homepage cards include:
 Full `/work` provides category filters. `/work/[slug]` includes Challenge,
 Architecture Built, Outcome, Credits, and Next Project.
 
-**Liquid — TARGET R5-D:** evolution satellites become a quiet current behind
+**Liquid — CURRENT R5-D:** evolution satellites become a quiet current behind
 the grid. Hover/focus pulls a restrained meniscus toward the active card.
 The liquid presents the work; it never replaces crawlable cards or media.
 
-**Content status:** current seed projects are prototypes. Baked form stills are
-approved placeholder art while real media arrives, but prototypes are not
-approved launch proof.
+**Content status:** current seed projects are selected-architecture concept
+studies available only through explicit non-production demo mode. Every seed
+surface carries the persistent concept label. Production never falls back to
+them: missing or failed Sanity content yields a truthful empty state. Baked
+form stills remain approved placeholder art only for the labeled demo set.
 
 **Acceptance:**
 
@@ -706,7 +699,7 @@ The Zéfiro/Ventura etymology remains a single dim grace note unless the owner
 chooses otherwise. Three founding pillars are the WHY; seven services are the
 HOW. Never style or count them as the same system.
 
-**Flash — TARGET R5-D:** exact mark fusion triggers the site’s one controlled
+**Flash — CURRENT R5-D:** exact mark fusion triggers the site’s one controlled
 cyan-white flash, then afterglow. It fires once per traversal and never under
 reduced motion.
 
@@ -717,7 +710,7 @@ reduced motion.
 - pillar labels remain understated and distinct from services;
 - wordmark particles resolve legibly in both locales;
 - static/reduced-motion mode presents all beats as a plain reading sequence;
-- flash and blur-reveal gates pass after R5-D.
+- flash and blur-reveal gates pass.
 
 ### 6.8 Chapter 08 — The Studio
 
@@ -730,7 +723,7 @@ Sections:
 - Why: closing purpose line;
 - CTA: `cta.talk`.
 
-**Liquid — TARGET R5-D:** Origin echo satellites persist behind the roles grid,
+**Liquid — CURRENT R5-D:** Origin echo satellites persist behind the roles grid,
 settling from afterglow into quiet presence. Copy stays dominant.
 
 **Acceptance:**
@@ -755,12 +748,14 @@ Content:
 - WhatsApp, domain email, and approved social paths.
 
 **Liquid:** every surviving droplet gathers into the exact resting mark above
-the form. A valid submit emits the exhale as additive success feedback.
+the form. Confirmed delivery emits the exhale as additive success feedback.
 R5-D completes the gather from Studio; the Footer release sends one droplet
 beyond the page, sharing identity with the 404’s lone drop.
 
-**Submission:** validate with zod, send with Resend, optionally store in Sanity,
-retain form state on error, announce error/success accessibly, include intent.
+**Submission:** validate with zod, bound the streamed body, rate-limit and
+idempotently send with a stable per-submission ID, confirm delivery before
+success, retain form state on error or accepted/pending delivery, verify final
+provider webhooks, announce every state accessibly, include intent.
 
 **Acceptance:**
 
@@ -829,7 +824,9 @@ Never upgrade a narrative to a metric for visual impact.
 
 ### 7.4 Contact and environment truth
 
-Local development may use configured fallbacks, but production requires:
+Local development may omit launch integrations and may enable the explicit
+portfolio demo source. Production has no prototype/contact fallbacks and
+requires:
 
 - real Sanity project configuration or approved static real content;
 - verified Resend sender and delivery address;
@@ -942,9 +939,9 @@ Protected gates:
 - NaN-free long simulation;
 - owner feel review remains the authority for future tuning.
 
-### R5-C — Optics v2 — NEXT
+### R5-C — Optics v2 — COMPLETE
 
-Build:
+Delivered:
 
 - framebuffer/post infrastructure;
 - bright pass, separable bloom, composite;
@@ -954,7 +951,7 @@ Build:
 - `?fgrade=0`;
 - `verify-postfx.mjs`.
 
-Gates:
+Protected gates:
 
 - `forms:rest` exact; stop immediately if it moves;
 - `?fgrade=0` readPixels-identical to the pre-C renderer;
@@ -964,9 +961,9 @@ Gates:
 - context-loss recovery verified;
 - 3–6 owner screenshot rounds for bloom/depth/grain.
 
-### R5-D — Cinematic Cut and New Scenes
+### R5-D — Cinematic Cut and New Scenes — COMPLETE
 
-Build:
+Delivered:
 
 - `CinematicVeils` and light-score application;
 - dedicated act/chapter scene behavior where needed;
@@ -978,7 +975,7 @@ Build:
 - act-boundary fades;
 - full-page diagnostic coverage.
 
-Gates:
+Protected gates:
 
 - exactly one flash per normal traversal;
 - zero flash under reduced motion;
@@ -1037,7 +1034,8 @@ node scripts/verify-perf.mjs
 node scripts/capture-transition-diagnostics.mjs
 ```
 
-R5-C adds `verify-postfx.mjs`. R5-D extends transition diagnostics to all acts.
+R5-C is protected by `verify-postfx.mjs` and `verify-rest-exact.mjs`. R5-D is
+protected by `verify-cinematics.mjs` and the full-page transition diagnostics.
 
 ### 10.3 Current query API
 
@@ -1051,15 +1049,15 @@ R5-C adds `verify-postfx.mjs`. R5-D extends transition diagnostics to all acts.
 | `?ftier=full|lite|none` | tier override |
 | `?feco=c` | freeze ecosystem progress `c ∈ [0,1]` |
 | `?fphys=0` | legacy integrator bypass |
+| `?fgrade=0` | exact optics/grade bypass |
+| `?fgov=0` | disable the idle energy governor for QA |
+| `?fcine=0` | disable cinematic scoring, veils, and flash |
 
 `window.__liquid` exposes current site channels and `window.__scenes` exposes
 all live scene channels for diagnostics.
 
-After R5-C:
-
-- `?fgrade=0` must bypass all grade/post changes exactly.
-- tier overrides must include the final full-nofx behavior or an equivalent
-  deterministic harness control.
+`?fgrade=0` must bypass all grade/post changes exactly. The post-effects
+harness drills full-nofx demotion deterministically through its diagnostics.
 
 ## 11. File Architecture
 
@@ -1076,6 +1074,7 @@ components/
   field/
     PageStage.tsx          conductor shell, geometry, inputs, one canvas
     FieldStage.tsx         WebGL renderer
+    CinematicVeils.tsx     fixed R5-D page-light consumers
   hero/                    hero shell + deterministic QA renderers
 
 lib/
@@ -1088,11 +1087,16 @@ lib/
     sdf-*.{ts,mjs}         exact SDF and unified glass field
     symbols.{ts,data.mjs}  exact form registry and endpoints
     field-tier.ts          runtime probe/session tier
+    post-chain.ts          R5-C framebuffer lifecycle and passes
+    post-shaders.mjs       R5-C bright/blur/composite shaders
     scenes/
       site.ts
       method.ts
+      work.ts
       origin.ts
+      studio.ts
       contact.ts
+      footer.ts
       types.ts
       geom.ts
 
@@ -1101,32 +1105,11 @@ references/morphs/         owner sources, traced endpoints, manifest
 scripts/                   capture and verification harnesses
 ```
 
-### 11.2 Target additions/reorganization
+### 11.2 R5-E additions/reorganization
 
-```text
-components/field/
-  CinematicVeils.tsx       R5-D fixed score consumers
-
-lib/webgl/
-  post-chain.ts            R5-C FBO lifecycle/passes
-  post-shaders.mjs         R5-C bright/blur/composite shaders
-  light-score.ts           R5-D score helpers if separation is useful
-  scenes/
-    targets.ts             shared target vocabulary
-    hero.ts
-    problem.ts
-    ecosystem.ts
-    services.ts
-    method.ts
-    work.ts
-    origin.ts
-    studio.ts
-    contact.ts
-    footer.ts
-```
-
-This is a target boundary, not a mandate to create empty files. Split current
-aggregate scenes transition-by-transition while keeping every gate green.
+R5-E may add bounded production-readiness helpers, tests, and telemetry beside
+the current architecture. It does not require a finer per-chapter scene split,
+a second visual engine, or a replacement renderer.
 
 ## 12. Open Decisions and Defaults
 

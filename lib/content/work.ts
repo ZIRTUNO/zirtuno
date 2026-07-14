@@ -7,34 +7,63 @@ import {
 } from "@/lib/sanity/queries";
 import { SEED_PROJECTS } from "./projects";
 import type { Project, ProjectCategory } from "@/lib/sanity/types";
+import { unstable_cache } from "next/cache";
 
-// Data-access layer for the portfolio. Tries Sanity; falls back to the local
-// seed so the site is fully functional and deployable without a CMS connected.
+// Portfolio source policy:
+// - production always reads Sanity and fails closed to empty content;
+// - local concept data is available only through an explicit, non-production
+//   demo mode. It is never a silent fallback for CMS failures.
+const isDemoPortfolio =
+  process.env.NODE_ENV !== "production" &&
+  process.env.PORTFOLIO_DEMO_MODE === "true";
+let hasReportedMissingClient = false;
+
+// Sanity-backed proof may update without a deploy, but it should not add a CMS
+// round trip to every page request. Query + params are part of the cache key;
+// approved edits become visible within five minutes (or an explicit tag purge).
+const fetchSanityCached = unstable_cache(
+  async (query: string, params: Record<string, unknown>) =>
+    sanityClient ? sanityClient.fetch<unknown>(query, params) : null,
+  ["zirtuno-portfolio"],
+  { revalidate: 300, tags: ["portfolio"] },
+);
 
 async function fromSanity<T>(
   query: string,
   params: Record<string, unknown> = {},
 ): Promise<T | null> {
-  if (!sanityClient) return null;
+  if (!sanityClient) {
+    if (process.env.NODE_ENV === "production" && !hasReportedMissingClient) {
+      hasReportedMissingClient = true;
+      console.error(
+        "[portfolio] Sanity is not configured; publishing no project content.",
+      );
+    }
+    return null;
+  }
   try {
-    return await sanityClient.fetch<T>(query, params);
-  } catch {
+    return (await fetchSanityCached(query, params)) as T;
+  } catch (error) {
+    console.error(
+      "[portfolio] Sanity request failed; publishing no project content.",
+      error,
+    );
     return null;
   }
 }
 
 export async function getAllProjects(): Promise<Project[]> {
+  if (isDemoPortfolio) return SEED_PROJECTS;
   const remote = await fromSanity<Project[]>(allProjectsQuery);
-  return remote && remote.length ? remote : SEED_PROJECTS;
+  return remote ?? [];
 }
 
 export async function getFeaturedProjects(limit = 4): Promise<Project[]> {
+  if (isDemoPortfolio) {
+    return SEED_PROJECTS.filter((project) => project.featured).slice(0, limit);
+  }
   const remote = await fromSanity<Project[]>(featuredProjectsQuery);
-  const list =
-    remote && remote.length
-      ? remote
-      : SEED_PROJECTS.filter((p) => p.featured);
-  return list.slice(0, limit);
+  return (remote ?? []).slice(0, limit);
 }
 
 export async function getProjectsByCategory(
@@ -48,14 +77,17 @@ export async function getProjectsByCategory(
 }
 
 export async function getProjectBySlug(slug: string): Promise<Project | null> {
+  if (isDemoPortfolio) {
+    return SEED_PROJECTS.find((project) => project.slug === slug) ?? null;
+  }
   const remote = await fromSanity<Project | null>(projectBySlugQuery, { slug });
-  if (remote) return remote;
-  return SEED_PROJECTS.find((p) => p.slug === slug) ?? null;
+  return remote ?? null;
 }
 
 export async function getAllProjectSlugs(): Promise<string[]> {
+  if (isDemoPortfolio) return SEED_PROJECTS.map((project) => project.slug);
   const remote = await fromSanity<string[]>(projectSlugsQuery);
-  return remote && remote.length ? remote : SEED_PROJECTS.map((p) => p.slug);
+  return remote ?? [];
 }
 
 /** Next project for the case-study footer (wraps around). */

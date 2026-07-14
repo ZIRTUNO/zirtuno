@@ -195,7 +195,7 @@ the complete story and conversion path usable without the canvas.
 - `lib/webgl/` — exact SDFs, symbols, driver kernel, conductor, physics,
   renderer shaders, tiers, and scene modules.
 - `lib/i18n/messages/` — authoritative PT-BR and EN copy.
-- `lib/content/` and `lib/sanity/` — project fallbacks and CMS integration.
+- `lib/content/` and `lib/sanity/` — project sources and CMS integration.
 - `public/brand/` — runtime mark, seven form SVGs, and baked form stills.
 - `references/morphs/` — owner originals, traced endpoints, previews, manifest.
 - `scripts/` — deterministic capture and machine-verification harnesses.
@@ -212,6 +212,7 @@ npm run dev
 npm run build
 npm run lint
 npx tsc --noEmit
+npm run verify:production # launch env, CMS, contact, identity, analytics gate
 ```
 
 The visual harnesses launch or reuse a dev server:
@@ -261,13 +262,23 @@ images; a green process exit does not replace visual judgment.
 ## Content and Environment
 
 Copy belongs only in the two locale message files. Do not hard-code shipped
-text in components. Sanity may fall back to prototype data during local
-development, and the contact endpoint may expose a clear configuration error,
-but production cannot launch on prototype facts, placeholder contact details,
-or unverified outcomes.
+text in components. Local concept studies are available only when
+`PORTFOLIO_DEMO_MODE=true` in a non-production environment. Missing or failed
+Sanity access in production fails closed to an honest empty portfolio; it
+never falls back to prototype proof. Contact reports success only after Resend
+confirms delivery. Safe retries reuse a stable per-submission identity and
+byte-equivalent provider payload; accepted-but-unconfirmed mail keeps the form
+intact and is tracked to a signature-verified webhook for final delivery/bounce
+alerts. Both public contact endpoints enforce actual streamed-body ceilings.
+Vercel production builds run the readiness gate automatically and cannot ship
+with placeholder contact identity, an unverified delivery path, or an
+unattested rate-limit/firewall rule. Plausible is optional while developing,
+but the production gate requires its approved domain/script so CTA, contact,
+case, locale, and field Web Vitals events are observable without submitted
+content.
 
-See `.env.local.example` for the current variables. Treat its existing
-fallback values as development conveniences, not approved production content.
+See `.env.local.example` for the current variables. Treat its local demo mode
+as a review convenience, never as approved production proof.
 
 ## Cleanup and Decision Policy
 

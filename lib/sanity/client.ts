@@ -1,7 +1,8 @@
 import { createClient, type SanityClient } from "@sanity/client";
 
-// Guarded: returns null when Sanity isn't configured so the site still builds
-// and renders (falling back to seeded prototype projects, see lib/content/work).
+// Guarded: a missing client leaves portfolio surfaces empty in production.
+// Explicit local concept mode is selected in lib/content/work.ts and is never
+// used as a production CMS fallback.
 const projectId = process.env.NEXT_PUBLIC_SANITY_PROJECT_ID;
 const dataset = process.env.NEXT_PUBLIC_SANITY_DATASET ?? "production";
 

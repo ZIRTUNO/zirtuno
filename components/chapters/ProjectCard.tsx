@@ -20,13 +20,21 @@ export function ProjectCard({ project }: { project: Project }) {
 
   const title = localize(project.title, locale);
   const categories = project.category.map((c) => t(`categories.${c}`));
+  const isSelectedArchitecture =
+    project.prototype || project.outcomeType === "architecture";
 
   return (
     <Link
       href={`/work/${project.slug}`}
       data-cursor="hover"
+      data-analytics-event="case_open"
+      data-analytics-project={project.slug}
       className="project-card"
-      aria-label={title}
+      aria-label={
+        isSelectedArchitecture
+          ? t("architectureCardLabel", { title })
+          : title
+      }
     >
       <div className="project-preview">
         {project.previewImage ? (
@@ -52,6 +60,11 @@ export function ProjectCard({ project }: { project: Project }) {
             </span>
           </>
         )}
+        {isSelectedArchitecture && (
+          <span className="project-arch project-preview-status">
+            {t("architectureLabel")}
+          </span>
+        )}
       </div>
 
       <div className="project-body">
@@ -67,15 +80,13 @@ export function ProjectCard({ project }: { project: Project }) {
         )}
 
         <div className="project-outcome">
-          {project.outcomeType === "architecture" ? (
-            <span className="project-arch">{t("architectureLabel")}</span>
-          ) : (
-            <p>{localize(project.outcome, locale)}</p>
-          )}
+          <p>{localize(project.outcome, locale)}</p>
         </div>
 
         <span className="project-cta cta cta-ghost">
-          <span className="cta-label">{t("ctaCard")}</span>
+          <span className="cta-label">
+            {t(isSelectedArchitecture ? "ctaArchitecture" : "ctaCard")}
+          </span>
           <span className="cta-arrow" aria-hidden="true">
             →
           </span>
