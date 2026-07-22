@@ -1,7 +1,6 @@
 {
-  "note": "pre-R5-C reference at /en?feco=0.55&ftier=full, 1440x900 dsf1; liquid-field metrics were derived from the original reference PNG so DOM typography is excluded",
-  "referencePngSha256": "eaf0cfdb25c51b7624dd959f8648034dc1725658e18b508c2e250881ac9d810f",
-  "date": "2026-07-10T06:17:52.894Z",
+  "note": "grade-bypass reference at /en?feco=0.55&ftier=full&fgrade=0, 1440x900 dsf1; renderer-only field sample",
+  "date": "2026-07-22T04:02:08.351Z",
   "viewport": {
     "w": 1440,
     "h": 900
@@ -18,11 +17,12 @@
     "w": 320,
     "h": 600
   },
-  "globalMean": 14.564,
-  "cropMean": 59.576,
-  "fieldMean": 52.397,
-  "fieldBlackFrac": 0.7173,
-  "blackFrac": 0.9147,
-  "spreadGlobal": 0.141,
-  "spreadCrop": 6.688
+  "globalMean": 19.726,
+  "cropMean": 57.933,
+  "fieldMean": 51.766,
+  "fieldBlackFrac": 0.721,
+  "blackFrac": 0.8898,
+  "spreadGlobal": 0.113,
+  "spreadCrop": 4.495,
+  "spreadField": 0.765
 }

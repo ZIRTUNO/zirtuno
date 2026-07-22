@@ -48,6 +48,11 @@ export default async function HomePage({
         nodes={ecoNodes}
         centerLabel={tEco("centerLabel")}
         ecosystemLabel={tEco("headline")}
+        systems={[
+          tEco("systems.identity"),
+          tEco("systems.growth"),
+          tEco("systems.operation"),
+        ]}
         pillars={pillars}
       >
         <Hero />

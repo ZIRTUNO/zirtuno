@@ -68,6 +68,11 @@
     "headline": "We build digital ecosystems, not loose pieces.",
     "lead": "Everything connected around your business. Each part strengthens the others: the brand feeds the site, the site feeds traffic, traffic feeds the CRM, AI accelerates service, automation connects processes, and dashboards show it all in real time.",
     "centerLabel": "Your business",
+    "systems": {
+      "identity": "Identity",
+      "growth": "Growth",
+      "operation": "Operation"
+    },
     "nodes": [
       {
         "name": "Brand",

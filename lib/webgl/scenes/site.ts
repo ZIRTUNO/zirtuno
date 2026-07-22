@@ -27,12 +27,24 @@ import {
   wideScatter,
   clusterTargets,
   convergeEnvelopes,
-  ECO_NODES,
   ORGANISM_SCALE,
-  TENDRIL_START,
-  ecoSpreadX,
-  ecoNodePos,
 } from "../phys.mjs";
+import {
+  socketPos,
+  ringPoint,
+  arteryPoint,
+  nodeTiming,
+  arteryTiming,
+  edgeTiming,
+  env as circuitEnv,
+  closurePulse,
+  DOCK_OF,
+  ARTERY_OF,
+  RING_PHASE,
+  RING_SPEED,
+  ARTERY_PERIOD,
+  ECO_N,
+} from "../eco-circuit.mjs";
 import type { ScatterTarget } from "../phys.mjs";
 import {
   STAGGER,
@@ -134,7 +146,6 @@ export function makeSiteScene(cbs: SiteCallbacks = {}): SceneModule {
   let convP = 1; // p = 1 - converge
   let rEnv = 0;
   let shed = 1;
-  let sx = 1;
   let hp = 0; // damped heroPhase
   let grow = 0;
   let ambW = 1;
@@ -186,6 +197,7 @@ export function makeSiteScene(cbs: SiteCallbacks = {}): SceneModule {
       heroOx: 0,
       heroOy: 0,
       heroScale: 0.5,
+      hov: -1, // hovered/focused circuit organ (slot index; -1 = none)
     },
     // raw passthroughs: the pair triple self-manages its snap-or-damp; the
     // hero machine inputs are events/geometry applied 1:1 (as today)
@@ -204,6 +216,7 @@ export function makeSiteScene(cbs: SiteCallbacks = {}): SceneModule {
       heroOx: false,
       heroOy: false,
       heroScale: false,
+      hov: false, // discrete organ index — never damp across slots
     },
     anchors: {
       hero: "#hero",
@@ -475,7 +488,6 @@ export function makeSiteScene(cbs: SiteCallbacks = {}): SceneModule {
       const env = convergeEnvelopes(convP);
       rEnv = env.rEnv;
       shed = env.shed;
-      sx = ecoSpreadX(aspect);
 
       // ambient calm — always alive, calmer where a composition must read
       ambW = (1 - 0.5 * smooth01(c) * (1 - SP)) * (1 - 0.35 * SP) * EXW;
@@ -574,35 +586,73 @@ export function makeSiteScene(cbs: SiteCallbacks = {}): SceneModule {
         bindJ = 1; // the §3.3 bridge is analytic-exact — physics hands off
         clusJ = -1;
       } else if (i < 40) {
-        // tendrils: the same droplets feed the capabilities once resolved
-        const nIdx = i % 10;
-        const e = (1 - SP) * smooth01((grow - nIdx * 0.055) / 0.32);
+        // THE CIRCULATION (S4 remake): the same droplets become the blood of
+        // the capability circuit — docks hold each organ's socket, supply
+        // beads ride the three arteries outward, and eighteen beads circulate
+        // the closed vein loop. Geometry and timing come from eco-circuit so
+        // the liquid, the SVG veins and the labels can never drift apart.
+        const hov = ctx.ch.hov ?? -1;
+        const fadeSvc = 1 - SP;
+        let txp = 0;
+        let typ = 0;
+        let trp = 0;
+        let e = 0;
+        const dock = DOCK_OF(i);
+        const artery = ARTERY_OF(i);
+        if (dock >= 0) {
+          // one droplet holds each organ's socket — a held drop, not a sticker
+          e = circuitEnv(grow, nodeTiming(dock)) * fadeSvc;
+          const p = socketPos(dock, aspect);
+          txp = p.x;
+          typ = p.y;
+          const swell = hov === dock ? 1.55 : 1;
+          trp =
+            (0.0105 + 0.0015 * Math.sin(t * 0.9 + dock * 1.7)) *
+            swell *
+            (1 + closurePulse(grow, dock / ECO_N) * 0.5);
+        } else if (artery >= 0) {
+          // supply pulses: born at the mark's edge, absorbed at the organ
+          e = circuitEnv(grow, arteryTiming(artery)) * fadeSvc;
+          const k = (i - 10) % 4;
+          const f =
+            (t / ARTERY_PERIOD + k / 4 + artery * 0.31) % 1;
+          const reach = circuitEnv(grow, arteryTiming(artery));
+          const p = arteryPoint(artery, f * reach, aspect);
+          txp = p.x;
+          typ = p.y;
+          trp = 0.012 * (0.35 + 0.65 * Math.sin(Math.PI * f));
+        } else {
+          // the loop: a slow, deliberate metabolism around the whole ring
+          const u = (RING_PHASE(i) + t * RING_SPEED) % 1;
+          const seg = Math.floor(u * ECO_N) % ECO_N;
+          const segE = circuitEnv(grow, edgeTiming(seg));
+          e = segE * fadeSvc;
+          const p = ringPoint(u, aspect);
+          txp = p.x;
+          typ = p.y;
+          // the closure pulse brightens the band as the loop seals; a hovered
+          // organ quickens its neighbourhood — the system responds as one
+          const near =
+            hov >= 0
+              ? smooth01(
+                  (0.14 -
+                    Math.min(
+                      Math.abs(u - hov / ECO_N),
+                      1 - Math.abs(u - hov / ECO_N),
+                    )) /
+                    0.14,
+                )
+              : 0;
+          trp =
+            0.0085 *
+            (0.7 + 0.3 * Math.sin(t * 1.3 + i * 2.1)) *
+            (1 + closurePulse(grow, u) * 0.9 + near * 0.5);
+        }
         if (e > 0.001) {
-          const node = ECO_NODES[nIdx];
-          const na = ((node.ang - 90) * Math.PI) / 180;
-          const np = ecoNodePos(nIdx, aspect);
-          const sxp = 0.5 + Math.cos(na) * sx * TENDRIL_START;
-          const syp = 0.5 - Math.sin(na) * TENDRIL_START;
-          const bead = (i / 10) | 0;
-          let txp: number;
-          let typ: number;
-          let trp: number;
-          if (bead === 3) {
-            txp = np.x;
-            typ = np.y;
-            trp = 0.012;
-          } else {
-            // marching beads: born at the organism's edge, absorbed just
-            // short of the node — a continuous outward pulse
-            const fr = (bead + ((t * 0.3 + nIdx * 0.618) % 1)) / 3;
-            txp = sxp + (np.x - sxp) * fr * 0.9;
-            typ = syp + (np.y - syp) * fr * 0.9;
-            trp = 0.015 * (0.45 + 0.55 * Math.sin(Math.PI * fr));
-          }
           jx += (txp - jx) * e;
           jy += (typ - jy) * e;
-          jr = jr * (1 - e) + trp * e;
-          // tendril beads march exact paths — mostly protected from forces
+          jr = jr * (1 - e) + trp * e * VARY[i] ** 0.35;
+          // circuit beads ride exact paths — mostly protected from forces
           bindJ = Math.max(bindJ, e * 0.9);
           if (e > 0.3) clusJ = -1;
         }

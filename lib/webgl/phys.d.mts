@@ -69,12 +69,4 @@ export declare function convergeEnvelopes(p: number): {
   shed: number;
 };
 
-export declare const ECO_NODES: { ang: number; r: number }[];
 export declare const ORGANISM_SCALE: number;
-export declare const TENDRIL_START: number;
-export declare const ecoSpreadX: (aspect: number) => number;
-export declare function ecoNodePos(
-  i: number,
-  aspect: number,
-): { x: number; y: number };
-export declare const ecoNodeEnv: (g: number, i: number) => number;

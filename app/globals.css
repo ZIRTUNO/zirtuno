@@ -1043,14 +1043,19 @@ section[id],
 }
 
 /* ===========================================================================
-   The Ecosystem — the ORGANISM's labels. They live in the journey layer,
-   anchored by the SAME ECO_NODES math as the liquid tendril beads, and only
-   enter after the organism has resolved. No SVG spokes, no orbit ring.
+   THE CIRCULATION (S4 remake) — the ecosystem as a circulatory system. SVG
+   veins (three arteries + one closed loop), organ sockets where the liquid
+   docks, instrument-grade labels along each socket's outward normal, and a
+   mission-control readout. Everything derives its envelope from TWO vars the
+   measurement loop writes (--eco-grow, --eco-fade) plus per-element --d/--w
+   timings that layout() copies from eco-circuit — the same clock the liquid
+   beads march to. Touching an organ sets data-pulse on the layer and the
+   brightening travels the graph via per-element --pd delays (BFS hops).
    =========================================================================== */
 .organism-center {
   position: absolute;
   left: 50%;
-  top: 81%;
+  top: 75%; /* inside the vein loop, clear of the bottom segments */
   transform: translateX(-50%);
   font-family: var(--font-mono);
   font-size: var(--text-mono-sm);
@@ -1060,7 +1065,54 @@ section[id],
   text-transform: uppercase;
   color: var(--color-cyan);
   white-space: nowrap;
-  opacity: 0; /* revealed with the tendrils (imperative) */
+  opacity: 0; /* revealed with the circuit (imperative) */
+}
+.eco-veins {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  display: none;
+}
+.eco-vein {
+  --e: clamp(0, (var(--eco-grow, 0) - var(--d, 0)) / var(--w, 1), 1);
+  fill: none;
+  stroke: var(--color-cyan);
+  stroke-width: 1;
+  stroke-linecap: round;
+  stroke-dasharray: var(--len, 2000);
+  stroke-dashoffset: calc(var(--len, 2000) * (1 - var(--e)));
+  opacity: calc(var(--e) * var(--eco-fade, 1) * 0.22);
+  transition: opacity 300ms var(--ease-arrive);
+}
+.eco-vein-artery {
+  stroke-width: 1.4;
+}
+.journey-interactions[data-pulse="true"] .eco-vein {
+  opacity: calc(var(--e) * var(--eco-fade, 1) * 0.55);
+  transition-delay: var(--pd, 0ms);
+}
+.eco-socket {
+  --e: clamp(0, (var(--eco-grow, 0) - var(--d, 0)) / var(--w, 1), 1);
+  opacity: calc(var(--e) * var(--eco-fade, 1));
+}
+.eco-socket-halo {
+  fill: none;
+  stroke: color-mix(in srgb, var(--color-cyan) 34%, transparent);
+  stroke-width: 1;
+  transform: scale(calc(0.4 + 0.6 * var(--e)));
+  transition:
+    stroke 260ms var(--ease-arrive),
+    transform 260ms var(--ease-arrive);
+}
+.eco-socket-core {
+  fill: var(--color-cyan);
+  opacity: 0.85;
+}
+.journey-interactions[data-pulse="true"] .eco-socket-halo {
+  stroke: color-mix(in srgb, var(--color-cyan) 80%, transparent);
+  transition-delay: var(--pd, 0ms);
 }
 .organism-nodes {
   position: absolute;
@@ -1068,58 +1120,74 @@ section[id],
   pointer-events: none;
 }
 .organism-node {
+  --e: clamp(0, (var(--eco-grow, 0) - var(--d, 0)) / var(--w, 1), 1);
   position: absolute;
   display: none;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.3rem;
-  transform: translate(-50%, -50%);
-  text-align: center;
-  opacity: 0; /* arrives with its tendril (imperative) */
+  opacity: calc(var(--e) * var(--eco-fade, 1));
   pointer-events: none;
+  white-space: nowrap;
 }
-/* the orbital labels need real room — below lg the eco-stack carries the
+/* the circuit needs real room — below lg the eco-stack carries the
    capabilities instead (in-app browsers and tablets included) */
 @media (min-width: 1024px) {
   .organism-node {
-    display: flex;
+    display: block;
   }
+  .eco-veins {
+    display: block;
+  }
+}
+.organism-node[data-side="right"] {
+  transform: translate(0, calc(-50% + (1 - var(--e)) * 6px));
+  text-align: left;
+}
+.organism-node[data-side="left"] {
+  transform: translate(-100%, calc(-50% + (1 - var(--e)) * 6px));
+  text-align: right;
+}
+.organism-node[data-side="top"] {
+  transform: translate(-50%, calc(-100% + (1 - var(--e)) * 6px));
+  text-align: center;
+}
+.organism-node[data-side="bottom"] {
+  transform: translate(-50%, calc((1 - var(--e)) * 6px));
+  text-align: center;
 }
 .journey-interactions[data-interactive="true"] .organism-node {
   pointer-events: auto;
 }
 .organism-node:focus-within {
   opacity: 1 !important;
-  transform: translate(-50%, -50%) !important;
   pointer-events: auto;
 }
+/* instrument annotation, not a sticker: no chip, no border — the hit area
+   is padding pulled back with negative margins so type sits on its anchor */
 .organism-node-trigger {
   display: inline-flex;
+  align-items: center;
+  gap: 0.5em;
   min-width: 44px;
   min-height: 44px;
-  align-items: center;
-  justify-content: center;
-  padding: 0.7rem 0.85rem;
-  border: 1px solid transparent;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--color-ink) 78%, transparent);
+  padding: 0.7rem 0.75rem;
+  margin: -0.7rem -0.75rem;
+  border: 0;
+  background: none;
   color: inherit;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
-  transition:
-    border-color 200ms var(--ease-arrive),
-    background 200ms var(--ease-arrive),
-    box-shadow 200ms var(--ease-arrive);
-}
-.organism-node-trigger:hover,
-.organism-node-trigger:focus-visible,
-.organism-node[data-open="true"] .organism-node-trigger {
-  border-color: color-mix(in srgb, var(--color-cyan) 54%, transparent);
-  background: color-mix(in srgb, var(--color-ink) 92%, transparent);
-  box-shadow: 0 0 22px -12px var(--color-cyan-glow);
 }
 .organism-node-trigger:focus-visible {
-  outline-offset: 3px;
+  outline-offset: 5px;
+  border-radius: 2px;
+}
+.organism-node-index {
+  font-family: var(--font-mono);
+  font-size: var(--text-mono-sm);
+  font-weight: 500;
+  line-height: var(--text-mono-sm--line-height);
+  letter-spacing: var(--text-mono-sm--letter-spacing);
+  font-variant-numeric: tabular-nums;
+  color: color-mix(in srgb, var(--color-cyan) 72%, transparent);
 }
 .organism-node-name {
   font-family: var(--font-mono);
@@ -1128,37 +1196,80 @@ section[id],
   line-height: var(--text-mono-sm--line-height);
   letter-spacing: var(--text-mono-sm--letter-spacing);
   text-transform: uppercase;
-  white-space: nowrap;
   color: var(--color-paper-mute);
-  transition: color 200ms var(--ease-arrive);
+  text-shadow: 0 1px 10px rgb(0 0 0 / 0.85);
+  transition: color 220ms var(--ease-arrive);
 }
 .organism-node:hover .organism-node-name,
 .organism-node:focus-within .organism-node-name,
 .organism-node[data-open="true"] .organism-node-name {
   color: var(--color-paper);
 }
+.journey-interactions[data-pulse="true"] .organism-node-name {
+  color: var(--color-paper);
+  transition-delay: var(--pd, 0ms);
+}
+/* the capability line reaches AT through aria-describedby; sighted users
+   read the same words in the HUD readout */
 .organism-node-cap {
-  max-width: 13rem;
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+/* the readout — quiet mission-control line, bottom-left of the stage */
+.eco-hud {
+  position: absolute;
+  left: clamp(1.5rem, 6vw, 5rem);
+  bottom: clamp(2.2rem, 7vh, 4.5rem);
+  display: none;
+  flex-direction: column;
+  gap: 0.4rem;
+  max-width: 22rem;
+  opacity: calc(
+    clamp(0, (var(--eco-grow, 0) - 0.1) / 0.18, 1) * var(--eco-fade, 1)
+  );
+  pointer-events: none;
+}
+@media (min-width: 1024px) {
+  .eco-hud {
+    display: flex;
+  }
+}
+.eco-hud-meter {
+  font-family: var(--font-mono);
+  font-size: var(--text-mono-sm);
+  line-height: var(--text-mono-sm--line-height);
+  letter-spacing: var(--tracking-label-wide);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-cyan);
+}
+.eco-hud-line {
+  font-family: var(--font-mono);
+  font-size: var(--text-mono-sm);
+  font-weight: 500;
+  line-height: var(--text-mono-sm--line-height);
+  letter-spacing: var(--text-mono-sm--letter-spacing);
+  text-transform: uppercase;
+  color: var(--color-paper);
+}
+.eco-hud-line b {
+  font-weight: 500;
+  color: var(--color-cyan);
+}
+.eco-hud-line i {
+  font-style: normal;
+  color: var(--color-paper-mute);
+}
+.eco-hud-cap {
   font-family: var(--font-sans);
   font-size: var(--text-body-s);
   line-height: var(--text-body-s--line-height);
   letter-spacing: var(--text-body-s--letter-spacing);
   color: var(--color-paper-mute);
-  padding: 0.55rem 0.7rem;
-  border: 1px solid var(--color-paper-faint);
-  background: color-mix(in srgb, var(--color-ink) 94%, transparent);
-  box-shadow: 0 8px 30px rgb(0 0 0 / 0.45);
-  opacity: 0;
-  transform: translateY(3px);
-  transition:
-    opacity 220ms var(--ease-arrive),
-    transform 220ms var(--ease-arrive);
-}
-.organism-node:hover .organism-node-cap,
-.organism-node:focus-within .organism-node-cap,
-.organism-node[data-open="true"] .organism-node-cap {
-  opacity: 1;
-  transform: translateY(0);
+  min-height: calc(var(--text-body-s--line-height) * 1em);
 }
 
 /* The capability stack — narrow viewports, static tiers and assistive tech.

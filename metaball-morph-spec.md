@@ -239,8 +239,16 @@ autocycle use the same bridge path and accessibility announcement.
 - `N = 48` canonical droplets;
 - the eight endpoint clouds;
 - stable per-droplet variation and `TAUP` mass/lag identity;
-- scatter, cluster, orbital, and ecosystem target vocabulary;
+- scatter and cluster target vocabulary;
 - a 12-droplet ambient family.
+
+`lib/webgl/eco-circuit.mjs` owns THE CIRCULATION (the S4 remake): the ring
+of ten organ sockets, the three arteries, the closed-loop parameterization,
+the assembly score (per-organ/vein `{d, w}` timings on the `grow` clock),
+the loop-closure pulse, the bead allocation for droplets `i < 40` (10 docks ·
+12 artery supply · 18 ring circulation), and the BFS response graph. The
+canvas beads, the SVG veins, and the DOM labels all evaluate these same
+functions — the liquid and the drawing cannot drift apart.
 
 Droplet `i` is the same conceptual droplet in Hero, Problem, Ecosystem,
 Services, Método, Work, Origin, Studio, Contact, and Footer. Scene handoffs
@@ -519,7 +527,7 @@ act boundaries. Keep those responsibilities separate.
 | Assembly/Hero      | exact mark and seven forms     | §3.3 bridges + cursor extras                                                                    | high for forms/bridge    | exact material first                             |
 | Pour               | form drains                    | canonical droplets spill into page                                                              | high → low               | scroll shear may stir                            |
 | Problem/Fracture   | no solid form at exit          | seven coherent chunks separate                                                                  | mostly low               | muted, volumetric                                |
-| Seek/Ecosystem     | mark emerges                   | cohesion pulls fragments inward                                                                 | low → high               | first exposure rise                              |
+| Seek/Ecosystem     | mark emerges                   | cohesion pulls fragments inward; then THE CIRCULATION assembles — arteries pump, ten organs dock, 18 beads ride the closed vein loop, a pulse seals it | low → high (circuit 0.9) | first exposure rise · SVG veins share eco-circuit geometry · hover pulses the graph |
 | Services/Bloom     | seven exact forms              | scrubbed §3.3 bridges                                                                           | high                     | no physics drift at endpoints                    |
 | Método/Rehearse    | exact mark only at Integration | probe, lattice, clusters, satellites                                                            | phase-specific           | three masses use cohesion                        |
 | Work/Current       | no dominant form               | Método's satellites become the gyre (i%3=0) + 5-droplet meniscus at the hovered card            | low (0.12; meniscus 0.4) | CURRENT R5-D · z 0.55 sub-surface · act fade III |
@@ -643,6 +651,7 @@ node scripts/verify-perf.mjs
 node scripts/verify-postfx.mjs
 node scripts/verify-rest-exact.mjs
 node scripts/verify-cinematics.mjs
+node scripts/verify-ecosystem.mjs
 node scripts/verify-devices.mjs
 node scripts/verify-context-loss.mjs
 node scripts/verify-a11y.mjs
@@ -676,6 +685,14 @@ demotes a calm page, draws never stall, the heap stays flat);
 `verify-a11y.mjs` is the semantic/keyboard/contrast/locale floor. Emulation
 is the regression floor, not the sign-off — iOS URL-bar collapse, real GPU
 probes, and thermal behavior are validated on owner hardware.
+
+`verify-ecosystem.mjs` is THE CIRCULATION's gate (the S4 remake): the
+assembled circuit (13 veins drawn, 10 sockets, 10 labels visible and clear
+of the chapter-index rail, HUD meter complete), the system response (hover
+AND keyboard raise `data-pulse` with graph-staggered `--pd` delays, the
+`hov` channel swells the touched organ's dock, the HUD reads the organ's
+index · name · system · capability), release on leave, and the reduced-
+motion story (no circuit; the eco-stack carries all ten capabilities).
 
 ### 14.3 Stop-the-line rules
 

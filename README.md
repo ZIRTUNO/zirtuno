@@ -59,7 +59,7 @@ canvases or chapter hairlines.
 | Act            | Chapters                     | Liquid narrative                                                                                | Light narrative                                             |
 | -------------- | ---------------------------- | ----------------------------------------------------------------------------------------------- | ----------------------------------------------------------- |
 | I — Signal     | Entry veil, Hero             | wordmark assembly hands off to the living mark and seven forms                                  | black, then the first cyan presence                         |
-| II — Argument  | Problem, Ecosystem, Services | pour → fracture → seek → reunify → bloom through the seven service forms                        | exposure falls through the problem and rises at convergence |
+| II — Argument  | Problem, Ecosystem, Services | pour → fracture → seek → reunify → THE CIRCULATION (arteries, ten organs, one closed vein loop) → bloom through the seven service forms | exposure falls through the problem and rises at convergence |
 | III — Practice | Método, Work                 | the liquid rehearses the client transformation, then becomes a quiet current behind honest work | neutral and workmanlike, with an act boundary before Work   |
 | IV — Soul      | Origin, Studio               | two brother-masses fuse into the mark; one controlled flash; echoes continue behind the studio  | emotional peak, afterglow, then settle                      |
 | V — Invitation | Contact, Footer              | every droplet gathers into the mark; submit exhales; one droplet releases beyond the footer     | calm return to black                                        |
@@ -232,6 +232,7 @@ node scripts/verify-perf.mjs
 node scripts/verify-postfx.mjs        # optics gate (vs scripts/postfx-baseline.json)
 node scripts/verify-rest-exact.mjs    # settled-still byte gate (vs scripts/rest-exact.json)
 node scripts/verify-cinematics.mjs    # R5-D gate: one flash, two fades, no dead zones
+node scripts/verify-ecosystem.mjs     # THE CIRCULATION: veins, labels, pulse, HUD, static story
 node scripts/capture-transition-diagnostics.mjs
 node scripts/record-liquid-motion.mjs # video + per-draw iBalls trace recordings
 ```

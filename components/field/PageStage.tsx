@@ -11,12 +11,21 @@ import {
   setFieldTier,
   type FieldTier,
 } from "@/lib/webgl/field-tier";
+import { clamp01, smooth01 } from "@/lib/webgl/field-drivers";
 import {
-  ecoNodePos,
-  ecoNodeEnv,
-  clamp01,
-  smooth01,
-} from "@/lib/webgl/field-drivers";
+  ECO_ORDER,
+  ECO_N,
+  ECO_SYSTEMS,
+  ARTERY_SLOTS,
+  socketPos,
+  socketNormal,
+  ringPoint,
+  arteryPoint,
+  nodeTiming,
+  arteryTiming,
+  edgeTiming,
+  pulseDistances,
+} from "@/lib/webgl/eco-circuit.mjs";
 import { makeConductor } from "@/lib/webgl/conductor.mjs";
 import {
   FLUID_OBSTACLE_MAX,
@@ -136,12 +145,15 @@ export function PageStage({
   nodes,
   centerLabel,
   ecosystemLabel,
+  systems,
   pillars,
   children,
 }: {
   nodes: EcoNode[];
   centerLabel: string;
   ecosystemLabel: string;
+  /** the three organ-system names (identity · growth · operation) */
+  systems: string[];
   pillars: string[];
   children: ReactNode;
 }) {
@@ -156,9 +168,15 @@ export function PageStage({
   const [ecoInteractive, setEcoInteractive] = useState(false);
   const [ecoKeyboardEnabled, setEcoKeyboardEnabled] = useState(false);
   const [openEcoNode, setOpenEcoNode] = useState<number | null>(null);
+  const [hovSlot, setHovSlot] = useState(-1);
   const [ecoHost, setEcoHost] = useState<HTMLElement | null>(null);
   const nodeEls = useRef<(HTMLLIElement | null)[]>([]);
   const centerEl = useRef<HTMLSpanElement>(null);
+  const veinsEl = useRef<SVGSVGElement | null>(null);
+  const arteryEls = useRef<(SVGPathElement | null)[]>([]);
+  const ringEls = useRef<(SVGPathElement | null)[]>([]);
+  const socketEls = useRef<(SVGGElement | null)[]>([]);
+  const hudMeterEl = useRef<HTMLSpanElement | null>(null);
   const pillarEls = useRef<(HTMLLIElement | null)[]>([]);
   const stageEl = useRef<HTMLElement | null>(null);
   const ecoLayerEl = useRef<HTMLDivElement | null>(null);
@@ -279,27 +297,103 @@ export function PageStage({
     return () => window.removeEventListener(EXHALE_EVENT, onExhale);
   }, [conductor]);
 
-  // label geometry: eco nodes (ECO_NODES math) + origin founding pillars
-  // (fixed anchors beside the mark's lobes), both aspect-corrected
+  // THE CIRCULATION's geometry: sockets, vein paths and labels all evaluate
+  // eco-circuit's shared functions in the sticky layer's pixel space — the
+  // liquid beads (site scene), the SVG veins and the type can never drift.
+  // Origin founding pillars keep their fixed anchors beside the mark's lobes.
   useEffect(() => {
     const layer = layerRef.current;
     if (!layer) return;
+    const px = (p: { x: number; y: number }, aspect: number, w: number, h: number) => ({
+      x: ((p.x - 0.5) / aspect + 0.5) * w,
+      y: (1 - p.y) * h,
+    });
+    const pathFrom = (pts: { x: number; y: number }[]) =>
+      pts
+        .map((p, k) => `${k === 0 ? "M" : "L"}${p.x.toFixed(1)} ${p.y.toFixed(1)}`)
+        .join("");
     const layout = () => {
       const r = layer.getBoundingClientRect();
       if (r.width < 2 || r.height < 2) return;
-      const aspect = r.width / r.height;
+      const w = r.width;
+      const h = r.height;
+      const aspect = w / h;
       const topbarBottom =
         document.querySelector<HTMLElement>(".topbar")?.getBoundingClientRect()
           .bottom ?? 0;
-      nodeEls.current.forEach((el, i) => {
+      if (veinsEl.current)
+        veinsEl.current.setAttribute("viewBox", `0 0 ${w} ${h}`);
+      // arteries: mark edge → each system's first organ
+      arteryEls.current.forEach((el, a) => {
         if (!el) return;
-        const p = ecoNodePos(i, aspect);
-        const halfH = el.offsetHeight / 2;
-        const minY = Math.max(0, topbarBottom - r.top) + halfH + 8;
-        const maxY = r.height - halfH - 12;
-        const y = Math.min(Math.max((1 - p.y) * r.height, minY), maxY);
-        el.style.left = `${(((p.x - 0.5) / aspect + 0.5) * 100).toFixed(2)}%`;
+        const pts = [];
+        for (let k = 0; k <= 28; k++)
+          pts.push(px(arteryPoint(a, k / 28, aspect), aspect, w, h));
+        el.setAttribute("d", pathFrom(pts));
+        const len = el.getTotalLength();
+        const t = arteryTiming(a);
+        el.style.setProperty("--len", len.toFixed(1));
+        el.style.setProperty("--d", String(t.d));
+        el.style.setProperty("--w", String(t.w));
+      });
+      // the closed loop, one segment per organ pair
+      ringEls.current.forEach((el, s) => {
+        if (!el) return;
+        const pts = [];
+        for (let k = 0; k <= 16; k++)
+          pts.push(px(ringPoint((s + k / 16) / ECO_N, aspect), aspect, w, h));
+        el.setAttribute("d", pathFrom(pts));
+        const len = el.getTotalLength();
+        const t = edgeTiming(s);
+        el.style.setProperty("--len", len.toFixed(1));
+        el.style.setProperty("--d", String(t.d));
+        el.style.setProperty("--w", String(t.w));
+      });
+      // sockets + labels sit on the same ring points, labels along the
+      // outward normal (the liquid docks AT the socket; type lives outside)
+      socketEls.current.forEach((el, s) => {
+        if (!el) return;
+        const p = px(socketPos(s, aspect), aspect, w, h);
+        el.setAttribute("transform", `translate(${p.x.toFixed(1)} ${p.y.toFixed(1)})`);
+        const t = nodeTiming(s);
+        el.style.setProperty("--d", String(t.d));
+        el.style.setProperty("--w", String(t.w));
+      });
+      // the right chapter-index rail owns this column — labels stay clear
+      const RAIL = 135;
+      nodeEls.current.forEach((el, s) => {
+        if (!el) return;
+        const p = px(socketPos(s, aspect), aspect, w, h);
+        const n = socketNormal(s);
+        const off = 24;
+        let x = p.x + n.x * off;
+        let y = p.y - n.y * off;
+        let side: string;
+        if (n.x > 0.4) side = "right";
+        else if (n.x < -0.4) side = "left";
+        else side = n.y > 0 ? "top" : "bottom";
+        // measured-width edge safety: a side label that would leave the
+        // stage (or enter the rail) drops below its socket instead
+        const w0 = el.offsetWidth || 120;
+        if (side === "right" && x + w0 > w - RAIL) {
+          side = "bottom";
+          x = p.x;
+          y = p.y + off;
+        } else if (side === "left" && x - w0 < 10) {
+          side = "bottom";
+          x = p.x;
+          y = p.y + off;
+        }
+        if (side === "top" || side === "bottom")
+          x = Math.min(Math.max(x, w0 / 2 + 10), w - RAIL - w0 / 2);
+        const minY = Math.max(0, topbarBottom - r.top) + 22;
+        y = Math.min(Math.max(y, minY), h - 26);
+        el.dataset.side = side;
+        el.style.left = `${x.toFixed(1)}px`;
         el.style.top = `${y.toFixed(1)}px`;
+        const t = nodeTiming(s);
+        el.style.setProperty("--d", String(t.d));
+        el.style.setProperty("--w", String(t.w));
       });
       pillarEls.current.forEach((el, i) => {
         if (!el) return;
@@ -309,10 +403,52 @@ export function PageStage({
       });
     };
     layout();
+    // label widths shift when the mono face lands — re-run the edge safety
+    let alive = true;
+    document.fonts?.ready.then(() => alive && layout());
     const ro = new ResizeObserver(layout);
     ro.observe(layer);
-    return () => ro.disconnect();
-  }, [nodes.length, pillars.length, ecoHost]);
+    return () => {
+      alive = false;
+      ro.disconnect();
+    };
+  }, [nodes.length, pillars.length, ecoHost, enabled]);
+
+  // the system response: touching one organ pulses the WHOLE circuit. BFS hop
+  // distances become per-element transition delays, so the brightening
+  // visibly travels the veins outward from the touched organ; the liquid
+  // answers through the scene's hov channel (dock swell + quickened beads).
+  const activeSlot = hovSlot >= 0 ? hovSlot : (openEcoNode ?? -1);
+  useEffect(() => {
+    site.hov = activeSlot;
+    const root = ecoLayerEl.current;
+    if (!root) return;
+    if (activeSlot < 0) {
+      root.removeAttribute("data-pulse");
+      return;
+    }
+    const dist = pulseDistances(activeSlot);
+    const HOP = 110; // ms per graph hop — a readable travel, not a blink
+    ringEls.current.forEach((el, s) => {
+      if (!el) return;
+      const d = Math.min(dist[s], dist[(s + 1) % ECO_N]);
+      el.style.setProperty("--pd", `${d * HOP}ms`);
+    });
+    arteryEls.current.forEach((el, a) => {
+      if (!el) return;
+      const d = Math.min(dist[ARTERY_SLOTS[a]], dist[ECO_N]);
+      el.style.setProperty("--pd", `${d * HOP}ms`);
+    });
+    socketEls.current.forEach((el, s) => {
+      if (!el) return;
+      el.style.setProperty("--pd", `${dist[s] * HOP}ms`);
+    });
+    nodeEls.current.forEach((el, s) => {
+      if (!el) return;
+      el.style.setProperty("--pd", `${dist[s] * HOP}ms`);
+    });
+    root.setAttribute("data-pulse", "true");
+  }, [activeSlot, site]);
 
   // ── the ONE measurement loop (all scenes' channels + DOM choreography) ─────
   useEffect(() => {
@@ -337,9 +473,9 @@ export function PageStage({
       lastS = svcPos;
       lastEcoDesktop = desktop;
       const fade = 1 - smooth01(svcPos);
-      // The orbit becomes keyboard-operable only after every tendril has
-      // arrived. Before/after that beat it leaves the tab order; the semantic
-      // stack remains available on mobile and every static path.
+      // The circuit becomes keyboard-operable only once the loop has closed.
+      // Before/after that beat it leaves the tab order; the semantic stack
+      // remains available on mobile and every static path.
       const interactive = enabled && desktop && grow >= 0.88 && fade >= 0.55;
       if (interactive !== lastEcoInteractive) {
         lastEcoInteractive = interactive;
@@ -351,16 +487,28 @@ export function PageStage({
           setOpenEcoNode(null);
         setEcoInteractive(interactive);
       }
-      nodeEls.current.forEach((el, i) => {
-        if (!el) return;
-        const e = ecoNodeEnv(grow, i) * fade;
-        el.style.opacity = String(e);
-        el.style.transform = `translate(-50%, -50%) translateY(${((1 - e) * 10).toFixed(1)}px)`;
-      });
+      // TWO vars drive the whole assembly — every vein, socket and label
+      // derives its own envelope from --eco-grow via its inline --d/--w
+      // (single write point; the same eco-circuit timing the beads use)
+      const root = ecoLayerEl.current;
+      if (root) {
+        root.style.setProperty("--eco-grow", grow.toFixed(4));
+        root.style.setProperty("--eco-fade", fade.toFixed(3));
+      }
       if (centerEl.current)
         centerEl.current.style.opacity = String(
           smooth01((grow - 0.1) / 0.35) * fade,
         );
+      if (hudMeterEl.current) {
+        let lit = 0;
+        for (let s = 0; s < ECO_N; s++) {
+          const t = nodeTiming(s);
+          if (grow >= t.d + t.w * 0.6) lit++;
+        }
+        const meter = `${String(lit).padStart(2, "0")} / ${ECO_N}`;
+        if (hudMeterEl.current.textContent !== meter)
+          hudMeterEl.current.textContent = meter;
+      }
     };
     let lastP = -1;
     const applyOriginLabels = (p: number) => {
@@ -821,9 +969,11 @@ export function PageStage({
             would trap them under the z-10 copy). Live path only: never under
             reduced motion, static tiers, deterministic QA holds, or
             ?fcine=0. */}
-        {/* The organism controls sit above chapter copy while the canvas stays
-            below it. Only visible controls opt back into hit testing. */}
+        {/* THE CIRCULATION's controls sit above chapter copy while the canvas
+            stays below it. Only visible controls opt back into hit testing.
+            Live path only — static tiers read the semantic eco-stack. */}
         {ecoHost &&
+          enabled &&
           createPortal(
             <div
               className="journey-interactions"
@@ -835,20 +985,56 @@ export function PageStage({
                   setOpenEcoNode(null);
               }}
             >
+              {/* the veins — arteries, the closed loop, the organ sockets.
+                  Same eco-circuit geometry as the liquid beads (layout()). */}
+              <svg className="eco-veins" ref={veinsEl} aria-hidden="true">
+                {Array.from({ length: ECO_N }, (_, s) => (
+                  <path
+                    key={`ring-${s}`}
+                    className="eco-vein eco-vein-ring"
+                    ref={(el) => {
+                      ringEls.current[s] = el;
+                    }}
+                  />
+                ))}
+                {ARTERY_SLOTS.map((slot, a) => (
+                  <path
+                    key={`artery-${slot}`}
+                    className="eco-vein eco-vein-artery"
+                    ref={(el) => {
+                      arteryEls.current[a] = el;
+                    }}
+                  />
+                ))}
+                {Array.from({ length: ECO_N }, (_, s) => (
+                  <g
+                    key={`socket-${s}`}
+                    className="eco-socket"
+                    ref={(el) => {
+                      socketEls.current[s] = el;
+                    }}
+                  >
+                    <circle className="eco-socket-halo" r="9" />
+                    <circle className="eco-socket-core" r="3" />
+                  </g>
+                ))}
+              </svg>
               <span className="organism-center" ref={centerEl}>
                 {centerLabel}
               </span>
               <ul className="organism-nodes" aria-label={ecosystemLabel}>
-                {nodes.map((n, i) => {
-                  const descriptionId = `ecosystem-node-${i}-description`;
-                  const open = openEcoNode === i;
+                {ECO_ORDER.map((nodeIdx, slot) => {
+                  const n = nodes[nodeIdx];
+                  if (!n) return null;
+                  const descriptionId = `ecosystem-node-${slot}-description`;
+                  const open = openEcoNode === slot;
                   return (
                     <li
                       key={n.name}
                       className="organism-node"
                       data-open={open ? "true" : "false"}
                       ref={(el) => {
-                        nodeEls.current[i] = el;
+                        nodeEls.current[slot] = el;
                       }}
                     >
                       <button
@@ -858,21 +1044,54 @@ export function PageStage({
                         aria-expanded={open}
                         aria-controls={descriptionId}
                         aria-describedby={descriptionId}
-                        onClick={() => setOpenEcoNode(open ? null : i)}
+                        onClick={() => setOpenEcoNode(open ? null : slot)}
+                        onPointerEnter={() => setHovSlot(slot)}
+                        onPointerLeave={() => setHovSlot(-1)}
+                        onFocus={() => setHovSlot(slot)}
+                        onBlur={() => setHovSlot(-1)}
                       >
+                        <span className="organism-node-index">
+                          {String(slot + 1).padStart(2, "0")}
+                        </span>
                         <span className="organism-node-name">{n.name}</span>
                       </button>
-                      <span
-                        id={descriptionId}
-                        className="organism-node-cap"
-                        role="tooltip"
-                      >
+                      {/* read by AT via aria-describedby; sighted users read
+                          the same line in the HUD readout */}
+                      <span id={descriptionId} className="organism-node-cap">
                         {n.tooltip}
                       </span>
                     </li>
                   );
                 })}
               </ul>
+              {/* the readout — mission-control line for the touched organ */}
+              <div className="eco-hud" aria-hidden="true">
+                <span className="eco-hud-meter" ref={hudMeterEl} />
+                {activeSlot >= 0 && nodes[ECO_ORDER[activeSlot]] ? (
+                  <>
+                    <span className="eco-hud-line">
+                      <b>{String(activeSlot + 1).padStart(2, "0")}</b>
+                      {" · "}
+                      {nodes[ECO_ORDER[activeSlot]].name}
+                      <i>
+                        {" — "}
+                        {
+                          systems[
+                            ECO_SYSTEMS.findIndex((sys) =>
+                              sys.slots.includes(activeSlot),
+                            )
+                          ]
+                        }
+                      </i>
+                    </span>
+                    <span className="eco-hud-cap">
+                      {nodes[ECO_ORDER[activeSlot]].tooltip}
+                    </span>
+                  </>
+                ) : (
+                  <span className="eco-hud-line">{centerLabel}</span>
+                )}
+              </div>
             </div>,
             ecoHost,
           )}

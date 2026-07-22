@@ -352,6 +352,11 @@ Additional stop-the-line gates:
 - Copy/semantics/locale/chrome change: `node scripts/verify-a11y.mjs`
   (landmarks, one h1, labels, skip link, keyboard menu, focus visibility,
   effective-background contrast, pt/en key parity, reduced-motion story).
+- Ecosystem circuit change (`eco-circuit.mjs`, the S4 scene block, the vein
+  layer, labels, or HUD): `node scripts/verify-ecosystem.mjs` — 13 veins
+  drawn, 10 sockets + 10 labels clear of the chapter-index rail, hover AND
+  keyboard raise the same graph-staggered pulse plus dock swell (`hov`
+  channel), HUD follows, and reduced motion keeps the eco-stack story.
 - Emulation is the regression floor, not the sign-off: iOS URL-bar collapse,
   real GPU probes, and thermal behavior still require the owner's hardware.
 

@@ -74,6 +74,11 @@
     "headline": "Criamos ecossistemas digitais, não peças soltas.",
     "lead": "Tudo conectado em torno do seu negócio. Cada parte fortalece as outras: a marca alimenta o site, o site alimenta o tráfego, o tráfego alimenta o CRM, a IA acelera o atendimento, a automação conecta os processos e os dashboards mostram tudo em tempo real.",
     "centerLabel": "Seu negócio",
+    "systems": {
+      "identity": "Identidade",
+      "growth": "Crescimento",
+      "operation": "Operação"
+    },
     "nodes": [
       {
         "name": "Marca",

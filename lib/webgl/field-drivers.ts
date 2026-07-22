@@ -27,32 +27,10 @@ import { EASE_POINTS } from "../animation/easings";
 // in phys.mjs (node-runnable — the conductor and the sim harnesses import it
 // without a TS toolchain). Re-exported here so every existing browser-side
 // import keeps working unchanged. ─────────────────────────────────────────────
-import {
-  CLOUDS,
-  N,
-  STAG,
-  clamp01,
-  smooth01,
-  PHYS,
-  ECO_NODES,
-  ecoSpreadX,
-  ecoNodePos,
-  ecoNodeEnv,
-} from "./phys.mjs";
+import { CLOUDS, N, STAG, clamp01, smooth01, PHYS } from "./phys.mjs";
 import type { Ball } from "./phys.mjs";
 
-export {
-  CLOUDS,
-  N,
-  STAG,
-  clamp01,
-  smooth01,
-  PHYS,
-  ECO_NODES,
-  ecoSpreadX,
-  ecoNodePos,
-  ecoNodeEnv,
-};
+export { CLOUDS, N, STAG, clamp01, smooth01, PHYS };
 export type { Ball };
 
 // ── §3.3 melt constants (single source — hero + services scrub) ───────────────
