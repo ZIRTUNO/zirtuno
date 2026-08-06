@@ -403,7 +403,9 @@ export function makeSiteScene(cbs: SiteCallbacks = {}): SceneModule {
       // ── hero presence (the pour) + form-slot ownership ─────────────────────
       // The resting form erodes thin-edges-first across heroPhase 0.04 → 0.62;
       // its droplets emerge on the footprint and stream to the journey.
-      const heroQ = 1 - smooth01((hp - 0.04) / 0.58);
+      // The Hero's liquid is the lab ribbon on its own surface, so the page
+      // field holds no mark behind it. The mark first appears at convergence.
+      const heroQ = 0;
       const [heroW, heroE] = formPresence(heroQ);
       const meltP = clamp01(hMorphT / DURATIONS.morph);
       const meltEnv = hPhase === "melt" ? Math.sin(Math.PI * meltP) : 0;
@@ -481,7 +483,9 @@ export function makeSiteScene(cbs: SiteCallbacks = {}): SceneModule {
         packBridge(scratch, 0, CLOUDS[hState], CLOUDS[hTarget], perm, stag, meltP);
         heroBridge = true;
       }
-      pourR = smooth01((hp - 0.05) / 0.3); // droplets emerge as the form erodes
+      // The page field remains invisible through the Hero and grows into the
+      // Problem choreography only as the Hero is leaving.
+      pourR = smooth01((hp - 0.72) / 0.26);
       // loose liquid drags with the scroll (bounded — a flick stirs, never flings)
       stirY = Math.max(-2.2, Math.min(2.2, ctx.scrollVel)) * PHYS.STIR;
       convP = 1 - c;
@@ -490,7 +494,15 @@ export function makeSiteScene(cbs: SiteCallbacks = {}): SceneModule {
       shed = env.shed;
 
       // ambient calm — always alive, calmer where a composition must read
-      ambW = (1 - 0.5 * smooth01(c) * (1 - SP)) * (1 - 0.35 * SP) * EXW;
+      // The Hero belongs to the lab ribbon. The shared ambient family used to
+      // hold weight 1 at the top of the page, so lava-lamp droplets drifted
+      // across the headline — the one thing separating the shipped Hero from
+      // the lab. It fades in with the pour instead.
+      ambW =
+        (1 - 0.5 * smooth01(c) * (1 - SP)) *
+        (1 - 0.35 * SP) *
+        EXW *
+        smooth01((hp - 0.66) / 0.3);
 
       // governor activity (R5-C): the hero melt, the gooey cursor and the
       // services melt are the scene's FAST clocks — everything else is

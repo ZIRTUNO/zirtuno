@@ -371,6 +371,23 @@
     "copyright": "Zirtuno © 2026",
     "tagline": "Discreto. Preciso. Transformador."
   },
+  "lab": {
+    "badge": "Espaço de teste",
+    "headlineBefore": "Dê forma ao seu",
+    "headlineMid": "com um",
+    "headlineBold": "ecossistema digital",
+    "headlineTail": "completo.",
+    "words": ["futuro", "crescimento", "posicionamento", "atendimento", "resultado"],
+    "subline": "Software, IA, automação, dados, branding e marketing conectados em uma única estrutura.",
+    "proof": [
+      "7 frentes conectadas",
+      "Estratégia + execução",
+      "Do diagnóstico à evolução",
+      "Um parceiro, um sistema"
+    ],
+    "cta": "Solicitar análise inicial",
+    "scroll": "Role para continuar"
+  },
   "notFound": {
     "code": "404",
     "metaTitle": "Página não encontrada",

@@ -25,14 +25,20 @@ import { SiteAnalytics } from "@/components/analytics/SiteAnalytics";
 // session must never see it flash — the attribute lands BEFORE the veil
 // element parses, so CSS hides it at first paint.
 const VEIL_SKIP =
-  'try{if(sessionStorage.getItem("zveil"))document.documentElement.dataset.zveil="seen"}catch(e){}';
+  'try{const q=[...new URLSearchParams(location.search).keys()].some(k=>/^f/.test(k));if(sessionStorage.getItem("zveil")||q)document.documentElement.dataset.zveil="seen"}catch(e){}';
 const VEIL_SKIP_MARKUP = `<script>${VEIL_SKIP}</script>`;
 const NO_SCRIPT_CSS = `
   .entry-veil,
   .page-wipe,
   .custom-cursor { display: none !important; }
   .page-transition-content,
-  [data-reveal] {
+  [data-reveal],
+  .lab-headline,
+  .lab-sub,
+  .lab-proof,
+  .lab-actions,
+  .lab-scroll {
+    animation: none !important;
     opacity: 1 !important;
     transform: none !important;
     filter: none !important;

@@ -4,21 +4,16 @@ import { useRef } from "react";
 import { useTranslations } from "next-intl";
 import { Link } from "@/lib/i18n/config";
 import { useReducedMotion } from "@/lib/animation/reduced-motion";
-import { ProofRow } from "./ProofRow";
-import { WordCycle } from "./WordCycle";
-import { HeroRibbon } from "./HeroRibbon";
+import { HeroRibbon } from "@/components/hero/HeroRibbon";
+import { ProofRow } from "@/components/hero/ProofRow";
+import { WordCycle } from "@/components/hero/WordCycle";
 import {
   useCinematicCamera,
   useCinematicCycle,
-} from "./useCinematicHero";
-import "@/app/lab.css";
+} from "@/components/hero/useCinematicHero";
 
-/**
- * The reference's hierarchy rebuilt as a native Zirtuno hero: a quiet two-line
- * sentence, one bold changing word, a stronger business phrase, then a proof
- * sequence. The lab stream supplies the ribbon beneath it.
- */
-export function Hero() {
+/** Isolated visual lab. The extra ribbon canvas is intentionally lab-only. */
+export function LabHero() {
   const t = useTranslations("lab");
   const reduced = useReducedMotion();
   const sectionRef = useRef<HTMLElement>(null);
@@ -33,7 +28,7 @@ export function Hero() {
   const headline = `${t("headlineBefore")} ${words[0] ?? ""} ${t("headlineMid")} ${t("headlineBold")} ${t("headlineTail")}`;
 
   return (
-    <section id="hero" className="lab-hero" ref={sectionRef}>
+    <section className="lab-hero" ref={sectionRef}>
       <div className="lab-mesh" aria-hidden="true">
         <span className="lab-mesh-a" />
         <span className="lab-mesh-b" />
@@ -43,6 +38,11 @@ export function Hero() {
 
       <div className="lab-perspective">
         <div className="lab-plane" ref={planeRef}>
+          <p className="lab-badge">
+            <span className="lab-badge-dot" aria-hidden="true" />
+            {t("badge")}
+          </p>
+
           <h1 className="lab-headline">
             <span className="sr-only">{headline}</span>
             <span className="lab-headline-visual" aria-hidden="true">
@@ -62,14 +62,7 @@ export function Hero() {
           <ProofRow items={proof} cycle={cycle} />
 
           <div className="lab-actions">
-            <Link
-              href="/?intent=analysis#contact"
-              className="lab-cta"
-              data-cursor="hover"
-              data-analytics-event="cta_intent"
-              data-analytics-intent="analysis"
-              data-analytics-placement="hero"
-            >
+            <Link href="/?intent=analysis#contact" className="lab-cta">
               <span className="lab-cta-sheen" aria-hidden="true" />
               <span className="lab-cta-label">{t("cta")}</span>
               <span className="lab-cta-arrow" aria-hidden="true">

@@ -368,6 +368,23 @@
     "copyright": "Zirtuno © 2026",
     "tagline": "Discreet. Precise. Transformative."
   },
+  "lab": {
+    "badge": "Test space",
+    "headlineBefore": "Shape your",
+    "headlineMid": "with one",
+    "headlineBold": "complete digital",
+    "headlineTail": "ecosystem.",
+    "words": ["future", "growth", "positioning", "operation", "outcome"],
+    "subline": "Software, AI, automation, data, branding and marketing connected into a single structure.",
+    "proof": [
+      "7 connected fronts",
+      "Strategy + execution",
+      "From diagnosis to evolution",
+      "One partner, one system"
+    ],
+    "cta": "Request initial analysis",
+    "scroll": "Scroll to continue"
+  },
   "notFound": {
     "code": "404",
     "metaTitle": "Page not found",

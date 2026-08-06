@@ -60,7 +60,7 @@ export default async function HomePage({
         ]}
         pillars={pillars}
       >
-        <Hero hasWork={hasWork} />
+        <Hero />
         <ChapterProblem />
         <ChapterEcosystem hasWork={hasWork} />
         <ChapterServices hasWork={hasWork} />

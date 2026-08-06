@@ -1,0 +1,578 @@
+/* ===========================================================================
+   LAB — a test space for the cinematic hero direction.
+   Shared by the isolated lab and the production Hero. Every selector remains
+   namespaced under .lab-* and consumes the locked tokens from globals.css.
+   =========================================================================== */
+
+.lab-page {
+  position: relative;
+  min-height: 100svh;
+  background: var(--color-ink);
+  overflow: hidden;
+}
+
+/* the inherited site chrome steps aside — the lab carries its own */
+body:has(.lab-page) .topbar,
+body:has(.lab-page) .side-index {
+  display: none;
+}
+
+/* ── chrome ─────────────────────────────────────────────────────────────── */
+.lab-chrome {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: clamp(1.25rem, 3vw, 2.25rem) clamp(1.25rem, 4vw, 3.25rem);
+  animation: lab-fade 900ms var(--ease-arrive) 150ms both;
+}
+.lab-wordmark {
+  font-family: var(--font-mono);
+  font-size: var(--text-mono);
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: var(--color-paper);
+  text-decoration: none;
+}
+.lab-wordmark sup {
+  font-size: 0.62em;
+  vertical-align: super;
+  color: var(--color-paper-mute);
+}
+.lab-burger {
+  display: grid;
+  gap: 5px;
+  width: 44px;
+  height: 44px;
+  place-content: center;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+}
+.lab-burger span {
+  display: block;
+  width: 22px;
+  height: 1.5px;
+  background: var(--color-paper);
+  transition: transform 200ms var(--ease-arrive);
+}
+.lab-burger:hover span:first-child {
+  transform: translateX(-3px);
+}
+.lab-burger:hover span:last-child {
+  transform: translateX(3px);
+}
+
+/* ── the stage ──────────────────────────────────────────────────────────── */
+.lab-hero {
+  position: relative;
+  display: grid;
+  align-content: center;
+  min-height: 100svh;
+  padding: calc(5.5rem + env(safe-area-inset-top)) clamp(1.25rem, 5vw, 3.25rem)
+    clamp(8rem, 18vh, 12rem);
+  text-align: center;
+}
+
+/* the camera: at rest the plane is level and the type is honest; the pointer
+   tilts it a couple of degrees, which is what makes a flat hero feel filmed */
+.lab-perspective {
+  position: relative;
+  z-index: 2;
+  perspective: 1600px;
+  perspective-origin: 50% 40%;
+}
+.lab-plane {
+  transform: translate3d(var(--shift-x, 0px), var(--shift-y, 0px), 0)
+    rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg));
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+
+/* ── the drifting mesh glow ─────────────────────────────────────────────── */
+.lab-mesh {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+.lab-mesh span {
+  position: absolute;
+  display: block;
+  border-radius: 50%;
+  filter: blur(90px);
+  opacity: 0.5;
+}
+.lab-mesh-a {
+  top: -18%;
+  right: -6%;
+  width: 46vw;
+  height: 46vw;
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--color-cyan) 22%, transparent),
+    transparent 68%
+  );
+  animation: lab-drift-a 26s var(--ease-breath) infinite;
+}
+.lab-mesh-b {
+  top: 6%;
+  left: -14%;
+  width: 38vw;
+  height: 38vw;
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--color-cyan-deep) 26%, transparent),
+    transparent 70%
+  );
+  animation: lab-drift-b 34s var(--ease-breath) infinite;
+}
+@keyframes lab-drift-a {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(-6vw, 4vh, 0) scale(1.12);
+  }
+}
+@keyframes lab-drift-b {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1.05);
+  }
+  50% {
+    transform: translate3d(5vw, -3vh, 0) scale(0.94);
+  }
+}
+
+/* ── the badge ──────────────────────────────────────────────────────────── */
+.lab-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  justify-self: center;
+  margin-bottom: clamp(1.5rem, 4vh, 2.5rem);
+  padding: 0.45rem 0.9rem;
+  border: 1px solid color-mix(in srgb, var(--color-cyan) 26%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--color-cyan) 6%, transparent);
+  font-family: var(--font-mono);
+  font-size: var(--text-mono-sm);
+  font-weight: 500;
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--color-paper-mute);
+  animation: lab-rise 900ms var(--ease-arrive) 250ms both;
+}
+.lab-badge-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--color-cyan);
+  box-shadow: 0 0 12px var(--color-cyan);
+  animation: lab-pulse 2.6s var(--ease-breath) infinite;
+}
+@keyframes lab-pulse {
+  0%,
+  100% {
+    opacity: 0.45;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* ── the headline ───────────────────────────────────────────────────────── */
+.lab-headline {
+  margin: 0;
+  font-family: var(--font-grotesk);
+  font-size: var(--text-display-m);
+  line-height: var(--text-display-m--line-height);
+  letter-spacing: var(--text-display-m--letter-spacing);
+  animation: lab-rise 1050ms var(--ease-arrive) 180ms both;
+}
+.lab-headline-visual {
+  display: grid;
+  justify-items: center;
+  max-width: 30ch;
+  margin-inline: auto;
+}
+/* every word is its own box, so the line wraps freely AND each word can arrive
+   on its own beat — the headline assembles instead of appearing */
+.lab-headline-line {
+  display: inline-block;
+  /* inline-block boxes swallow the whitespace between them — the word gap has
+     to come back as a margin, in em so it tracks the display size */
+  width: max-content;
+  max-width: 100%;
+  white-space: nowrap;
+}
+.lab-headline-line > span {
+  display: inline-block;
+}
+/* the weight contrast IS the hierarchy — light carries the sentence, the
+   heavy words carry the claim */
+.lab-light {
+  font-weight: 300;
+  color: color-mix(in srgb, var(--color-paper) 82%, transparent);
+}
+.lab-strong {
+  font-weight: 700;
+  color: var(--color-paper);
+}
+
+/* ── the rotating noun ──────────────────────────────────────────────────── */
+.lab-word {
+  position: relative;
+  display: inline-block;
+  vertical-align: baseline;
+  /* the slot animates to the next word's measured width, so the line
+     re-centres instead of jumping */
+  font-weight: 700;
+  color: var(--color-paper);
+  will-change: width;
+}
+/* the mask the two words cross under. A little vertical breathing room keeps
+   ascenders and descenders off the clip at rest; the pulled margin means that
+   room costs the line box nothing. */
+.lab-word-clip {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  padding-block: 0.16em;
+  margin-block: -0.16em;
+}
+/* the measuring rig: real face, real size, zero footprint, never painted */
+.lab-word-sizer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  visibility: hidden;
+  pointer-events: none;
+  white-space: nowrap;
+}
+.lab-word-sizer span {
+  display: block;
+  width: max-content;
+}
+.lab-word-face {
+  display: block;
+  white-space: nowrap;
+  color: var(--color-paper);
+}
+.lab-word-char {
+  display: inline-block;
+  will-change: transform, opacity, filter, clip-path;
+}
+
+/* ── the subline ────────────────────────────────────────────────────────── */
+.lab-sub {
+  margin: clamp(1.25rem, 3vh, 2rem) auto 0;
+  max-width: 46ch;
+  font-family: var(--font-sans);
+  font-size: var(--text-body);
+  line-height: var(--text-body--line-height);
+  letter-spacing: var(--text-body--letter-spacing);
+  color: var(--color-paper-mute);
+  animation: lab-rise 1000ms var(--ease-arrive) 700ms both;
+}
+
+/* ── the proof row + saber ──────────────────────────────────────────────── */
+.lab-proof {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: center;
+  gap: clamp(1.25rem, 3vw, 2.75rem);
+  margin: clamp(1.75rem, 4.5vh, 3rem) auto 0;
+  max-width: 62rem;
+  animation: lab-rise 1000ms var(--ease-arrive) 900ms both;
+}
+.lab-proof-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding-bottom: 0.7rem;
+}
+.lab-proof-mark {
+  display: grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  flex: none;
+}
+.lab-proof-mark svg {
+  width: 16px;
+  height: 16px;
+  overflow: visible;
+}
+.lab-proof-ring {
+  stroke: color-mix(in srgb, var(--color-paper) 34%, transparent);
+  stroke-width: 1.25;
+  transform-origin: center;
+}
+.lab-proof-tick {
+  stroke: var(--color-cyan);
+  stroke-width: 1.9;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  filter: drop-shadow(0 0 5px color-mix(in srgb, var(--color-cyan) 60%, transparent));
+}
+.lab-proof-label {
+  font-family: var(--font-mono);
+  font-size: var(--text-mono-sm);
+  font-weight: 500;
+  letter-spacing: var(--tracking-label-dense);
+  white-space: nowrap;
+  color: var(--color-paper);
+}
+/* each item's own hairline fills behind the light */
+.lab-proof-rule {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 1px;
+  background: color-mix(in srgb, var(--color-paper) 12%, transparent);
+  overflow: hidden;
+}
+.lab-proof-rule-fill {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    var(--color-cyan-deep),
+    var(--color-cyan)
+  );
+  transform-origin: left;
+}
+
+/* ── the action ─────────────────────────────────────────────────────────── */
+.lab-actions {
+  display: flex;
+  justify-content: center;
+  margin-top: clamp(2rem, 5vh, 3.25rem);
+  animation: lab-rise 1000ms var(--ease-arrive) 1100ms both;
+}
+.lab-cta {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.8rem;
+  overflow: hidden;
+  min-height: 56px;
+  padding: 1rem 2.2rem;
+  border: 1px solid color-mix(in srgb, var(--color-cyan) 55%, transparent);
+  background: color-mix(in srgb, var(--color-ink) 55%, transparent);
+  backdrop-filter: blur(6px);
+  font-family: var(--font-mono);
+  font-size: var(--text-mono);
+  font-weight: 500;
+  letter-spacing: var(--tracking-label-dense);
+  color: var(--color-paper);
+  text-decoration: none;
+  transition:
+    border-color 240ms var(--ease-arrive),
+    box-shadow 240ms var(--ease-arrive),
+    transform 240ms var(--ease-arrive);
+}
+.lab-cta:hover,
+.lab-cta:focus-visible {
+  border-color: var(--color-cyan);
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--color-cyan) 30%, transparent),
+    0 12px 46px -14px var(--color-cyan);
+  transform: translateY(-1px);
+}
+/* the same saber language, reused as the button's hover sheen */
+.lab-cta-sheen {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -40%;
+  width: 40%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in srgb, var(--color-cyan) 26%, transparent),
+    transparent
+  );
+  transition: transform 700ms var(--ease-arrive);
+}
+.lab-cta:hover .lab-cta-sheen,
+.lab-cta:focus-visible .lab-cta-sheen {
+  transform: translateX(350%);
+}
+.lab-cta-label,
+.lab-cta-arrow {
+  position: relative;
+}
+.lab-cta-arrow {
+  transition: transform 240ms var(--ease-arrive);
+}
+.lab-cta:hover .lab-cta-arrow {
+  transform: translateX(5px);
+}
+
+/* ── the liquid sheet ───────────────────────────────────────────────────── */
+.lab-ribbon {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1;
+  height: min(56vh, 560px);
+  pointer-events: none;
+  /* the sheet dissolves upward into the black instead of ending on a hard
+     rectangle edge */
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    #000 34%,
+    #000 100%
+  );
+  mask-image: linear-gradient(to bottom, transparent 0%, #000 34%, #000 100%);
+  animation: lab-fade 1400ms var(--ease-arrive) both;
+}
+.lab-ribbon-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+/* no WebGL2 — a still cyan horizon, so the hero is never a black band */
+.lab-ribbon[data-ribbon="fallback"] {
+  background:
+    radial-gradient(
+      120% 76% at 50% 108%,
+      var(--color-cyan) 0%,
+      var(--color-cyan-deep) 34%,
+      transparent 70%
+    ),
+    radial-gradient(
+      80% 50% at 22% 118%,
+      color-mix(in srgb, var(--color-cyan-glow) 70%, transparent),
+      transparent 60%
+    );
+}
+.lab-ribbon[data-ribbon="fallback"] .lab-ribbon-canvas {
+  display: none;
+}
+
+/* ── the scroll cue ─────────────────────────────────────────────────────── */
+.lab-scroll {
+  position: absolute;
+  left: 50%;
+  bottom: clamp(1.25rem, 3vh, 2rem);
+  z-index: 3;
+  transform: translateX(-50%);
+  font-family: var(--font-mono);
+  font-size: var(--text-mono-sm);
+  letter-spacing: var(--tracking-label-open);
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--color-paper) 42%, transparent);
+  animation: lab-fade 1200ms var(--ease-arrive) 1500ms both;
+}
+
+/* ── arrival ────────────────────────────────────────────────────────────── */
+@keyframes lab-rise {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+    filter: blur(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+    filter: blur(0);
+  }
+}
+@keyframes lab-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* ── narrow stages ──────────────────────────────────────────────────────── */
+@media (max-width: 960px) {
+  .lab-headline-line {
+    width: auto;
+    white-space: normal;
+  }
+}
+
+@media (max-width: 767px) {
+  .lab-hero {
+    padding-bottom: clamp(8rem, 20vh, 11rem);
+    text-align: left;
+  }
+  .lab-headline {
+    letter-spacing: -0.03em;
+  }
+  .lab-headline-visual {
+    justify-items: start;
+  }
+  .lab-headline-line {
+    width: auto;
+    white-space: normal;
+  }
+  .lab-badge {
+    justify-self: start;
+  }
+  .lab-sub {
+    margin-inline: 0;
+  }
+  .lab-proof {
+    justify-content: flex-start;
+    gap: 0.85rem 1.5rem;
+    margin-inline: 0;
+  }
+  .lab-actions {
+    justify-content: stretch;
+  }
+  .lab-cta {
+    width: 100%;
+    justify-content: center;
+  }
+  .lab-ribbon {
+    height: min(46vh, 420px);
+  }
+  .lab-scroll {
+    display: none;
+  }
+}
+
+/* ── reduced motion: the composition, held still ────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .lab-badge,
+  .lab-headline,
+  .lab-sub,
+  .lab-proof,
+  .lab-actions,
+  .lab-chrome,
+  .lab-ribbon,
+  .lab-scroll {
+    animation: none;
+  }
+  .lab-mesh span,
+  .lab-badge-dot {
+    animation: none;
+  }
+  .lab-word {
+    transition: none;
+  }
+  .lab-plane {
+    transform: none;
+  }
+}

@@ -66,8 +66,8 @@ export type EcoNode = { name: string; tooltip: string };
 // business-critical reading surfaces. Bounds are cached outside the frame
 // loop; weight controls influence without changing the authored composition.
 const FLOW_OBSTACLES = [
-  ["#hero .type-hero-title", 1],
-  ["#hero .type-lead-copy", 0.72],
+  ["#hero .lab-headline", 1],
+  ["#hero .lab-sub", 0.72],
   ["#problem .type-section-title", 0.9],
   ["#ecosystem .type-section-title", 0.82],
   ["#services .type-section-title", 0.9],
@@ -85,7 +85,9 @@ function makeJourneyRuntime(
   search: URLSearchParams | null,
 ) {
   // journey order: site → método → work → origin → studio → contact →
-  // footer — the R5-D scenes fill what were the liquid-dead bands
+  // footer — the R5-D scenes fill what were the liquid-dead bands.
+  // The Hero stream is rendered by components/hero/HeroRibbon. The page field
+  // begins its work as the Hero leaves for The Problem.
   const scenes: SceneModule[] = [
     makeSiteScene({ onHeroActive }),
     makeMethodScene(),
