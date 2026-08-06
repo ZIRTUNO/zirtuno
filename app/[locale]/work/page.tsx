@@ -4,7 +4,8 @@ import { Link, routing } from "@/lib/i18n/config";
 import { cn } from "@/lib/utils";
 import { ProjectCard } from "@/components/chapters/ProjectCard";
 import { Footer } from "@/components/chrome/Footer";
-import { getProjectsByCategory } from "@/lib/content/work";
+import { CtaAnalysis } from "@/components/chrome/CtaButton";
+import { getProjectsByCategory, hasPublishedProjects } from "@/lib/content/work";
 import { PROJECT_CATEGORIES } from "@/lib/sanity/types";
 
 export function generateStaticParams() {
@@ -59,6 +60,7 @@ export default async function WorkPage({
 
   const t = await getTranslations("work");
   const projects = await getProjectsByCategory(category);
+  const hasWork = await hasPublishedProjects();
   const active = category ?? "all";
 
   return (
@@ -75,35 +77,47 @@ export default async function WorkPage({
           {t("indexLead")}
         </p>
 
-        <nav
-          className="mt-10 flex flex-wrap gap-2"
-          aria-label={t("indexTitle")}
-        >
-          <Link
-            href="/work"
-            data-cursor="hover"
-            className={cn("work-filter", active === "all" && "is-active")}
-            aria-current={active === "all" ? "page" : undefined}
+        {/* Filters exist only when there is something to filter. Eight controls
+            over an empty catalogue were the page's loudest element and every one
+            of them led to the same empty result. */}
+        {hasWork && (
+          <nav
+            className="mt-10 flex flex-wrap gap-2"
+            aria-label={t("indexTitle")}
           >
-            {t("filterAll")}
-          </Link>
-          {PROJECT_CATEGORIES.map((c) => (
             <Link
-              key={c}
-              href={`/work?category=${c}`}
+              href="/work"
               data-cursor="hover"
-              className={cn("work-filter", active === c && "is-active")}
-              aria-current={active === c ? "page" : undefined}
+              className={cn("work-filter", active === "all" && "is-active")}
+              aria-current={active === "all" ? "page" : undefined}
             >
-              {t(`categories.${c}`)}
+              {t("filterAll")}
             </Link>
-          ))}
-        </nav>
+            {PROJECT_CATEGORIES.map((c) => (
+              <Link
+                key={c}
+                href={`/work?category=${c}`}
+                data-cursor="hover"
+                className={cn("work-filter", active === c && "is-active")}
+                aria-current={active === c ? "page" : undefined}
+              >
+                {t(`categories.${c}`)}
+              </Link>
+            ))}
+          </nav>
+        )}
 
         {projects.length === 0 ? (
-          <p className="mt-16 max-w-2xl text-body-l text-paper-mute">
-            {t(category ? "empty" : "emptyPortfolio")}
-          </p>
+          <div className="work-empty mt-12 max-w-2xl">
+            <p className="work-empty-label">{t("emptyLabel")}</p>
+            <p className="work-empty-body">
+              {t(category ? "empty" : "emptyPortfolio")}
+            </p>
+            <p className="work-empty-invite">{t("emptyInvite")}</p>
+            <div className="mt-7 flex">
+              <CtaAnalysis placement="work_index_empty" />
+            </div>
+          </div>
         ) : (
           <div className="mt-12 grid min-w-0 gap-10 sm:grid-cols-2 lg:grid-cols-3">
             {projects.map((p) => (

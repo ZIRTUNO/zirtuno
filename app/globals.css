@@ -18,11 +18,16 @@
        mute = readable secondary (leads, descriptions, poetic accents)
        soft = quiet mono metadata (capability lists, counters, fine print)
        dim  = captions / input placeholders
-       faint = hairline borders + rules only */
-  --color-paper-mute: rgba(242, 240, 235, 0.56);
-  --color-paper-soft: rgba(242, 240, 235, 0.42);
-  --color-paper-dim: rgba(242, 240, 235, 0.3);
-  --color-paper-faint: rgba(242, 240, 235, 0.1);
+       faint = hairline borders + rules only.
+     R5-E raised every rung one notch. The ladder's SHAPE is unchanged — the
+     steps are still clearly separated — but the audit found muted copy losing
+     its read once the liquid, the veils and the grain were composited over it.
+     Against ink these now measure ≈7.1:1 (mute), ≈4.5:1 (soft) and ≈3.0:1
+     (dim), so secondary copy holds AA even under the transient act fades. */
+  --color-paper-mute: rgba(242, 240, 235, 0.62);
+  --color-paper-soft: rgba(242, 240, 235, 0.48);
+  --color-paper-dim: rgba(242, 240, 235, 0.36);
+  --color-paper-faint: rgba(242, 240, 235, 0.13);
   --color-warn: #ff6b5c; /* form errors only */
 
   /* --- Fonts (S1.2 · display/text split, R4). next/font sets the family vars
@@ -91,12 +96,14 @@
   --text-body-s--line-height: 1.5;
   --text-body-s--letter-spacing: 0em;
 
-  /* LABEL — JetBrains mono (uppercase, open tracking) */
-  --text-mono: clamp(0.75rem, 0.71rem + 0.18vw, 0.875rem);
+  /* LABEL — JetBrains mono (uppercase, open tracking). R5-E lifted both tiers:
+     open tracking plus a 11–12px cap made counters, capability lists, filters
+     and chrome CTAs the hardest reads on the site once composited. */
+  --text-mono: clamp(0.8125rem, 0.78rem + 0.15vw, 0.9375rem);
   --text-mono--line-height: 1.35;
   --text-mono--letter-spacing: 0.1em;
 
-  --text-mono-sm: clamp(0.6875rem, 0.66rem + 0.12vw, 0.75rem);
+  --text-mono-sm: clamp(0.75rem, 0.72rem + 0.13vw, 0.8125rem);
   --text-mono-sm--line-height: 1.45;
   --text-mono-sm--letter-spacing: 0.11em;
 }
@@ -144,6 +151,18 @@
   --tracking-label: 0.08em;
   --tracking-label-open: 0.12em;
   --tracking-label-wide: 0.14em;
+
+  /* The chapter rail's protected column. Only the two homepage blocks that
+     actually reach the page's right edge (the Studio role grid and the Work
+     strip) reserve it; every other chapter is measure-limited and already
+     stops far short. 0 below lg, where the rail is not rendered at all. */
+  --rail-safe: 0rem;
+}
+
+@media (min-width: 1024px) {
+  :root {
+    --rail-safe: 2.75rem;
+  }
 }
 
 /* The desktop display voice is intentionally compressed. Small screens gain
@@ -153,6 +172,12 @@
     --text-hero--line-height: 0.97;
     --text-display-xl--line-height: 0.94;
     --text-display-l--line-height: 0.98;
+    /* the Hero's first screen has to carry the promise, the primary action AND
+       the mark on a 844 px phone — the poetic line keeps its voice one notch
+       smaller, and the two Hero rhythms tighten */
+    --text-poetic: 1.1875rem;
+    --hero-label-space: 0.85rem;
+    --hero-action-space: 1.75rem;
   }
 }
 
@@ -169,7 +194,13 @@
    above the fold while normal-height desktops retain the full display scale. */
 @media (min-width: 1024px) and (max-height: 800px) {
   :root {
-    --text-hero: min(4.375rem, 7vw);
+    /* Laptop stages (1280×720, 1366×768) get a deliberately different Hero
+       break. The signature four-line headline needs a tall viewport; on a short
+       one it pushed the primary CTA onto the fold. A slightly wider copy column
+       and one size down let the promise land as a clean two-liner with the
+       action fully above it. Taller desktops keep the approved composition. */
+    --text-hero: min(4rem, 6.4vw);
+    --measure-hero: 20ch;
     --hero-label-space: 1.5rem;
     --hero-action-space: 2rem;
   }
@@ -607,13 +638,16 @@ section[id],
 /* ===========================================================================
    Type breathing (S1.8) — serif display ONLY, ~8s, very subtle
    =========================================================================== */
+/* R5-E floor: the breath used to multiply an already-muted colour down to
+   ~0.25 alpha, which is where the audit found the Hero eyebrow "extremely
+   subdued". The gesture is identical — the trough is simply readable. */
 @keyframes type-breathe {
   0%,
   100% {
-    opacity: 0.45;
+    opacity: 0.74;
   }
   50% {
-    opacity: 0.72;
+    opacity: 1;
   }
 }
 .type-breathe {
@@ -875,22 +909,114 @@ section[id],
   display: none;
 }
 
+/* Copy that STANDS on the liquid (R5-E). Every cinematic chapter puts business
+   copy over a live cyan field whose luminance wanders through the same band as
+   muted paper. A shadow — not a dim, not a veil — separates the two: the
+   material keeps its full luminosity and the type keeps its edge. */
+.liquid-journey
+  :is(
+    .symptom-desc,
+    .pillar-accent,
+    .pillar-caps,
+    .method-name,
+    .method-desc,
+    .method-num,
+    .origin-open,
+    .origin-coda,
+    .origin-closing,
+    .origin-grace,
+    .founding-pillars,
+    .name-word,
+    .name-word-text,
+    .manifesto-line,
+    .eco-stack-name,
+    .eco-stack-cap,
+    .eco-stack-center,
+    .origin-pillar-label
+  ),
+.side-index-num {
+  text-shadow:
+    0 1px 10px rgb(0 0 0 / 0.78),
+    0 0 26px rgb(0 0 0 / 0.55);
+}
+
+/* A droplet crossing the one thing the reader is meant to press costs more than
+   one crossing a paragraph. The primary action keeps a glass backing at every
+   width: the liquid still reads through it, the label always wins. */
+.liquid-journey .cta-primary {
+  background: rgb(0 0 0 / 0.68);
+}
+
 /* Mobile reading apertures: the live field remains visible around the copy,
    while a page-black feather prevents high-energy droplets from crossing the
-   two densest commercial statements. This is composition, not liquid dimming. */
+   business message. This is composition, not liquid dimming.
+   R5-E widened the set: the audit found the liquid crossing Problem items, the
+   Ecosystem stack, service descriptions, the Work empty state, Method phases,
+   Origin copy and the Studio lead — every place the argument actually lives,
+   not only the two headline statements the aperture originally covered. */
 @media (max-width: 767px) {
-  .liquid-journey #hero :is(.type-hero-title, .type-lead-copy),
   .liquid-journey
-    :where(#problem, #services)
-    :is(.type-section-title, .type-lead-copy),
-  .liquid-journey #services :is(.pillar-accent, .pillar-name) {
+    :is(
+      #hero .chapter-label,
+      #hero .type-breathe,
+      #hero .type-hero-title,
+      #hero .type-lead-copy,
+      #problem .type-section-title,
+      #problem .type-lead-copy,
+      #problem .symptom,
+      #ecosystem .type-section-title,
+      #ecosystem .type-lead-copy,
+      #ecosystem .eco-stack-center,
+      #ecosystem .eco-stack-item,
+      #services .type-section-title,
+      #services .type-lead-copy,
+      #services .pillar-accent,
+      #services .pillar-name,
+      #services .pillar-blocks,
+      #services .pillar-caps,
+      #method .type-section-title,
+      #method .method-name,
+      #method .method-desc,
+      #work .type-section-title,
+      #work .type-lead-copy,
+      #name .origin-open,
+      #name .founding-pillars,
+      #name .origin-statement,
+      #name .origin-coda,
+      #name .name-word-text,
+      #name .origin-closing,
+      #name .origin-grace,
+      #name .manifesto-line,
+      #studio .studio-lead,
+      #studio .type-feature-title,
+      #contact .type-section-title
+    ) {
     background: rgb(0 0 0 / 0.86);
     box-shadow: 0 0 1.1rem 0.8rem rgb(0 0 0 / 0.86);
   }
 
-  .liquid-journey #services .pillar-accent {
+  /* the aperture hugs the words on short, non-filling lines */
+  .liquid-journey
+    :is(#services .pillar-accent, #name .manifesto-line, #name .founding-pillars) {
     width: fit-content;
     max-width: 100%;
+  }
+  .liquid-journey #name .founding-pillars {
+    margin-inline: auto;
+  }
+
+  .liquid-journey :is(.cta-secondary, .cta-ghost) {
+    background: rgb(0 0 0 / 0.86);
+    box-shadow: 0 0 0.9rem 0.7rem rgb(0 0 0 / 0.86);
+  }
+  .liquid-journey #name .manifesto-line {
+    margin-inline: auto;
+  }
+
+  /* the stack's cyan spine would be cut by the per-item apertures — it moves
+     in front of them so the ecosystem still reads as ONE connected list */
+  .liquid-journey #ecosystem .eco-stack::before {
+    z-index: 1;
   }
 }
 
@@ -946,10 +1072,18 @@ section[id],
 }
 
 /* S4's converge runway — the scroll distance the liquid choreography is
-   scrubbed across (no pins; the sticky layer holds the stage). */
+   scrubbed across (no pins; the sticky layer holds the stage).
+   R5-E shortened it: at 230vh the reader crossed a full desktop viewport, and
+   several narrow ones, that carried liquid and no ecosystem explanation. The
+   choreography is scrubbed, so it is unchanged in shape — only in duration. */
 .eco-runway {
   position: relative;
-  height: 230vh;
+  height: 165vh;
+}
+@media (max-width: 767px) {
+  .eco-runway {
+    height: 130vh;
+  }
 }
 .ecosystem-interactions-host {
   position: sticky;
@@ -996,7 +1130,7 @@ section[id],
   align-items: baseline;
   max-width: 26rem;
   padding: 1.5rem 0 0;
-  margin-bottom: 22vh;
+  margin-bottom: 13vh;
   border-top: 1px solid var(--color-paper-faint);
 }
 .symptom:last-child {
@@ -1015,7 +1149,7 @@ section[id],
 @media (min-width: 768px) {
   .symptom {
     margin-left: var(--shard-x, 0);
-    margin-bottom: 30vh;
+    margin-bottom: 18vh;
   }
 }
 .symptom-num {
@@ -1341,19 +1475,24 @@ section[id],
 /* ===========================================================================
    The Services — pillar entries (S5)
    =========================================================================== */
-/* ONE service owns the viewport at a time: generous vertical rhythm gives the
-   liquid room to melt between pillars without two states ever competing. */
+/* ONE service owns the viewport at a time: enough vertical rhythm for the
+   liquid to melt between pillars without two states ever competing.
+   R5-E: 24vh of padding meant a 720px-tall stage almost never framed a whole
+   card — every capture showed the tail of the previous service above a clipped
+   current one. 14vh still separates the melts and lets each pillar arrive as
+   one clean standing read. */
 .pillar {
   position: relative;
-  padding: 24vh 0;
+  padding: 14vh 0;
   border-top: 1px solid var(--color-paper-faint);
+  scroll-margin-top: calc(var(--topbar-h) + 2rem);
 }
 .pillar:first-child {
   border-top: 0;
-  padding-top: 10vh;
+  padding-top: 7vh;
 }
 .pillar:last-child {
-  padding-bottom: 12vh;
+  padding-bottom: 10vh;
 }
 .liquid-journey[data-liquid="static"] .pillar,
 .liquid-journey[data-liquid="static"] .pillar:first-child,
@@ -1369,7 +1508,7 @@ section[id],
 }
 .pillar-watermark {
   position: absolute;
-  top: 22vh;
+  top: 12vh;
   right: 0;
   z-index: 0;
   font-family: var(--font-mono);
@@ -1410,7 +1549,7 @@ section[id],
 }
 .pillar-block {
   display: grid;
-  grid-template-columns: 9rem 1fr;
+  grid-template-columns: 10.25rem 1fr;
   gap: 0.25rem 1.5rem;
   align-items: baseline;
 }
@@ -1468,7 +1607,7 @@ section[id],
 .method-phase {
   position: relative;
   display: flex;
-  min-height: 92vh;
+  min-height: 74vh;
   flex-direction: column;
   justify-content: center;
   max-width: 24rem;
@@ -1684,7 +1823,7 @@ section[id],
   display: inline-flex;
   align-items: center;
   min-height: 44px;
-  padding: 0.45rem 0.8rem;
+  padding: 0.5rem 1.1rem;
   font-family: var(--font-mono);
   font-size: var(--text-mono-sm);
   font-weight: 500;
@@ -1707,6 +1846,47 @@ section[id],
   color: var(--color-ink);
   background: var(--color-cyan);
   border-color: var(--color-cyan);
+}
+
+/* The designed empty state (R5-E). "Nothing is published yet" is an honest
+   answer, but a lone muted sentence under a display heading read as an
+   unfinished page. It is a deliberate panel now, and it ends in the one action
+   that IS available while the selection is in curation. */
+.work-empty {
+  max-width: 44rem;
+  padding: clamp(1.5rem, 4vw, 2.25rem);
+  border: 1px solid var(--color-paper-faint);
+  border-left: 2px solid var(--color-cyan-deep);
+  background: color-mix(in srgb, var(--color-surface) 82%, transparent);
+}
+.work-empty-label {
+  font-family: var(--font-mono);
+  font-size: var(--text-mono-sm);
+  font-weight: 500;
+  line-height: var(--text-mono-sm--line-height);
+  letter-spacing: var(--tracking-label-open);
+  text-transform: uppercase;
+  color: var(--color-cyan);
+}
+.work-empty-body {
+  margin-top: 1rem;
+  font-size: var(--text-body-l);
+  line-height: var(--text-body-l--line-height);
+  letter-spacing: var(--text-body-l--letter-spacing);
+  color: var(--color-paper);
+}
+.work-empty-invite {
+  margin-top: 0.75rem;
+  max-width: var(--measure-reading);
+  font-size: var(--text-body);
+  line-height: var(--text-body--line-height);
+  letter-spacing: var(--text-body--letter-spacing);
+  color: var(--color-paper-mute);
+}
+
+/* the homepage strip is the other block that reaches the page's right edge */
+#work .work-strip {
+  margin-right: var(--rail-safe);
 }
 
 .case-hero {
@@ -1813,14 +1993,25 @@ section[id],
    while the sticky liquid stage behind plays the story. Copy sits in the LOWER
    third — the liquid (the mark) owns the centre. The static path collapses the
    runway back to the plain reading column. */
+/* R5-E trimmed every beat. The story is unchanged; the waiting is not. The old
+   108–118vh beats plus a bottom-thirds anchor meant the chapter opened on an
+   almost empty screen and asked for a full viewport of scroll before its first
+   sentence. */
 .origin-beat {
   display: flex;
-  min-height: 108vh;
+  min-height: 86vh;
   flex-direction: column;
   align-items: center;
   justify-content: flex-end;
-  padding-bottom: 16vh;
+  padding-bottom: 11vh;
   text-align: center;
+}
+/* the opening beat carries its line into the reader's eyeline instead of
+   holding a near-empty viewport before it */
+.origin-beat:first-child {
+  min-height: 68vh;
+  justify-content: center;
+  padding-bottom: 0;
 }
 /* Beat 1 — a quiet opening (the two masses drift in behind) */
 .origin-open {
@@ -1832,7 +2023,7 @@ section[id],
 }
 /* Beat 2 — the mark forms on the stage; the pillar line reads beneath it */
 .origin-beat--mark {
-  min-height: 118vh;
+  min-height: 96vh;
 }
 /* Beat 3 — the purpose: the dominant line, CENTRED over the breathing mark */
 .origin-beat--hold {
@@ -1857,7 +2048,7 @@ section[id],
 }
 /* Beat 5 — the resolution: the wordmark assembles as the liquid drains */
 .origin-beat--resolve {
-  min-height: 118vh;
+  min-height: 96vh;
   justify-content: center;
   padding-bottom: 0;
 }
@@ -1892,6 +2083,21 @@ section[id],
   white-space: nowrap;
   opacity: 0; /* arrives with the mark (imperative) */
 }
+/* Narrow stages have no room beside the mark for three floating labels — the
+   percentages put them off-stage, where the layer's overflow simply ate them.
+   Below md the authored pillar LINE carries the three founding pillars instead,
+   live or static, so the beat never loses its content. */
+@media (max-width: 767px) {
+  .origin-pillar-labels {
+    display: none;
+  }
+  .liquid-journey[data-liquid="live"][data-field-ready="true"]
+    #name
+    .founding-pillars.journey-static {
+    display: block;
+  }
+}
+
 /* static path: collapse the runway to the plain reading column (the
    data-liquid flag lives on the page-wide PageStage wrapper since R5) */
 .liquid-journey[data-liquid="static"] .origin-beat {
@@ -1966,6 +2172,11 @@ section[id],
   .studio-roles {
     grid-template-columns: repeat(3, 1fr);
   }
+}
+/* the role grid is one of only two homepage blocks that reach the page's right
+   edge — it stops short of the chapter rail's protected column */
+#studio .studio-roles {
+  margin-right: var(--rail-safe);
 }
 
 /* ===========================================================================
@@ -2051,6 +2262,55 @@ section[id],
   font-size: var(--text-body-s);
   line-height: var(--text-body-s--line-height);
   letter-spacing: var(--text-body-s--letter-spacing);
+  color: var(--color-warn);
+}
+
+/* the aggregate error announcement (R5-E) — one focused, spoken summary of the
+   complete error state. Salmon stays validation-only; the block is quiet, not
+   a klaxon, and each line is a direct route to its field. */
+.contact-error-summary {
+  padding: 1rem 1.15rem;
+  border: 1px solid color-mix(in srgb, var(--color-warn) 55%, transparent);
+  border-left-width: 2px;
+  background: color-mix(in srgb, var(--color-warn) 7%, transparent);
+}
+.contact-error-summary:focus {
+  outline: none;
+}
+.contact-error-summary:focus-visible {
+  outline: 2px solid var(--color-warn);
+  outline-offset: 3px;
+}
+.contact-error-summary-title {
+  font-family: var(--font-mono);
+  font-size: var(--text-mono-sm);
+  font-weight: 500;
+  line-height: var(--text-mono-sm--line-height);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--color-warn);
+}
+.contact-error-summary ul {
+  margin-top: 0.6rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+.contact-error-summary a {
+  font-size: var(--text-body-s);
+  line-height: var(--text-body-s--line-height);
+  color: var(--color-paper);
+  text-decoration: underline;
+  text-decoration-color: color-mix(
+    in srgb,
+    var(--color-warn) 70%,
+    transparent
+  );
+  text-underline-offset: 3px;
+  transition: color 200ms var(--ease-arrive);
+}
+.contact-error-summary a:hover,
+.contact-error-summary a:focus-visible {
   color: var(--color-warn);
 }
 .contact-pending {
@@ -2170,19 +2430,22 @@ section[id],
   align-items: center;
   gap: 1.5rem;
 }
+/* The chrome carries the location, the language choice and the only persistent
+   conversion action, so R5-E gave all three the LABEL tier rather than the
+   fine-print tier and pulled the location's tracking back a notch. */
 .topbar-location {
   font-family: var(--font-mono);
-  font-size: var(--text-mono-sm);
+  font-size: var(--text-mono);
   font-weight: 500;
-  line-height: var(--text-mono-sm--line-height);
-  letter-spacing: var(--tracking-label);
+  line-height: var(--text-mono--line-height);
+  letter-spacing: var(--tracking-label-dense);
   text-transform: uppercase;
   color: var(--color-paper-mute);
 }
 .lang-toggle {
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.25rem;
 }
 .lang-opt {
   min-width: 44px;
@@ -2192,10 +2455,10 @@ section[id],
   border: none;
   cursor: pointer;
   font-family: var(--font-mono);
-  font-size: var(--text-mono-sm);
+  font-size: var(--text-mono);
   font-weight: 500;
-  line-height: var(--text-mono-sm--line-height);
-  letter-spacing: var(--tracking-label);
+  line-height: var(--text-mono--line-height);
+  letter-spacing: var(--tracking-label-dense);
   color: var(--color-paper-mute);
   transition: color 200ms var(--ease-arrive);
 }
@@ -2204,6 +2467,13 @@ section[id],
 }
 .lang-opt.is-active {
   color: var(--color-cyan);
+}
+/* the persistent CTA is an action, not metadata — it reads at full paper */
+.topbar-desktop .cta-ghost {
+  font-size: var(--text-mono);
+  line-height: var(--text-mono--line-height);
+  letter-spacing: var(--tracking-label-dense);
+  color: var(--color-paper);
 }
 
 @media (max-width: 1023px) {
@@ -2230,22 +2500,44 @@ section[id],
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: 0.95rem;
+  gap: 0.7rem;
 }
 .side-index-link {
   position: relative;
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 0.6rem;
+  gap: 0.5rem;
+  padding-block: 2px;
   text-decoration: none;
 }
 .side-index-link::before {
   content: "";
   position: absolute;
-  inset: -4px;
+  inset: -5px -4px;
 }
+/* the resting state: the chapter NUMBER — the same numbering every chapter
+   label carries. Narrow enough that the rail can never sit on the copy. */
+.side-index-num {
+  font-family: var(--font-mono);
+  font-size: var(--text-mono-sm);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums lining-nums;
+  line-height: var(--text-mono-sm--line-height);
+  letter-spacing: var(--tracking-label-dense);
+  /* mute, not dim: these are now real text in the chrome, and they have to hold
+     AA on their own — the dim rung reads 2.9:1, and 2.2:1 under an act fade */
+  color: var(--color-paper-mute);
+  transition: color 200ms var(--ease-arrive);
+}
+/* the names reveal TOGETHER on rail hover / keyboard focus — the rail tells you
+   what it contains instead of making you probe nine dots one at a time. They
+   are absolutely placed, so revealing them never widens the resting footprint. */
 .side-index-label {
+  position: absolute;
+  right: 100%;
+  margin-right: 0.55rem;
+  padding: 0.15rem 0.5rem;
   font-family: var(--font-mono);
   font-size: var(--text-mono-sm);
   font-weight: 500;
@@ -2253,9 +2545,11 @@ section[id],
   letter-spacing: var(--tracking-label-dense);
   text-transform: uppercase;
   white-space: nowrap;
-  color: var(--color-paper-mute);
+  color: var(--color-paper);
+  background: rgb(0 0 0 / 0.72);
   opacity: 0;
   transform: translateX(6px);
+  pointer-events: none;
   transition:
     opacity 200ms var(--ease-arrive),
     transform 200ms var(--ease-arrive),
@@ -2263,27 +2557,33 @@ section[id],
 }
 .side-index-dot {
   flex: none;
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
   border-radius: 9999px;
   background: var(--color-paper-dim);
   transition:
     transform 200ms var(--ease-arrive),
     background 200ms var(--ease-arrive);
 }
+.side-index:hover .side-index-label,
+.side-index:focus-within .side-index-label,
 .side-index-link:hover .side-index-label,
 .side-index-link:focus-visible .side-index-label {
   opacity: 1;
   transform: translateX(0);
+}
+.side-index-link:hover .side-index-num,
+.side-index-link:focus-visible .side-index-num {
   color: var(--color-paper);
 }
 .side-index-link.is-active .side-index-dot {
   background: var(--color-cyan);
-  transform: scale(1.6);
+  transform: scale(1.5);
+}
+.side-index-link.is-active .side-index-num {
+  color: var(--color-cyan);
 }
 .side-index-link.is-active .side-index-label {
-  opacity: 1;
-  transform: translateX(0);
   color: var(--color-cyan);
 }
 
@@ -2556,19 +2856,12 @@ section[id],
   transform-origin: top;
   pointer-events: none;
 }
-.loading-screen {
-  position: fixed;
-  inset: 0;
-  z-index: 70;
-  display: grid;
-  place-items: center;
-  background: var(--color-ink);
-}
-
 /* 404 — the lone dispersed droplet (R3). Fallback = the fractured mark. */
 .lone-drop-stage {
   position: relative;
-  width: min(64vw, 22rem);
+  /* the viewport-height term keeps the whole 404 — mark, title, body AND the
+     way back — inside one laptop stage; the droplet was pushing the CTA off it */
+  width: min(64vw, 22rem, 34vh);
   aspect-ratio: 1 / 1;
   margin-inline: auto;
 }
@@ -2586,16 +2879,6 @@ section[id],
 .lone-drop-fallback.is-hidden {
   opacity: 0;
 }
-.loading-word {
-  font-family: var(--font-sans);
-  font-weight: 600;
-  font-size: var(--text-title);
-  line-height: var(--text-title--line-height);
-  letter-spacing: var(--text-title--letter-spacing);
-  color: var(--color-paper);
-  animation: loading-pulse 1.4s var(--ease-breath) infinite;
-}
-
 /* S1.10 — the ENTRY veil: the first brand touch is the wordmark assembling
    (shared particle engine with S8 Beat 5). Return visitors skip it with no
    flash: the layout's pre-paint script sets html[data-zveil="seen"] before
@@ -2647,16 +2930,6 @@ html[data-zveil="seen"] .entry-veil {
 .entry-veil-text.is-hidden {
   opacity: 0;
 }
-@keyframes loading-pulse {
-  0%,
-  100% {
-    opacity: 0.4;
-  }
-  50% {
-    opacity: 1;
-  }
-}
-
 /* ===========================================================================
    Reduced motion (S1.13/S1.14)
    NOTE: components must keep their RESTING state visible (never animate in

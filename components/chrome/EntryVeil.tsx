@@ -14,8 +14,11 @@ import { cn } from "@/lib/utils";
  * pre-paint script in the layout sets `html[data-zveil="seen"]` from
  * sessionStorage before the veil can paint), reduced motion (CSS media query
  * + JS), and it can never strand the page — a hard cap always releases it.
- * The route-segment loading state (app/[locale]/loading.tsx) still covers
- * in-app navigations.
+ * In-app navigations are covered by the cyan page wipe in
+ * app/[locale]/template.tsx. There is deliberately no route-segment
+ * `loading.tsx`: its Suspense boundary flushed the document shell — and with it
+ * a 200 status — before `notFound()` could run, turning every unmatched path
+ * into a soft 404.
  */
 export function EntryVeil({ label }: { label: string }) {
   const reduced = useReducedMotion();

@@ -107,6 +107,7 @@
     "labelCreates": "O que gera",
     "counter": "{n} / 07",
     "pillarCta": "Ver projetos de {category}",
+    "pillarCtaTalk": "Falar sobre {category}",
     "pillars": {
       "web": {
         "accent": "A superfície onde o sopro pousa.",
@@ -284,6 +285,8 @@
       "back": "Voltar aos projetos"
     },
     "empty": "Nenhuma arquitetura publicada nesta seleção.",
+    "emptyLabel": "Seleção em curadoria",
+    "emptyInvite": "Enquanto isso, podemos desenhar e mostrar a estrutura que construiríamos para o seu negócio.",
     "emptyPortfolio": "A seleção está em curadoria. Nenhum projeto ou estudo conceitual foi publicado ainda."
   },
   "name": {
@@ -351,6 +354,7 @@
       "email": "Informe um email válido.",
       "message": "Conte um pouco do que você precisa."
     },
+    "errorSummaryTitle": "Corrija {count, plural, =1 {1 campo} other {# campos}} antes de enviar.",
     "secondaryLead": "Ou fale direto:",
     "whatsapp": "WhatsApp",
     "email": "Email",
@@ -369,6 +373,7 @@
   },
   "notFound": {
     "code": "404",
+    "metaTitle": "Página não encontrada",
     "title": "Esta página se dispersou.",
     "body": "O caminho que você procurava não existe — ou ainda não tomou forma.",
     "cta": "Voltar ao início"

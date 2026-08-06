@@ -39,13 +39,14 @@ export function makeFooterScene(): SceneModule {
   let stOx = 0;
   let stOy = 0;
   let stScale = 0.3;
+  let exitOx = 0;
   const scoreOut: Partial<LightScore> = { exposure: 1, vignette: 0 };
 
   return {
     id: "footer",
     forms: [], // contact's held mark is the visual — this scene claims nothing
-    channels: { on: 0, p: 0, stOx: 0, stOy: 0, stScale: 0.3 },
-    damp: { on: false, stOx: false, stOy: false, stScale: false },
+    channels: { on: 0, p: 0, stOx: 0, stOy: 0, stScale: 0.3, exitOx: 0 },
+    damp: { on: false, stOx: false, stOy: false, stScale: false, exitOx: false },
     anchors: { wrap: ".footer", stage: ".contact-metaball-stage" },
 
     read(g: SceneGeom, out: SceneChannels) {
@@ -61,12 +62,18 @@ export function makeFooterScene(): SceneModule {
       }
       // the mark's stage (contact's box) — the droplet detaches FROM it
       const st = g.rect("stage");
+      const md = Math.min(g.vw, vh);
       if (st) {
-        const md = Math.min(g.vw, vh);
         out.stOx = (st.left + st.width / 2 - g.vw / 2) / md;
         out.stOy = (vh / 2 - (st.top + st.height / 2)) / md;
         out.stScale = Math.min(st.width, st.height) / md;
       }
+      // The fall LEANS to the page's outer margin instead of dropping down the
+      // middle. Straight down put a bright droplet across the footer's locale
+      // control at narrow widths (Z-AUD-011); the outer margin is empty at every
+      // width, and a departure that drifts as it sinks reads better than a plumb
+      // line. 14% of the viewport, expressed in the same stage units as stOx.
+      out.exitOx = (g.vw * 0.14 - g.vw / 2) / md;
     },
 
     presence(ctx: SceneCtx) {
@@ -78,6 +85,7 @@ export function makeFooterScene(): SceneModule {
       stOx = ctx.ch.stOx;
       stOy = ctx.ch.stOy;
       stScale = ctx.ch.stScale;
+      exitOx = ctx.ch.exitOx;
       // the calm return to black (§5 act V) — light, not a veil
       scoreOut.exposure = 1 - 0.08 * p;
       scoreOut.vignette = 0.12 * p;
@@ -102,7 +110,11 @@ export function makeFooterScene(): SceneModule {
       // the blend note): contact's half of the blend pins the other side.
       const sep = smooth01((p - 0.32) / 0.25); // detach — after full grip
       const sink = smooth01((p - 0.4) / 0.6); // the long fall
-      out.x = fx + Math.sin(ctx.t * 0.6 + 2.1) * 0.03 * sink;
+      const exitX = 0.5 + exitOx; // the outer margin, clear of the footer bar
+      // 1.6, not the 2.1 the vertical fall uses: the lean only has to clear the
+      // footer bar, so it stays on-stage even if the blend is not exactly 50/50
+      out.x =
+        fx + (exitX - fx) * sink * 1.6 + Math.sin(ctx.t * 0.6 + 2.1) * 0.03 * sink;
       out.y = fy + (-0.14 - fy) * sink * 2.1;
       out.r = 0.027 * sep;
       out.bind = 0.2; // mostly free — the core gives the fall its wobble

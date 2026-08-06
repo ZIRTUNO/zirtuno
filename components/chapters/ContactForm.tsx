@@ -35,6 +35,10 @@ const ERROR_IDS = {
   message: "contact-message-error",
 } as const;
 
+// The summary lists errors in the form's own reading order, never in the order
+// the resolver happened to report them.
+const FIELD_ORDER = ["name", "email", "message"] as const;
+
 type SubmissionAttempt = {
   id: string;
   fingerprint: string;
@@ -76,17 +80,33 @@ export function ContactForm({
     useState<SubmissionAttempt | null>(null);
   const started = useRef(false);
   const formRef = useRef<HTMLFormElement>(null);
+  const summaryRef = useRef<HTMLDivElement>(null);
 
   const {
     register,
     handleSubmit,
     setValue,
     reset,
-    formState: { errors, isSubmitting },
+    formState: { errors, isSubmitting, submitCount },
   } = useForm<ContactInput>({
     resolver: zodResolver(contactSchema),
+    // The aggregate summary — not the first offending input — is what receives
+    // focus, so a screen reader hears the COMPLETE error state as one event
+    // instead of a single field's message.
+    shouldFocusError: false,
     defaultValues: { name: "", email: "", company: "", message: "", intent },
   });
+
+  const invalidFields = FIELD_ORDER.filter((field) => errors[field]);
+  const invalidCount = invalidFields.length;
+
+  // Every rejected submit moves the reader to the summary, so the complete
+  // error state is announced as ONE event. Driven by submitCount rather than by
+  // the resolver callback: a second attempt with the same failures must
+  // re-announce, and the summary has to exist in the DOM before it is focused.
+  useEffect(() => {
+    if (submitCount > 0 && invalidCount > 0) summaryRef.current?.focus();
+  }, [submitCount, invalidCount]);
 
   useEffect(() => {
     setValue("intent", intent);
@@ -222,6 +242,38 @@ export function ContactForm({
         <p className="contact-intent">
           {t("intentLabel")}: {t(`intents.${intent}`)}
         </p>
+      )}
+
+      {/* The aggregate error announcement (R5-E). Per-field `aria-describedby`
+          messages stay exactly where they are — this adds the ONE event that
+          was missing: the complete error state, announced and focused, with a
+          direct route to each offending field. */}
+      {invalidCount > 0 && (
+        <div
+          ref={summaryRef}
+          role="alert"
+          tabIndex={-1}
+          className="contact-error-summary"
+        >
+          <p className="contact-error-summary-title">
+            {t("errorSummaryTitle", { count: invalidCount })}
+          </p>
+          <ul>
+            {invalidFields.map((field) => (
+              <li key={field}>
+                <a
+                  href={`#contact-${field}`}
+                  onClick={(event) => {
+                    event.preventDefault();
+                    document.getElementById(`contact-${field}`)?.focus();
+                  }}
+                >
+                  {t(`validation.${field}`)}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
       )}
 
       <div className="field">

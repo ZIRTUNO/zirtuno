@@ -58,6 +58,18 @@ export async function getAllProjects(): Promise<Project[]> {
   return remote ?? [];
 }
 
+/**
+ * Is there ANY published proof right now?
+ *
+ * Reads the same cached catalogue every other query uses, so asking costs
+ * nothing extra. Chapters use it to keep the portfolio CTAs honest: while the
+ * selection is empty, "see the portfolio" is a dead end, and the visitor is
+ * offered the conversation instead.
+ */
+export async function hasPublishedProjects(): Promise<boolean> {
+  return (await getAllProjects()).length > 0;
+}
+
 export async function getFeaturedProjects(limit = 4): Promise<Project[]> {
   if (isDemoPortfolio) {
     return SEED_PROJECTS.filter((project) => project.featured).slice(0, limit);

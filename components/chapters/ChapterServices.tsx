@@ -12,7 +12,7 @@ import { PILLARS } from "@/lib/content/services";
  * pillar gets near-viewport presence — no competing states, no stacked
  * screens. Copy is server-rendered (RSC).
  */
-export function ChapterServices() {
+export function ChapterServices({ hasWork }: { hasWork: boolean }) {
   const t = useTranslations("services");
 
   return (
@@ -41,7 +41,12 @@ export function ChapterServices() {
         <div className="mt-[10vh] max-w-2xl">
           {PILLARS.map((p, i) => (
             <Reveal inView key={p.key} delay={0.03}>
-              <PillarEntry index={i} pillarKey={p.key} category={p.category} />
+              <PillarEntry
+                index={i}
+                pillarKey={p.key}
+                category={p.category}
+                hasWork={hasWork}
+              />
             </Reveal>
           ))}
         </div>

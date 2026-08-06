@@ -243,6 +243,18 @@ Ask before adding any dependency or substituting any layer.
   The post chain grades the liquid; the veils grade the page. Keep the split.
 - `lib/webgl/field-drivers.ts` remains the shared §3.3 melt kernel, deterministic
   harness contract, and special-page driver home—not a second homepage brain.
+- **There is deliberately no `app/[locale]/loading.tsx`.** Its Suspense boundary
+  flushed the document shell — and a 200 status — before `notFound()` could run,
+  so every unmatched path answered as a soft 404. Route transitions are covered
+  by the cyan wipe in `template.tsx`, which now plays only on client navigation
+  (a document's first paint has nothing to transition from). The localized 404's
+  head comes from the sibling layouts at `[locale]/[...rest]` and
+  `[locale]/work/[slug]`: a `not-found` boundary cannot export
+  `generateMetadata`, but a layout that never throws can.
+- The chapter rail rests at its numbers-only width and reserves `--rail-safe`;
+  only the two homepage blocks that reach the page's right edge (the Studio role
+  grid and the Work strip) claim it. `PageStage` measures the rail rather than
+  hardcoding its column.
 
 ## 8. Working Conventions
 

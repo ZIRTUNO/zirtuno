@@ -31,10 +31,14 @@ export const ORIGIN_OY = 0.06; // slightly above centre — the beat copy reads 
 // the three FOUNDING-pillar labels, anchored beside the mark's three lobes
 // (stage units around the mark centre, y up — understated, never cyan-styled).
 // Consumed by the shell (PageStage) for the floating DOM labels.
+// R5-E pushed them a notch further out: at 1280×720 the side anchors landed
+// within a few pixels of the beat-3 purpose line's 26rem measure, so label and
+// narrative shared one visual field. The shell clamps them into the stage, so
+// the wider anchors cannot walk off a narrow one.
 export const PILLAR_ANCHORS: { dx: number; dy: number }[] = [
-  { dx: -0.31, dy: 0.05 },
-  { dx: 0.3, dy: 0.18 },
-  { dx: 0.03, dy: -0.31 },
+  { dx: -0.38, dy: 0.05 },
+  { dx: 0.37, dy: 0.18 },
+  { dx: 0.03, dy: -0.35 },
 ];
 
 type OriginTarget = {

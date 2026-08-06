@@ -18,7 +18,7 @@ const PILLAR_KEYS = [
   "marketing",
 ] as const;
 
-export function Hero() {
+export function Hero({ hasWork }: { hasWork: boolean }) {
   const t = useTranslations("hero");
   const tp = useTranslations("services.pillars");
   // short pillar names for the metaball's keyboard a11y announcements (states 1-7)
@@ -64,7 +64,8 @@ export function Hero() {
           className="mt-[var(--hero-action-space)] flex flex-wrap items-center gap-x-8 gap-y-4"
         >
           <CtaAnalysis placement="hero" />
-          <CtaPortfolio placement="hero" />
+          {/* the secondary action only exists while the portfolio does */}
+          {hasWork && <CtaPortfolio placement="hero" />}
         </Reveal>
       </div>
 

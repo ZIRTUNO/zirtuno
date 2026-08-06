@@ -14,6 +14,8 @@ const eslintConfig = [
     ignores: [
       "node_modules/**",
       ".next/**",
+      ".next-verify/**", // NEXT_DIST_DIR verification builds
+      "captures/**", // local screenshot / QA scratch, never shipped
       "out/**",
       "build/**",
       "next-env.d.ts",

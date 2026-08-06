@@ -36,7 +36,7 @@ export function ChapterStudio() {
         {/* Who — anonymous role grid */}
         <Reveal inView delay={0.05}>
           <h2 className="case-label">{t("whoLabel")}</h2>
-          <p className="mt-5 max-w-[38ch] text-body-l text-paper-mute">
+          <p className="studio-lead mt-5 max-w-[38ch] text-body-l text-paper-mute">
             {t("whoLead")}
           </p>
           <ul className="studio-roles mt-6">

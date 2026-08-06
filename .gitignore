@@ -56,3 +56,6 @@ next-env.d.ts
 
 # local visual-evidence drops (videos, frame dumps) - reviewed, never shipped
 artifacts/
+
+# verification build output (NEXT_DIST_DIR)
+/.next-verify/

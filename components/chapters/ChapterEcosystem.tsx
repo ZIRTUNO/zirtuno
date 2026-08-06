@@ -13,7 +13,7 @@ type Node = { name: string; tooltip: string };
  * capability stack for narrow viewports / assistive tech / static tiers.
  * Copy is server-rendered (RSC) for SEO.
  */
-export function ChapterEcosystem() {
+export function ChapterEcosystem({ hasWork }: { hasWork: boolean }) {
   const t = useTranslations("ecosystem");
   const nodes = t.raw("nodes") as Node[];
 
@@ -70,7 +70,8 @@ export function ChapterEcosystem() {
 
         <Reveal inView className="flex flex-wrap items-center gap-x-8 gap-y-4">
           <CtaStructure placement="ecosystem" />
-          <CtaPortfolio placement="ecosystem" />
+          {/* the portfolio link only exists while there is a portfolio */}
+          {hasWork && <CtaPortfolio placement="ecosystem" />}
         </Reveal>
       </div>
     </section>

@@ -414,10 +414,15 @@ for (const locale of ["pt", "en"]) {
       );
     };
     const form = document.querySelector("#contact form");
+    // "absent" is a PASS: the route wipe no longer renders on a document's
+    // first paint at all (it is a transition, and there is nothing to
+    // transition from), so nothing can cover the no-JS page.
+    const displayOf = (element) =>
+      element ? getComputedStyle(element).display : "absent";
     return {
       h1: visible(document.querySelector("h1")),
-      veil: getComputedStyle(document.querySelector(".entry-veil")).display,
-      wipe: getComputedStyle(document.querySelector(".page-wipe")).display,
+      veil: displayOf(document.querySelector(".entry-veil")),
+      wipe: displayOf(document.querySelector(".page-wipe")),
       hiddenReveals: [...document.querySelectorAll("[data-reveal]")].filter(
         (element) => !visible(element),
       ).length,
@@ -444,8 +449,9 @@ for (const locale of ["pt", "en"]) {
       submit: visible(document.querySelector('#contact button[type="submit"]')),
     };
   });
+  const inert = (value) => value === "none" || value === "absent";
   check(
-    noJs.h1 && noJs.veil === "none" && noJs.wipe === "none",
+    noJs.h1 && inert(noJs.veil) && inert(noJs.wipe),
     "entry and route motion cannot strand the no-JS page",
     JSON.stringify(noJs),
   );

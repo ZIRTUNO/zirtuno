@@ -10,10 +10,14 @@ export function PillarEntry({
   index,
   pillarKey,
   category,
+  hasWork,
 }: {
   index: number;
   pillarKey: PillarKey;
   category: string;
+  /** While the portfolio is empty the category link is a dead end — the card
+   *  offers the conversation instead, still tagged with its entry intent. */
+  hasWork: boolean;
 }) {
   const t = useTranslations("services");
   const base = `pillars.${pillarKey}`;
@@ -58,12 +62,21 @@ export function PillarEntry({
       </p>
 
       <div className="mt-5">
-        <CtaButton
-          variant="ghost"
-          href={`/work?category=${category}`}
-          label={t("pillarCta", { category: categoryLabel })}
-          placement={`service_${pillarKey}`}
-        />
+        {hasWork ? (
+          <CtaButton
+            variant="ghost"
+            href={`/work?category=${category}`}
+            label={t("pillarCta", { category: categoryLabel })}
+            placement={`service_${pillarKey}`}
+          />
+        ) : (
+          <CtaButton
+            variant="ghost"
+            intent="structure"
+            label={t("pillarCtaTalk", { category: categoryLabel })}
+            placement={`service_${pillarKey}`}
+          />
+        )}
       </div>
     </article>
   );

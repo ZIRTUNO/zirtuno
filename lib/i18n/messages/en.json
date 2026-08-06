@@ -104,6 +104,7 @@
     "labelCreates": "What it creates",
     "counter": "{n} / 07",
     "pillarCta": "See {category} projects",
+    "pillarCtaTalk": "Talk about {category}",
     "pillars": {
       "web": {
         "accent": "The surface where the breath lands.",
@@ -281,6 +282,8 @@
       "back": "Back to work"
     },
     "empty": "No architecture has been published in this selection.",
+    "emptyLabel": "Selection in curation",
+    "emptyInvite": "In the meantime, we can map and show you the structure we would build for your business.",
     "emptyPortfolio": "The selection is being curated. No project or concept study has been published yet."
   },
   "name": {
@@ -348,6 +351,7 @@
       "email": "Enter a valid email.",
       "message": "Tell us a little about what you need."
     },
+    "errorSummaryTitle": "Fix {count, plural, =1 {1 field} other {# fields}} before sending.",
     "secondaryLead": "Or reach us directly:",
     "whatsapp": "WhatsApp",
     "email": "Email",
@@ -366,6 +370,7 @@
   },
   "notFound": {
     "code": "404",
+    "metaTitle": "Page not found",
     "title": "This page has dispersed.",
     "body": "The path you were looking for doesn't exist — or hasn't taken shape yet.",
     "cta": "Back home"

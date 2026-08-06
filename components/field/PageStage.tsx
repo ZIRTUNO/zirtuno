@@ -359,8 +359,15 @@ export function PageStage({
         el.style.setProperty("--d", String(t.d));
         el.style.setProperty("--w", String(t.w));
       });
-      // the right chapter-index rail owns this column — labels stay clear
-      const RAIL = 135;
+      // the right chapter-index rail owns this column — labels stay clear.
+      // Measured, not guessed: the rail rests at its numbers-only width, so the
+      // circuit's labels get back the column the old always-open label held.
+      const railEl = document.querySelector<HTMLElement>(".side-index");
+      const railBox = railEl?.getBoundingClientRect();
+      const RAIL =
+        railBox && railBox.width > 0
+          ? Math.ceil(w - (railBox.left - r.left)) + 16
+          : 0;
       nodeEls.current.forEach((el, s) => {
         if (!el) return;
         const p = px(socketPos(s, aspect), aspect, w, h);
@@ -395,11 +402,19 @@ export function PageStage({
         el.style.setProperty("--d", String(t.d));
         el.style.setProperty("--w", String(t.w));
       });
+      // the founding-pillar labels ride the mark's lobes, clamped into the
+      // stage exactly like the circuit's labels — the un-clamped percentages
+      // walked clean off a portrait viewport, so the beat lost them entirely
       pillarEls.current.forEach((el, i) => {
         if (!el) return;
         const a = PILLAR_ANCHORS[i % PILLAR_ANCHORS.length];
-        el.style.left = `${((a.dx / aspect + 0.5) * 100).toFixed(2)}%`;
-        el.style.top = `${((1 - (0.5 + ORIGIN_OY + a.dy)) * 100).toFixed(2)}%`;
+        const halfW = (el.offsetWidth || 90) / 2;
+        const x = (a.dx / aspect + 0.5) * w;
+        const y = (1 - (0.5 + ORIGIN_OY + a.dy)) * h;
+        const minX = halfW + 12;
+        const maxX = Math.max(minX, w - RAIL - halfW - 12);
+        el.style.left = `${Math.min(Math.max(x, minX), maxX).toFixed(1)}px`;
+        el.style.top = `${Math.min(Math.max(y, 26), h - 26).toFixed(1)}px`;
       });
     };
     layout();
@@ -514,11 +529,15 @@ export function PageStage({
     const applyOriginLabels = (p: number) => {
       if (Math.abs(p - lastP) < 0.002) return;
       lastP = p;
-      // the three labels arrive staggered as the mark resolves, leave at the end
-      const gone = 1 - smooth01((p - 0.84) / 0.1);
+      // The three labels arrive staggered as the mark fuses and clear BEFORE the
+      // echo beat (q4 opens at p 0.62). They used to hold until p 0.84, which
+      // put them underneath the evolution paragraph and the wordmark beat — the
+      // collisions the audit captured. Their window is now beat 2 + the purpose
+      // hold: exactly the passage they annotate.
+      const gone = 1 - smooth01((p - 0.56) / 0.08);
       pillarEls.current.forEach((el, i) => {
         if (!el) return;
-        const e = smooth01((p - (0.3 + i * 0.04)) / 0.09) * gone;
+        const e = smooth01((p - (0.24 + i * 0.035)) / 0.08) * gone;
         el.style.opacity = String(e);
         el.style.transform = `translate(-50%, -50%) translateY(${((1 - e) * 8).toFixed(1)}px)`;
       });

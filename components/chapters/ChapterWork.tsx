@@ -1,12 +1,17 @@
 import { getTranslations } from "next-intl/server";
 import { Reveal } from "@/components/ui/Reveal";
-import { CtaPortfolio } from "@/components/chrome/CtaButton";
+import { CtaAnalysis, CtaPortfolio } from "@/components/chrome/CtaButton";
 import { ProjectCard } from "./ProjectCard";
 import { getFeaturedProjects } from "@/lib/content/work";
 
 /**
  * S7 · Selected Work (homepage strip). A curated set of featured projects,
  * ending with the portfolio CTA → /work. Primary credibility section.
+ *
+ * While the selection is empty the chapter must not pretend otherwise, and it
+ * must not point at an empty index: the honest statement becomes a designed
+ * panel and the action becomes the conversation (R5-E). Never invent proof
+ * (§4.9) — but never dead-end the reader either.
  */
 export async function ChapterWork() {
   const t = await getTranslations("work");
@@ -36,7 +41,7 @@ export async function ChapterWork() {
 
       {projects.length > 0 ? (
         <>
-          <div className="mt-16 grid gap-10 sm:grid-cols-2">
+          <div className="work-strip mt-16 grid gap-10 sm:grid-cols-2">
             {projects.map((project, index) => (
               <Reveal
                 inView
@@ -53,8 +58,13 @@ export async function ChapterWork() {
           </Reveal>
         </>
       ) : (
-        <Reveal inView as="p" className="mt-12 max-w-2xl text-body-l text-paper-mute">
-          {t("emptyPortfolio")}
+        <Reveal inView className="work-empty mt-14">
+          <p className="work-empty-label">{t("emptyLabel")}</p>
+          <p className="work-empty-body">{t("emptyPortfolio")}</p>
+          <p className="work-empty-invite">{t("emptyInvite")}</p>
+          <div className="mt-7 flex">
+            <CtaAnalysis placement="work_empty" />
+          </div>
         </Reveal>
       )}
     </section>

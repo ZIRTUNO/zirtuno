@@ -26,6 +26,9 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { locale, slug } = await params;
   const project = await getProjectBySlug(slug);
+  // An unpublished slug renders the localized 404. This segment's metadata is
+  // discarded once the page calls notFound(), so the head title comes from the
+  // sibling layout's 404 default instead of from here.
   if (!project) return {};
 
   const t = await getTranslations({ locale, namespace: "work" });
