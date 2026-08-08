@@ -88,6 +88,34 @@ export function bridgeRadiusEnvelope(p: number): number {
   );
 }
 
+/**
+ * The handoff FLOOR. The bridge envelope must never drive a droplet's presence
+ * all the way down, because a cloud whose presence is scaled toward zero comes
+ * apart: two droplets only neck while their gap is under 0.83 x radius, so the
+ * ramps used to shatter the melt into loose beads at both ends. Rendering the
+ * real bridge cloud and counting connected bodies across the ramp:
+ *
+ *   p      radius envelope (was)   density envelope + this floor
+ *   0.16   34 bodies, largest 8%    5 bodies, largest 62%
+ *   0.80   48 bodies, largest 4%   12 bodies, largest 19%
+ *   0.30    3 bodies, largest 73%   3 bodies, largest 73%   (identical mid-melt)
+ *
+ * The remaining presence is taken away by the FORM, not by the envelope:
+ * formShield already suppresses droplets once they are under a solid surface,
+ * which is what the envelope was reaching for in the first place.
+ */
+/**
+ * …but it cannot be an actual floor. Presence must still reach 0 at both ends,
+ * because the melt hands back to a state where these droplets are fully
+ * absorbed; a floor left a 0.6 step at the release and moved the centre of mass
+ * 113x the journey's median step. So the ramp keeps its endpoints and is made
+ * STEEP instead: the cloud crosses the fragile band (where it would come apart
+ * into beads) in a fraction of the timeline it used to spend there.
+ */
+export const BRIDGE_RAMP = 0.25;
+export const bridgePresence = (p: number): number =>
+  Math.pow(bridgeRadiusEnvelope(p), BRIDGE_RAMP);
+
 /** Min-travel droplet matching (§3.2): greedy nearest-neighbour, O(N² log N). */
 export function matchClouds(A: Ball[], B: Ball[]): number[] {
   const pairs: [number, number, number][] = [];
@@ -133,10 +161,20 @@ export function packBridge(
   perm: number[],
   stag: number[],
   p: number,
+  dBuf?: Float32Array,
 ): number {
   // Keep droplets out of fully solid forms: they take over after the source
   // has started dissolving and drain before the target is already solid.
-  const rEnv = bridgeRadiusEnvelope(p);
+  //
+  // This envelope used to multiply the RADIUS, which is what made every melt
+  // shed micro-balls at both ends. Two droplets only neck while their gap is
+  // under 0.83 x radius, so scaling all 48 radii toward zero closes every
+  // merge in the cloud proportionally — the mass necessarily breaks into
+  // separate beads on the way in and again on the way out, and each bead stays
+  // fully solid until it is culled, because a metaball's peak field does not
+  // depend on its size. Driving DENSITY leaves the geometry (and therefore
+  // every neck) intact while the liquid thins into and out of existence.
+  const pres = bridgePresence(p);
   for (let i = 0; i < N; i++) {
     const lt = clamp01(p * (1 + STAGGER) - STAGGER * stag[i]);
     const tp = arrive(lt);
@@ -146,7 +184,14 @@ export function packBridge(
     const j = (offset + i) * 3;
     buf[j] = a[0] + (b[0] - a[0]) * tp;
     buf[j + 1] = a[1] + (b[1] - a[1]) * tp;
-    buf[j + 2] = (a[2] + (b[2] - a[2]) * tr) * rEnv;
+    // Radius rides the SAME steep ramp. It still has to reach 0 at both ends —
+    // the melt hands back to a state with no droplets, and leaving radius full
+    // there stepped the field's mass and moved the centre of mass ~107x the
+    // median. What changed is how long it lingers on the way: the old envelope
+    // spent most of each ramp below the merge threshold, which is where the
+    // cloud broke into beads.
+    buf[j + 2] = (a[2] + (b[2] - a[2]) * tr) * pres;
+    if (dBuf) dBuf[offset + i] = pres;
   }
   return offset + N;
 }
@@ -212,6 +257,10 @@ export type FieldDriver = {
      *  Canonical droplets use stable non-negative ids; transient families use
      *  -1 and therefore stay circular. */
     idBuf?: Int16Array,
+    /** Optional packed field DENSITY (1 = solid) the stage uploads as
+     *  iBallDensity. The stage refills it with 1 each frame, so a driver only
+     *  writes the slots it actually thins. */
+    dBuf?: Float32Array,
   ) => FieldFrame;
 };
 

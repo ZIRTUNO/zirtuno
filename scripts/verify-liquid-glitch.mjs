@@ -157,6 +157,9 @@ const result = await page.evaluate(
       gl.uniform1f(U("iEroB"), 0);
       gl.uniform1f(U("iGlass"), glass ? 1 : 0);
       gl.uniform3fv(U("iBalls"), balls);
+      // solid — the identity every consumer must upload (unset reads 0, which
+      // multiplies the ball field away entirely)
+      gl.uniform1fv(U("iBallDensity"), new Float32Array(balls.length / 3).fill(1));
       gl.uniform1i(U("iBallCount"), count);
       gl.clearColor(0, 0, 0, 0);
       gl.clear(gl.COLOR_BUFFER_BIT);

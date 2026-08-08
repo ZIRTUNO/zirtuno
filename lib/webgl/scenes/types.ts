@@ -44,6 +44,13 @@ export type DropletOut = {
   bind: number;
   cluster: number;
   z: number;
+  /** Field DENSITY, 1 = solid liquid. The channel a scene uses to make liquid
+   *  LEAVE: scaling `r` toward zero instead pulls droplets out of contact with
+   *  each other (they only neck while their gap is under 0.83 x radius) and
+   *  leaves fully-solid beads behind, because a metaball's peak field does not
+   *  fall with its size. The conductor reseeds this to 1 before every call, so
+   *  a scene that never mentions it always renders solid. */
+  d: number;
 };
 
 /** Per-frame context handed to every scene hook. `ch` is the scene's OWN

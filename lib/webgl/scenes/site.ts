@@ -47,6 +47,7 @@ import {
   permFor,
   packBridge,
   bridgeRadiusEnvelope,
+  BRIDGE_RAMP,
   formPresence,
   formPhase,
   type SiteCallbacks,
@@ -107,6 +108,7 @@ export function makeSiteScene(cbs: SiteCallbacks = {}): SceneModule {
   let perm: number[] = [];
   let stag: number[] = [];
   const scratch = new Float32Array(N * 3); // hero bridge cloud (form-local)
+  const scratchD = new Float32Array(N).fill(1); // …and its presence channel
   const startMelt = (s: number) => {
     perm = permFor(hState, s);
     stag = STAG[hState];
@@ -521,7 +523,16 @@ export function makeSiteScene(cbs: SiteCallbacks = {}): SceneModule {
       // ── per-droplet shared factors ──────────────────────────────────────────
       heroBridge = false;
       if (hPhase === "melt" && heroW > 0.002) {
-        packBridge(scratch, 0, CLOUDS[hState], CLOUDS[hTarget], perm, stag, meltP);
+        packBridge(
+          scratch,
+          0,
+          CLOUDS[hState],
+          CLOUDS[hTarget],
+          perm,
+          stag,
+          meltP,
+          scratchD,
+        );
         heroBridge = true;
       }
       // The page field remains invisible through the Hero and grows into the
@@ -577,10 +588,13 @@ export function makeSiteScene(cbs: SiteCallbacks = {}): SceneModule {
       let hx: number;
       let hy: number;
       let hr: number;
+      // presence (field density) rather than size — see BRIDGE_PRESENCE_FLOOR
+      let hd = 1;
       if (heroBridge) {
         hx = scratch[i * 3];
         hy = scratch[i * 3 + 1];
         hr = scratch[i * 3 + 2];
+        hd = scratchD[i];
       } else {
         hx = bb[0];
         hy = bb[1];
@@ -598,6 +612,7 @@ export function makeSiteScene(cbs: SiteCallbacks = {}): SceneModule {
       // its own capability's schedule. Nothing "converges" as a block.
       let bindJ = 0; // journey-side bind (exactness of the current regime)
       let clusJ = -1; // cohesion group
+      let densJ = 1; // journey-side field presence (1 = solid liquid)
       const clu = Tclu[i],
         dis = Tdis[i],
         eco = Teco[i];
@@ -663,9 +678,24 @@ export function makeSiteScene(cbs: SiteCallbacks = {}): SceneModule {
       // over. Without this the thirty gathered masses simply pile onto the
       // mark's footprint and inflate it into an amorphous blob — the form is
       // underneath the whole time, drowned by the liquid that carried it.
-      // Same principle as the §3.3 bridge's radius envelope: liquid leaves
-      // before the form is solid.
-      jr *= 1 - 0.84 * fused;
+      // Same principle as the §3.3 bridge: liquid leaves before the form is
+      // solid. But it leaves by THINNING, not by shrinking — scaling thirty
+      // radii toward zero pulled every gathered mass out of contact with its
+      // neighbours and left a rash of small, fully-solid beads sitting on the
+      // mark's silhouette (a metaball's peak field does not fall with its
+      // size). Density takes the presence away instead, so the masses stay
+      // merged the whole way in and are simply no longer there at full fuse;
+      // radius now only relieves the pile-up that would inflate the mark.
+      // `fused` LATCHES at 1 once the mark has formed, and that is deliberate:
+      // from here on the exact SILHOUETTE is the subject, so the carrying
+      // droplets stay absorbed through the Services pillars too and only the
+      // form is drawn. The §3.3 branch below hands them their presence back for
+      // the duration of each melt, which is the only time they are the subject
+      // again. Scoping this to the gathering alone re-exposed 48 droplets at
+      // every pillar rest and inflated the visible liquid by ~70%, embossing
+      // exactly the lumpy silhouettes this is meant to remove.
+      jr *= 1 - 0.35 * fused;
+      densJ = 1 - fused;
 
       // loose liquid drags with the scroll; gathered liquid has been claimed
       jy += stirY * (1 - e);
@@ -705,9 +735,18 @@ export function makeSiteScene(cbs: SiteCallbacks = {}): SceneModule {
         // journey's median step, right on the Ecosystem→Services seam. Easing
         // the two radii together over the first slice of the melt removes the
         // step without touching the bridge's own shape.
-        const bridgeR = (aa[2] + (bb2[2] - aa[2]) * trr) * rEnvM * jScale;
+        const ramp = Math.pow(rEnvM, BRIDGE_RAMP);
+        const bridgeR = (aa[2] + (bb2[2] - aa[2]) * trr) * ramp * jScale;
         const handoff = smooth01(clamp01(mState / 0.14));
         jr = jr * (1 - handoff) + bridgeR * handoff;
+        // PRESENCE HANDOFF — through the same easing as the radius above, and
+        // for the same reason. The gathered droplets arrive here fully absorbed
+        // (density 0, the mark's silhouette is the subject), while the bridge
+        // wants them back at the floor: assigning that directly stepped the
+        // field's mass from nothing to 0.6 in a single frame and moved the
+        // centre of mass 113x the journey's median step, right on this seam.
+        const bridgeD = ramp;
+        densJ = densJ * (1 - handoff) + bridgeD * handoff;
         bindJ = 1; // the §3.3 bridge is analytic-exact — physics hands off
         clusJ = -1;
         depth = 0; // the services body is the near plane, always
@@ -726,7 +765,13 @@ export function makeSiteScene(cbs: SiteCallbacks = {}): SceneModule {
       const li = smooth01((hp - 0.08 - 0.42 * hash(i, 15)) / 0.44);
       out.x = hx + (jx - hx) * li;
       out.y = hy + (jy - hy) * li;
-      out.r = (hr + (jr - hr) * li) * EXW;
+      out.r = hr + (jr - hr) * li;
+      // THE EXIT dissolves, it does not shrink. EXW used to scale every radius
+      // toward zero on the way into Método, which is the same fragmentation as
+      // the melt ramps: the departing body broke into a scatter of small solid
+      // dots that then blinked out one at a time. Taking presence away instead
+      // lets the mass thin and go, still whole.
+      out.d = (hd + (densJ - hd) * li) * EXW;
       // physics attributes (R5-B): the hero side is analytic-exact (rest
       // footprint / §3.3 bridge); looseness grows through the pour and lands
       // at the journey regime's own exactness

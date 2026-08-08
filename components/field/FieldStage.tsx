@@ -192,6 +192,8 @@ export default function FieldStage({
     const textures: (WebGLTexture | null)[] = new Array(STATE_COUNT).fill(null);
     const ballBuf = new Float32Array(SDF_BALL_MAX * 3);
     const zBuf = new Float32Array(SDF_BALL_MAX); // per-ball depth (iBallZ)
+    // per-ball field density (iBallDensity); 1 = solid liquid, 0 = dissolved
+    const dBuf = new Float32Array(SDF_BALL_MAX).fill(1);
     const ballIds = new Int16Array(SDF_BALL_MAX);
     ballIds.fill(-1);
     // `iBallVelocity` is packed as two xy vectors per vec4. Every history and
@@ -355,12 +357,14 @@ export default function FieldStage({
           ? gl.drawingBufferWidth / gl.drawingBufferHeight
           : 1;
       if (shapeShaderActive) ballIds.fill(-1);
+      dBuf.fill(1); // identity for any slot the driver does not author
       const f = driverRef.current.frame(
         tMs,
         ballBuf,
         aspect,
         zBuf,
         shapeShaderActive ? ballIds : undefined,
+        dBuf,
       );
       const ta = textures[f.a];
       if (!ta) return f; // the driver's form isn't built yet — fallback stays
@@ -435,6 +439,7 @@ export default function FieldStage({
       gl.uniform1f(layer.U("iAbsorb"), grade ? SDF_GRADE.ABSORB : 0);
       gl.uniform1f(layer.U("iDepthFx"), grade ? SDF_GRADE.DEPTH : 0);
       gl.uniform1fv(layer.U("iBallZ"), zBuf);
+      gl.uniform1fv(layer.U("iBallDensity"), dBuf);
       gl.clearColor(0, 0, 0, 0);
       gl.clear(gl.COLOR_BUFFER_BIT);
       gl.drawArrays(gl.TRIANGLES, 0, 3);

@@ -92,6 +92,10 @@ export default function FieldMorphHero({
       ? formPhase(m)
       : { wA: 1, eA: 0, wB: 0, eB: 0 };
     const buf = new Float32Array(SDF_BALL_MAX * 3);
+    // iBallDensity has NO safe GLSL default: unset uniform arrays read 0, which
+    // multiplies the whole ball field away. Every consumer of the glass shader
+    // must upload it, exactly like iGlass. Solid is the identity.
+    const dens = new Float32Array(SDF_BALL_MAX).fill(1);
     let count = 0;
     if (frozenCursor) {
       buf[0] = clamp01(frozenCursor[0]);
@@ -100,7 +104,7 @@ export default function FieldMorphHero({
       count = 1;
     }
     if (melt)
-      count = packBridge(buf, count, CLOUDS[a], CLOUDS[b], permFor(a, b), STAG[a], m);
+      count = packBridge(buf, count, CLOUDS[a], CLOUDS[b], permFor(a, b), STAG[a], m, dens);
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
 
     const draw = () => {
@@ -118,6 +122,7 @@ export default function FieldMorphHero({
       gl.uniform1f(layer.U("iEroB"), eB);
       gl.uniform1f(layer.U("iWarp"), warp);
       gl.uniform3fv(layer.U("iBalls"), buf);
+      gl.uniform1fv(layer.U("iBallDensity"), dens);
       gl.uniform1i(layer.U("iBallCount"), count);
       gl.activeTexture(gl.TEXTURE0);
       gl.bindTexture(gl.TEXTURE_2D, texA);
