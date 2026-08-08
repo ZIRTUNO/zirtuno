@@ -263,7 +263,7 @@ async function run(query, { scroll }) {
 }
 
 console.log("== default (shipped material), scrolling ==");
-const scrolled = await run("ftier=full", { scroll: true });
+const scrolled = await run("ftier=full&fglass=1", { scroll: true });
 console.log("  optics:", JSON.stringify(scrolled.optics));
 console.log(
   `  iBallShape max=${scrolled.tap.shapeMax} (${scrolled.tap.shapeSamples} uploads) · iStrain max=${scrolled.tap.strainMax} (${scrolled.tap.strainSamples})`,
@@ -274,13 +274,13 @@ console.log(
 );
 
 console.log("\n== default (shipped material), idle ==");
-const idle = await run("ftier=full", { scroll: false });
+const idle = await run("ftier=full&fglass=1", { scroll: false });
 console.log(
   `  travel: ${idle.stats.perSecond.toFixed(4)} uv/s · ${idle.stats.frames} frames`,
 );
 
 console.log("\n== control: legacy integrator (?fphys=0), idle ==");
-const legacy = await run("ftier=full&fphys=0", { scroll: false });
+const legacy = await run("ftier=full&fglass=1&fphys=0", { scroll: false });
 console.log(
   `  travel: ${legacy.stats.perSecond.toFixed(4)} uv/s · ${legacy.stats.frames} frames`,
 );

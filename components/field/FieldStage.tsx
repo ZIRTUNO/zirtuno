@@ -130,6 +130,19 @@ export default function FieldStage({
     if (!container) return;
     let disposed = false;
 
+    // THE GLASS MATERIAL IS OFF BY DEFAULT (owner's call: the shading read as
+    // glitchy). The liquid renders through the shader's flat branch — a solid
+    // brand-cyan silhouette, no dome, specular, fresnel or absorption — which
+    // is the same path the `lite` rung has always used. `?fglass=1` restores
+    // the full material; nothing was deleted, so that switch is the whole
+    // difference between the two looks.
+    //
+    // Knock-on effects, all deliberate: the R5-C grade (iExpo/iKey/iAbsorb/
+    // iDepthFx) becomes inert because the flat branch returns before it, and
+    // the strain optics go with it. Deformation still shapes the FIELD, so the
+    // liquid keeps stretching under its own motion — that is geometry, not
+    // shading, and it survives.
+    const glassRequested = /[?&]fglass=1(?:&|$)/.test(window.location.search);
     // Velocity-aware deformation is the DEFAULT material behaviour: liquid that
     // cannot stretch under its own motion reads as sliding discs. It stays off
     // for lite/reduced paths, which cannot afford the uniforms or must not
@@ -335,6 +348,8 @@ export default function FieldStage({
       tier: liveTier as string,
       frames: 0,
       gov: 0,
+      glassRequested: glassRequested ? 1 : 0,
+      glass: 0, // 1 only while the material is actually being shaded
       shapeRequested: shapeRequested ? 1 : 0,
       shapeShader: shapeShaderActive ? 1 : 0,
       shape: 0,
@@ -370,7 +385,10 @@ export default function FieldStage({
       if (!ta) return f; // the driver's form isn't built yet — fallback stays
       const tb = textures[f.b] ?? ta;
       const formBWeight = textures[f.b] ? f.fb : 0;
-      const glass = GLASS_RUNGS.has(liveTier);
+      // The glass MATERIAL is off by default (see glassRequested). The rung set
+      // still gates it, so `?fglass=1` restores the full ladder behaviour
+      // rather than forcing glass onto a machine that cannot hold it.
+      const glass = glassRequested && GLASS_RUNGS.has(liveTier);
       const postChain = post;
       const usePost = postChain !== null && liveTier === "full";
       diag.post = usePost ? 1 : 0;
@@ -402,6 +420,7 @@ export default function FieldStage({
       gl.uniform1f(layer.U("iWarp"), f.warp);
       gl.uniform1f(layer.U("iMute"), f.mute);
       gl.uniform1f(layer.U("iGlass"), glass ? 1 : 0);
+      diag.glass = glass ? 1 : 0;
       gl.uniform3fv(layer.U("iBalls"), ballBuf);
       gl.uniform1i(layer.U("iBallCount"), f.count);
       // Deformation is its OWN rung, not a passenger of the glass. Measured at

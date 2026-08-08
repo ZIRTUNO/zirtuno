@@ -3,12 +3,18 @@
 //   node scripts/verify-postfx.mjs --baseline    pre-C: record reference stats
 //   node scripts/verify-postfx.mjs               post-C: assert the contract
 //
+// EVERY URL HERE CARRIES ?fglass=1. The glass material is opt-in since the
+// owner turned it off site-wide (the shading read as glitchy) — the code is
+// untouched, so this gate keeps verifying the optics chain by asking for it
+// explicitly. Without the flag the shader takes its flat branch and returns
+// before the grade, and every measurement below would be of nothing.
+//
 // The BYTE gate for shader identity is `npm run forms:rest` (deterministic
 // stills — time and grade bypassed). The live page cannot be byte-compared
 // across builds (time-driven warp, wandering ambient), so the `?fgrade=0`
 // stop-the-line rule ("bypass differs from pre-C pixels: stop", §14.3) is
 // enforced statistically against a pre-C baseline recorded by --baseline:
-// at a frozen choreography hold (?feco=0.55&ftier=full&fcine=0, no scroll;
+// at a frozen choreography hold (?feco=0.55&ftier=full&fglass=1&fcine=0, no scroll;
 // fcine=0 keeps the R5-D light score neutral so this harness keeps
 // measuring the OPTICS chain in isolation against its pre-C baseline) the
 // mark-interior mean and a DOM-free liquid-field sample must match the pre-C
@@ -191,10 +197,10 @@ if (baselineMode) {
   console.log("postfx --baseline: recording grade-bypass reference stats…");
   // A future deliberate baseline records the exact grade-bypass renderer, not
   // whatever the default optics implementation happens to be at that time.
-  await settle(page, "/en?feco=0.55&ftier=full&fgrade=0&fcine=0");
+  await settle(page, "/en?feco=0.55&ftier=full&fglass=1&fgrade=0&fcine=0");
   const s = await sampleShots(page, "baseline");
   const record = {
-    note: "grade-bypass reference at /en?feco=0.55&ftier=full&fgrade=0, 1440x900 dsf1; renderer-only field sample",
+    note: "grade-bypass reference at /en?feco=0.55&ftier=full&fglass=1&fgrade=0, 1440x900 dsf1; renderer-only field sample",
     date: new Date().toISOString(),
     viewport: { w: VW, h: VH },
     crop: CROP,
@@ -219,7 +225,7 @@ const base = JSON.parse(fs.readFileSync(BASELINE_PATH, "utf8"));
 console.log("postfx verify vs baseline", base.date);
 
 // 1 · the ?fgrade=0 bypass matches the pre-C baseline
-await settle(page, "/en?feco=0.55&ftier=full&fgrade=0&fcine=0");
+await settle(page, "/en?feco=0.55&ftier=full&fglass=1&fgrade=0&fcine=0");
 const off = await sampleShots(page, "fgrade0");
 {
   const optics = await page.evaluate(() => window.__optics ?? null);
@@ -235,7 +241,7 @@ const off = await sampleShots(page, "fgrade0");
 }
 
 // 2 · default grade: post on, background exactly black, banding tamed, grain bounded
-await settle(page, "/en?feco=0.55&ftier=full&fcine=0");
+await settle(page, "/en?feco=0.55&ftier=full&fglass=1&fcine=0");
 const on = await sampleShots(page, "grade-on");
 {
   const optics = await page.evaluate(() => window.__optics ?? null);
@@ -346,7 +352,7 @@ const on = await sampleShots(page, "grade-on");
 
 // 4 · energy governor: idle cadence halves; input restores full cadence
 {
-  await settle(page, "/en?feco=0.55&ftier=full&fcine=0");
+  await settle(page, "/en?feco=0.55&ftier=full&fglass=1&fcine=0");
   await page.waitForTimeout(2500); // sustain window entry
   const idle = await page.evaluate(
     () =>
@@ -373,7 +379,7 @@ const on = await sampleShots(page, "grade-on");
     "governor: idle cadence drops (≈30Hz), input restores it",
     `idle=${idle}/2s active=${active}/2s`,
   );
-  await settle(page, "/en?feco=0.55&ftier=full&fgov=0&fcine=0");
+  await settle(page, "/en?feco=0.55&ftier=full&fglass=1&fgov=0&fcine=0");
   await page.waitForTimeout(1500);
   const ungov = await page.evaluate(
     () =>
@@ -389,7 +395,7 @@ const on = await sampleShots(page, "grade-on");
 {
   const errors = [];
   page.on("pageerror", (e) => errors.push(String(e)));
-  await settle(page, "/en?fphys=0&fgrade=0&ftier=full&fcine=0");
+  await settle(page, "/en?fphys=0&fgrade=0&ftier=full&fglass=1&fcine=0");
   const canvases = await page.evaluate(
     () => document.querySelectorAll(".journey-canvas canvas").length,
   );
