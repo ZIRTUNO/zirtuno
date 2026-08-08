@@ -6,46 +6,49 @@ import { CtaStructure, CtaPortfolio } from "@/components/chrome/CtaButton";
 type Node = { name: string; tooltip: string };
 
 /**
- * S4 · The Ecosystem — the conceptual centerpiece. "Ecossistemas, não peças
- * soltas." The liquid travel + converge + tendril choreography plays in the
- * shared LiquidSite layer; this chapter contributes the copy, the RUNWAY
- * (the scroll distance the converge is scrubbed across — no pins) and the
- * capability stack for narrow viewports / assistive tech / static tiers.
- * Copy is server-rendered (RSC) for SEO.
+ * S3 · THE GATHERING — the ecosystem as a convergence in depth.
+ *
+ * The Problem leaves the liquid fractured and scattered. This chapter is the
+ * answer, and it is told by the liquid rather than beside it: the same
+ * fragments are drawn forward out of the dark, arrive in their three systems,
+ * and fuse into one body. Nothing is drawn between them — the claim is that
+ * they stop being separate, and a diagram of boxes and lines would quietly
+ * argue the opposite.
+ *
+ * The chapter contributes: the opening claim, the RUNWAY (the scroll distance
+ * the gathering is scrubbed across — no pins), a closing line that only makes
+ * sense once the body is whole, and the semantic capability stack for narrow
+ * viewports, assistive tech and static tiers. Copy is server-rendered (RSC).
+ *
+ * The live capability names and system markers are portalled into the sticky
+ * layer by PageStage, so they can ride the liquid masses in its pixel space.
  */
 export function ChapterEcosystem({ hasWork }: { hasWork: boolean }) {
   const t = useTranslations("ecosystem");
   const nodes = t.raw("nodes") as Node[];
 
   return (
-    <section
-      id="ecosystem"
-      data-chapter
-      className="relative"
-    >
-      <div className="page-x pt-24 pb-6 md:pt-32 md:pb-10">
+    <section id="ecosystem" data-chapter className="relative">
+      {/* The claim sits ABOVE the runway and stays short. The long form of
+          this argument is the gathering itself; repeating it in a paragraph
+          beside the liquid would make the liquid decoration. */}
+      <div className="page-x gather-intro">
         <Reveal inView as="p" className="chapter-label">
           {t("chapterLabel")}
         </Reveal>
 
         <Reveal inView delay={0.05}>
-          <h2 className="type-section-title mt-[var(--type-space-label-title)] text-paper">
-            {t("headline")}
-          </h2>
-        </Reveal>
-
-        <Reveal inView delay={0.1}>
-          <p className="type-lead-copy mt-[var(--type-space-title-lead)] text-paper-mute">
-            {t("lead")}
-          </p>
+          <h2 className="type-section-title gather-claim">{t("headline")}</h2>
         </Reveal>
       </div>
 
-      {/* the converge runway — the sticky liquid layer plays across this
-          scroll distance; static tiers see the resolved mark instead */}
+      {/* The runway — the scroll distance the gathering plays across. The
+          sticky liquid layer owns everything visible here; static tiers get
+          the resolved mark instead. */}
       <div className="eco-runway" data-organism>
-        {/* PageStage portals the live orbital controls here so their keyboard
-            order remains Problem -> Ecosystem nodes -> Ecosystem CTAs. */}
+        {/* PageStage portals the live capability names and system markers
+            here so their keyboard order remains Problem → capabilities →
+            Ecosystem CTAs. */}
         <div
           id="ecosystem-interactions-host"
           className="ecosystem-interactions-host"
@@ -55,10 +58,16 @@ export function ChapterEcosystem({ hasWork }: { hasWork: boolean }) {
         </div>
       </div>
 
-      <div className="page-x pt-10 pb-24 md:pb-32">
+      {/* The resolution. This line is the payoff of the fuse and is placed to
+          be read at the moment the body is whole. */}
+      <div className="page-x gather-outro">
+        <Reveal inView>
+          <p className="type-lead-copy gather-lead">{t("lead")}</p>
+        </Reveal>
+
         {/* the capabilities as a connected stack — narrow viewports, static
-            tiers and assistive tech (the orbital labels are lg+ and visual) */}
-        <ul className="eco-stack mb-12" aria-label={t("headline")}>
+            tiers and assistive tech (the live names are lg+ and visual) */}
+        <ul className="eco-stack" aria-label={t("headline")}>
           <li className="eco-stack-center">{t("centerLabel")}</li>
           {nodes.map((n, i) => (
             <li key={i} className="eco-stack-item">
@@ -68,7 +77,10 @@ export function ChapterEcosystem({ hasWork }: { hasWork: boolean }) {
           ))}
         </ul>
 
-        <Reveal inView className="flex flex-wrap items-center gap-x-8 gap-y-4">
+        <Reveal
+          inView
+          className="mt-12 flex flex-wrap items-center gap-x-8 gap-y-4"
+        >
           <CtaStructure placement="ecosystem" />
           {/* the portfolio link only exists while there is a portfolio */}
           {hasWork && <CtaPortfolio placement="ecosystem" />}

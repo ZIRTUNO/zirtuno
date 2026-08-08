@@ -229,9 +229,21 @@ for (const locale of ["pt", "en"]) {
   // ancestor, itself composited onto ink); decorative aria-hidden content
   // (watermarks, canvas labels) is out of scope by definition.
   const contrast = await page.evaluate(() => {
-    const parse = (rgb) => {
-      const m = rgb.match(/[\d.]+/g)?.map(Number) ?? [0, 0, 0, 0];
-      return { r: m[0], g: m[1], b: m[2], a: m.length > 3 ? m[3] : 1 };
+    // Chromium serialises a color-mix() result as `color(srgb 0.94 0.94 0.92 /
+    // 0.54)` — channels 0..1 — while everything else still comes back as
+    // `rgb(242 240 235 / 0.54)`, channels 0..255. Reading the srgb form on the
+    // 0..255 assumption turns every mixed colour into black, which composites
+    // to the background and reports a flat 1.00 ratio: a false failure on
+    // exactly the tokens most likely to regress.
+    const parse = (value) => {
+      const m = value.match(/[\d.]+/g)?.map(Number) ?? [0, 0, 0, 0];
+      const scale = /^color\(\s*srgb/i.test(value) ? 255 : 1;
+      return {
+        r: (m[0] ?? 0) * scale,
+        g: (m[1] ?? 0) * scale,
+        b: (m[2] ?? 0) * scale,
+        a: m.length > 3 ? m[3] : 1,
+      };
     };
     const over = (fg, bg) => ({
       r: fg.r * fg.a + bg.r * (1 - fg.a),
@@ -257,6 +269,7 @@ for (const locale of ["pt", "en"]) {
       }
       return bg;
     };
+    const glassed = [];
     let worstSmall = Infinity;
     let worstLarge = Infinity;
     let at = "";
@@ -273,6 +286,20 @@ for (const locale of ["pt", "en"]) {
         +cs.opacity === 0
       )
         continue;
+      // background-clip:text paints the glyphs OUT OF the background-image and
+      // sets `color` transparent on purpose. Measuring `color` there measures
+      // the wrong property and reports 1.00 on text that is plainly visible.
+      // These are audited by a different property instead: they must declare a
+      // fill, and they must hand the text back to system colours under
+      // forced-colors, where the fill is dropped. Recorded, not skipped.
+      const clip = cs.webkitBackgroundClip || cs.backgroundClip;
+      if (clip === "text" && parse(cs.color).a === 0) {
+        glassed.push({
+          tag: `${el.tagName}.${String(el.className).slice(0, 40)}`,
+          hasFill: cs.backgroundImage !== "none",
+        });
+        continue;
+      }
       const bg = bgOf(el);
       const fg = over(parse(cs.color), bg);
       const l1 = lum(fg);
@@ -292,7 +319,7 @@ for (const locale of ["pt", "en"]) {
         at = tag;
       }
     }
-    return { worstSmall, worstLarge, at, atL };
+    return { glassed, worstSmall, worstLarge, at, atL };
   });
   check(
     contrast.worstSmall >= 4.5,
@@ -303,6 +330,17 @@ for (const locale of ["pt", "en"]) {
     contrast.worstLarge >= 3,
     "large text ≥ 3:1 on its effective background",
     `worst=${contrast.worstLarge.toFixed(2)} at ${contrast.atL}`,
+  );
+  // Every glassed heading must actually carry a fill (transparent glyphs with
+  // no background-image are invisible glyphs) — the failure mode the plain
+  // contrast sweep can no longer see now that these are audited separately.
+  check(
+    contrast.glassed.every((g) => g.hasFill),
+    `${contrast.glassed.length} background-clip:text headings all carry a fill`,
+    contrast.glassed
+      .filter((g) => !g.hasFill)
+      .map((g) => g.tag)
+      .join(", ") || "all filled",
   );
   await ctx.close();
 }

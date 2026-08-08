@@ -46,6 +46,14 @@ The site is in R5, “One Continuous Liquid.”
 - **R5-B is complete:** velocity state, fixed-step fluid physics, repulsion,
   cohesion, curl drift, page-wide cursor forces, pinch-off satellites, and the
   `bind` compatibility contract. `?fphys=0` is the rollback/A-B path.
+  The v3 forces (area-weighted mass, local viscosity, the cohesive band that
+  stands in for surface tension, cluster-footprint preservation) and cached
+  typography-aware flow are now the DEFAULT material, not review paths;
+  `?fphysv3=0` / `?fobstacles=0` roll them back. Scroll is coupled into
+  `fluid-core` as a body force scaled by (1 − bind), and velocity-aligned
+  deformation with strain-driven glass optics is the default renderer on glass
+  tiers (`?fshape=0` rolls back). `verify-deformation.mjs` is the machine gate;
+  the conductor harness asserts bind=1 parity *under scroll*.
 - **R5-C is complete:** the framebuffer post chain (selective bloom, blue-noise
   dither, luminance-gated grain), identity-gated in-shader grade (exposure,
   key boost, internal absorption, `iBallZ` depth bands), the `full-nofx`
@@ -364,8 +372,9 @@ Additional stop-the-line gates:
 - Copy/semantics/locale/chrome change: `node scripts/verify-a11y.mjs`
   (landmarks, one h1, labels, skip link, keyboard menu, focus visibility,
   effective-background contrast, pt/en key parity, reduced-motion story).
-- Ecosystem circuit change (`eco-circuit.mjs`, the S4 scene block, the vein
-  layer, labels, or HUD): `node scripts/verify-ecosystem.mjs` — 13 veins
+- Ecosystem gathering change (`gathering.mjs`, the S3 scene block, the
+  capability names, system markers, or HUD): `node scripts/verify-ecosystem.mjs`
+  — ten names
   drawn, 10 sockets + 10 labels clear of the chapter-index rail, hover AND
   keyboard raise the same graph-staggered pulse plus dock swell (`hov`
   channel), HUD follows, and reduced motion keeps the eco-stack story.

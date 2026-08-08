@@ -57,7 +57,10 @@ float vnoise(vec2 p) {
 }
 float fbm(vec2 p) {
   float v = 0.0, a = 0.5;
-  for (int i = 0; i < 5; i++) { v += a * vnoise(p); p *= 2.02; a *= 0.5; }
+  // three octaves, not five: this is called twice per layer across four layers,
+  // so every octave costs eight fbm evaluations per pixel. The lost detail sits
+  // below the blur the material already has.
+  for (int i = 0; i < 3; i++) { v += a * vnoise(p); p *= 2.02; a *= 0.5; }
   return v;
 }
 
@@ -88,6 +91,7 @@ void main() {
 
   vec3 col = INK;
   float coverage = 0.0;
+  float topGlow = 0.0;
 
   // BACK TO FRONT — four folds. Each is darker and flatter behind, brighter
   // and sharper in front, which is what reads as depth in the reference.
@@ -108,6 +112,9 @@ void main() {
     float edge = h - uv.y;
     float aa = 1.5 / uRes.y;
     float inside = smoothstep(-aa, aa, edge);
+    // the glow this fold throws upward — gathered here so the atmosphere pass
+    // does not have to rebuild every height field a second time
+    topGlow = max(topGlow, smoothstep(0.20, 0.0, -edge));
     if (inside <= 0.001) continue;
 
     // How far INTO the sheet this pixel sits. This — not a flat lambert — is
@@ -162,18 +169,10 @@ void main() {
     coverage = max(coverage, inside);
   }
 
-  // atmosphere above the sheet: the glow the liquid throws into the black
-  float top = 0.0;
-  for (int i = 0; i < 4; i++) {
-    float fi = float(i);
-    float depth = fi / 3.0;
-    float base = 0.30 + 0.13 * depth + rise;
-    float amp = 0.085 + 0.052 * depth;
-    float h = layerY(x + uPointer * 0.07 * (0.25 + depth),
-                     t * (0.7 + 0.5 * depth), base, amp, 0.37 * fi + 0.11);
-    top = max(top, smoothstep(0.20, 0.0, uv.y - h));
-  }
-  col += CYAN * top * 0.06 * (0.6 + 0.4 * enter);
+  // atmosphere above the sheet: the glow the liquid throws into the black.
+  // topGlow was accumulated inside the main loop — recomputing four more
+  // height fields down here doubled the sine cost of the whole shader.
+  col += CYAN * topGlow * 0.06 * (0.6 + 0.4 * enter);
 
   // grain — the same blue-noise-ish dither the site uses, keeps banding out of
   // the long cyan gradients

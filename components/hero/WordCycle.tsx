@@ -1,29 +1,117 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { useReducedMotion } from "@/lib/animation/reduced-motion";
 
+/**
+ * The widths have to exist BEFORE the first paint.
+ *
+ * Measured in a plain effect, the slot paints once with no width at all — and a
+ * slot with no width is sized by its content, which is exactly the thing the
+ * measurement exists to stop.
+ */
+const useIsomorphicLayoutEffect =
+  typeof window === "undefined" ? useEffect : useLayoutEffect;
+
 const ARRIVE = [0.22, 1, 0.36, 1] as const;
-const DEPART = [0.64, 0, 0.78, 0] as const;
+const LEAVE = [0.55, 0, 0.85, 0.3] as const;
+
+/** per-character beats. Typed in left to right; cleared right to left, the way
+ *  a line actually gets rewritten — the word is unmade, then written again. */
+const TYPE_STAGGER = 0.034;
+const CLEAR_STAGGER = 0.016;
+const TYPE_MS = 0.32;
+const CLEAR_MS = 0.19;
 
 /**
- * The changing noun keeps the baseline calm while its individual letters leave
- * right-to-left and arrive left-to-right. The measured slot eases to the next
- * width at the same time, so the complete line recentres instead of snapping.
+ * VARIANTS, not per-letter props.
+ *
+ * Hanging initial/animate/exit on each letter while the face above them
+ * declared nothing left AnimatePresence with no orchestration to drive: the
+ * letters mounted at their resting values and the word went back to swapping.
+ * Variants are the mechanism that actually cascades — the face names a state,
+ * every letter inherits that name, and staggerChildren is what turns the
+ * cascade into a sequence.
+ */
+const FACE = {
+  written: { transition: { staggerChildren: TYPE_STAGGER } },
+  // staggerDirection -1 clears from the tail, so the word unwrites itself
+  cleared: { transition: { staggerChildren: CLEAR_STAGGER, staggerDirection: -1 } },
+} as const;
+
+const LETTER = {
+  blank: { opacity: 0, y: "26%" },
+  written: {
+    opacity: 1,
+    y: "0%",
+    transition: { duration: TYPE_MS, ease: ARRIVE },
+  },
+  cleared: {
+    opacity: 0,
+    y: "-18%",
+    transition: { duration: CLEAR_MS, ease: LEAVE },
+  },
+} as const;
+
+const segmenter =
+  typeof Intl !== "undefined" && "Segmenter" in Intl
+    ? new Intl.Segmenter(undefined, { granularity: "grapheme" })
+    : null;
+
+/**
+ * One box per VISIBLE character.
+ *
+ * Splitting on code points would tear a combining accent off the letter it
+ * belongs to and animate it as its own glyph — "ç" and "ã" reach these words
+ * both precomposed and decomposed depending on where the copy came from, and
+ * only grapheme segmentation is right for both. A plain space has to become a
+ * non-breaking one on the way out: an inline-block wrapping a normal space
+ * collapses to zero width and the word loses its gap.
+ */
+function splitGraphemes(word: string) {
+  const raw = segmenter
+    ? [...segmenter.segment(word)].map((s) => s.segment)
+    : [...word];
+  return raw.map((char) => (char === " " ? "\u00A0" : char));
+}
+
+/**
+ * The changing noun.
+ *
+ * The slot is sized to the word CURRENTLY in it and eased between sizes. Held
+ * at the widest word in the set instead, the sentence never moves — but a short
+ * word then sits in a hole the length of the longest one, and "futuro" was
+ * floating in 223px of dead space. Snug wins; the cost is that the line has to
+ * give, so the width travels rather than jumps, and it travels in the beat
+ * after the old word has cleared and before the new one is written, which is
+ * the one moment nothing is on screen to be dragged sideways by it.
+ *
+ * The exchange is per-CHARACTER, not per word. Fading one whole face into
+ * another reads as a swap — the word is simply a different word the next time
+ * you look at it, with nothing in between. Staggering the letters gives the
+ * change a direction and a duration: the old word is cleared from its tail and
+ * the new one is written from its head, so it reads as the line being typed
+ * rather than replaced.
+ *
+ * Every letter sits at its FINAL position the whole time and only opacity and
+ * a small lift are animated. Laying letters out as they arrive would grow the
+ * word from its centre and undo the fixed slot above — and opacity/transform
+ * are the two things that cost the compositor nothing, which matters when a
+ * long word is fourteen of them.
  */
 export function WordCycle({ words, index }: { words: string[]; index: number }) {
   const reduced = useReducedMotion();
   const [widths, setWidths] = useState<number[]>([]);
   const sizerRef = useRef<HTMLSpanElement>(null);
 
-  useEffect(() => {
+  useIsomorphicLayoutEffect(() => {
     const sizer = sizerRef.current;
     if (!sizer) return;
 
     const measure = () => {
       const next = [...sizer.children].map((child) =>
-        Math.round(child.getBoundingClientRect().width * 100) / 100,
+        Math.ceil(child.getBoundingClientRect().width),
       );
       setWidths((current) =>
         current.length === next.length && current.every((w, i) => w === next[i])
@@ -34,6 +122,7 @@ export function WordCycle({ words, index }: { words: string[]; index: number }) 
 
     measure();
     let alive = true;
+    // the display face changes the metrics — remeasure once it lands
     document.fonts?.ready.then(() => alive && measure());
     const observer = new ResizeObserver(measure);
     observer.observe(sizer);
@@ -46,14 +135,22 @@ export function WordCycle({ words, index }: { words: string[]; index: number }) 
 
   const safeIndex = Math.max(0, Math.min(index, words.length - 1));
   const word = words[safeIndex] ?? "";
-  const width = widths[safeIndex];
+  const letters = splitGraphemes(word);
 
+  const slot = widths[safeIndex] ?? 0;
+
+  // The width is a plain style with a CSS transition, NOT a Motion value.
+  // Motion only writes a style when it has something to animate, so on mount —
+  // where the target already equalled the measured width — it wrote nothing at
+  // all and left the slot at auto. An auto slot is sized by the ghost below it,
+  // and the ghost swaps to the new word the instant the index changes, so the
+  // width jumped a whole word before Motion ever took control. An explicit
+  // width is never auto, and the transition lives in lab.css so reduced motion
+  // switches it off with everything else.
   return (
-    <motion.span
+    <span
       className="lab-word"
-      initial={false}
-      animate={width ? { width } : undefined}
-      transition={{ duration: reduced ? 0 : 0.68, ease: ARRIVE }}
+      style={slot ? { width: `${slot}px` } : undefined}
     >
       <span className="lab-word-sizer" ref={sizerRef} aria-hidden="true">
         {words.map((candidate) => (
@@ -62,63 +159,38 @@ export function WordCycle({ words, index }: { words: string[]; index: number }) 
       </span>
 
       <span className="lab-word-clip">
+        {/* both faces are absolute so they can overlap during the exchange —
+            this ghost is what still gives the clip its height */}
+        <span className="lab-word-ghost" aria-hidden="true">
+          {word}
+        </span>
         {reduced ? (
           <span className="lab-word-face">{word}</span>
         ) : (
+          // wait, not sync: the old word finishes clearing before the new one
+          // starts being written. Overlapping them is the cross-fade again.
           <AnimatePresence initial={false} mode="wait">
             <motion.span
               key={word}
               className="lab-word-face"
-              initial="hidden"
-              animate="visible"
-              exit="exit"
-              variants={{
-                hidden: {},
-                visible: {
-                  transition: { delayChildren: 0.04, staggerChildren: 0.04 },
-                },
-                exit: {
-                  transition: {
-                    staggerChildren: 0.022,
-                    staggerDirection: -1,
-                  },
-                },
-              }}
+              variants={FACE}
+              initial="blank"
+              animate="written"
+              exit="cleared"
             >
-              {[...word].map((character, characterIndex) => (
+              {letters.map((char, i) => (
                 <motion.span
-                  key={`${character}-${characterIndex}`}
                   className="lab-word-char"
-                  variants={{
-                    hidden: {
-                      opacity: 0,
-                      y: "0.14em",
-                      filter: "blur(3px)",
-                      clipPath: "inset(100% 0 0 0)",
-                    },
-                    visible: {
-                      opacity: 1,
-                      y: 0,
-                      filter: "blur(0px)",
-                      clipPath: "inset(0% 0 0 0)",
-                      transition: { duration: 0.3, ease: ARRIVE },
-                    },
-                    exit: {
-                      opacity: 0,
-                      y: "-0.08em",
-                      filter: "blur(2px)",
-                      clipPath: "inset(0 0 100% 0)",
-                      transition: { duration: 0.18, ease: DEPART },
-                    },
-                  }}
+                  key={`${word}-${i}`}
+                  variants={LETTER}
                 >
-                  {character}
+                  {char}
                 </motion.span>
               ))}
             </motion.span>
           </AnimatePresence>
         )}
       </span>
-    </motion.span>
+    </span>
   );
 }

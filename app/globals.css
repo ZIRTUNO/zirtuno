@@ -940,11 +940,157 @@ section[id],
     0 0 26px rgb(0 0 0 / 0.55);
 }
 
+/* ── LIQUID GLASS ────────────────────────────────────────────────────────────
+   The block above separates BODY copy from the liquid with a shadow. This is
+   the opposite move for DISPLAY type: instead of standing off the field, the
+   headline is made of it — a slab of glass lying in the liquid rather than a
+   label printed over it.
+
+   Three coats on one glyph:
+     · a gradient DOWN the letterform: a specular where the top facet catches
+       the key light, paper through the body, cooling into cyan at the base
+       where it transmits the field below. A flat fill reads as a shape; a fill
+       that changes down its own height reads as a solid with thickness.
+     · a dark seat directly under the glyph, so it has an edge to sit on.
+     · a cyan bloom into the black, so the letter belongs to the same light as
+       the liquid behind it.
+
+   PAINT, never backdrop-filter. Backdrop-filter is the obvious way to build
+   glass and the wrong way to build it here: it re-filters its backdrop every
+   frame, and its backdrop is a canvas that never stops moving — one was
+   already removed from the CTA for exactly that reason. Paint rasterises once
+   and rides along as a texture, so this costs the same whether the liquid
+   behind it is still or boiling.
+
+   ONE slab per headline, not one per line. Repeating the gradient down each
+   line box seemed right until the descenders proved otherwise: display
+   line-heights here are below 1 (0.94 for display-l), so a p or a g hangs out
+   of its own band and picks up the TOP of the next one — every descender cut
+   bright across its tail. A single gradient over the whole block has no seam
+   to cross, and reads as what it is: one piece of glass, lit from its top
+   edge, transmitting further into cyan the deeper down it goes. */
+:root {
+  --liquid-glass-fill: linear-gradient(
+    180deg,
+    #ffffff 0%,
+    color-mix(in srgb, var(--color-paper) 84%, #ffffff) 15%,
+    var(--color-paper) 44%,
+    color-mix(in srgb, var(--color-paper) 64%, var(--color-cyan)) 78%,
+    color-mix(in srgb, var(--color-cyan) 82%, var(--color-paper)) 100%
+  );
+}
+
+.liquid-glass {
+  color: transparent;
+  background-image: var(--liquid-glass-fill);
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
+/* drop-shadow, NOT text-shadow. With background-clip:text the fill IS the
+   element's background, and background paints before text-shadow — a shadow
+   declared here would sit on top of the fill and wash the glyph out. A filter
+   applies to the finished glyph, which is where a shadow belongs. */
+.liquid-glass-lit {
+  filter:
+    drop-shadow(0 1px 0 rgb(0 0 0 / 0.55))
+    drop-shadow(0 0 16px rgb(0 0 0 / 0.5))
+    drop-shadow(0 0 26px color-mix(in srgb, var(--color-cyan) 20%, transparent));
+}
+
+/* Transparent glyphs with no fill behind them are invisible glyphs. If the
+   clip is not supported, the type stays type. */
+/* FORCED COLORS. background-clip:text paints glyphs out of a background-image,
+   and forced-colors modes drop background images — which would leave every
+   glassed title as transparent glyphs on a forced background, i.e. invisible.
+   The @supports fallbacks below only cover engines that lack the property;
+   this covers engines that HAVE it but refuse the paint. Hand the text back to
+   the system colours and drop the fill entirely. */
+@media (forced-colors: active) {
+  .liquid-glass,
+  .lab-strong,
+  .lab-word-char,
+  .lab-word-face,
+  .liquid-journey
+    :is(
+      #problem .type-section-title,
+      #ecosystem .type-section-title,
+      #services .type-section-title,
+      #method .type-section-title,
+      #work .type-section-title,
+      #contact .type-section-title
+    ),
+  .liquid-journey #studio .type-feature-title,
+  .liquid-journey #name .origin-statement {
+    color: CanvasText;
+    background-image: none;
+    filter: none;
+  }
+}
+
+@supports not ((background-clip: text) or (-webkit-background-clip: text)) {
+  .liquid-glass {
+    color: var(--color-paper);
+    background-image: none;
+  }
+}
+
 /* A droplet crossing the one thing the reader is meant to press costs more than
    one crossing a paragraph. The primary action keeps a glass backing at every
    width: the liquid still reads through it, the label always wins. */
 .liquid-journey .cta-primary {
   background: rgb(0 0 0 / 0.68);
+}
+
+/* The chapter display type over the journey canvas takes the glass.
+   ≥768px ONLY, and deliberately: the mobile reading aperture below sets a
+   `background` shorthand on these exact elements. Next to background-clip:text
+   that shorthand both resets the fill and clips the aperture's black to the
+   glyph interiors — an invisible title over a liquid it was supposed to hold
+   back. The aperture is a legibility device and it wins on small screens. */
+@media (min-width: 768px) {
+  .liquid-journey
+    :is(
+      #problem .type-section-title,
+      #ecosystem .type-section-title,
+      #services .type-section-title,
+      #method .type-section-title,
+      #work .type-section-title,
+      #contact .type-section-title
+    ),
+  .liquid-journey #studio .type-feature-title,
+  .liquid-journey #name .origin-statement {
+    color: transparent;
+    background-image: var(--liquid-glass-fill);
+    -webkit-background-clip: text;
+    background-clip: text;
+    filter:
+      drop-shadow(0 1px 0 rgb(0 0 0 / 0.55))
+      drop-shadow(0 0 16px rgb(0 0 0 / 0.5))
+      drop-shadow(0 0 26px color-mix(in srgb, var(--color-cyan) 20%, transparent));
+  }
+  .liquid-journey #name .origin-statement {
+    /* the black halo it used for legibility is now the filter's job — a
+       text-shadow would paint over the fill, not behind it */
+    text-shadow: none;
+  }
+
+  @supports not ((background-clip: text) or (-webkit-background-clip: text)) {
+    .liquid-journey
+      :is(
+        #problem .type-section-title,
+        #ecosystem .type-section-title,
+        #services .type-section-title,
+        #method .type-section-title,
+        #work .type-section-title,
+        #contact .type-section-title
+      ),
+    .liquid-journey #studio .type-feature-title,
+    .liquid-journey #name .origin-statement {
+      color: var(--color-paper);
+      background-image: none;
+    }
+  }
 }
 
 /* Mobile reading apertures: the live field remains visible around the copy,
@@ -1076,9 +1222,48 @@ section[id],
    R5-E shortened it: at 230vh the reader crossed a full desktop viewport, and
    several narrow ones, that carried liquid and no ecosystem explanation. The
    choreography is scrubbed, so it is unchanged in shape — only in duration. */
+/* ── S3 THE GATHERING · chapter type ────────────────────────────────────────
+   The claim opens the chapter and gets air; the resolution lands after the
+   runway, where the body is whole. Both are centred, because the gathering
+   itself is centred and a left-aligned column beside a centred convergence
+   reads as two unrelated compositions. */
+.gather-intro {
+  position: relative;
+  z-index: 1;
+  padding-top: clamp(6rem, 16vh, 11rem);
+  padding-bottom: clamp(2rem, 6vh, 4rem);
+  text-align: center;
+}
+.gather-claim {
+  margin-top: var(--type-space-label-title);
+  margin-inline: auto;
+  max-width: 20ch;
+  color: var(--color-paper);
+}
+.gather-outro {
+  position: relative;
+  z-index: 1;
+  padding-top: clamp(2rem, 6vh, 4rem);
+  padding-bottom: clamp(6rem, 16vh, 11rem);
+}
+.gather-lead {
+  margin-inline: auto;
+  max-width: 62ch;
+  color: var(--color-paper-mute);
+  text-align: center;
+}
+.gather-outro .eco-stack {
+  margin-top: clamp(2.5rem, 7vh, 4.5rem);
+}
+
 .eco-runway {
   position: relative;
-  height: 165vh;
+  /* The gather clock is (-top / (height - vh)), so this height IS the pacing.
+     The circuit assembled in 65vh of travel because drawing lines is quick;
+     ten masses crossing the dark in three beats is not, and at that distance
+     the whole convergence flashed past inside a single trackpad flick. ~3.5
+     viewports gives each system beat roughly a screen of its own. */
+  height: 320vh;
 }
 @media (max-width: 767px) {
   .eco-runway {
@@ -1189,7 +1374,12 @@ section[id],
 .organism-center {
   position: absolute;
   left: 50%;
-  top: 75%; /* inside the vein loop, clear of the bottom segments */
+  /* ABOVE the mark. It appears only at the fuse — the business is not a node
+     in the diagram, it is what the ten became — and every position BELOW the
+     mark is contested by construction, because Operation is the bottom lobe
+     and owns that band. The air above the body is the only space no lobe
+     claims. */
+  top: 14%;
   transform: translateX(-50%);
   font-family: var(--font-mono);
   font-size: var(--text-mono-sm);
@@ -1201,53 +1391,11 @@ section[id],
   white-space: nowrap;
   opacity: 0; /* revealed with the circuit (imperative) */
 }
-.eco-veins {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-  display: none;
-}
-.eco-vein {
-  --e: clamp(0, (var(--eco-grow, 0) - var(--d, 0)) / var(--w, 1), 1);
-  fill: none;
-  stroke: var(--color-cyan);
-  stroke-width: 1;
-  stroke-linecap: round;
-  stroke-dasharray: var(--len, 2000);
-  stroke-dashoffset: calc(var(--len, 2000) * (1 - var(--e)));
-  opacity: calc(var(--e) * var(--eco-fade, 1) * 0.22);
-  transition: opacity 300ms var(--ease-arrive);
-}
-.eco-vein-artery {
-  stroke-width: 1.4;
-}
-.journey-interactions[data-pulse="true"] .eco-vein {
-  opacity: calc(var(--e) * var(--eco-fade, 1) * 0.55);
-  transition-delay: var(--pd, 0ms);
-}
-.eco-socket {
-  --e: clamp(0, (var(--eco-grow, 0) - var(--d, 0)) / var(--w, 1), 1);
-  opacity: calc(var(--e) * var(--eco-fade, 1));
-}
-.eco-socket-halo {
-  fill: none;
-  stroke: color-mix(in srgb, var(--color-cyan) 34%, transparent);
-  stroke-width: 1;
-  transform: scale(calc(0.4 + 0.6 * var(--e)));
-  transition:
-    stroke 260ms var(--ease-arrive),
-    transform 260ms var(--ease-arrive);
-}
-.eco-socket-core {
-  fill: var(--color-cyan);
-  opacity: 0.85;
-}
-.journey-interactions[data-pulse="true"] .eco-socket-halo {
-  stroke: color-mix(in srgb, var(--color-cyan) 80%, transparent);
-  transition-delay: var(--pd, 0ms);
-}
+/* THE GATHERING's type. No veins, no sockets, no chips: the names ride the
+   liquid masses themselves. Each label derives its envelope from --eco-grow
+   via the inline --d/--w that layout() copies from gathering.mjs — the same
+   clock the masses march to — and --pulse peaks on its own arrival, so a name
+   ignites at the instant its mass lands rather than on a timer of its own. */
 .organism-nodes {
   position: absolute;
   inset: 0;
@@ -1257,42 +1405,92 @@ section[id],
   --e: clamp(0, (var(--eco-grow, 0) - var(--d, 0)) / var(--w, 1), 1);
   position: absolute;
   display: none;
-  opacity: calc(var(--e) * var(--eco-fade, 1));
+  /* Names recede as the body closes (--eco-fuse): once it is one thing,
+     naming the parts is the wrong emphasis. A HALVING reads as stepping back;
+     the 0.34 this first shipped at read as "switched off", and the ten
+     capabilities are the chapter's actual content — they have to stay
+     readable while the mark resolves over them. */
+  opacity: calc(
+    var(--e) * var(--eco-fade, 1) * (1 - 0.5 * var(--eco-fuse, 0))
+  );
+  transform: translate(-50%, -50%)
+    scale(calc(0.94 + 0.06 * var(--e) + 0.05 * var(--pulse, 0)));
   pointer-events: none;
   white-space: nowrap;
+  text-align: center;
+  transition: opacity 300ms var(--ease-arrive);
 }
-/* the circuit needs real room — below lg the eco-stack carries the
+/* the gathering needs real room — below lg the eco-stack carries the
    capabilities instead (in-app browsers and tablets included) */
 @media (min-width: 1024px) {
   .organism-node {
     display: block;
   }
-  .eco-veins {
-    display: block;
-  }
-}
-.organism-node[data-side="right"] {
-  transform: translate(0, calc(-50% + (1 - var(--e)) * 6px));
-  text-align: left;
-}
-.organism-node[data-side="left"] {
-  transform: translate(-100%, calc(-50% + (1 - var(--e)) * 6px));
-  text-align: right;
-}
-.organism-node[data-side="top"] {
-  transform: translate(-50%, calc(-100% + (1 - var(--e)) * 6px));
-  text-align: center;
-}
-.organism-node[data-side="bottom"] {
-  transform: translate(-50%, calc((1 - var(--e)) * 6px));
-  text-align: center;
 }
 .journey-interactions[data-interactive="true"] .organism-node {
   pointer-events: auto;
 }
+.journey-interactions[data-pulse="true"] .organism-node {
+  transition-delay: var(--pd, 0ms);
+}
 .organism-node:focus-within {
   opacity: 1 !important;
   pointer-events: auto;
+}
+
+/* ── the three systems ──────────────────────────────────────────────────────
+   Three beats instead of ten items. Each marker sits at its lobe's centre of
+   mass and holds a short rule that draws itself as the system arrives — the
+   one piece of line-work that survived, because it measures a group rather
+   than asserting a connection between two things. */
+.gather-systems {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  pointer-events: none;
+}
+.gather-system {
+  --e: clamp(0, (var(--eco-grow, 0) - var(--d, 0)) / var(--w, 1), 1);
+  position: absolute;
+  display: none;
+  align-items: center;
+  gap: 0.6rem;
+  transform: translate(-50%, -50%);
+  font-family: var(--font-mono);
+  font-size: var(--text-mono-sm);
+  font-weight: 500;
+  letter-spacing: var(--tracking-label-wide);
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: color-mix(in srgb, var(--color-cyan) 74%, var(--color-paper));
+  /* strongest while its own system is arriving, then it steps back and lets
+     the capabilities carry the reading */
+  opacity: calc(
+    var(--e) * var(--eco-fade, 1) * (1 - 0.6 * var(--eco-fuse, 0))
+  );
+  transition:
+    opacity 320ms var(--ease-arrive),
+    color 260ms var(--ease-arrive);
+}
+@media (min-width: 1024px) {
+  .gather-system {
+    display: inline-flex;
+  }
+}
+.gather-system-rule {
+  display: block;
+  width: calc(var(--e) * 2.4rem);
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in srgb, var(--color-cyan) 60%, transparent)
+  );
+}
+.journey-interactions[data-pulse="true"] .gather-system {
+  transition-delay: var(--pd, 0ms);
 }
 /* instrument annotation, not a sticker: no chip, no border — the hit area
    is padding pulled back with negative margins so type sits on its anchor */
@@ -1481,46 +1679,48 @@ section[id],
    card — every capture showed the tail of the previous service above a clipped
    current one. 14vh still separates the melts and lets each pillar arrive as
    one clean standing read. */
+/* ── S4 AS SETE FORMAS ──────────────────────────────────────────────────────
+   One body, seven shapes. Each pillar is a STAGE, not a list item: the name
+   sits above the form, the instrument band below it, and the middle is left
+   empty so the liquid can be the subject. No rule between pillars — the melt
+   is the transition, and a repeated border line would announce a boundary the
+   liquid is working to dissolve. */
 .pillar {
   position: relative;
-  padding: 14vh 0;
-  border-top: 1px solid var(--color-paper-faint);
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  min-height: 100svh;
+  /* the fixed topbar overlays the first rows of every stage */
+  padding-top: calc(var(--topbar-h) + clamp(1.5rem, 5vh, 3rem));
+  padding-bottom: clamp(2rem, 6vh, 4rem);
   scroll-margin-top: calc(var(--topbar-h) + 2rem);
-}
-.pillar:first-child {
-  border-top: 0;
-  padding-top: 7vh;
-}
-.pillar:last-child {
-  padding-bottom: 10vh;
-}
-.liquid-journey[data-liquid="static"] .pillar,
-.liquid-journey[data-liquid="static"] .pillar:first-child,
-.liquid-journey[data-liquid="static"] .pillar:last-child {
-  padding-block: clamp(2.75rem, 8vw, 4.5rem);
-}
-.liquid-journey[data-liquid="static"] .pillar-watermark {
-  top: clamp(2.75rem, 8vw, 4.5rem);
 }
 .pillar > * {
   position: relative;
   z-index: 1;
 }
-.pillar-watermark {
-  position: absolute;
-  top: 12vh;
-  right: 0;
-  z-index: 0;
-  font-family: var(--font-mono);
-  font-size: var(--text-display-l);
-  font-variant-numeric: tabular-nums lining-nums;
-  font-weight: 500;
-  line-height: var(--text-display-l--line-height);
-  letter-spacing: var(--text-display-l--letter-spacing);
-  opacity: 0.45;
-  color: var(--color-paper-faint);
-  pointer-events: none;
-  user-select: none;
+/* The form's own space. It must never collapse — an auto-height middle row
+   would let the type close over the liquid on short viewports. */
+.pillar-stage {
+  min-height: clamp(14rem, 34vh, 22rem);
+}
+/* Narrow on purpose: the form is centred, so the head has to live entirely to
+   the LEFT of it. A wider column runs under the liquid and the name becomes
+   unreadable exactly when its form arrives. */
+.pillar-head {
+  max-width: 24rem;
+}
+.pillar-foot {
+  max-width: 46rem;
+}
+/* Static tiers have no liquid to leave room for, so the empty middle becomes
+   dead space; collapse it and let the chapter read as a document. */
+.liquid-journey[data-liquid="static"] .pillar {
+  min-height: 0;
+  padding-block: clamp(2.75rem, 8vw, 4.5rem);
+}
+.liquid-journey[data-liquid="static"] .pillar-stage {
+  min-height: 0;
 }
 .pillar-counter {
   font-family: var(--font-mono);
@@ -1528,48 +1728,59 @@ section[id],
   font-variant-numeric: tabular-nums lining-nums;
   line-height: var(--text-mono--line-height);
   letter-spacing: var(--text-mono--letter-spacing);
-  color: var(--color-paper-mute);
+  color: var(--color-cyan);
+}
+.pillar-name {
+  margin-top: 0.5rem;
+  color: var(--color-paper);
 }
 .pillar-accent {
-  margin-top: 0.75rem;
+  margin-top: 0.6rem;
   font-size: var(--text-poetic);
   line-height: var(--text-poetic--line-height);
   letter-spacing: var(--text-poetic--letter-spacing);
   color: var(--color-paper-mute);
 }
-.pillar-name {
-  margin-top: 0.35rem;
-  color: var(--color-paper);
-}
+/* the instrument band: three labelled columns reading as one panel under the
+   form, rather than three stacked paragraphs reading as a card */
 .pillar-blocks {
-  margin-top: 1.75rem;
   display: grid;
-  gap: 1rem;
-  max-width: 46rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1.75rem;
+  margin: 0;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--color-paper-faint);
 }
 .pillar-block {
   display: grid;
-  grid-template-columns: 10.25rem 1fr;
-  gap: 0.25rem 1.5rem;
-  align-items: baseline;
+  gap: 0.4rem;
+  align-content: start;
 }
 .pillar-label {
   font-family: var(--font-mono);
-  font-size: var(--text-mono);
+  font-size: var(--text-mono-sm);
   font-weight: 500;
-  line-height: var(--text-mono--line-height);
-  letter-spacing: var(--text-mono--letter-spacing);
+  line-height: var(--text-mono-sm--line-height);
+  letter-spacing: var(--tracking-label);
   text-transform: uppercase;
   color: var(--color-cyan);
 }
 .pillar-block dd {
+  margin: 0;
   color: var(--color-paper);
+}
+.pillar-foot-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem 2rem;
+  margin-top: 1.5rem;
 }
 /* the capability list — quiet mono fine-print with cyan-tinted separators so
    it reads as an organised set, not a flat gray run-on */
 .pillar-caps {
-  margin-top: 1.5rem;
-  max-width: 42rem;
+  max-width: 30rem;
   font-family: var(--font-mono);
   font-size: var(--text-mono-sm);
   letter-spacing: var(--tracking-label-dense);
@@ -1582,10 +1793,35 @@ section[id],
   color: var(--color-cyan-deep);
 }
 
-@media (max-width: 640px) {
-  .pillar-block {
+/* ── S4 chapter type ─────────────────────────────────────────────────────── */
+.svc-intro {
+  padding-top: clamp(6rem, 16vh, 11rem);
+  padding-bottom: clamp(2rem, 6vh, 4rem);
+  text-align: center;
+}
+.svc-claim {
+  margin-top: var(--type-space-label-title);
+  margin-inline: auto;
+  max-width: 18ch;
+  color: var(--color-paper);
+}
+.svc-lead {
+  margin-top: var(--type-space-title-lead);
+  margin-inline: auto;
+  max-width: 54ch;
+  color: var(--color-paper-mute);
+}
+.svc-outro {
+  padding-block: clamp(4rem, 12vh, 8rem);
+}
+
+@media (max-width: 900px) {
+  .pillar-blocks {
     grid-template-columns: 1fr;
-    gap: 0.15rem;
+    gap: 1rem;
+  }
+  .pillar-stage {
+    min-height: clamp(12rem, 30vh, 18rem);
   }
 }
 

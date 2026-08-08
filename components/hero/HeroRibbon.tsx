@@ -81,7 +81,11 @@ export function HeroRibbon() {
     let width = 0;
     let height = 0;
     const resize = () => {
-      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      // The stream is a soft, out-of-focus body of liquid — it has no edges
+      // worth resolving, so it does not need device pixels. Rendering at ~0.7
+      // CSS px and letting the canvas scale up is invisible here and costs
+      // roughly an EIGHTH of the fragments a dpr-2 buffer did.
+      const dpr = Math.min(window.devicePixelRatio || 1, 1) * 0.7;
       const r = host.getBoundingClientRect();
       const w = Math.max(1, Math.round(r.width * dpr));
       const h = Math.max(1, Math.round(r.height * dpr));
@@ -135,21 +139,39 @@ export function HeroRibbon() {
     };
     raf = requestAnimationFrame(draw);
 
-    // never burn frames on a hidden tab
+    // Never burn frames the visitor cannot see. The tab check was here; the
+    // SCROLL check was not — so the whole shader kept running at full rate,
+    // alongside the page's own liquid canvas, for the entire rest of the
+    // journey. That was the stutter.
+    let onScreen = true;
+    let tabVisible = true;
+    const sync = () => {
+      const shouldRun = onScreen && tabVisible;
+      if (shouldRun === running) return;
+      running = shouldRun;
+      if (running) raf = requestAnimationFrame(draw);
+      else cancelAnimationFrame(raf);
+    };
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        onScreen = entry.isIntersecting;
+        sync();
+      },
+      { rootMargin: "10% 0px" },
+    );
+    observer.observe(host);
+
     const onVisibility = () => {
-      if (document.hidden) {
-        running = false;
-        cancelAnimationFrame(raf);
-      } else if (!running) {
-        running = true;
-        raf = requestAnimationFrame(draw);
-      }
+      tabVisible = !document.hidden;
+      sync();
     };
     document.addEventListener("visibilitychange", onVisibility);
 
     return () => {
       running = false;
       cancelAnimationFrame(raf);
+      observer.disconnect();
       ro.disconnect();
       window.removeEventListener("pointermove", onPointer);
       window.removeEventListener("scroll", onScroll);

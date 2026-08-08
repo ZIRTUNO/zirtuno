@@ -430,13 +430,19 @@ output = mix(physics_body, byte_exact_legacy_shadow, bind)
 `?fphys=0` bypasses the core and runs the pure Phase-A low-pass. Keep it until
 R5-E regression sign-off.
 
-The approved Physics-v3 study is reviewable with `?fphysv3=1`. It adds
-area-weighted pair response, a bounded attraction/viscosity band, and
-cluster-footprint correction without changing the default R5-B path. Add
-`?fobstacles=1` to let free droplets deflect around a cached, fixed-budget set
-of essential headings and conversion surfaces. Both switches are off by
-default until owner capture review; both preserve the exact bind=1 output, and
-`?fphys=0` remains the master rollback.
+Physics-v3 is the DEFAULT material behaviour: area-weighted pair response, a
+bounded attraction/viscosity band, and cluster-footprint correction. Cached
+typography avoidance is on with it, letting free droplets deflect around a
+fixed-budget set of essential headings and conversion surfaces. `?fphysv3=0`
+and `?fobstacles=0` roll each back independently; both preserve the exact
+bind=1 output, and `?fphys=0` remains the master rollback.
+
+Scroll is coupled into the core as a body force scaled by (1 - bind): an
+inertial lean opposite the travel, a cross-field shear so the body stretches
+internally rather than sliding as a slab, and a gain on the ambient current.
+Before this, the conductor damped a scroll velocity and handed it to the core,
+which never read it — so between the authored transitions, scrolling produced
+no liquid response at all.
 
 ### 5.7 Field renderer — CURRENT R5-A/B
 
@@ -452,10 +458,15 @@ lighting. It supports:
 - runtime resolution downshift;
 - transparent canvas over the ink-black page.
 
-`?fshape=1` compiles a separate full-tier review shader that gives free
-droplets a bounded, area-preserving velocity stretch. It is suppressed under
-reduced motion, watchdog demotion, exact forms, and staged §3.3 bridges. The
-default/lite shaders keep their original uniform budget and circular field
+Glass tiers compile a shader that gives droplets a bounded, area-preserving
+velocity stretch plus the matching optics (anisotropic specular along the flow,
+a brightened leading edge, less absorption where stretch thins the body, and
+advected internal striations). It is suppressed under reduced motion and at the
+flat tiers, and it follows the GLASS rather than the post chain — the
+full → full-nofx rung keeps the material, so deformation survives it. Stretch
+is gated on droplet SPEED, which is what keeps exact forms and settled bridge
+endpoints untouched without an administrative guard. `?fshape=0` rolls it back.
+The lite/flat shaders keep their original uniform budget and circular field
 math. Stable canonical ids carry velocity history; satellites, ambience, and
 scene extras remain circular so packed-slot changes cannot create false motion.
 
@@ -1079,9 +1090,9 @@ protected by `verify-cinematics.mjs` and the full-page transition diagnostics.
 | `?ftier=full\|lite\|none` | tier override                                               |
 | `?feco=c`                 | freeze ecosystem progress `c ∈ [0,1]`                       |
 | `?fphys=0`                | legacy integrator bypass                                    |
-| `?fphysv3=1`              | opt-in area/viscosity/footprint physics review              |
-| `?fobstacles=1`           | opt-in cached type/form avoidance; requires Physics v3      |
-| `?fshape=1`               | opt-in full-tier velocity-aligned free-droplet shape review |
+| `?fphysv3=0`              | roll back area/viscosity/footprint physics (default ON)     |
+| `?fobstacles=0`           | roll back cached type/form avoidance (default ON)           |
+| `?fshape=0`               | roll back velocity-aligned deformation + optics (default ON)|
 | `?fgrade=0`               | exact optics/grade bypass                                   |
 | `?fgov=0`                 | disable the idle energy governor for QA                     |
 | `?fcine=0`                | disable cinematic scoring, veils, and flash                 |

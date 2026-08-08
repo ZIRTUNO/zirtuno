@@ -26,25 +26,19 @@ import {
   VARY,
   wideScatter,
   clusterTargets,
-  convergeEnvelopes,
   ORGANISM_SCALE,
 } from "../phys.mjs";
 import {
-  socketPos,
-  ringPoint,
-  arteryPoint,
-  nodeTiming,
-  arteryTiming,
-  edgeTiming,
-  env as circuitEnv,
-  closurePulse,
-  DOCK_OF,
-  ARTERY_OF,
-  RING_PHASE,
-  RING_SPEED,
-  ARTERY_PERIOD,
-  ECO_N,
-} from "../eco-circuit.mjs";
+  gatherAnchor,
+  gatherTiming,
+  gatherDepth,
+  gatherRadius,
+  arrivalPulse,
+  familyOffset,
+  fuse as gatherFuse,
+  env as gatherEnv,
+  NODE_OF,
+} from "../gathering.mjs";
 import type { ScatterTarget } from "../phys.mjs";
 import {
   STAGGER,
@@ -78,10 +72,12 @@ import type {
 } from "./types";
 import { centersMid, coordAt } from "./geom";
 
-// choreography of the eco runway progress pr ∈ [0,1] (moved from LiquidSite):
-export const CONV_END = 0.5; // converge completes at half the runway
-export const GROW_START = 0.46;
-export const GROW_SPAN = 0.38;
+// The eco runway progress pr ∈ [0,1] IS the gather clock. One clock, not two:
+// the old pair (converge, then grow the circuit on top of it) described a mark
+// that assembled and then had a diagram drawn around it. The gathering has no
+// second act — capabilities arrive on their own schedules (gathering.mjs owns
+// the timing) and the last stretch fuses them, so a single monotonic progress
+// drives everything and every frame of it is scrub-safe.
 // within each service gap: rest, then melt across the middle window
 const MELT_LO = 0.35;
 const MELT_HI = 0.65;
@@ -134,6 +130,7 @@ export function makeSiteScene(cbs: SiteCallbacks = {}): SceneModule {
   let TR = 0; // travel
   let SP = 0; // services position
   let EXW = 1; // exit drain (radii)
+  let exitDrop = 0; // uv the seventh form has fallen out of frame
   let jScale = ORGANISM_SCALE;
   let jOx = 0;
   let jOy = 0;
@@ -143,11 +140,9 @@ export function makeSiteScene(cbs: SiteCallbacks = {}): SceneModule {
   let heroBridge = false;
   let pourR = 0;
   let stirY = 0;
-  let convP = 1; // p = 1 - converge
-  let rEnv = 0;
-  let shed = 1;
   let hp = 0; // damped heroPhase
-  let grow = 0;
+  let gather = 0; // the S3 clock (0 = dispersed and far, 1 = one near body)
+  let fused = 0; // the closing collapse of the three lobes into the mark
   let ambW = 1;
   let hOx = 0;
   let hOy = 0;
@@ -180,8 +175,7 @@ export function makeSiteScene(cbs: SiteCallbacks = {}): SceneModule {
       heroPhase: 0,
       fracture: 0,
       travel: 0,
-      converge: 0,
-      grow: 0,
+      gather: 0,
       svcPos: 0,
       exit: 0,
       pairA: 0,
@@ -222,6 +216,12 @@ export function makeSiteScene(cbs: SiteCallbacks = {}): SceneModule {
       hero: "#hero",
       runway: "[data-organism]",
       services: "#services",
+      // The departure is timed against the chapter it hands TO, not the one it
+      // is leaving. Specifically against the element MÉTODO'S OWN entry
+      // envelope watches (method scene, rIn), because that — not the chapter
+      // box — is where its liquid actually arrives.
+      method: "#method .method-journey",
+      methodBox: "#method",
     },
     lists: {
       symptoms: "#problem .symptom",
@@ -247,13 +247,11 @@ export function makeSiteScene(cbs: SiteCallbacks = {}): SceneModule {
         out.fracture = clamp01(stepped / (symptoms.length - 1));
       }
 
-      // S3 → S4 travel + the eco runway (converge → tendrils)
+      // S3 → S4 travel + the gather runway
       const rw = g.rect("runway");
       if (rw) {
         out.travel = clamp01((vh - rw.top) / (vh * 0.9));
-        const pr = clamp01(-rw.top / Math.max(rw.height - vh, 1));
-        out.converge = clamp01(pr / CONV_END);
-        out.grow = clamp01((pr - GROW_START) / GROW_SPAN);
+        out.gather = clamp01(-rw.top / Math.max(rw.height - vh, 1));
       }
 
       // S4 → S5: the organism clears the services HEADLINE (drift + scale
@@ -261,16 +259,28 @@ export function makeSiteScene(cbs: SiteCallbacks = {}): SceneModule {
       const sr = g.rect("services");
       if (sr) {
         out.svcPos = clamp01((vh * 0.92 - sr.top) / (vh * 0.85));
-        // S5 → S6: the liquid settles away BEFORE the method chapter, so the
-        // handoff never drags visible liquid. The window is the services CTA
-        // zone only — the last pillar keeps its liquid while read. (Anchored
-        // to the services bottom — identical geometry to the old wrap bottom.)
-        out.exit = clamp01(1 - (sr.bottom - vh) / (vh * 0.35));
+        // (exit is timed against Método's arrival below, not the services box)
         // presence: this scene's grip fades once the services have fully left
         // (long after the exit drain made everything invisible) — the method
         // scene takes the weights from here
         out.on = clamp01((sr.bottom + vh * 0.2) / (vh * 0.8));
       }
+
+      // S4 → S5: the seventh form pours out across MÉTODO'S ARRIVAL. It used
+      // to be timed off the services box and finished while that section was
+      // still fully on screen, which left a band of scroll — measured at
+      // ~420px — where the site scene had drained and Método had not yet
+      // taken over: a stage with nothing on it, which is a cut no matter how
+      // smoothly each side faded. Timing the departure against the chapter it
+      // hands TO makes the two overlap by construction.
+      //
+      // Método's own rIn opens at its journey top = 1.15vh and completes at
+      // 0.80vh. Draining across 1.45vh → 0.90vh puts this scene's departure
+      // INSIDE that window, so the two overlap instead of meeting at a point.
+      // Timing it off #method's box instead left a screen of intro copy
+      // between the two — the ~420px of empty stage the boundary gate found.
+      const mr = g.rect("method") ?? g.rect("methodBox");
+      if (mr) out.exit = clamp01((vh * 1.45 - mr.top) / (vh * 0.55));
       const pillars = g.list("pillars");
       if (pillars.length >= 2 && out.svcPos > 0.02) {
         // virtual pre-pillar centre gives the organism → pillar-1 melt a runway
@@ -306,12 +316,20 @@ export function makeSiteScene(cbs: SiteCallbacks = {}): SceneModule {
         cachedAspect = aspect;
         // S3's liquid lives right of the copy column on wide stages
         const sCx = 0.5 + Math.min(0.14 * aspect, Math.max(aspect / 2 - 0.34, 0));
-        // services placement: beside the copy on wide stages; BELOW it (smaller,
-        // lower half) on narrow ones — legibility is first-class everywhere
+        // SERVICES: the form is the subject, so it holds the CENTRE of the
+        // stage and the type composes around it — name above, instrument band
+        // below. It used to sit off to one side of a reading column, which
+        // made seven exact vector forms into an illustration beside a list.
+        // Centred and larger, "one body, seven shapes" is the argument itself.
+        // Centred horizontally, lifted into the UPPER middle. Dead-centre and
+        // full size, the form ran straight through the instrument band and
+        // covered the third column — the form is the subject, but the
+        // is/solves/creates block is the commercial core and cannot be the
+        // thing that yields. This leaves a clear band beneath it.
         const wide = aspect >= 1.4;
-        svcOx = wide ? Math.min(0.15 * aspect, aspect / 2 - 0.32) : 0;
-        svcOy = wide ? 0 : -0.22;
-        svcScale = wide ? ORGANISM_SCALE : 0.38;
+        svcOx = 0;
+        svcOy = wide ? 0.16 : 0.2;
+        svcScale = wide ? 0.5 : 0.38;
         Tclu = clusterTargets(aspect, sCx);
         Tdis = wideScatter(aspect, sCx, 0.5, 0.85);
         Teco = wideScatter(aspect, 0.5, 0.5, 1);
@@ -336,13 +354,29 @@ export function makeSiteScene(cbs: SiteCallbacks = {}): SceneModule {
       hp = clamp01(ch.heroPhase);
       F = smooth01(clamp01(ch.fracture));
       TR = smooth01(clamp01(ch.travel));
-      const c = clamp01(ch.converge);
-      grow = clamp01(ch.grow);
+      gather = clamp01(ch.gather);
+      fused = gatherFuse(gather);
       SP = smooth01(clamp01(ch.svcPos));
-      EXW = 1 - smooth01(clamp01(ch.exit));
+      // BOUNDARY: Services → Método. The seventh form POURS OUT of the frame
+      // rather than evaporating where it stands. Draining radius in place left
+      // a liquid-dead band before Método and read as the material being
+      // switched off; falling out of frame is a departure, and the momentum
+      // carries into the next chapter instead of stopping at its edge.
+      const EXD = smooth01(clamp01(ch.exit));
+      // squared: a fall accelerates. Linear travel reads as a slide.
+      exitDrop = EXD * EXD * 0.9;
+      // The body stays a BODY while it leaves — the drain only finishes it off
+      // once it is already mostly past the bottom edge.
+      // Held later still. At 0.55 the body had already thinned to near
+      // invisibility while Método was only beginning to arrive; the overlap is
+      // what removes the seam, so the mass survives most of the fall.
+      EXW = 1 - smooth01(clamp01((EXD - 0.72) / 0.28));
       jScale = ORGANISM_SCALE + (svcScale - ORGANISM_SCALE) * SP;
       jOx = svcOx * SP;
-      jOy = svcOy * SP;
+      // One write carries the whole departure: the form's own offset, the
+      // droplets' home footprint and the §3.3 bridge all read jOy, so the body
+      // and its liquid leave together instead of separating on the way out.
+      jOy = svcOy * SP - exitDrop;
       const inServices = pa !== pb || pa > 0;
       inSvcMelt = pa !== pb && mState > 0.0005 && mState < 0.9995;
       hOx = ch.heroOx;
@@ -459,8 +493,12 @@ export function makeSiteScene(cbs: SiteCallbacks = {}): SceneModule {
               (SDF_WARP_MORPH - SDF_WARP_REST) * Math.sin(Math.PI * mState);
           }
         } else {
-          // the mark emerges only at full convergence — never while dispersed
-          const [w, e] = formPresence(convergeEnvelopes(1 - c).q);
+          // The mark is the RESULT of the fuse, never a thing the droplets
+          // assemble around. Its field weight rides `fused`, which is 0 until
+          // the last capability has arrived — so through the whole gathering
+          // there is no form at all, only liquid, and the mark exists for the
+          // first time at the moment the three lobes become one body.
+          const [w, e] = formPresence(fused);
           formOut.a = 0;
           formOut.b = 0;
           formOut.fa = w;
@@ -469,7 +507,10 @@ export function makeSiteScene(cbs: SiteCallbacks = {}): SceneModule {
           formOut.eb = 0;
         }
         // exit: the form erodes away before the sticky layer unsticks
-        const exE = smooth01(clamp01(ch.exit));
+        // The form holds its weight while it falls and only erodes once it is
+        // leaving the frame — dissolving it on the spot was the "obvious cut"
+        // this boundary is meant to remove.
+        const exE = smooth01(clamp01((smooth01(clamp01(ch.exit)) - 0.55) / 0.45));
         formOut.fa *= 1 - exE;
         formOut.fb *= 1 - exE;
         formOut.ea += exE * SDF_MELT_ERODE;
@@ -488,10 +529,6 @@ export function makeSiteScene(cbs: SiteCallbacks = {}): SceneModule {
       pourR = smooth01((hp - 0.72) / 0.26);
       // loose liquid drags with the scroll (bounded — a flick stirs, never flings)
       stirY = Math.max(-2.2, Math.min(2.2, ctx.scrollVel)) * PHYS.STIR;
-      convP = 1 - c;
-      const env = convergeEnvelopes(convP);
-      rEnv = env.rEnv;
-      shed = env.shed;
 
       // ambient calm — always alive, calmer where a composition must read
       // The Hero belongs to the lab ribbon. The shared ambient family used to
@@ -499,7 +536,7 @@ export function makeSiteScene(cbs: SiteCallbacks = {}): SceneModule {
       // across the headline — the one thing separating the shipped Hero from
       // the lab. It fades in with the pour instead.
       ambW =
-        (1 - 0.5 * smooth01(c) * (1 - SP)) *
+        (1 - 0.5 * smooth01(gather) * (1 - SP)) *
         (1 - 0.35 * SP) *
         EXW *
         smooth01((hp - 0.66) / 0.3);
@@ -549,37 +586,98 @@ export function makeSiteScene(cbs: SiteCallbacks = {}): SceneModule {
       hy = 0.5 + hOy + (hy - 0.5) * hScale;
       hr *= hScale;
 
-      // journey-side target: clusters → dispersed (S3) → the eco field
+      // ── journey-side target: fracture → dispersed → THE GATHERING ───────────
+      //
+      // The dispersed field is not a waypoint on the way to the mark any more:
+      // it is the STATE the chapter begins in, and every droplet leaves it on
+      // its own capability's schedule. Nothing "converges" as a block.
       let bindJ = 0; // journey-side bind (exactness of the current regime)
-      let clusJ = -1; // cohesion group (the fracture's unstable chunks)
+      let clusJ = -1; // cohesion group
       const clu = Tclu[i],
         dis = Tdis[i],
         eco = Teco[i];
       let tx = clu.tx + (dis.tx - clu.tx) * F;
       let ty = clu.ty + (dis.ty - clu.ty) * F;
-      tx += (eco.tx - tx) * TR;
-      ty += (eco.ty - ty) * TR;
-      // converge home: the organism's cloud (centred, scaled, services drift)
-      const hx2 = 0.5 + jOx + (bb[0] - 0.5) * jScale;
-      const hy2 = 0.5 + jOy + (bb[1] - 0.5) * jScale;
-      const lt = smooth01((convP - (0.16 + 0.3 * dis.key)) / 0.5);
-      // landed at the converge home = exact under the form; loose = free liquid
-      bindJ = 1 - lt;
-      // the fracture's unstable CHUNKS cohere like liquid until the field
-      // fully disperses / travels — the same anchor pick as clusterTargets
-      if (TR < 0.6 && F < 0.85 && lt > 0.5)
-        clusJ = Math.min((hash(i, 11) * 4) | 0, 3);
+      // BOUNDARY: Problem → Ecosystem. Only a PARTIAL re-centring. Carrying the
+      // whole field from the Problem's off-centre scatter to a centred one made
+      // the liquid slide sideways as a block before the chapter began — a move
+      // with no cause, which reads as a scene change. The fracture's dispersed
+      // field IS the gathering's starting state; travel only eases it into the
+      // runway's frame, and each capability makes the rest of the journey
+      // itself, on its own schedule, as part of arriving.
+      tx += (eco.tx - tx) * TR * 0.42;
+      ty += (eco.ty - ty) * TR * 0.42;
+
+      // the mark's own footprint — where everything ends up once fused
+      const mx = 0.5 + jOx + (bb[0] - 0.5) * jScale;
+      const my = 0.5 + jOy + (bb[1] - 0.5) * jScale;
+
+      const node = NODE_OF(i);
+      let e = 0; // this droplet's arrival (0 = still out in the dark)
+      let depth = 1; // 1 = far, 0 = near
+      let gx = mx;
+      let gy = my;
+      let gr = bb[2] * jScale;
+
+      if (node >= 0) {
+        // one of the ten capabilities: it has a lobe to arrive at, a depth to
+        // come forward through, and two family members it holds on to
+        const fam = familyOffset(i);
+        const tm = gatherTiming(node);
+        // family members lead each other slightly, so a capability arrives as a
+        // small stream rather than three dots moving in lockstep
+        e = gatherEnv(gather, { d: tm.d + fam.lead * 0.03, w: tm.w });
+        depth = gatherDepth(node, gather);
+        const pulse = arrivalPulse(node, gather);
+        const anchor = gatherAnchor(node, aspect);
+        const ax = anchor.x + fam.x;
+        const ay = anchor.y + fam.y;
+        // arrive at the lobe, then be drawn into the body by the fuse
+        gx = ax + (mx - ax) * fused;
+        gy = ay + (my - ay) * fused;
+        gr = gatherRadius(i, depth, pulse);
+        // Gathered mass keeps its cluster id so cohesion holds each capability
+        // together in flight — this is what makes ten families read as ten
+        // BODIES crossing the dark rather than thirty independent beads.
+        if (e > 0.12 && fused < 0.6) clusJ = node % 16;
+      } else {
+        // the connective liquid: no lobe of its own, it simply comes forward
+        // and becomes the body the capabilities arrive into
+        e = gatherEnv(gather, { d: 0.5 + 0.22 * hash(i, 71), w: 0.3 });
+        depth = 1 - e;
+        gr = bb[2] * jScale * (0.5 + 0.5 * e);
+      }
+
+      // Where the droplet actually is: out in the dispersed dark, or gathered.
+      // The blend IS the travel — there is no separate "converge" transform.
+      let jx = tx + (gx - tx) * e;
+      let jy = ty + (gy - ty) * e;
+      let jr = bb[2] * jScale * VARY[i] * (1 - e) + gr * e;
+      // THE HANDOFF. The droplets are how the mark arrives, not what it is:
+      // as the fuse closes, they drain and the form's exact silhouette takes
+      // over. Without this the thirty gathered masses simply pile onto the
+      // mark's footprint and inflate it into an amorphous blob — the form is
+      // underneath the whole time, drowned by the liquid that carried it.
+      // Same principle as the §3.3 bridge's radius envelope: liquid leaves
+      // before the form is solid.
+      jr *= 1 - 0.84 * fused;
+
+      // loose liquid drags with the scroll; gathered liquid has been claimed
+      jy += stirY * (1 - e);
       // The fluid core owns free-liquid micro-motion. Preserve the authored
       // drift only for the exact ?fphys=0 rollback, where no curl field exists.
-      const drift = ctx.physics ? 0 : PHYS.DRIFT * lt;
-      let jx = hx2 + (tx - hx2) * lt + drift * Math.sin(t * dis.f1 + i * 1.7);
-      let jy =
-        hy2 +
-        (ty - hy2) * lt +
-        drift * Math.cos(t * dis.f2 + i * 2.3) +
-        stirY * lt; // loose liquid drags with the scroll; landed liquid holds
-      const vary = 1 + (VARY[i] - 1) * lt; // size spread while loose
-      let jr = bb[2] * jScale * (1 - 0.28 * lt) * rEnv * shed * vary;
+      if (!ctx.physics) {
+        const drift = PHYS.DRIFT * (1 - e);
+        jx += drift * Math.sin(t * dis.f1 + i * 1.7);
+        jy += drift * Math.cos(t * dis.f2 + i * 2.3);
+      }
+      // Free while crossing, exact once fused under the mark. The middle is
+      // deliberately loose: that is where the merging is visible.
+      bindJ = Math.max(e * 0.35, fused);
+      if (fused > 0.7) clusJ = -1;
+      // the fracture's unstable chunks still cohere before the gathering starts
+      if (TR < 0.6 && F < 0.85 && e < 0.1)
+        clusJ = Math.min((hash(i, 11) * 4) | 0, 3);
       if (inSvcMelt) {
         // the §3.3 services bridge is the journey target while melting
         const A = CLOUDS[pa],
@@ -594,79 +692,28 @@ export function makeSiteScene(cbs: SiteCallbacks = {}): SceneModule {
         const rEnvM = bridgeRadiusEnvelope(mState);
         jx = 0.5 + jOx + (aa[0] + (bb2[0] - aa[0]) * tp - 0.5) * jScale;
         jy = 0.5 + jOy + (aa[1] + (bb2[1] - aa[1]) * tp - 0.5) * jScale;
-        jr = (aa[2] + (bb2[2] - aa[2]) * trr) * rEnvM * jScale;
+        // RADIUS HANDOFF. Positions match exactly at mState 0 (the bridge's A
+        // cloud IS the mark cloud), but the radii do not: bridgeRadiusEnvelope
+        // opens at ZERO, so the instant inSvcMelt flipped, every gathered
+        // droplet snapped from its residual radius to nothing. The centre of
+        // mass then lurched onto whatever was left — measured at 50x the
+        // journey's median step, right on the Ecosystem→Services seam. Easing
+        // the two radii together over the first slice of the melt removes the
+        // step without touching the bridge's own shape.
+        const bridgeR = (aa[2] + (bb2[2] - aa[2]) * trr) * rEnvM * jScale;
+        const handoff = smooth01(clamp01(mState / 0.14));
+        jr = jr * (1 - handoff) + bridgeR * handoff;
         bindJ = 1; // the §3.3 bridge is analytic-exact — physics hands off
         clusJ = -1;
-      } else if (i < 40) {
-        // THE CIRCULATION (S4 remake): the same droplets become the blood of
-        // the capability circuit — docks hold each organ's socket, supply
-        // beads ride the three arteries outward, and eighteen beads circulate
-        // the closed vein loop. Geometry and timing come from eco-circuit so
-        // the liquid, the SVG veins and the labels can never drift apart.
+        depth = 0; // the services body is the near plane, always
+      } else if (node >= 0) {
+        // A hovered capability swells and pulls its own family forward — the
+        // system answering a touch, on the same channel the circuit used.
         const hov = ctx.ch.hov ?? -1;
-        const fadeSvc = 1 - SP;
-        let txp = 0;
-        let typ = 0;
-        let trp = 0;
-        let e = 0;
-        const dock = DOCK_OF(i);
-        const artery = ARTERY_OF(i);
-        if (dock >= 0) {
-          // one droplet holds each organ's socket — a held drop, not a sticker
-          e = circuitEnv(grow, nodeTiming(dock)) * fadeSvc;
-          const p = socketPos(dock, aspect);
-          txp = p.x;
-          typ = p.y;
-          const swell = hov === dock ? 1.55 : 1;
-          trp =
-            (0.0105 + 0.0015 * Math.sin(t * 0.9 + dock * 1.7)) *
-            swell *
-            (1 + closurePulse(grow, dock / ECO_N) * 0.5);
-        } else if (artery >= 0) {
-          // supply pulses: born at the mark's edge, absorbed at the organ
-          e = circuitEnv(grow, arteryTiming(artery)) * fadeSvc;
-          const k = (i - 10) % 4;
-          const f =
-            (t / ARTERY_PERIOD + k / 4 + artery * 0.31) % 1;
-          const reach = circuitEnv(grow, arteryTiming(artery));
-          const p = arteryPoint(artery, f * reach, aspect);
-          txp = p.x;
-          typ = p.y;
-          trp = 0.012 * (0.35 + 0.65 * Math.sin(Math.PI * f));
-        } else {
-          // the loop: a slow, deliberate metabolism around the whole ring
-          const u = (RING_PHASE(i) + t * RING_SPEED) % 1;
-          const seg = Math.floor(u * ECO_N) % ECO_N;
-          const segE = circuitEnv(grow, edgeTiming(seg));
-          e = segE * fadeSvc;
-          const p = ringPoint(u, aspect);
-          txp = p.x;
-          typ = p.y;
-          // the closure pulse brightens the band as the loop seals; a hovered
-          // organ quickens its neighbourhood — the system responds as one
-          const near =
-            hov >= 0
-              ? smooth01(
-                  (0.14 -
-                    Math.min(
-                      Math.abs(u - hov / ECO_N),
-                      1 - Math.abs(u - hov / ECO_N),
-                    )) /
-                    0.14,
-                )
-              : 0;
-          trp =
-            0.0085 *
-            (0.7 + 0.3 * Math.sin(t * 1.3 + i * 2.1)) *
-            (1 + closurePulse(grow, u) * 0.9 + near * 0.5);
-        }
-        if (e > 0.001) {
-          jx += (txp - jx) * e;
-          jy += (typ - jy) * e;
-          jr = jr * (1 - e) + trp * e * VARY[i] ** 0.35;
-          // circuit beads ride exact paths — mostly protected from forces
-          bindJ = Math.max(bindJ, e * 0.9);
-          if (e > 0.3) clusJ = -1;
+        if (hov === node && e > 0.05 && fused < 0.85) {
+          const w = (1 - fused) * e;
+          jr *= 1 + 0.5 * w;
+          depth *= 1 - 0.55 * w;
         }
       }
 
@@ -680,7 +727,12 @@ export function makeSiteScene(cbs: SiteCallbacks = {}): SceneModule {
       // at the journey regime's own exactness
       out.bind = 1 - li * (1 - bindJ);
       out.cluster = li > 0.6 ? clusJ : -1;
-      out.z = 0;
+      // DEPTH is the chapter's argument (R5-C's iBallZ + the absorption grade
+      // do the rest): scattered tools are far and half-lit, an ecosystem is
+      // near and bright. The hero side is always the near plane, so the pour
+      // carries each droplet OUT into the dark before the gathering earns it
+      // back — the loss is what makes the recovery mean anything.
+      out.z = li * depth * (1 - SP);
     },
 
     form() {

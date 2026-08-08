@@ -24,6 +24,7 @@ import {
   SDF_THICK,
   SDF_RES,
   SDF_GRADE,
+  SDF_STRAIN,
 } from "@/lib/webgl/sdf-glass-shader.mjs";
 import { makeLayer, makeSdfTexture, loadSdf } from "@/lib/webgl/sdf-gl";
 import { makePostChain } from "@/lib/webgl/post-chain";
@@ -69,19 +70,24 @@ export default function FieldStage({
     if (!container) return;
     let disposed = false;
 
-    // Compile the extra packed-velocity uniforms only for an explicit,
-    // motion-capable full-tier review. Lite/reduced paths retain the original
-    // shader budget even when the URL flag was carried across devices.
-    const shapeRequested = /[?&]fshape=1(?:&|$)/.test(window.location.search);
+    // Velocity-aware deformation is the DEFAULT material behaviour: liquid that
+    // cannot stretch under its own motion reads as sliding discs. It stays off
+    // for lite/reduced paths, which cannot afford the uniforms or must not
+    // move, and `?fshape=0` is the rollback.
+    const shapeRequested = !/[?&]fshape=0(?:&|$)/.test(window.location.search);
     const motionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const shapeShaderActive =
+    const shapeWanted =
       shapeRequested && tier === "full" && !motionQuery.matches;
+    // Preference list, not a prediction: the driver decides whether the wider
+    // uniform block links, and the plain field is always the last resort so a
+    // refusal costs deformation, never the canvas.
     const layer = makeLayer(
       container,
       SDF_GLASS_VERT,
-      shapeShaderActive ? SDF_GLASS_FRAG_SHAPE : SDF_GLASS_FRAG,
+      shapeWanted ? [SDF_GLASS_FRAG_SHAPE, SDF_GLASS_FRAG] : SDF_GLASS_FRAG,
     );
     if (!layer) return; // no WebGL2 → shell's SVG fallback stays
+    const shapeShaderActive = shapeWanted && layer.variant === 0;
     const gl = layer.gl;
 
     // §12.5: on loss the loop PARKS (no zombie GL, no fake frame counts, no
@@ -287,13 +293,13 @@ export default function FieldStage({
         gl.drawingBufferHeight > 0
           ? gl.drawingBufferWidth / gl.drawingBufferHeight
           : 1;
-      if (shapeRequested) ballIds.fill(-1);
+      if (shapeShaderActive) ballIds.fill(-1);
       const f = driverRef.current.frame(
         tMs,
         ballBuf,
         aspect,
         zBuf,
-        shapeRequested ? ballIds : undefined,
+        shapeShaderActive ? ballIds : undefined,
       );
       const ta = textures[f.a];
       if (!ta) return f; // the driver's form isn't built yet — fallback stays
@@ -333,18 +339,29 @@ export default function FieldStage({
       gl.uniform1f(layer.U("iGlass"), glass ? 1 : 0);
       gl.uniform3fv(layer.U("iBalls"), ballBuf);
       gl.uniform1i(layer.U("iBallCount"), f.count);
-      const shapeTierActive =
-        shapeShaderActive && !motionReduced && liveTier === "full";
+      // Deformation belongs to the GLASS, not to the post chain. The first
+      // watchdog rung (full → fullnofx) sheds bloom/dither/grain and keeps the
+      // material — gating stretch on `full` made the liquid quietly revert to
+      // rigid discs the moment a machine dropped one rung, which is precisely
+      // where it is least affordable to look cheap. It dies with the glass, at
+      // lite/half, where the shader is flat cyan anyway.
+      const shapeTierActive = shapeShaderActive && !motionReduced && glass;
       const speed = shapeTierActive ? sampleBallVelocity(f.count, tMs) : 0;
-      // EPS_FORM mirrors the conductor's material-presence boundary. A/B
-      // staging remains a second hard guard so the droplet-only middle of a
-      // §3.3 bridge also retains the signed-off circular field byte-for-byte.
-      const shape =
-        shapeTierActive && f.fa < 0.002 && formBWeight < 0.002 && f.a === f.b
-          ? 1
-          : 0;
-      if (shapeShaderActive)
+      // Deformation is no longer fenced to droplet-only frames. It cannot
+      // disturb a form: the shape branch rewrites the BALL metric only, while
+      // every form silhouette comes from formOnlyField(), which it never
+      // touches. What keeps a resting stage exact is physical rather than
+      // administrative — stretch is gated on SHAPE_SPEED_MIN, and liquid at
+      // rest is below it. So the melt's travelling droplets finally deform
+      // while its endpoints stay put.
+      const shape = shapeTierActive ? 1 : 0;
+      if (shapeShaderActive) {
         gl.uniform4fv(layer.U("iBallVelocity"), ballVelocity);
+        // The optics ride the same gate as the geometry: liquid that is not
+        // allowed to deform must not be lit as though it were. ?fgrade=0 keeps
+        // its meaning as the exact-optics bypass.
+        gl.uniform1f(layer.U("iStrain"), gradeOn && shape ? SDF_STRAIN : 0);
+      }
       gl.uniform1f(layer.U("iBallShape"), shape);
       diag.shape = shape;
       diag.shapeSpeed = speed;

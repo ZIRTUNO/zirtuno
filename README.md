@@ -47,7 +47,7 @@ offer. The balance is:
 
 The visitor must understand the offer before the poetic peak, see honest proof,
 and reach an obvious contact action. The liquid is not decoration: it proves the
-business argument by turning fragmentation into one connected organism.
+business argument by turning fragmentation into one body.
 
 ## The New Experience: Five Acts, One Liquid
 
@@ -59,7 +59,7 @@ canvases or chapter hairlines.
 | Act            | Chapters                     | Liquid narrative                                                                                | Light narrative                                             |
 | -------------- | ---------------------------- | ----------------------------------------------------------------------------------------------- | ----------------------------------------------------------- |
 | I — Signal     | Entry veil, Hero             | wordmark assembly hands off to the living mark and seven forms                                  | black, then the first cyan presence                         |
-| II — Argument  | Problem, Ecosystem, Services | pour → fracture → seek → reunify → THE CIRCULATION (arteries, ten organs, one closed vein loop) → bloom through the seven service forms | exposure falls through the problem and rises at convergence |
+| II — Argument  | Problem, Ecosystem, Services | pour → fracture → THE GATHERING (ten capability masses drawn forward out of depth, arriving in three systems, fusing into the mark) → AS SETE FORMAS (one body taking each service's exact form) | exposure falls through the problem and rises at the fuse |
 | III — Practice | Método, Work                 | the liquid rehearses the client transformation, then becomes a quiet current behind honest work | neutral and workmanlike, with an act boundary before Work   |
 | IV — Soul      | Origin, Studio               | two brother-masses fuse into the mark; one controlled flash; echoes continue behind the studio  | emotional peak, afterglow, then settle                      |
 | V — Invitation | Contact, Footer              | every droplet gathers into the mark; submit exhales; one droplet releases beyond the footer     | calm return to black                                        |
@@ -232,7 +232,11 @@ node scripts/verify-perf.mjs
 node scripts/verify-postfx.mjs        # optics gate (vs scripts/postfx-baseline.json)
 node scripts/verify-rest-exact.mjs    # settled-still byte gate (vs scripts/rest-exact.json)
 node scripts/verify-cinematics.mjs    # R5-D gate: one flash, two fades, no dead zones
-node scripts/verify-ecosystem.mjs     # THE CIRCULATION: veins, labels, pulse, HUD, static story
+node scripts/verify-deformation.mjs   # deformable-material gate: the velocity field
+                                      # linked, iBallShape/iStrain driven, ambient
+                                      # current running, nothing teleports
+node scripts/verify-ecosystem.mjs     # THE GATHERING: names, three beats, collisions, response
+node scripts/verify-boundaries.mjs    # no dead band / no teleport across acts II-III
 node scripts/capture-transition-diagnostics.mjs
 node scripts/record-liquid-motion.mjs # video + per-draw iBalls trace recordings
 ```
@@ -251,9 +255,9 @@ images; a green process exit does not replace visual judgment.
 - `?ftier=full|lite|none` — tier override.
 - `?feco=c` — freeze ecosystem choreography at `c ∈ [0,1]`.
 - `?fphys=0` — bypass fluid physics through the legacy low-pass.
-- `?fphysv3=1` — enable the area-weighted/viscous physics review prototype.
-- `?fobstacles=1` — add cached typography/form avoidance to Physics v3.
-- `?fshape=1` — enable full-tier velocity-aligned free-droplet deformation.
+- `?fphysv3=0` — roll back the area-weighted/viscous physics (default ON).
+- `?fobstacles=0` — roll back cached typography/form avoidance (default ON).
+- `?fshape=0` — roll back velocity-aligned deformation and its glass optics (default ON).
 - `?fgrade=0` — bypass the optics chain and grade (exact pre-optics output).
 - `?fgov=0` — disable the idle-cadence governor.
 - `?fcine=0` — disable the cinematic layer (neutral score, no veils/flash).

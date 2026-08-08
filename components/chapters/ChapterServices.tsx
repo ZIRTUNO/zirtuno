@@ -5,53 +5,53 @@ import { CtaAnalysis } from "@/components/chrome/CtaButton";
 import { PILLARS } from "@/lib/content/services";
 
 /**
- * S5 · The Services — ONE service owns the viewport at a time. The liquid
- * (the shared LiquidSite layer) melts pillar → pillar in lockstep with the
- * copy — beside the column on wide stages, smaller and below it on narrow
- * ones (placement, never dimming: the liquid keeps full luminosity). Each
- * pillar gets near-viewport presence — no competing states, no stacked
- * screens. Copy is server-rendered (RSC).
+ * S4 · AS SETE FORMAS — one body, seven shapes.
+ *
+ * The gathering ends with the ten capabilities fused into one mark. This
+ * chapter is what that body can DO: it holds the centre of the stage and takes
+ * each service's exact vector form in turn, and the §3.3 melt is the only
+ * transition between them. The argument is not "here are seven services" — it
+ * is "this is one system that becomes what the work needs", and a stacked
+ * column of seven entries beside an illustration cannot make that argument.
+ *
+ * Each pillar is therefore a full stage rather than a list item: name above the
+ * form, instrument band below it, and the middle left to the liquid. Copy is
+ * server-rendered (RSC); the semantic order is unchanged, so assistive tech and
+ * static tiers read exactly the same seven pillars in the same sequence.
  */
 export function ChapterServices({ hasWork }: { hasWork: boolean }) {
   const t = useTranslations("services");
 
   return (
-    <section
-      id="services"
-      data-chapter
-      className="relative"
-    >
-      <div className="page-x py-24 md:py-32">
+    <section id="services" data-chapter className="relative">
+      <div className="page-x svc-intro">
         <Reveal inView as="p" className="chapter-label">
           {t("chapterLabel")}
         </Reveal>
 
         <Reveal inView delay={0.05}>
-          <h2 className="type-section-title mt-[var(--type-space-label-title)] text-paper">
-            {t("headline")}
-          </h2>
+          <h2 className="type-section-title svc-claim">{t("headline")}</h2>
         </Reveal>
 
         <Reveal inView delay={0.1}>
-          <p className="type-lead-copy mt-[var(--type-space-title-lead)] text-paper-mute">
-            {t("lead")}
-          </p>
+          <p className="type-lead-copy svc-lead">{t("lead")}</p>
         </Reveal>
+      </div>
 
-        <div className="mt-[10vh] max-w-2xl">
-          {PILLARS.map((p, i) => (
-            <Reveal inView key={p.key} delay={0.03}>
-              <PillarEntry
-                index={i}
-                pillarKey={p.key}
-                category={p.category}
-                hasWork={hasWork}
-              />
-            </Reveal>
-          ))}
-        </div>
+      <div className="page-x svc-forms">
+        {PILLARS.map((p, i) => (
+          <PillarEntry
+            key={p.key}
+            index={i}
+            pillarKey={p.key}
+            category={p.category}
+            hasWork={hasWork}
+          />
+        ))}
+      </div>
 
-        <Reveal inView className="mt-16 flex">
+      <div className="page-x svc-outro">
+        <Reveal inView className="flex">
           <CtaAnalysis placement="services" />
         </Reveal>
       </div>

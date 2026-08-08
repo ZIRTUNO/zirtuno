@@ -156,7 +156,7 @@ At rest:
 
 Current tuning:
 
-- rest warp: `SDF_WARP_REST = 0.0055`;
+- rest warp: `SDF_WARP_REST = 0.0082`;
 - peak morph warp: `SDF_WARP_MORPH = 0.012`;
 - melt erosion depth: `SDF_MELT_ERODE = 0.085`.
 
@@ -242,9 +242,9 @@ autocycle use the same bridge path and accessibility announcement.
 - scatter and cluster target vocabulary;
 - a 12-droplet ambient family.
 
-`lib/webgl/eco-circuit.mjs` owns THE CIRCULATION (the S4 remake): the ring
-of ten organ sockets, the three arteries, the closed-loop parameterization,
-the assembly score (per-organ/vein `{d, w}` timings on the `grow` clock),
+`lib/webgl/gathering.mjs` owns THE GATHERING (the S3 remake): the three
+system lobes, the ten capability anchors, the per-capability `{d, w}` timings
+and depth curve on the single `gather` clock, the closing fuse,
 the loop-closure pulse, the bead allocation for droplets `i < 40` (10 docks ·
 12 artery supply · 18 ring circulation), and the BFS response graph. The
 canvas beads, the SVG veins, and the DOM labels all evaluate these same
@@ -404,21 +404,65 @@ per-droplet low-pass. Keep the bypass until R5-E. The conductor harness checks:
 - satellite budget;
 - arbiter invariants.
 
-Physics-v3 is an opt-in signature-visual study (`?fphysv3=1`), not a silent
-replacement for the signed-off R5-B path. Its area-weighted response, local
-viscosity/attraction, and bounded cluster-footprint correction must still obey
-the same bind contract. `?fobstacles=1` adds at most twelve cached field-space
-reading bounds; only free droplets respond. Exact forms, §3.3 melts, and
-`?fphys=0` remain unchanged. Promotion to the default requires capture review
-and real-hardware feel sign-off.
+Physics-v3 is now the DEFAULT material behaviour; `?fphysv3=0` is its rollback.
+Its area-weighted response, local viscosity/attraction, and bounded
+cluster-footprint correction still obey the same bind contract — the conductor
+harness asserts bind=1 parity against the legacy trajectory *while a scroll body
+force is applied*, since scroll is the newest force able to break it. Cached
+typography avoidance is likewise on by default (`?fobstacles=0` rolls back), at
+most twelve field-space reading bounds, and only free droplets respond. Exact
+forms, §3.3 melts, and `?fphys=0` remain unchanged.
 
-`?fshape=1` is the paired renderer study for full-tier free liquid. It compiles
-a separate shader variant, derives a filtered velocity direction from the
-already packed droplet state, and preserves projected area while stretching.
-It resolves to circular droplets for exact forms, staged bridges, reduced
-motion, lower tiers, watchdog demotion, and every anonymous transient family;
-stable canonical ids—not packed slot positions—own velocity history. The
-default shader stays unchanged.
+Scroll is coupled into `fluid-core` as a body force (`SCROLL_LEAN`,
+`SCROLL_SHEAR`, `SCROLL_STIR`). Previously the conductor damped a scroll
+velocity and handed it to the core, which never read it: scroll reached the
+ambient beads and the cadence governor only. The goal-seek spring does lag
+whenever a scene MOVES its targets, but most of the page holds its targets still
+in viewport space, so between authored transitions scrolling produced no liquid
+response at all. All three terms scale by (1 − bind).
+
+The ambient curl amplitude is a FORCE competing with that spring, so what
+matters is its ratio to ω² (= 48…400 from `OMEGA_K / TAUP`), not its own size.
+At the original `CURL_V = 0.016` the resulting wander was 0.0035 uv on the
+heaviest droplet and 0.0004 on the lightest — sub-pixel at any real canvas size,
+which is why the liquid read as dead between transitions and why small increases
+changed nothing.
+
+Velocity-aligned deformation is the default renderer for glass tiers;
+`?fshape=0` is its rollback. It compiles a separate shader variant, derives a
+filtered velocity direction from the already packed droplet state, and preserves
+projected area while stretching. Stable canonical ids — not packed slot
+positions — own velocity history.
+
+Two guards changed when it was promoted:
+
+- It is no longer fenced to droplet-only frames. The shape branch rewrites the
+  BALL metric only; every form silhouette comes from `formOnlyField()`, which it
+  never touches, so a form cannot be disturbed by it. What keeps a resting stage
+  exact is physical rather than administrative — stretch is gated on
+  `SHAPE_SPEED_MIN`, and liquid at rest is below it. A §3.3 bridge's travelling
+  droplets therefore deform while its endpoints stay put.
+- It follows the GLASS, not the post chain. The first watchdog rung
+  (full → full-nofx) sheds bloom/dither/grain and keeps the material; gating
+  stretch on `full` made liquid revert to rigid discs the moment a machine
+  dropped one rung. It now dies at lite/half, where the shader is flat cyan.
+
+Because the variant costs ~40 extra uniform vectors on top of `iBalls` and
+`iBallZ` — close to WebGL2's guaranteed 224 — `makeLayer` takes a PREFERENCE
+LIST and asks the driver the real question by linking the real shader, falling
+back to the plain field if it refuses. A refusal costs deformation, never the
+canvas. Predicting this from `MAX_FRAGMENT_UNIFORM_VECTORS` would be the same
+class of proxy the tier probe deliberately rejects.
+
+`iStrain` carries the deformation OPTICS: anisotropic specular along the flow
+axis, a brightened leading edge, reduced absorption where volume-preserving
+stretch thins the body, and flow-advected internal striations. Every term is
+exact identity at `iStrain = 0`, and the field-weighted velocity average is
+diluted to zero by forms (which carry none), so solid liquid keeps the locked
+material without a second guard. The plain shader source is byte-identical to
+its pre-deformation form, which is what keeps `verify-rest-exact` sound:
+`FieldMorphHero` — the only renderer that gate uses — compiles that source, at
+`warp = 0`, and touches neither `fluid-core` nor the conductor.
 
 ## 9. Interaction
 
@@ -527,7 +571,7 @@ act boundaries. Keep those responsibilities separate.
 | Assembly/Hero      | exact mark and seven forms     | §3.3 bridges + cursor extras                                                                    | high for forms/bridge    | exact material first                             |
 | Pour               | form drains                    | canonical droplets spill into page                                                              | high → low               | scroll shear may stir                            |
 | Problem/Fracture   | no solid form at exit          | seven coherent chunks separate                                                                  | mostly low               | muted, volumetric                                |
-| Seek/Ecosystem     | mark emerges                   | cohesion pulls fragments inward; then THE CIRCULATION assembles — arteries pump, ten organs dock, 18 beads ride the closed vein loop, a pulse seals it | low → high (circuit 0.9) | first exposure rise · SVG veins share eco-circuit geometry · hover pulses the graph |
+| Gathering/Ecosystem | mark emerges at the fuse      | ten capability masses come forward out of depth (z 1 → 0) on their own schedules, arrive in three system lobes, then fuse into the mark; nothing is drawn between them | low → high | first exposure rise · labels share gathering.mjs anchors · hover pulses the system first |
 | Services/Bloom     | seven exact forms              | scrubbed §3.3 bridges                                                                           | high                     | no physics drift at endpoints                    |
 | Método/Rehearse    | exact mark only at Integration | probe, lattice, clusters, satellites                                                            | phase-specific           | three masses use cohesion                        |
 | Work/Current       | no dominant form               | Método's satellites become the gyre (i%3=0) + 5-droplet meniscus at the hovered card            | low (0.12; meniscus 0.4) | CURRENT R5-D · z 0.55 sub-surface · act fade III |
@@ -629,9 +673,9 @@ Retired architecture is not an alternate path. Do not create:
 | `?ftier=full\|lite\|none` | tier override                                                  |
 | `?feco=c`                 | ecosystem choreography progress                                |
 | `?fphys=0`                | legacy integrator bypass                                       |
-| `?fphysv3=1`              | opt-in area/viscosity/footprint physics review                 |
-| `?fobstacles=1`           | opt-in cached typography/form flow; requires Physics v3        |
-| `?fshape=1`               | opt-in full-tier velocity-aligned free-droplet shape review    |
+| `?fphysv3=0`              | roll back area/viscosity/footprint physics (default ON)        |
+| `?fobstacles=0`           | roll back cached typography/form flow (default ON)             |
+| `?fshape=0`               | roll back velocity-aligned deformation + optics (default ON)   |
 | `?fgrade=0`               | exact optics bypass (no post, grade uniforms at 0 identity)    |
 | `?fgov=0`                 | idle-cadence governor bypass                                   |
 | `?fcine=0`                | cinematic bypass (neutral score, no veils, flash cannot latch) |
@@ -686,13 +730,23 @@ demotes a calm page, draws never stall, the heap stays flat);
 is the regression floor, not the sign-off — iOS URL-bar collapse, real GPU
 probes, and thermal behavior are validated on owner hardware.
 
-`verify-ecosystem.mjs` is THE CIRCULATION's gate (the S4 remake): the
-assembled circuit (13 veins drawn, 10 sockets, 10 labels visible and clear
-of the chapter-index rail, HUD meter complete), the system response (hover
-AND keyboard raise `data-pulse` with graph-staggered `--pd` delays, the
-`hov` channel swells the touched organ's dock, the HUD reads the organ's
-index · name · system · capability), release on leave, and the reduced-
-motion story (no circuit; the eco-stack carries all ten capabilities).
+`verify-ecosystem.mjs` is THE GATHERING's gate (the S3 remake): the gathered
+body (ten capability names and three system markers visible, clear of the
+chapter-index rail, and clear OF EACH OTHER — type riding moving liquid
+collides in ways a static layout never does, so overlap is a machine check),
+the three beats (only the first system has landed a third of the way in; the
+body keeps accumulating through the middle), the system response (hover AND
+keyboard raise `data-pulse`, the pulse reaches the touched capability's own
+system before the rest of the body, the `hov` channel swells its mass, the HUD
+reads index · name · system · capability), release on leave, and the reduced-
+motion story (no live gathering; the eco-stack carries all ten capabilities).
+
+`verify-boundaries.mjs` is the seam gate for acts II–III: no DEAD BAND (a
+scroll position with neither droplets nor form on stage) and no centre-of-mass
+teleport across the Problem→Ecosystem, Ecosystem→Services and Services→Método
+handoffs. Mass counts droplets OR form weight — the two form slots render from
+SDF textures and never appear in the ball buffer, so a droplet-only measure
+reports an empty stage during exactly the passages a solid form is carrying.
 
 ### 14.3 Stop-the-line rules
 

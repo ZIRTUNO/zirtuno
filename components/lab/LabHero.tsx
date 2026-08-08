@@ -59,7 +59,7 @@ export function LabHero() {
           </h1>
 
           <p className="lab-sub">{t("subline")}</p>
-          <ProofRow items={proof} cycle={cycle} />
+          <ProofRow items={proof} />
 
           <div className="lab-actions">
             <Link href="/?intent=analysis#contact" className="lab-cta">

@@ -1,16 +1,22 @@
-// verify-ecosystem (S4 remake) — THE CIRCULATION's gate. The ecosystem is a
-// circulatory system: one closed vein loop, three arteries, ten organ
-// sockets, instrument labels, a HUD readout, and a system-wide response to
-// touch. This harness proves the circuit assembles, stays legible, and
-// answers as ONE system — and that the static/reduced paths keep the
-// semantic story.
+// verify-ecosystem (S3 remake) — THE GATHERING's gate.
 //
-//   A · assembled circuit (?feco=1): 13 veins drawn, 10 sockets, 10 labels
-//       visible and clear of the chapter-index rail, HUD meter complete
-//   B · the response: hovering an organ pulses the graph (data-pulse +
-//       staggered --pd delays), swells its dock (hov channel), fills the HUD
-//   C · keyboard: focusing a trigger raises the same response
-//   D · reduced motion: no circuit — the eco-stack carries the capabilities
+// The ecosystem is no longer a circuit of veins and sockets: the ten
+// capabilities are masses that come forward out of the dark, arrive in three
+// systems, and fuse into one body. Nothing is drawn between them, so there is
+// no line-work to assert. What has to be true instead:
+//
+//   A · the gathered body (?feco=1): ten capability names and three system
+//       markers visible, clear of the chapter-index rail, and — the defect
+//       this build actually shipped once — CLEAR OF EACH OTHER. Type that
+//       rides moving liquid collides in ways a static layout never does, so
+//       overlap is a machine check, not an eye check.
+//   B · the three beats: at a third of the clock only the first system has
+//       landed; at the end all ten have. This is what stops the convergence
+//       from collapsing back into a single undifferentiated event.
+//   C · the response: touching a capability pulses its SYSTEM first and the
+//       rest of the body after, drives the hov channel, and fills the HUD.
+//   D · keyboard raises the same response.
+//   E · reduced motion keeps the semantic story (the eco-stack).
 //
 // Dev server must be running:  node scripts/verify-ecosystem.mjs
 
@@ -37,62 +43,123 @@ page.on("console", (m) => {
   if (m.type() === "error") errors.push(m.text());
 });
 
-console.log("A · the assembled circuit");
-await page.goto(`${BASE}/en?ftier=full&feco=1`, { waitUntil: "networkidle" });
-await page.evaluate(() =>
-  document.querySelector("[data-organism]")?.scrollIntoView({ block: "center" }),
-);
-await page.waitForTimeout(2500);
-
-const a = await page.evaluate(() => {
-  const root = document.querySelector(".journey-interactions");
-  const veins = [...document.querySelectorAll(".eco-vein")];
-  const sockets = [...document.querySelectorAll(".eco-socket")];
-  const nodes = [...document.querySelectorAll(".organism-node")];
-  const rail = document.querySelector(".side-index")?.getBoundingClientRect();
-  const drawn = veins.filter((v) => {
-    const cs = getComputedStyle(v);
-    const len = parseFloat(v.style.getPropertyValue("--len")) || 0;
-    return len > 0 && Math.abs(parseFloat(cs.strokeDashoffset)) < len * 0.02;
-  }).length;
-  const visible = nodes.filter((n) => {
-    const cs = getComputedStyle(n);
-    return cs.display !== "none" && parseFloat(cs.opacity) > 0.85;
+/** Visible label boxes in the gathering layer, with their text. */
+const readLabels = () =>
+  page.evaluate(() => {
+    const vis = (el) => {
+      const cs = getComputedStyle(el);
+      return cs.display !== "none" && parseFloat(cs.opacity) > 0.35;
+    };
+    const box = (el) => {
+      const r = el.getBoundingClientRect();
+      return {
+        text: (el.textContent || "").trim().replace(/\s+/g, " "),
+        left: r.left,
+        right: r.right,
+        top: r.top,
+        bottom: r.bottom,
+      };
+    };
+    const nodes = [...document.querySelectorAll(".organism-node")].filter(vis);
+    const systems = [...document.querySelectorAll(".gather-system")].filter(vis);
+    // the centre label is type in the same layer and collided with the lowest
+    // lobe once — it belongs in the collision set, not outside it
+    const centre = [...document.querySelectorAll(".organism-center")].filter(vis);
+    const rail = document.querySelector(".side-index")?.getBoundingClientRect();
+    return {
+      nodes: nodes.map(box),
+      systems: systems.map(box),
+      centre: centre.map(box),
+      rail: rail ? { left: rail.left, right: rail.right, top: rail.top, bottom: rail.bottom } : null,
+      meter: document.querySelector(".eco-hud-meter")?.textContent ?? "",
+      hudLine: document.querySelector(".eco-hud-line")?.textContent ?? "",
+      grow: document.querySelector(".journey-interactions")?.style.getPropertyValue("--eco-grow"),
+    };
   });
-  const railHit = rail
-    ? visible.filter((n) => {
-        const r = n.getBoundingClientRect();
-        return r.right > rail.left && r.left < rail.right && r.bottom > rail.top && r.top < rail.bottom;
-      }).length
-    : 0;
-  return {
-    grow: root?.style.getPropertyValue("--eco-grow"),
-    veins: veins.length,
-    drawn,
-    sockets: sockets.length,
-    labels: visible.length,
-    railHit,
-    meter: document.querySelector(".eco-hud-meter")?.textContent ?? "",
-    hudLine: document.querySelector(".eco-hud-line")?.textContent ?? "",
-  };
-});
-check(a.veins === 13, "13 veins (3 arteries + 10 loop segments)", `${a.veins}`);
-check(a.drawn === 13, "every vein fully drawn at feco=1", `drawn=${a.drawn}`);
-check(a.sockets === 10, "10 organ sockets", `${a.sockets}`);
-check(a.labels === 10, "10 labels visible", `${a.labels}`);
-check(a.railHit === 0, "labels clear of the chapter-index rail", `overlaps=${a.railHit}`);
+
+/** Pairs of boxes that genuinely overlap (a few px of touch is not a clash). */
+function overlaps(boxes) {
+  const PAD = -3; // shrink each box slightly: kerning slivers are not collisions
+  const hits = [];
+  for (let i = 0; i < boxes.length; i++)
+    for (let j = i + 1; j < boxes.length; j++) {
+      const a = boxes[i];
+      const b = boxes[j];
+      if (
+        a.right + PAD > b.left - PAD &&
+        a.left - PAD < b.right + PAD &&
+        a.bottom + PAD > b.top - PAD &&
+        a.top - PAD < b.bottom + PAD
+      )
+        hits.push(`${a.text} × ${b.text}`);
+    }
+  return hits;
+}
+
+const settle = async (feco) => {
+  await page.goto(`${BASE}/en?ftier=full&feco=${feco}`, {
+    waitUntil: "networkidle",
+  });
+  await page.waitForSelector(".organism-node", { timeout: 30000 });
+  await page.waitForTimeout(2200);
+};
+
+console.log("A · the gathered body");
+await settle(1);
+const a = await readLabels();
+const all = [...a.nodes, ...a.systems, ...a.centre];
+const clash = overlaps(all);
+const railHit = a.rail
+  ? all.filter(
+      (n) =>
+        n.right > a.rail.left &&
+        n.left < a.rail.right &&
+        n.bottom > a.rail.top &&
+        n.top < a.rail.bottom,
+    ).length
+  : 0;
+check(a.nodes.length === 10, "ten capability names visible", `${a.nodes.length}`);
+check(a.systems.length === 3, "three system markers visible", `${a.systems.length}`);
+check(railHit === 0, "type clear of the chapter-index rail", `overlaps=${railHit}`);
+check(
+  clash.length === 0,
+  "no label collides with another",
+  clash.length ? clash.join(" · ") : "clean",
+);
 check(a.meter.includes("10"), "HUD meter reads complete", a.meter);
 check(a.hudLine.length > 0, "HUD idle line present", a.hudLine);
 
-console.log("B · the system response (pointer)");
+console.log("B · the three beats");
+await settle(0.3);
+const early = await readLabels();
+await settle(0.62);
+const mid = await readLabels();
+check(
+  early.nodes.length > 0 && early.nodes.length < 6,
+  "a third of the way in, only the first system has landed",
+  `${early.nodes.length} names`,
+);
+check(
+  mid.nodes.length > early.nodes.length,
+  "the body keeps accumulating through the middle",
+  `${early.nodes.length} → ${mid.nodes.length}`,
+);
+check(
+  overlaps([...early.nodes, ...early.systems]).length === 0 &&
+    overlaps([...mid.nodes, ...mid.systems]).length === 0,
+  "type stays clear of itself mid-gather too",
+);
+
+console.log("C · the system response (pointer)");
+await settle(1);
 const before = await page.evaluate(() => window.__liquid?.hov ?? -99);
 await page.hover(".organism-node:nth-child(5) .organism-node-trigger");
 await page.waitForTimeout(450);
-const b = await page.evaluate(() => {
+const c = await page.evaluate(() => {
   const root = document.querySelector(".journey-interactions");
-  const delays = [
-    ...document.querySelectorAll(".eco-vein"),
-  ].map((v) => v.style.getPropertyValue("--pd"));
+  const delays = [...document.querySelectorAll(".organism-node")].map((n) =>
+    n.style.getPropertyValue("--pd"),
+  );
   return {
     pulse: root?.getAttribute("data-pulse"),
     hov: window.__liquid?.hov ?? -99,
@@ -102,40 +169,54 @@ const b = await page.evaluate(() => {
   };
 });
 check(before === -1, "hov channel idle before touch", `hov=${before}`);
-check(b.pulse === "true", "data-pulse raised on the layer");
-check(b.hov === 4, "the hov channel carries the touched organ", `hov=${b.hov}`);
-check(b.distinct >= 3, "pulse delays stagger by graph distance", `${b.distinct} distinct`);
-check(b.hudLine.includes("05"), "HUD line shows the organ index", b.hudLine);
-check(b.hudCap.length > 8, "HUD shows the capability line", b.hudCap.slice(0, 40));
+check(c.pulse === "true", "data-pulse raised on the layer");
+check(c.hov === 4, "the hov channel carries the touched capability", `hov=${c.hov}`);
+check(
+  c.distinct >= 3,
+  "the pulse reaches its own system before the rest of the body",
+  `${c.distinct} distinct delays`,
+);
+check(c.hudLine.includes("05"), "HUD line shows the capability index", c.hudLine);
+check(c.hudCap.length > 8, "HUD shows the capability line", c.hudCap.slice(0, 40));
 await page.mouse.move(20, 20);
 await page.waitForTimeout(350);
 const cleared = await page.evaluate(() => ({
-  pulse: document.querySelector(".journey-interactions")?.getAttribute("data-pulse"),
+  pulse: document
+    .querySelector(".journey-interactions")
+    ?.getAttribute("data-pulse"),
   hov: window.__liquid?.hov ?? -99,
 }));
-check(cleared.pulse === null && cleared.hov === -1, "response releases on leave", JSON.stringify(cleared));
+check(
+  cleared.pulse === null && cleared.hov === -1,
+  "response releases on leave",
+  JSON.stringify(cleared),
+);
 
-console.log("C · the system response (keyboard)");
+console.log("D · the system response (keyboard)");
 const k = await page.evaluate(() => {
   const trigger = document.querySelector(
     ".organism-node:nth-child(1) .organism-node-trigger",
   );
   trigger.focus();
-  return {
-    focused: document.activeElement === trigger,
-  };
+  return { focused: document.activeElement === trigger };
 });
 await page.waitForTimeout(350);
 const k2 = await page.evaluate(() => ({
-  pulse: document.querySelector(".journey-interactions")?.getAttribute("data-pulse"),
+  pulse: document
+    .querySelector(".journey-interactions")
+    ?.getAttribute("data-pulse"),
   hov: window.__liquid?.hov ?? -99,
   hudLine: document.querySelector(".eco-hud-line")?.textContent ?? "",
 }));
 check(k.focused, "trigger takes keyboard focus");
-check(k2.pulse === "true" && k2.hov === 0, "focus raises the same response", JSON.stringify(k2));
+check(
+  k2.pulse === "true" && k2.hov === 0,
+  "focus raises the same response",
+  JSON.stringify(k2),
+);
 check(k2.hudLine.includes("01"), "HUD follows keyboard focus", k2.hudLine);
 
-console.log("D · reduced motion keeps the semantic story");
+console.log("E · reduced motion keeps the semantic story");
 const rmCtx = await browser.newContext({
   viewport: { width: 1440, height: 900 },
   reducedMotion: "reduce",
@@ -144,21 +225,26 @@ const rmPage = await rmCtx.newPage();
 await rmPage.goto(`${BASE}/en`, { waitUntil: "networkidle" });
 await rmPage.waitForTimeout(1200);
 const d = await rmPage.evaluate(() => ({
-  circuit: !!document.querySelector(".eco-veins"),
+  live: !!document.querySelector(".organism-node"),
   stack: [...document.querySelectorAll(".eco-stack-item")].length,
   stackVisible: (() => {
     const el = document.querySelector(".eco-stack");
     if (!el) return false;
-    const cs = getComputedStyle(el);
-    return cs.display !== "none";
+    return getComputedStyle(el).display !== "none";
   })(),
 }));
-check(!d.circuit, "no circuit under reduced motion");
-check(d.stack === 10 && d.stackVisible, "eco-stack carries all ten capabilities", `${d.stack}`);
+check(!d.live, "no live gathering under reduced motion");
+check(
+  d.stack === 10 && d.stackVisible,
+  "eco-stack carries all ten capabilities",
+  `${d.stack}`,
+);
 await rmCtx.close();
 
 check(errors.length === 0, "zero page errors across the gate", errors[0]);
 
 await browser.close();
-console.log(failures === 0 ? "ECOSYSTEM: circuit green" : `ECOSYSTEM FAILURES: ${failures}`);
+console.log(
+  failures === 0 ? "ECOSYSTEM: the gathering is green" : `ECOSYSTEM FAILURES: ${failures}`,
+);
 process.exit(failures === 0 ? 0 : 1);

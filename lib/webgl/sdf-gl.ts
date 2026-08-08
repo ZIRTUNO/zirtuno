@@ -22,12 +22,25 @@ export type Layer = {
   prog: WebGLProgram;
   U: (n: string) => WebGLUniformLocation | null;
   floatLinear: boolean;
+  /** Index of the fragment source that actually linked, for callers that pass
+   *  a preference list (0 = the first/most capable). */
+  variant: number;
 };
 
 export function makeLayer(
   container: HTMLElement,
   vert: string,
-  frag: string,
+  /**
+   * One source, or a PREFERENCE LIST tried in order until one links.
+   *
+   * The velocity-aware field costs ~40 extra uniform vectors on top of iBalls
+   * and iBallZ, which lands close to WebGL2's guaranteed 224. Rather than
+   * predicting that from MAX_FRAGMENT_UNIFORM_VECTORS — the same kind of proxy
+   * the tier probe deliberately refuses — ask the driver the real question by
+   * linking the real shader, and fall back to the plain field if it says no.
+   * A single string keeps the original all-or-nothing behaviour.
+   */
+  frag: string | readonly string[],
 ): Layer | null {
   const canvas = document.createElement("canvas");
   canvas.style.cssText =
@@ -47,22 +60,58 @@ export function makeLayer(
       throw new Error(gl.getShaderInfoLog(s) || "shader compile failed");
     return s;
   };
-  const prog = gl.createProgram()!;
-  gl.attachShader(prog, sh(gl.VERTEX_SHADER, vert));
-  gl.attachShader(prog, sh(gl.FRAGMENT_SHADER, frag));
-  gl.linkProgram(prog);
-  if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) return null;
-  gl.useProgram(prog);
+
+  const sources = typeof frag === "string" ? [frag] : frag;
+  let prog: WebGLProgram | null = null;
+  let variant = 0;
+  for (let i = 0; i < sources.length; i++) {
+    // A rejected candidate must leave nothing behind: the next attempt runs on
+    // a context that has already refused one program.
+    let vs: WebGLShader | null = null;
+    let fs: WebGLShader | null = null;
+    const candidate = gl.createProgram()!;
+    try {
+      vs = sh(gl.VERTEX_SHADER, vert);
+      fs = sh(gl.FRAGMENT_SHADER, sources[i]);
+      gl.attachShader(candidate, vs);
+      gl.attachShader(candidate, fs);
+      gl.linkProgram(candidate);
+      if (gl.getProgramParameter(candidate, gl.LINK_STATUS)) {
+        prog = candidate;
+        variant = i;
+        break;
+      }
+    } catch {
+      /* compile threw — try the next source */
+    } finally {
+      if (vs) gl.deleteShader(vs);
+      if (fs) gl.deleteShader(fs);
+      if (prog !== candidate) gl.deleteProgram(candidate);
+    }
+    // the last source is the contract: if even it fails, there is no layer
+    if (i === sources.length - 1) return null;
+  }
+  if (!prog) return null;
+  // const, so the uniform accessor closure below keeps the narrowed type
+  const program = prog;
+  gl.useProgram(program);
   const buf = gl.createBuffer();
   gl.bindBuffer(gl.ARRAY_BUFFER, buf);
   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
-  const loc = gl.getAttribLocation(prog, "position");
+  const loc = gl.getAttribLocation(program, "position");
   gl.enableVertexAttribArray(loc);
   gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
   gl.enable(gl.BLEND);
   gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
   container.appendChild(canvas);
-  return { canvas, gl, prog, U: (n) => gl.getUniformLocation(prog, n), floatLinear };
+  return {
+    canvas,
+    gl,
+    prog: program,
+    U: (n) => gl.getUniformLocation(program, n),
+    floatLinear,
+    variant,
+  };
 }
 
 export function makeSdfTexture(layer: Layer, data: Float32Array): WebGLTexture {

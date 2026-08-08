@@ -537,6 +537,13 @@ const mkJumpScene = (bind) => ({
       legacyBound.raw.J.jump = 1;
     }
     t += 16.7;
+    // Scroll is a BODY FORCE on free liquid (fluid-core SCROLL_LEAN/SHEAR/STIR).
+    // It scales by (1 − bind), so bind=1 must stay on the legacy trajectory no
+    // matter how hard the page is being scrolled — assert that rather than
+    // trusting it, since a parity run at vel=0 would never touch the term.
+    const vel = Math.sin(fr * 0.11) * 3.4; // beyond SCROLL_CLAMP, both signs
+    v3Bound.input.vel = vel;
+    legacyBound.input.vel = vel;
     v3Bound.driver.frame(t, buf, 1.5);
     legacyBound.driver.frame(t, legacyBuf, 1.5);
     if (buf[0] !== legacyBuf[0] || buf[1] !== legacyBuf[1]) parity = false;

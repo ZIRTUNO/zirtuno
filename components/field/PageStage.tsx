@@ -13,19 +13,15 @@ import {
 } from "@/lib/webgl/field-tier";
 import { clamp01, smooth01 } from "@/lib/webgl/field-drivers";
 import {
-  ECO_ORDER,
-  ECO_N,
-  ECO_SYSTEMS,
-  ARTERY_SLOTS,
-  socketPos,
-  socketNormal,
-  ringPoint,
-  arteryPoint,
-  nodeTiming,
-  arteryTiming,
-  edgeTiming,
-  pulseDistances,
-} from "@/lib/webgl/eco-circuit.mjs";
+  GATHER_N,
+  GATHER_SYSTEMS,
+  SYS_OF_NODE,
+  gatherAnchor,
+  gatherTiming,
+  systemTiming,
+  arrivalPulse,
+  fuse as gatherFuse,
+} from "@/lib/webgl/gathering.mjs";
 import { makeConductor } from "@/lib/webgl/conductor.mjs";
 import {
   FLUID_OBSTACLE_MAX,
@@ -36,12 +32,7 @@ import type {
   SceneGeom,
   SceneModule,
 } from "@/lib/webgl/scenes/types";
-import {
-  makeSiteScene,
-  CONV_END,
-  GROW_START,
-  GROW_SPAN,
-} from "@/lib/webgl/scenes/site";
+import { makeSiteScene } from "@/lib/webgl/scenes/site";
 import { makeMethodScene } from "@/lib/webgl/scenes/method";
 import { makeWorkScene } from "@/lib/webgl/scenes/work";
 import {
@@ -97,13 +88,16 @@ function makeJourneyRuntime(
     makeContactScene(),
     makeFooterScene(),
   ];
-  // ?fphys=0 routes the legacy low-pass integrator (A/B + escape hatch);
-  // ?fphysv3=1 enables the approved force prototype and ?fobstacles=1 adds
-  // cached type/form avoidance. Both remain opt-in through visual review.
+  // ?fphys=0 routes the legacy low-pass integrator (A/B + escape hatch).
+  // v3 forces (area-weighted mass, local viscosity, the cohesive band that
+  // stands in for surface tension) and type-aware flow are now the material's
+  // default behaviour rather than a review path — they are what makes separated
+  // beads read as one substance instead of independent discs. ?fphysv3=0 and
+  // ?fobstacles=0 roll each back independently.
   // ?fcine=0 keeps the light score neutral (no veils/flash/score grade).
   const physics = search?.get("fphys") !== "0";
-  const physicsV3 = physics && search?.get("fphysv3") === "1";
-  const obstacleFlow = physicsV3 && search?.get("fobstacles") === "1";
+  const physicsV3 = physics && search?.get("fphysv3") !== "0";
+  const obstacleFlow = physicsV3 && search?.get("fobstacles") !== "0";
   const cine = search?.get("fcine") !== "0";
 
   return [
@@ -130,15 +124,16 @@ function makeJourneyRuntime(
  * two form slots (ownership transfers only through droplet-only states) and
  * packs the one shared field. No per-chapter canvases, no handoffs-as-swaps.
  *
- * DOM choreography also lives here (in the sticky layer): the ecosystem
- * orbital labels, the origin founding-pillar labels, and the method progress
+ * DOM choreography also lives here (in the sticky layer): the gathering's
+ * capability names and system markers, the origin founding-pillar labels, and
+ * the method progress
  * thread (--method-flow). Deterministic layering: canvas z-0 (pointer-events
  * none), copy z-10, Ecosystem controls z-12. Reduced-motion / "none" tier /
  * hero QA stills render no
  * canvas and flag the wrapper `data-liquid="static"` so every chapter's
  * static fallback shows instead.
  *
- * QA: ?feco=c freezes the S4 choreography at c ∈ [0,1]; ?fcycle=1 shortens
+ * QA: ?feco=c freezes the S3 gathering at c ∈ [0,1]; ?fcycle=1 shortens
  * the hero dwell; ?fstate/?fpair/?fcursor/?fflat switch the hero to its
  * deterministic standalone renderers (page canvas off). window.__liquid
  * exposes the site scene's raw channels; window.__scenes exposes all seven.
@@ -174,10 +169,7 @@ export function PageStage({
   const [ecoHost, setEcoHost] = useState<HTMLElement | null>(null);
   const nodeEls = useRef<(HTMLLIElement | null)[]>([]);
   const centerEl = useRef<HTMLSpanElement>(null);
-  const veinsEl = useRef<SVGSVGElement | null>(null);
-  const arteryEls = useRef<(SVGPathElement | null)[]>([]);
-  const ringEls = useRef<(SVGPathElement | null)[]>([]);
-  const socketEls = useRef<(SVGGElement | null)[]>([]);
+  const systemEls = useRef<(HTMLLIElement | null)[]>([]);
   const hudMeterEl = useRef<HTMLSpanElement | null>(null);
   const pillarEls = useRef<(HTMLLIElement | null)[]>([]);
   const stageEl = useRef<HTMLElement | null>(null);
@@ -300,7 +292,7 @@ export function PageStage({
   }, [conductor]);
 
   // THE CIRCULATION's geometry: sockets, vein paths and labels all evaluate
-  // eco-circuit's shared functions in the sticky layer's pixel space — the
+  // gathering.mjs's shared functions in the sticky layer's pixel space — the
   // liquid beads (site scene), the SVG veins and the type can never drift.
   // Origin founding pillars keep their fixed anchors beside the mark's lobes.
   useEffect(() => {
@@ -310,10 +302,6 @@ export function PageStage({
       x: ((p.x - 0.5) / aspect + 0.5) * w,
       y: (1 - p.y) * h,
     });
-    const pathFrom = (pts: { x: number; y: number }[]) =>
-      pts
-        .map((p, k) => `${k === 0 ? "M" : "L"}${p.x.toFixed(1)} ${p.y.toFixed(1)}`)
-        .join("");
     const layout = () => {
       const r = layer.getBoundingClientRect();
       if (r.width < 2 || r.height < 2) return;
@@ -323,44 +311,10 @@ export function PageStage({
       const topbarBottom =
         document.querySelector<HTMLElement>(".topbar")?.getBoundingClientRect()
           .bottom ?? 0;
-      if (veinsEl.current)
-        veinsEl.current.setAttribute("viewBox", `0 0 ${w} ${h}`);
-      // arteries: mark edge → each system's first organ
-      arteryEls.current.forEach((el, a) => {
-        if (!el) return;
-        const pts = [];
-        for (let k = 0; k <= 28; k++)
-          pts.push(px(arteryPoint(a, k / 28, aspect), aspect, w, h));
-        el.setAttribute("d", pathFrom(pts));
-        const len = el.getTotalLength();
-        const t = arteryTiming(a);
-        el.style.setProperty("--len", len.toFixed(1));
-        el.style.setProperty("--d", String(t.d));
-        el.style.setProperty("--w", String(t.w));
-      });
-      // the closed loop, one segment per organ pair
-      ringEls.current.forEach((el, s) => {
-        if (!el) return;
-        const pts = [];
-        for (let k = 0; k <= 16; k++)
-          pts.push(px(ringPoint((s + k / 16) / ECO_N, aspect), aspect, w, h));
-        el.setAttribute("d", pathFrom(pts));
-        const len = el.getTotalLength();
-        const t = edgeTiming(s);
-        el.style.setProperty("--len", len.toFixed(1));
-        el.style.setProperty("--d", String(t.d));
-        el.style.setProperty("--w", String(t.w));
-      });
-      // sockets + labels sit on the same ring points, labels along the
-      // outward normal (the liquid docks AT the socket; type lives outside)
-      socketEls.current.forEach((el, s) => {
-        if (!el) return;
-        const p = px(socketPos(s, aspect), aspect, w, h);
-        el.setAttribute("transform", `translate(${p.x.toFixed(1)} ${p.y.toFixed(1)})`);
-        const t = nodeTiming(s);
-        el.style.setProperty("--d", String(t.d));
-        el.style.setProperty("--w", String(t.w));
-      });
+      // No veins. The circuit drew lines between organs because a diagram has
+      // to; the gathering's whole claim is that nothing needs to be drawn
+      // between them — they stop being separate. Type sits ON the liquid.
+      //
       // the right chapter-index rail owns this column — labels stay clear.
       // Measured, not guessed: the rail rests at its numbers-only width, so the
       // circuit's labels get back the column the old always-open label held.
@@ -370,37 +324,81 @@ export function PageStage({
         railBox && railBox.width > 0
           ? Math.ceil(w - (railBox.left - r.left)) + 16
           : 0;
+      // Each capability's label rides its own mass. The label is anchored to
+      // the SAME gatherAnchor the liquid uses, so type and liquid arrive
+      // together — the name is what the mass is, not a caption beside it.
+      const minY = Math.max(0, topbarBottom - r.top) + 22;
+      // The label sits just BELOW its mass, never on it: type over a bright
+      // cyan body is unreadable, and the mass is the thing being named — it
+      // should not be hidden by its own name. A small alternating x-nudge
+      // keeps neighbours inside a tight lobe from stacking on each other.
+      const LABEL_DROP = 30;
+      // Placed boxes, kept so the system markers can steer clear of the names
+      // they belong to instead of trusting a tuned offset to hold at every
+      // viewport. Centre-anchored (the labels translate -50%, -50%).
+      const placed: { x: number; y: number; w: number; h: number }[] = [];
       nodeEls.current.forEach((el, s) => {
         if (!el) return;
-        const p = px(socketPos(s, aspect), aspect, w, h);
-        const n = socketNormal(s);
-        const off = 24;
-        let x = p.x + n.x * off;
-        let y = p.y - n.y * off;
-        let side: string;
-        if (n.x > 0.4) side = "right";
-        else if (n.x < -0.4) side = "left";
-        else side = n.y > 0 ? "top" : "bottom";
-        // measured-width edge safety: a side label that would leave the
-        // stage (or enter the rail) drops below its socket instead
+        const p = px(gatherAnchor(s, aspect), aspect, w, h);
         const w0 = el.offsetWidth || 120;
-        if (side === "right" && x + w0 > w - RAIL) {
-          side = "bottom";
-          x = p.x;
-          y = p.y + off;
-        } else if (side === "left" && x - w0 < 10) {
-          side = "bottom";
-          x = p.x;
-          y = p.y + off;
-        }
-        if (side === "top" || side === "bottom")
-          x = Math.min(Math.max(x, w0 / 2 + 10), w - RAIL - w0 / 2);
-        const minY = Math.max(0, topbarBottom - r.top) + 22;
-        y = Math.min(Math.max(y, minY), h - 26);
-        el.dataset.side = side;
+        const h0 = el.offsetHeight || 20;
+        const nudge = (SYS_OF_NODE[s]?.wi ?? 0) % 2 === 0 ? -0.28 : 0.28;
+        const x = Math.min(
+          Math.max(p.x + nudge * w0, w0 / 2 + 12),
+          w - RAIL - w0 / 2,
+        );
+        const y = Math.min(Math.max(p.y + LABEL_DROP, minY), h - 30);
         el.style.left = `${x.toFixed(1)}px`;
         el.style.top = `${y.toFixed(1)}px`;
-        const t = nodeTiming(s);
+        placed[s] = { x, y, w: w0, h: h0 };
+        const t = gatherTiming(s);
+        el.style.setProperty("--d", String(t.d));
+        el.style.setProperty("--w", String(t.w));
+      });
+      // The three system markers sit at their lobe's centre of mass — the
+      // average of the capabilities that belong to them, so a marker can never
+      // drift away from the group it names.
+      systemEls.current.forEach((el, si) => {
+        if (!el) return;
+        const group = GATHER_SYSTEMS[si].nodes;
+        let sx = 0;
+        let sy = 0;
+        for (const n of group) {
+          const a = gatherAnchor(n, aspect);
+          sx += a.x / group.length;
+          sy += a.y / group.length;
+        }
+        // Pushed OUTWARD from the stage centre until it clears its OWN
+        // capability names. Parked at the centre of mass it landed exactly
+        // where those names are; a fixed push then cleared some lobes and not
+        // others, because the lobes have different shapes and the names have
+        // different lengths. Stepping out until the boxes separate is the only
+        // version that holds at every viewport and in both locales.
+        const p = px({ x: sx, y: sy }, aspect, w, h);
+        const ox = p.x - w / 2;
+        const oy = p.y - h / 2;
+        const len = Math.hypot(ox, oy) || 1;
+        const w0 = el.offsetWidth || 140;
+        const h0 = el.offsetHeight || 20;
+        const hits = (cx: number, cy: number) =>
+          group.some((n) => {
+            const b = placed[n];
+            if (!b) return false;
+            const GAP = 10;
+            return (
+              Math.abs(cx - b.x) < (w0 + b.w) / 2 + GAP &&
+              Math.abs(cy - b.y) < (h0 + b.h) / 2 + GAP
+            );
+          });
+        let lx = p.x + (ox / len) * 56;
+        let ly = p.y + (oy / len) * 56 * 0.62;
+        for (let step = 0; step < 8 && hits(lx, ly); step++) {
+          lx += (ox / len) * 22;
+          ly += (oy / len) * 22 * 0.62;
+        }
+        el.style.left = `${Math.min(Math.max(lx, w0 / 2 + 12), w - RAIL - w0 / 2).toFixed(1)}px`;
+        el.style.top = `${Math.min(Math.max(ly, minY), h - 30).toFixed(1)}px`;
+        const t = systemTiming(si);
         el.style.setProperty("--d", String(t.d));
         el.style.setProperty("--w", String(t.w));
       });
@@ -431,10 +429,10 @@ export function PageStage({
     };
   }, [nodes.length, pillars.length, ecoHost, enabled]);
 
-  // the system response: touching one organ pulses the WHOLE circuit. BFS hop
-  // distances become per-element transition delays, so the brightening
-  // visibly travels the veins outward from the touched organ; the liquid
-  // answers through the scene's hov channel (dock swell + quickened beads).
+  // The system response: touching one capability answers through its SYSTEM
+  // first and the rest of the body after. There is no graph to walk any more —
+  // membership is the relationship the chapter is arguing for, so distance is
+  // "same lobe / other lobe", and the delay makes that structure audible.
   const activeSlot = hovSlot >= 0 ? hovSlot : (openEcoNode ?? -1);
   useEffect(() => {
     site.hov = activeSlot;
@@ -444,25 +442,16 @@ export function PageStage({
       root.removeAttribute("data-pulse");
       return;
     }
-    const dist = pulseDistances(activeSlot);
-    const HOP = 110; // ms per graph hop — a readable travel, not a blink
-    ringEls.current.forEach((el, s) => {
-      if (!el) return;
-      const d = Math.min(dist[s], dist[(s + 1) % ECO_N]);
-      el.style.setProperty("--pd", `${d * HOP}ms`);
-    });
-    arteryEls.current.forEach((el, a) => {
-      if (!el) return;
-      const d = Math.min(dist[ARTERY_SLOTS[a]], dist[ECO_N]);
-      el.style.setProperty("--pd", `${d * HOP}ms`);
-    });
-    socketEls.current.forEach((el, s) => {
-      if (!el) return;
-      el.style.setProperty("--pd", `${dist[s] * HOP}ms`);
-    });
+    const HOP = 110; // ms per step outward — a readable travel, not a blink
+    const activeSys = SYS_OF_NODE[activeSlot]?.si ?? -1;
     nodeEls.current.forEach((el, s) => {
       if (!el) return;
-      el.style.setProperty("--pd", `${dist[s] * HOP}ms`);
+      const d = s === activeSlot ? 0 : SYS_OF_NODE[s]?.si === activeSys ? 1 : 2;
+      el.style.setProperty("--pd", `${d * HOP}ms`);
+    });
+    systemEls.current.forEach((el, si) => {
+      if (!el) return;
+      el.style.setProperty("--pd", `${(si === activeSys ? 0 : 2) * HOP}ms`);
     });
     root.setAttribute("data-pulse", "true");
   }, [activeSlot, site]);
@@ -490,10 +479,10 @@ export function PageStage({
       lastS = svcPos;
       lastEcoDesktop = desktop;
       const fade = 1 - smooth01(svcPos);
-      // The circuit becomes keyboard-operable only once the loop has closed.
+      // The gathering becomes keyboard-operable once the body is whole.
       // Before/after that beat it leaves the tab order; the semantic stack
       // remains available on mobile and every static path.
-      const interactive = enabled && desktop && grow >= 0.88 && fade >= 0.55;
+      const interactive = enabled && desktop && grow >= 0.8 && fade >= 0.55;
       if (interactive !== lastEcoInteractive) {
         lastEcoInteractive = interactive;
         ecoInteractiveRef.current = interactive;
@@ -504,25 +493,32 @@ export function PageStage({
           setOpenEcoNode(null);
         setEcoInteractive(interactive);
       }
-      // TWO vars drive the whole assembly — every vein, socket and label
-      // derives its own envelope from --eco-grow via its inline --d/--w
-      // (single write point; the same eco-circuit timing the beads use)
+      // THREE vars drive the whole gathering — each label derives its own
+      // envelope from --eco-grow via its inline --d/--w (one write point, the
+      // same gathering.mjs timing the liquid masses use), and --eco-fuse lets
+      // the names recede as the body closes: once it is one thing, naming the
+      // parts is the wrong emphasis.
       const root = ecoLayerEl.current;
       if (root) {
         root.style.setProperty("--eco-grow", grow.toFixed(4));
         root.style.setProperty("--eco-fade", fade.toFixed(3));
+        root.style.setProperty("--eco-fuse", gatherFuse(grow).toFixed(3));
       }
       if (centerEl.current)
-        centerEl.current.style.opacity = String(
-          smooth01((grow - 0.1) / 0.35) * fade,
-        );
+        centerEl.current.style.opacity = String(gatherFuse(grow) * fade);
+      // Per-label arrival: the pulse peaks exactly as its mass lands, so the
+      // name ignites on the arrival rather than on a timer of its own.
+      nodeEls.current.forEach((el, s) => {
+        if (!el) return;
+        el.style.setProperty("--pulse", arrivalPulse(s, grow).toFixed(3));
+      });
       if (hudMeterEl.current) {
         let lit = 0;
-        for (let s = 0; s < ECO_N; s++) {
-          const t = nodeTiming(s);
+        for (let s = 0; s < GATHER_N; s++) {
+          const t = gatherTiming(s);
           if (grow >= t.d + t.w * 0.6) lit++;
         }
-        const meter = `${String(lit).padStart(2, "0")} / ${ECO_N}`;
+        const meter = `${String(lit).padStart(2, "0")} / ${GATHER_N}`;
         if (hudMeterEl.current.textContent !== meter)
           hudMeterEl.current.textContent = meter;
       }
@@ -578,15 +574,16 @@ export function PageStage({
       site.heroPhase = 1;
       site.fracture = 1;
       site.travel = 1;
-      site.converge = clamp01(c / CONV_END);
-      site.grow = clamp01((c - GROW_START) / GROW_SPAN);
+      // ?feco=c freezes the gathering at c — one clock now, so the QA hold is
+      // simply that clock rather than two derived windows
+      site.gather = c;
       site.svcPos = 0;
       site.pairA = 0;
       site.pairB = 0;
       site.pairM = 0;
       site.exit = 0;
       conductor.input.vel = 0;
-      applyEcoLabels(site.grow, 0);
+      applyEcoLabels(site.gather, 0);
       wrap.style.setProperty("--method-flow", "1"); // static thread reads full
       return;
     }
@@ -890,7 +887,7 @@ export function PageStage({
       }
 
       // DOM choreography (writes AFTER all reads — no layout thrash)
-      applyEcoLabels(site.grow, site.svcPos);
+      applyEcoLabels(site.gather, site.svcPos);
       applyOriginLabels(conductor.raw.origin.p);
       applyMethodFlow(clamp01(conductor.raw.method.u / methodPhases));
       applyScore();
@@ -1006,46 +1003,31 @@ export function PageStage({
                   setOpenEcoNode(null);
               }}
             >
-              {/* the veins — arteries, the closed loop, the organ sockets.
-                  Same eco-circuit geometry as the liquid beads (layout()). */}
-              <svg className="eco-veins" ref={veinsEl} aria-hidden="true">
-                {Array.from({ length: ECO_N }, (_, s) => (
-                  <path
-                    key={`ring-${s}`}
-                    className="eco-vein eco-vein-ring"
+              {/* The three systems, named at their lobe's centre of mass.
+                  These are the reader's three beats — ten names at once is a
+                  list, three groups arriving in order is a structure. */}
+              <ul className="gather-systems" aria-hidden="true">
+                {GATHER_SYSTEMS.map((sys, si) => (
+                  <li
+                    key={sys.id}
+                    className="gather-system"
                     ref={(el) => {
-                      ringEls.current[s] = el;
-                    }}
-                  />
-                ))}
-                {ARTERY_SLOTS.map((slot, a) => (
-                  <path
-                    key={`artery-${slot}`}
-                    className="eco-vein eco-vein-artery"
-                    ref={(el) => {
-                      arteryEls.current[a] = el;
-                    }}
-                  />
-                ))}
-                {Array.from({ length: ECO_N }, (_, s) => (
-                  <g
-                    key={`socket-${s}`}
-                    className="eco-socket"
-                    ref={(el) => {
-                      socketEls.current[s] = el;
+                      systemEls.current[si] = el;
                     }}
                   >
-                    <circle className="eco-socket-halo" r="9" />
-                    <circle className="eco-socket-core" r="3" />
-                  </g>
+                    <span className="gather-system-rule" />
+                    <span className="gather-system-name">
+                      {systems[si] ?? sys.id}
+                    </span>
+                  </li>
                 ))}
-              </svg>
+              </ul>
               <span className="organism-center" ref={centerEl}>
                 {centerLabel}
               </span>
               <ul className="organism-nodes" aria-label={ecosystemLabel}>
-                {ECO_ORDER.map((nodeIdx, slot) => {
-                  const n = nodes[nodeIdx];
+                {Array.from({ length: GATHER_N }, (_, slot) => {
+                  const n = nodes[slot];
                   if (!n) return null;
                   const descriptionId = `ecosystem-node-${slot}-description`;
                   const open = openEcoNode === slot;
@@ -1088,25 +1070,19 @@ export function PageStage({
               {/* the readout — mission-control line for the touched organ */}
               <div className="eco-hud" aria-hidden="true">
                 <span className="eco-hud-meter" ref={hudMeterEl} />
-                {activeSlot >= 0 && nodes[ECO_ORDER[activeSlot]] ? (
+                {activeSlot >= 0 && nodes[activeSlot] ? (
                   <>
                     <span className="eco-hud-line">
                       <b>{String(activeSlot + 1).padStart(2, "0")}</b>
                       {" · "}
-                      {nodes[ECO_ORDER[activeSlot]].name}
+                      {nodes[activeSlot].name}
                       <i>
                         {" — "}
-                        {
-                          systems[
-                            ECO_SYSTEMS.findIndex((sys) =>
-                              sys.slots.includes(activeSlot),
-                            )
-                          ]
-                        }
+                        {systems[SYS_OF_NODE[activeSlot]?.si ?? 0]}
                       </i>
                     </span>
                     <span className="eco-hud-cap">
-                      {nodes[ECO_ORDER[activeSlot]].tooltip}
+                      {nodes[activeSlot].tooltip}
                     </span>
                   </>
                 ) : (

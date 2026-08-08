@@ -69,7 +69,9 @@ body:has(.lab-page) .side-index {
 }
 
 /* ── the stage ──────────────────────────────────────────────────────────── */
+/* the stream bleeds out of the Hero on purpose — nothing here may clip it */
 .lab-hero {
+  overflow: visible;
   position: relative;
   display: grid;
   align-content: center;
@@ -102,12 +104,16 @@ body:has(.lab-page) .side-index {
   pointer-events: none;
   overflow: hidden;
 }
+/* No blur filter. These are radial-gradients — they are already perfectly
+   soft — so a 90px blur on two ~46vw layers was paying for smoothness the
+   paint had for free, and re-rasterising both every frame of their 26 s drift.
+   The gradient stops carry the falloff instead. */
 .lab-mesh span {
   position: absolute;
   display: block;
   border-radius: 50%;
-  filter: blur(90px);
   opacity: 0.5;
+  will-change: transform;
 }
 .lab-mesh-a {
   top: -18%;
@@ -223,9 +229,20 @@ body:has(.lab-page) .side-index {
   font-weight: 300;
   color: color-mix(in srgb, var(--color-paper) 82%, transparent);
 }
+/* The claim words are glass; the connective line is not. Glassing the whole
+   sentence would flatten the weight contrast that IS the hierarchy here — the
+   material has to land on what it is meant to promote.
+
+   Fill only, no filter. Over the journey canvas the glass carries its own
+   bloom because the field there is sparse; over the stream the light is
+   already in the frame, and three blur passes per glyph would be paid on top
+   of a shader that is running at the same time. */
 .lab-strong {
   font-weight: 700;
-  color: var(--color-paper);
+  color: transparent;
+  background-image: var(--liquid-glass-fill);
+  -webkit-background-clip: text;
+  background-clip: text;
 }
 
 /* ── the rotating noun ──────────────────────────────────────────────────── */
@@ -233,21 +250,28 @@ body:has(.lab-page) .side-index {
   position: relative;
   display: inline-block;
   vertical-align: baseline;
-  /* the slot animates to the next word's measured width, so the line
-     re-centres instead of jumping */
+  /* The slot fits the word CURRENTLY in it, and travels between sizes.
+     Holding it at the widest word in the set left "futuro" (142px) sitting in
+     a 365px hole — over 110px of dead space on either side of it. The word has
+     to be snug, so the sentence has to give: the width moves between beats,
+     eased, in the gap where the old word has cleared and the new one has not
+     been written yet, which reads as the line making room rather than jumping. */
+  text-align: center;
   font-weight: 700;
   color: var(--color-paper);
-  will-change: width;
+  /* the delay is the point: it lands the resize in the beat after the old word
+     has cleared and before the new one is written, which is the one moment
+     there is nothing on screen for it to drag sideways */
+  transition: width 420ms var(--ease-arrive) 300ms;
 }
-/* the mask the two words cross under. A little vertical breathing room keeps
-   ascenders and descenders off the clip at rest; the pulled margin means that
-   room costs the line box nothing. */
+/* NO overflow here. An inline-block takes its baseline from its last line box —
+   unless that box is inside an overflow-clipped block, in which case it falls
+   back to the bottom margin edge and the whole slot rides ~9px high against the
+   rest of its own line. The letters only travel a fraction of their own height
+   and are transparent at the extremes, so there was nothing to clip anyway. */
 .lab-word-clip {
   position: relative;
   display: block;
-  overflow: hidden;
-  padding-block: 0.16em;
-  margin-block: -0.16em;
 }
 /* the measuring rig: real face, real size, zero footprint, never painted */
 .lab-word-sizer {
@@ -262,14 +286,54 @@ body:has(.lab-page) .side-index {
   display: block;
   width: max-content;
 }
+/* the two faces are stacked and centred, so the exchange is a true cross-fade
+   in place — neither word moves a pixel while they trade */
+/* the ghost holds the clip open; every painted face is absolute and centred on
+   it, so the exchange is a true cross-fade in place — neither word shifts */
+.lab-word-ghost {
+  display: block;
+  visibility: hidden;
+  white-space: nowrap;
+}
 .lab-word-face {
+  position: absolute;
+  inset: 0 0 auto 0;
   display: block;
   white-space: nowrap;
+  text-align: center;
   color: var(--color-paper);
 }
+/* one box per character, so the word can be written and unwritten a letter at
+   a time. inline-block is what makes a letter transformable at all — and the
+   letters are laid out at their FINAL positions from the first frame, so the
+   word assembles in place instead of growing out of its own centre and
+   dragging the fixed slot's centring around with it.
+   No will-change here: a long word is fourteen of these and Motion promotes
+   each one only for the moment it is actually moving. */
 .lab-word-char {
   display: inline-block;
-  will-change: transform, opacity, filter, clip-path;
+  white-space: pre;
+  /* The fill sits on the LETTER, not on the word above it. background-clip:text
+     paints the element's own background through the glyphs of its whole
+     subtree, so a fill declared on the word would be painted by the word — and
+     the letters' opacity, which is the entire typing animation, would have
+     nothing left to fade. Each letter owning its own fill is what keeps the
+     material and the animation on the same element.
+     Every letter box is one line box tall, so the band maps identically across
+     them and the specular runs level along the word. */
+  color: transparent;
+  background-image: var(--liquid-glass-fill);
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
+/* an unsupported clip means transparent glyphs with nothing behind them */
+@supports not ((background-clip: text) or (-webkit-background-clip: text)) {
+  .lab-strong,
+  .lab-word-char {
+    color: var(--color-paper);
+    background-image: none;
+  }
 }
 
 /* ── the subline ────────────────────────────────────────────────────────── */
@@ -284,24 +348,44 @@ body:has(.lab-page) .side-index {
   animation: lab-rise 1000ms var(--ease-arrive) 700ms both;
 }
 
-/* ── the proof row + saber ──────────────────────────────────────────────── */
+/* ── the proof row + the saber ──────────────────────────────────────────── */
+/* The reference's signature is not the checklist — it is the LIGHT that runs
+   the checklist. Everything here is derived from where that light is, so the
+   row has a cause on screen instead of four callouts changing state on their
+   own. It also means the return pass is free: the beam runs back and every
+   derivation below unwinds with it. */
 .lab-proof {
   position: relative;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-end;
-  justify-content: center;
-  gap: clamp(1.25rem, 3vw, 2.75rem);
+  /* shrink to the callouts, so the track the light runs is exactly as wide as
+     the row — not the 62rem column the row is centred in */
+  width: fit-content;
+  max-width: min(100%, 62rem);
   margin: clamp(1.75rem, 4.5vh, 3rem) auto 0;
-  max-width: 62rem;
+  /* where the track sits under the labels */
+  padding-bottom: 0.85rem;
   animation: lab-rise 1000ms var(--ease-arrive) 900ms both;
 }
+.lab-proof-items {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(1.25rem, 3vw, 2.75rem);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
 .lab-proof-item {
+  /* the ONE derivation: how far the light has crossed THIS callout. --at is
+     MEASURED (see ProofRow), so a six-character label and a twenty-six
+     character one both light at the moment the beam actually reaches them. */
+  --q: clamp(0, (var(--sweep, 0) - var(--at, 0.5)) / var(--span, 0.18), 1);
+  /* and the last stretch of that crossing, where the ring becomes the check */
+  --done: clamp(0, (var(--q) - 0.74) / 0.26, 1);
   position: relative;
   display: flex;
   align-items: center;
   gap: 0.55rem;
-  padding-bottom: 0.7rem;
 }
 .lab-proof-mark {
   display: grid;
@@ -309,40 +393,214 @@ body:has(.lab-page) .side-index {
   width: 16px;
   height: 16px;
   flex: none;
+  /* a small swell as the ring resolves — peaks mid-morph, gone by the time the
+     check lands. Transform only: no layout, no repaint. */
+  scale: calc(1 + 0.5 * var(--done) * (1 - var(--done)));
 }
 .lab-proof-mark svg {
   width: 16px;
   height: 16px;
   overflow: visible;
 }
+/* The mark at rest: barely there. Nothing on this row may compete with the
+   beam — four resting callouts drawn at full contrast read as four separate
+   objects, and the light stops being the subject. */
+.lab-proof-track {
+  stroke: color-mix(in srgb, var(--color-paper) 17%, transparent);
+  stroke-width: 1;
+}
+/* THE LOADING RING. r=6 → circumference 37.7. It draws from 12 o'clock as this
+   callout fills, then hands over to the check. */
 .lab-proof-ring {
-  stroke: color-mix(in srgb, var(--color-paper) 34%, transparent);
-  stroke-width: 1.25;
+  stroke: var(--color-cyan);
+  stroke-width: 1.35;
+  stroke-linecap: round;
+  stroke-dasharray: 37.7;
+  stroke-dashoffset: calc(37.7 * (1 - var(--q)));
+  /* fill-box, or `center` resolves against the SVG user-space origin and the
+     ring swings off its own mark instead of spinning in place */
+  transform-box: fill-box;
   transform-origin: center;
+  transform: rotate(-90deg);
+  opacity: calc(1 - 0.85 * var(--done));
+  /* no drop-shadow: this stroke's dash offset changes every frame, so the
+     filter was re-rasterised every frame too. The cyan carries itself. */
 }
 .lab-proof-tick {
   stroke: var(--color-cyan);
-  stroke-width: 1.9;
+  stroke-width: 1.6;
   stroke-linecap: round;
   stroke-linejoin: round;
-  filter: drop-shadow(0 0 5px color-mix(in srgb, var(--color-cyan) 60%, transparent));
+  stroke-dasharray: 12;
+  stroke-dashoffset: calc(12 * (1 - var(--done)));
 }
+/* a narrower contrast range than before: the label lifts as the light passes,
+   but an unlit callout still has to be readable, not a ghost */
 .lab-proof-label {
   font-family: var(--font-mono);
   font-size: var(--text-mono-sm);
   font-weight: 500;
   letter-spacing: var(--tracking-label-dense);
   white-space: nowrap;
-  color: var(--color-paper);
+  color: color-mix(
+    in srgb,
+    var(--color-paper) calc(54% + 46% * var(--q)),
+    transparent
+  );
 }
-/* each item's own hairline fills behind the light */
+
+/* ── the track, and the light that runs it ──────────────────────────────── */
+/* Centred ON the track and given real height, so the beam's halo has room to
+   fall off to nothing INSIDE this box. Clipped tight to the line, the glow hit
+   a hard top and bottom edge and the light read as a lit rectangle.
+   Horizontally it IS clipped, on purpose — the light crosses an edge on its
+   way in and out instead of appearing from nothing — and the mask softens that
+   edge, because a hard cut through a glow reads as a rectangle too. */
+.lab-proof-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1.35rem;
+  height: 2.7rem;
+  overflow: hidden;
+  pointer-events: none;
+  -webkit-mask-image: linear-gradient(
+    90deg,
+    transparent,
+    #000 4%,
+    #000 96%,
+    transparent
+  );
+  mask-image: linear-gradient(
+    90deg,
+    transparent,
+    #000 4%,
+    #000 96%,
+    transparent
+  );
+}
+.lab-proof-rail,
+.lab-proof-trace {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(50% - 0.5px);
+  height: 1px;
+}
+/* the floor: ONE line under the whole row, not one per callout. Four separate
+   rails at rest were the loudest thing in the composition before the light had
+   done anything — this is only just enough to hold the row down. */
+.lab-proof-rail {
+  background: color-mix(in srgb, var(--color-paper) 6%, transparent);
+}
+/* What the light leaves behind it — dimmest at the far end and strongest just
+   behind the beam, so it reads as a trail cooling off rather than a progress
+   bar filling up. It scales with the sweep, so the gradient always spans
+   exactly from the start of the row to the light. */
+.lab-proof-trace {
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--color-cyan-deep) 16%, transparent),
+    color-mix(in srgb, var(--color-cyan) 52%, transparent)
+  );
+  transform: scaleX(clamp(0, var(--sweep, 0), 1));
+  transform-origin: left;
+}
+/* THE SABER. A fixed-size box that only ever translates, so running it across
+   the row costs the compositor a matrix — no layout, no repaint, and no filter
+   (a drop-shadow here would re-rasterise the glow on every frame of the run).
+   The falloff is painted into the background instead. */
+.lab-proof-beam {
+  /* which way the light is pointing, as three numbers rather than a flip:
+     where the box sits relative to the sweep, which end of it is the head, and
+     which way the core brightens. Mirroring with scale(-1) instead moves the
+     head by the beam's own length, because the flip resolves against the box,
+     not against the point the light is supposed to be standing on. */
+  /* The box runs PAST the head by this much. With the bloom centred on the
+     box's own edge, its outer half is clipped away and the light ends in a
+     hard vertical cut — the one thing that stops a glow reading as a glow.
+     The overhang is the room it fades out in. */
+  --beam-over: 2.4rem;
+  --beam-lead: calc(var(--beam-over) - 100%);
+  --beam-head: calc(100% - var(--beam-over));
+  --beam-peak: calc(100% - var(--beam-over));
+  --beam-core: 90deg;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: calc(var(--span, 0.18) * var(--row-w, 0px) + var(--beam-over));
+  height: 100%;
+  /* the head sits ON the sweep position and the body trails behind it */
+  translate: calc(var(--sweep, 0) * var(--row-w, 0px) + var(--beam-lead)) 0;
+  /* the bloom at the tip, sized so it falls to nothing inside the overhang */
+  background: radial-gradient(
+    var(--beam-over) calc(var(--beam-over) * 0.5) at var(--beam-head) 50%,
+    color-mix(in srgb, var(--color-cyan) 46%, transparent),
+    color-mix(in srgb, var(--color-cyan-deep) 24%, transparent) 42%,
+    transparent 76%
+  );
+  transition: opacity 420ms var(--ease-arrive);
+}
+/* its cutting edge — a hairline the length of the beam, cyan through the body
+   and paper-white where it is actually touching the row. It brightens to white
+   just SHORT of the end and falls away again: run all the way to the box edge
+   and the head is a hard vertical cut, which is the one thing that stops a
+   light reading as a light. */
+.lab-proof-beam::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(50% - 1px);
+  height: 2px;
+  border-radius: 999px;
+  background: linear-gradient(
+    var(--beam-core),
+    transparent,
+    color-mix(in srgb, var(--color-cyan) 62%, transparent) 46%,
+    var(--color-paper) var(--beam-peak),
+    transparent
+  );
+}
+/* running back, the light turns around: the head stays put and the tail, the
+   halo and the core all swing to the other side of it */
+.lab-proof[data-phase="reverse"] .lab-proof-beam {
+  --beam-lead: calc(-1 * var(--beam-over));
+  --beam-head: var(--beam-over);
+  --beam-core: 270deg;
+}
+/* at each end of the run the light rests and the row simply holds its state.
+   Both rests happen at zero opacity, which is also where the flip above lands —
+   the beam is never seen changing direction. */
+.lab-proof[data-phase="held"] .lab-proof-beam,
+.lab-proof[data-phase="empty"] .lab-proof-beam {
+  opacity: 0;
+}
+
+/* ── the wrapped fallback ───────────────────────────────────────────────── */
+/* A wrapped row cannot share one beam — the light would have to jump lines. On
+   narrow stages the shared track is dropped and each callout carries its own
+   hairline, still filling from the same --q. */
+.lab-proof[data-wrapped="false"] .lab-proof-rule {
+  display: none;
+}
+.lab-proof[data-wrapped="true"] .lab-proof-line {
+  display: none;
+}
+.lab-proof[data-wrapped="true"] {
+  /* the shared track is gone, so the room reserved for it goes too */
+  padding-bottom: 0;
+}
+.lab-proof[data-wrapped="true"] .lab-proof-item {
+  padding-bottom: 0.7rem;
+}
 .lab-proof-rule {
   position: absolute;
   left: 0;
   right: 0;
   bottom: 0;
   height: 1px;
-  background: color-mix(in srgb, var(--color-paper) 12%, transparent);
+  background: color-mix(in srgb, var(--color-paper) 9%, transparent);
   overflow: hidden;
 }
 .lab-proof-rule-fill {
@@ -353,6 +611,7 @@ body:has(.lab-page) .side-index {
     var(--color-cyan-deep),
     var(--color-cyan)
   );
+  transform: scaleX(var(--q));
   transform-origin: left;
 }
 
@@ -372,8 +631,9 @@ body:has(.lab-page) .side-index {
   min-height: 56px;
   padding: 1rem 2.2rem;
   border: 1px solid color-mix(in srgb, var(--color-cyan) 55%, transparent);
-  background: color-mix(in srgb, var(--color-ink) 55%, transparent);
-  backdrop-filter: blur(6px);
+  /* no backdrop-filter: it sat directly over the animating stream, so the
+     blur behind it was recomputed every single frame for a 300px button */
+  background: color-mix(in srgb, var(--color-ink) 68%, transparent);
   font-family: var(--font-mono);
   font-size: var(--text-mono);
   font-weight: 500;
@@ -423,24 +683,35 @@ body:has(.lab-page) .side-index {
   transform: translateX(5px);
 }
 
-/* ── the liquid sheet ───────────────────────────────────────────────────── */
+/* ── the liquid stream ──────────────────────────────────────────────────── */
+/* It is not a panel that ends where the Hero ends. The stream BLEEDS past the
+   section boundary and dissolves into the chapter below, so the page reads as
+   one continuous surface with the liquid running through it — no seam, no
+   rectangle, nothing to notice. Both ends are feathered: the top so it rises
+   out of the black behind the copy, the bottom so it sinks back into it well
+   inside The Problem. */
 .lab-ribbon {
   position: absolute;
   left: 0;
   right: 0;
-  bottom: 0;
+  bottom: min(-30vh, -240px); /* the bleed — this is the integration */
   z-index: 1;
-  height: min(56vh, 560px);
+  height: min(96vh, 980px);
   pointer-events: none;
-  /* the sheet dissolves upward into the black instead of ending on a hard
-     rectangle edge */
   -webkit-mask-image: linear-gradient(
     to bottom,
     transparent 0%,
-    #000 34%,
-    #000 100%
+    #000 26%,
+    #000 58%,
+    transparent 100%
   );
-  mask-image: linear-gradient(to bottom, transparent 0%, #000 34%, #000 100%);
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    #000 26%,
+    #000 58%,
+    transparent 100%
+  );
   animation: lab-fade 1400ms var(--ease-arrive) both;
 }
 .lab-ribbon-canvas {
@@ -534,9 +805,11 @@ body:has(.lab-page) .side-index {
     margin-inline: 0;
   }
   .lab-proof {
+    margin-inline: 0;
+  }
+  .lab-proof-items {
     justify-content: flex-start;
     gap: 0.85rem 1.5rem;
-    margin-inline: 0;
   }
   .lab-actions {
     justify-content: stretch;
@@ -546,7 +819,10 @@ body:has(.lab-page) .side-index {
     justify-content: center;
   }
   .lab-ribbon {
-    height: min(46vh, 420px);
+    /* the same bleed, scaled to a phone: the stream still runs past the Hero
+       and dissolves inside the chapter below */
+    bottom: min(-22vh, -150px);
+    height: min(74vh, 700px);
   }
   .lab-scroll {
     display: none;
@@ -571,6 +847,16 @@ body:has(.lab-page) .side-index {
   }
   .lab-word {
     transition: none;
+  }
+  /* Reduced motion renders the word as one plain face with no letter spans, so
+     the fill has to live here instead. It can ONLY live here: with letters
+     present, a fill on the face would keep painting through letters whose
+     opacity has taken them to zero, and the typing would never clear. */
+  .lab-word-face {
+      color: transparent;
+    background-image: var(--liquid-glass-fill);
+    -webkit-background-clip: text;
+    background-clip: text;
   }
   .lab-plane {
     transform: none;
