@@ -2662,6 +2662,49 @@ section[id],
   backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--color-paper-faint);
 }
+/* NO BACKDROP BLUR ON PHONES. A translucent blurred bar over a black page buys
+   nothing — there is no colour behind it to soften — while every line of copy
+   smears as it scrolls underneath, and the filter forces the whole viewport
+   into a composited layer that phones re-rasterise on every scroll frame. A
+   solid bar is cheaper and cleaner. */
+@media (max-width: 767px) {
+  .topbar {
+    background: var(--color-ink);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+  /* COPY WINS ON A PHONE. The liquid is a full-bleed layer behind the text and
+     a 390px viewport has no spare column for it to occupy, so it lands on the
+     words. Measured by diffing the page against itself with the canvas hidden:
+     "02 — O Problema" was 100% covered, the symptom labels 36%, the method
+     descriptions 35%. A dark halo separates each glyph from whatever passes
+     underneath without laying a visible plate over the art direction.
+
+     Split by fill type on purpose: with background-clip:text the fill IS the
+     element's background and backgrounds paint BEFORE text-shadow, so a shadow
+     would sit on top of the gradient and wash the glyph out — those get a
+     filter, which applies to the finished glyph. Same reasoning as
+     .liquid-glass-lit, which already carries its own and is left alone. */
+  #content :is(h1, h2, h3, h4, p, dt, dd, li, blockquote, figcaption):not(.liquid-glass) {
+    text-shadow:
+      0 0 4px var(--color-ink),
+      0 0 14px var(--color-ink);
+  }
+  #content .liquid-glass:not(.liquid-glass-lit) {
+    filter: drop-shadow(0 0 4px var(--color-ink))
+      drop-shadow(0 0 14px var(--color-ink));
+  }
+  .mobile-menu-scrim {
+    background: color-mix(in srgb, var(--color-ink) 88%, transparent);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+  .project-preview-status {
+    background: var(--color-ink);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
 .wordmark {
   display: inline-flex;
   min-height: 44px;
