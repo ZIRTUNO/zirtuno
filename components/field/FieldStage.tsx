@@ -6,13 +6,29 @@
  * as the hero) driven by a pure FieldDriver (lib/webgl/field-drivers): scatter
  * (S3), converge (S4/S8), scrub-morph (S5), impulse exhale (S10).
  *
- * Tiers (lib/webgl/field-tier): "full" = glass at dpr ≤ 2 · "lite" = the flat
- * cyan branch at dpr 1 · "half" = flat at dpr 0.5 (watchdog floor). The FPS
- * watchdog needs SUSTAINED slowness (the counter decays on smooth frames) and
- * only ever lowers resolution — the liquid never freezes: a frozen scroll-
- * choreographed canvas reads as a pasted image being dragged, which is the
- * exact failure this system exists to prevent. Pauses when `play` is false
- * (off-screen). Context loss → onContextLost + rebuild on restore.
+ * DEGRADATION ORDER — the glass is the LAST thing to go, not the first.
+ * Measured on this shader (512², 60 balls, forced sync): going flat saves ~58%,
+ * while dropping dpr 2 → 1 saves ~75% AND keeps the material. The old ladder
+ * bundled both into one step (fullnofx → lite), so the first real downshift
+ * surrendered the entire liquid-glass identity to buy a saving that a pure
+ * resolution cut beats outright. Every rung below now spends resolution and
+ * deformation first, in decreasing saving-per-unit-of-visual-harm:
+ *
+ *   full      glass + post, dpr ≤ 2, deformation      (the intended material)
+ *   fullnofx  … post chain shed                       (bloom/dither/grain)
+ *   glass1x   … dpr 1                                 (−75% fill, material intact)
+ *   rigid     … deformation shed                      (−33%, discs not droplets)
+ *   glasshalf … dpr 0.7                               (last glass-bearing rung)
+ *   lite      FLAT CYAN, dpr 1                        (genuine last resort)
+ *   half      flat, dpr 0.5                           (floor)
+ *
+ * Reaching flat now takes five sustained-slow episodes rather than two, which
+ * is the point: it should mean "this GPU cannot do this", not "this GPU had a
+ * rough second". The FPS watchdog needs SUSTAINED slowness (the counter decays
+ * on smooth frames) and never freezes the liquid: a frozen scroll-choreographed
+ * canvas reads as a pasted image being dragged, which is the exact failure this
+ * system exists to prevent. Pauses when `play` is false (off-screen). Context
+ * loss → onContextLost + rebuild on restore.
  */
 
 import { useEffect, useReducer, useRef } from "react";
@@ -30,6 +46,50 @@ import { makeLayer, makeSdfTexture, loadSdf } from "@/lib/webgl/sdf-gl";
 import { makePostChain } from "@/lib/webgl/post-chain";
 import type { FieldDriver } from "@/lib/webgl/field-drivers";
 import { SVG_URLS, STATE_COUNT } from "@/lib/webgl/symbols";
+
+/** The watchdog ladder, richest first. See the degradation note in the header. */
+type LiveTier =
+  | "full"
+  | "fullnofx"
+  | "glass1x"
+  | "rigid"
+  | "glasshalf"
+  | "lite"
+  | "half";
+
+/** Each rung's successor — the single source of truth for the descent. */
+const NEXT_RUNG: Record<LiveTier, LiveTier | null> = {
+  full: "fullnofx",
+  fullnofx: "glass1x",
+  glass1x: "rigid",
+  rigid: "glasshalf",
+  glasshalf: "lite",
+  lite: "half",
+  half: null,
+};
+
+/** Rungs that still shade the real material (iGlass=1). */
+const GLASS_RUNGS = new Set<LiveTier>([
+  "full",
+  "fullnofx",
+  "glass1x",
+  "rigid",
+  "glasshalf",
+]);
+
+/** Rungs that can still afford velocity-aligned deformation (~1.49× the pass). */
+const DEFORM_RUNGS = new Set<LiveTier>(["full", "fullnofx", "glass1x"]);
+
+/** Buffer scale per rung — the cheapest lever, so it is spent before the glass. */
+const RUNG_SCALE: Record<LiveTier, number | "max"> = {
+  full: "max",
+  fullnofx: "max",
+  glass1x: 1,
+  rigid: 1,
+  glasshalf: 0.7,
+  lite: 1,
+  half: 0.5,
+};
 
 type FieldStageProps = {
   driver: FieldDriver;
@@ -103,12 +163,15 @@ export default function FieldStage({
     layer.canvas.addEventListener("webglcontextlost", onLost);
     layer.canvas.addEventListener("webglcontextrestored", onRestored);
 
-    // full = glass + post at dpr ≤ 2 · full-nofx = glass, post chain off (the
-    // R5-C watchdog rung) · lite = flat cyan at dpr 1 · half = flat at dpr
-    // 0.5. There is NO stop state: freezing a scroll-choreographed liquid
-    // reads as a pasted image being dragged — a blurrier LIVING liquid always
-    // beats a crisp dead one.
-    let liveTier: "full" | "fullnofx" | "lite" | "half" = tier;
+    // There is NO stop state: freezing a scroll-choreographed liquid reads as a
+    // pasted image being dragged — a blurrier LIVING liquid always beats a crisp
+    // dead one, and a flat one is worse than either.
+    //
+    // A probe-"lite" machine starts at `rigid`, NOT at the flat branch. The
+    // probe measures a mid-range GPU (12–55 ms at the hero's buffer); such a
+    // machine can nearly always shade glass at dpr 1, and starting it flat threw
+    // away the material on a guess taken during page load.
+    let liveTier: LiveTier = tier === "lite" ? "rigid" : "full";
     // ?fgrade=0 — the R5-C exact optics bypass (spec §14.1): no post chain,
     // every grade uniform at its 0 identity → pre-C pixels.
     const gradeOn = !/[?&]fgrade=0/.test(window.location.search);
@@ -280,12 +343,10 @@ export default function FieldStage({
     (window as unknown as { __optics?: typeof diag }).__optics = diag;
 
     const maxDpr = Math.min(window.devicePixelRatio || 1, 2);
-    const scaleFor = () =>
-      liveTier === "full" || liveTier === "fullnofx"
-        ? maxDpr
-        : liveTier === "lite"
-          ? 1
-          : 0.5;
+    const scaleFor = () => {
+      const s = RUNG_SCALE[liveTier];
+      return s === "max" ? maxDpr : s;
+    };
 
     const drawFrame = (tMs: number) => {
       if (ctxLost) return null; // parked — every caller tolerates a skip
@@ -305,7 +366,7 @@ export default function FieldStage({
       if (!ta) return f; // the driver's form isn't built yet — fallback stays
       const tb = textures[f.b] ?? ta;
       const formBWeight = textures[f.b] ? f.fb : 0;
-      const glass = liveTier === "full" || liveTier === "fullnofx";
+      const glass = GLASS_RUNGS.has(liveTier);
       const postChain = post;
       const usePost = postChain !== null && liveTier === "full";
       diag.post = usePost ? 1 : 0;
@@ -339,13 +400,13 @@ export default function FieldStage({
       gl.uniform1f(layer.U("iGlass"), glass ? 1 : 0);
       gl.uniform3fv(layer.U("iBalls"), ballBuf);
       gl.uniform1i(layer.U("iBallCount"), f.count);
-      // Deformation belongs to the GLASS, not to the post chain. The first
-      // watchdog rung (full → fullnofx) sheds bloom/dither/grain and keeps the
-      // material — gating stretch on `full` made the liquid quietly revert to
-      // rigid discs the moment a machine dropped one rung, which is precisely
-      // where it is least affordable to look cheap. It dies with the glass, at
-      // lite/half, where the shader is flat cyan anyway.
-      const shapeTierActive = shapeShaderActive && !motionReduced && glass;
+      // Deformation is its OWN rung, not a passenger of the glass. Measured at
+      // ~1.49× the plain glass pass, it is the largest single lever short of
+      // resolution — so `rigid` sheds it to buy headroom while the material
+      // survives. Tying it to `glass` (as it was) meant this 49% was still being
+      // paid on the very rungs a struggling machine had already been demoted to.
+      const shapeTierActive =
+        shapeShaderActive && !motionReduced && DEFORM_RUNGS.has(liveTier);
       const speed = shapeTierActive ? sampleBallVelocity(f.count, tMs) : 0;
       // Deformation is no longer fenced to droplet-only frames. It cannot
       // disturb a form: the shape branch rewrites the BALL metric only, while
@@ -427,25 +488,23 @@ export default function FieldStage({
     const downshift = () => {
       wdWarm = 0;
       wdSlow = 0;
-      if (liveTier === "full") {
-        // R5-C rung: shed the post chain first — glass survives (§12.3).
-        // Runtime-only (not persisted): a fresh session retries full.
-        liveTier = "fullnofx";
+      const next = NEXT_RUNG[liveTier];
+      if (!next) return; // already on the floor
+      liveTier = next;
+      if (next === "fullnofx") {
         // No rung promotes this instance back to full. Release the framebuffer
         // targets now instead of retaining their GPU memory until unmount; a
         // fresh context or session will build a fresh chain.
         post?.dispose();
         post = null;
         diag.fmt = "none";
-        resize();
-      } else if (liveTier === "fullnofx") {
-        liveTier = "lite";
-        resize();
-        cb.current.onTierChange("lite");
-      } else if (liveTier === "lite") {
-        liveTier = "half";
-        resize();
       }
+      resize();
+      // Only the FLAT floor is worth persisting for the session. The glass-
+      // bearing rungs stay runtime-only so a fresh load retries the real
+      // material — a machine that stuttered once should not be sentenced to
+      // flat cyan for the rest of its visit.
+      if (next === "lite") cb.current.onTierChange("lite");
     };
     diag.demote = downshift;
 

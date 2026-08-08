@@ -110,9 +110,10 @@ const INIT = () => {
     if (tap.on && window.__optics) {
       tap.peakSpeed = Math.max(tap.peakSpeed, window.__optics.shapeSpeed || 0);
       // Which tier was live while we measured. Under software GL the FPS
-      // watchdog walks full → fullnofx → lite → half, and below the glass
-      // rungs the velocity sampler is not run at all — a peak of 0 there means
-      // "not measured", never "the liquid did not move".
+      // watchdog walks full → fullnofx → glass1x → rigid → glasshalf → lite →
+      // half. Deformation is shed at `rigid` (it costs ~1.49× the glass pass),
+      // so from that rung down the velocity sampler is not run at all — a peak
+      // of 0 there means "not measured", never "the liquid did not move".
       const t = window.__optics.tier;
       tap.tiers[t] = (tap.tiers[t] || 0) + 1;
     }
@@ -191,9 +192,9 @@ async function run(query, { scroll }) {
     waitUntil: "domcontentloaded",
   });
   // MEASURE EARLY. Software GL cannot hold the full tier for long, and the
-  // watchdog is right to demote it — but every rung below the glass ones stops
-  // running the very code under test. So get into the field and start sampling
-  // promptly rather than settling first.
+  // watchdog is right to demote it — but the `rigid` rung and everything below
+  // stop running the very code under test. So get into the field and start
+  // sampling promptly rather than settling first.
   //
   // The peak-speed tap opens BEFORE the warm-up scroll on purpose. Deformation
   // is a property of the fast choreographed passages — the pour, the fracture,

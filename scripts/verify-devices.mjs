@@ -223,14 +223,19 @@ const newPage = async (opts) => {
     shapeShader: window.__optics?.shapeShader,
     shape: window.__optics?.shape,
   }));
+  // A probe-"lite" machine now enters at `rigid`, NOT at the flat branch: no
+  // post chain and no deformation (the two costs it cannot afford), but the
+  // liquid-glass MATERIAL intact at dpr 1. The probe measures a mid-range GPU,
+  // and mid-range GPUs shade this material comfortably at dpr 1 — starting them
+  // flat surrendered the site's core visual on a guess taken during page load.
   check(
-    o.tier === "lite" && o.post === 0,
-    "lite tier active, post chain off",
+    o.tier === "rigid" && o.post === 0,
+    "probe-lite enters at `rigid` — cheap, but still glass",
     JSON.stringify(o),
   );
   check(
     o.shapeRequested === 1 && o.shapeShader === 0 && o.shape === 0,
-    "lite keeps the original shader budget even when fshape is requested",
+    "…and keeps the original shader budget even when fshape is requested",
     `${o.shapeRequested}/${o.shapeShader}/${o.shape}`,
   );
   await page.waitForTimeout(1000);
@@ -291,9 +296,12 @@ const newPage = async (opts) => {
     "demote sheds the post chain first",
     JSON.stringify(o),
   );
+  // v3 forces and typography-aware flow SHIPPED as defaults (R5-B); `?fphysv3=0`
+  // and `?fobstacles=0` are now the rollbacks. This assertion tracked the old
+  // opt-in contract and was left behind by that promotion.
   check(
-    o.physics === "v2" && o.obstacles === "false",
-    "default physics diagnostics stay on the signed-off v2 path",
+    o.physics === "v3" && o.obstacles === "true",
+    "default physics diagnostics report the shipped v3 + flow path",
     `${o.physics}/${o.obstacles}`,
   );
   await page.waitForTimeout(1000);

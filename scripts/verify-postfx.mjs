@@ -95,6 +95,36 @@ function statsOf(buf) {
   };
 }
 
+/**
+ * What share of the liquid sits in ONE colour bucket. The flat-cyan branch
+ * paints a single constant (#00E3FE) with no lighting, so it lands ~0.97;
+ * genuinely shaded glass spreads across dome/specular/fresnel and lands far
+ * lower. This is how a rung's MATERIAL is judged — not by its label.
+ */
+function liquidFlatness(png, box = FIELD) {
+  const d = png.data;
+  const buckets = new Map();
+  let liquid = 0;
+  // FIELD only. The page is full of cyan chrome — gradient-clipped headings, the
+  // chapter rail, CTA rules — and counting those diluted a genuinely flat canvas
+  // to a healthy-looking 7%. Judge the liquid inside the liquid's own box.
+  for (let y = box.y; y < box.y + box.h; y++) {
+    for (let x = box.x; x < box.x + box.w; x++) {
+      const p = (y * png.width + x) * 4;
+      const r = d[p];
+      const g = d[p + 1];
+      const b = d[p + 2];
+      if (g > 60 && b > 60 && g > r + 25) {
+        liquid++;
+        const k = `${r >> 3},${g >> 3},${b >> 3}`;
+        buckets.set(k, (buckets.get(k) || 0) + 1);
+      }
+    }
+  }
+  if (!liquid) return { liquid: 0, share: 0 };
+  return { liquid, share: Math.max(...buckets.values()) / liquid };
+}
+
 async function settle(page, url) {
   await page.goto(`${BASE}${url}`, { waitUntil: "domcontentloaded" });
   await page.waitForFunction(() => !!document.querySelector("h1"), { timeout: 40000 });
@@ -263,10 +293,55 @@ const on = await sampleShots(page, "grade-on");
   check(f1 > f0, "full-nofx keeps drawing (never freezes)", `frames +${f1 - f0}`);
   const shot = statsOf(await page.screenshot({ type: "png" }));
   check(shot.cropMean > 8, "full-nofx still renders the glass mark", `crop=${shot.cropMean.toFixed(2)}`);
-  await page.evaluate(() => window.__optics.demote());
-  await page.waitForTimeout(300);
-  const o2 = await page.evaluate(() => window.__optics.tier);
-  check(o2 === "lite", "second demote → lite", o2);
+}
+
+// 3b · THE GLASS IS THE LAST THING TO GO. Measured on this shader, dropping
+// dpr 2→1 saves ~75% while going flat saves ~58% — so every resolution and
+// deformation rung must be spent BEFORE the material. Walking the whole ladder
+// here pins that order down: five rungs bearing glass, then the flat floor.
+// A regression that re-bundles resolution and material into one step (as the
+// original ladder did) fails on the very first mismatch.
+{
+  const LADDER = ["fullnofx", "glass1x", "rigid", "glasshalf", "lite", "half"];
+  const seen = [];
+  const flat = {};
+  for (let i = 1; i < LADDER.length; i++) {
+    await page.evaluate(() => window.__optics.demote());
+    await page.waitForTimeout(300);
+    const t = await page.evaluate(() => window.__optics.tier);
+    seen.push(t);
+    flat[t] = liquidFlatness(statsOf(await page.screenshot({ type: "png" })).png);
+  }
+  check(
+    seen.join(",") === LADDER.slice(1).join(","),
+    "watchdog descends resolution+deformation before the material",
+    `saw ${seen.join(" → ")}`,
+  );
+  // The point of the whole redesign: the material outlives the resolution cuts.
+  // Judged RELATIVELY. An absolute flatness threshold is not portable here —
+  // the iso edge carries a continuous alpha ramp, so even the constant-colour
+  // branch spreads across buckets wherever the blob meets the black page, and
+  // how much of FIELD is edge depends on the hold. What cannot be explained
+  // away is the ratio: the flat branch collapses the INTERIOR onto one colour,
+  // so its dominant bucket must tower over a genuinely shaded rung's.
+  const lastGlass = flat.glasshalf;
+  check(
+    lastGlass.liquid > 200 && lastGlass.share < 0.25,
+    "the LAST glass-bearing rung still shades a real material",
+    `glasshalf: ${lastGlass.liquid}px, dominant bucket ${(lastGlass.share * 100).toFixed(1)}%`,
+  );
+  check(
+    flat.lite.share > lastGlass.share * 2,
+    "…and only the flat floor below it collapses to one colour",
+    `lite ${(flat.lite.share * 100).toFixed(1)}% vs glasshalf ${(lastGlass.share * 100).toFixed(1)}% dominant`,
+  );
+  // the floor still draws — degradation never becomes a freeze
+  const f0 = await page.evaluate(() => window.__optics.frames);
+  await page.waitForTimeout(600);
+  check(
+    (await page.evaluate(() => window.__optics.frames)) > f0,
+    "the ladder floor keeps drawing (never freezes)",
+  );
 }
 
 // 4 · energy governor: idle cadence halves; input restores full cadence
