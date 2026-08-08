@@ -14,6 +14,12 @@
 //      form is carrying the composition on its own.
 //   2. A JUMP — the field's centre of mass teleporting between frames, which is
 //      what "objects being swapped" actually looks like in the numbers.
+//   3. INK ON GLASS — that the liquid actually PAINTS. Everything above reads
+//      simulation state, and state can be perfectly healthy while the shader
+//      emits nothing: a NaN in the light score once multiplied `col` to zero
+//      across an entire chapter while the droplet buffer, the form weights and
+//      the ball count all looked correct. State gates cannot see that. This
+//      reads the framebuffer.
 //
 // Both are measured on the real packed buffer while wheel input drives Lenis
 // across Hero → Problem → Ecosystem → Services → Método.
@@ -147,6 +153,58 @@ const frames = await page.evaluate(() => {
   window.__bounds.on = false;
   return window.__bounds.frames;
 });
+
+// ── INK ON GLASS ────────────────────────────────────────────────────────────
+// Sample the real composited page at three points where liquid must be on
+// screen. Screenshots, not canvas readback: the GL context has no
+// preserveDrawingBuffer, so drawImage() off it returns an empty buffer and
+// would report zero for a perfectly healthy render.
+const inkAt = async (label, ticks) => {
+  await page.goto(`${BASE}/pt?ftier=full`, { waitUntil: "domcontentloaded" });
+  await page.addStyleTag({
+    content: ".cursor-ring,.cursor-dot{display:none!important}",
+  });
+  await page.mouse.move(450, 310);
+  await page.waitForTimeout(1300);
+  for (let i = 0; i < ticks; i++) {
+    await page.mouse.wheel(0, 150);
+    await page.waitForTimeout(45);
+  }
+  await page.waitForTimeout(1800);
+  const shot = await page.screenshot();
+  const { createHash } = await import("node:crypto");
+  // count pixels with real cyan energy, cheaply, straight off the PNG-decoded
+  // screenshot via the browser (no image lib in this repo)
+  const b64 = shot.toString("base64");
+  const lit = await page.evaluate(
+    (d) =>
+      new Promise((res) => {
+        const img = new Image();
+        img.onload = () => {
+          const cv = document.createElement("canvas");
+          cv.width = img.width;
+          cv.height = img.height;
+          const g = cv.getContext("2d");
+          g.drawImage(img, 0, 0);
+          const px = g.getImageData(0, 0, cv.width, cv.height).data;
+          let n = 0;
+          for (let i = 0; i < px.length; i += 4)
+            if (px[i + 2] > 90 && px[i + 2] > px[i] + 40) n++;
+          res(n);
+        };
+        img.src = "data:image/png;base64," + d;
+      }),
+    b64,
+  );
+  void createHash;
+  return { label, lit };
+};
+
+const ink = [];
+ink.push(await inkAt("problem (fracture)", 13));
+ink.push(await inkAt("ecosystem (gathering)", 26));
+ink.push(await inkAt("services (a form)", 44));
+
 await browser.close();
 
 /** Area-weighted centre of mass + total area of one packed frame. */
@@ -261,6 +319,12 @@ check(
   `nothing teleports at a seam (no step > ${JUMP_RATIO}x the median)`,
   `worst ${ratio.toFixed(1)}x`,
 );
+for (const i of ink)
+  check(
+    i.lit > 1500,
+    `ink on glass — the liquid actually paints at ${i.label}`,
+    `${i.lit} cyan px`,
+  );
 check(errors.length === 0, "no page errors", errors[0]);
 console.log(bad === 0 ? "BOUNDARIES: one continuous liquid" : `BOUNDARY FAILURES: ${bad}`);
 process.exit(bad ? 1 : 0);

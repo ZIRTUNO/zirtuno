@@ -554,7 +554,12 @@ export function makeSiteScene(cbs: SiteCallbacks = {}): SceneModule {
       // are IN-the-liquid grades (iExpo/iKey); copy is never dimmed here —
       // the DOM only feels the vignette breathing closed through Problem.
       const dip = F * (1 - TR);
-      const rise = smooth01((clamp01(ctx.ch.converge) - 0.75) / 0.25) * (1 - SP);
+      // The light rise IS the fuse — the reunified mark earns a key lift the
+      // dispersed field never had. This read `ctx.ch.converge`, a channel that
+      // no longer exists after the gather rename; the undefined propagated to
+      // NaN exposure and multiplied the whole fragment to nothing, so the
+      // liquid rendered as pure black across the entire chapter.
+      const rise = fused * (1 - SP);
       scoreOut.exposure = 1 - 0.16 * dip + 0.06 * rise;
       scoreOut.key =
         0.3 * rise + (inSvcMelt ? 0.12 * Math.sin(Math.PI * mState) : 0);
