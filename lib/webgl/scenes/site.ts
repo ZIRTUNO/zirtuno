@@ -46,8 +46,7 @@ import {
   arrive,
   permFor,
   packBridge,
-  bridgeRadiusEnvelope,
-  BRIDGE_RAMP,
+  bridgePresence,
   formPresence,
   formPhase,
   type SiteCallbacks,
@@ -79,11 +78,24 @@ import { centersMid, coordAt } from "./geom";
 // second act — capabilities arrive on their own schedules (gathering.mjs owns
 // the timing) and the last stretch fuses them, so a single monotonic progress
 // drives everything and every frame of it is scrub-safe.
-// within each service gap: rest, then melt across the middle window
-const MELT_LO = 0.35;
-const MELT_HI = 0.65;
+// Within each service gap: a short hold on the pillar, then a LONG morph.
+//
+// This used to be 0.35 → 0.65, so the whole transformation was crammed into the
+// middle 30% of the gap while the liquid sat still for the other 70%. At normal
+// scroll speed that is a few hundred milliseconds of change bracketed by long
+// stillness, which is why it read as a shape being swapped rather than a shape
+// becoming another one — there was no motion to follow, just a before and an
+// after. Giving the morph three quarters of the gap makes the transformation
+// the thing you are actually scrolling through.
+const MELT_LO = 0.12;
+const MELT_HI = 0.88;
 
 const HERO_DROPS = 1 + CURSOR_TRAIL_N; // gooey cursor chain length
+
+// Surface churn held over each Services pillar. Roughly a melt's worth of warp
+// on top of rest, so the material never stops moving while the form holds its
+// column — the silhouette stays the exact vector form, only its skin travels.
+const SVC_CHURN = (SDF_WARP_MORPH - SDF_WARP_REST) * 0.85;
 
 export function makeSiteScene(cbs: SiteCallbacks = {}): SceneModule {
   const base = CLOUDS[0];
@@ -319,19 +331,21 @@ export function makeSiteScene(cbs: SiteCallbacks = {}): SceneModule {
         // S3's liquid lives right of the copy column on wide stages
         const sCx = 0.5 + Math.min(0.14 * aspect, Math.max(aspect / 2 - 0.34, 0));
         // SERVICES: the form is the subject, so it holds the CENTRE of the
-        // stage and the type composes around it — name above, instrument band
-        // below. It used to sit off to one side of a reading column, which
-        // made seven exact vector forms into an illustration beside a list.
-        // Centred and larger, "one body, seven shapes" is the argument itself.
-        // Centred horizontally, lifted into the UPPER middle. Dead-centre and
-        // full size, the form ran straight through the instrument band and
-        // covered the third column — the form is the subject, but the
-        // is/solves/creates block is the commercial core and cannot be the
-        // thing that yields. This leaves a clear band beneath it.
+        // THE LOCKED COLUMN. The form owns the right half of the stage and
+        // holds the viewport's vertical centre for the entire pillar; the copy
+        // owns the left half and the two never meet. Centring the form over the
+        // whole width — what this did before — put it on top of the instrument
+        // band and the headline for the whole of each transition, so every melt
+        // played out across type that was trying to be read. A form that never
+        // moves also makes the melt legible as a CHANGE OF SHAPE rather than a
+        // thing flying about: the only thing in motion is the silhouette.
+        //
+        // uv x for a page fraction f is 0.5 + (f - 0.5) * aspect, so the centre
+        // of the right column (f = 0.75) is an offset of 0.25 * aspect.
         const wide = aspect >= 1.4;
-        svcOx = 0;
-        svcOy = wide ? 0.16 : 0.2;
-        svcScale = wide ? 0.5 : 0.38;
+        svcOx = wide ? 0.25 * aspect : 0;
+        svcOy = wide ? 0 : 0.24; // narrow stacks: form above the copy
+        svcScale = wide ? 0.62 : 0.38;
         Tclu = clusterTargets(aspect, sCx);
         Tdis = wideScatter(aspect, sCx, 0.5, 0.85);
         Teco = wideScatter(aspect, 0.5, 0.5, 1);
@@ -494,6 +508,12 @@ export function makeSiteScene(cbs: SiteCallbacks = {}): SceneModule {
             warp +=
               (SDF_WARP_MORPH - SDF_WARP_REST) * Math.sin(Math.PI * mState);
           }
+          // CHURN. A form that holds its position for a whole pillar has to
+          // stay visibly ALIVE or it reads as a placed image being scrolled
+          // past. This is surface motion only — the silhouette is still the
+          // exact vector form, it is just never still — and it rides SP so the
+          // gathering and the exit are unaffected.
+          warp += SVC_CHURN * SP * (0.72 + 0.28 * Math.sin(ctx.t * 0.53));
         } else {
           // The mark is the RESULT of the fuse, never a thing the droplets
           // assemble around. Its field weight rides `fused`, which is 0 until
@@ -546,9 +566,15 @@ export function makeSiteScene(cbs: SiteCallbacks = {}): SceneModule {
       // hold weight 1 at the top of the page, so lava-lamp droplets drifted
       // across the headline — the one thing separating the shipped Hero from
       // the lab. It fades in with the pour instead.
+      // Services gets NO atmosphere. Each pillar is one form alone in its
+      // column with the copy beside it, and a dozen unattached lava-lamp beads
+      // drifting through that composition are exactly the loose micro-balls the
+      // melts get blamed for — they cross the headline and the instrument band
+      // with no relationship to the form at all. The gathering keeps its
+      // atmosphere, because there the scattered liquid IS the subject.
       ambW =
         (1 - 0.5 * smooth01(gather) * (1 - SP)) *
-        (1 - 0.35 * SP) *
+        (1 - SP) *
         EXW *
         smooth01((hp - 0.66) / 0.3);
 
@@ -724,29 +750,22 @@ export function makeSiteScene(cbs: SiteCallbacks = {}): SceneModule {
         const trr = arrive(clamp01(lm * RADIUS_LEAD));
         const aa = A[i],
           bb2 = B[pm[i]];
-        const rEnvM = bridgeRadiusEnvelope(mState);
         jx = 0.5 + jOx + (aa[0] + (bb2[0] - aa[0]) * tp - 0.5) * jScale;
         jy = 0.5 + jOy + (aa[1] + (bb2[1] - aa[1]) * tp - 0.5) * jScale;
-        // RADIUS HANDOFF. Positions match exactly at mState 0 (the bridge's A
-        // cloud IS the mark cloud), but the radii do not: bridgeRadiusEnvelope
-        // opens at ZERO, so the instant inSvcMelt flipped, every gathered
-        // droplet snapped from its residual radius to nothing. The centre of
-        // mass then lurched onto whatever was left — measured at 50x the
-        // journey's median step, right on the Ecosystem→Services seam. Easing
-        // the two radii together over the first slice of the melt removes the
-        // step without touching the bridge's own shape.
-        const ramp = Math.pow(rEnvM, BRIDGE_RAMP);
-        const bridgeR = (aa[2] + (bb2[2] - aa[2]) * trr) * ramp * jScale;
+        // RADIUS IS NEVER SCALED HERE. The whole handoff is carried by presence
+        // (which is the form's exact complement), so the cloud keeps the size
+        // that makes it the same body as the form — and keeps its droplets in
+        // contact with each other, since they only neck while their gap is
+        // under 0.83 x radius. Shrinking radius on the way in and out is what
+        // used to shed the loose beads at both ends of every melt.
+        const bridgeR = (aa[2] + (bb2[2] - aa[2]) * trr) * jScale;
         const handoff = smooth01(clamp01(mState / 0.14));
         jr = jr * (1 - handoff) + bridgeR * handoff;
-        // PRESENCE HANDOFF — through the same easing as the radius above, and
-        // for the same reason. The gathered droplets arrive here fully absorbed
-        // (density 0, the mark's silhouette is the subject), while the bridge
-        // wants them back at the floor: assigning that directly stepped the
-        // field's mass from nothing to 0.6 in a single frame and moved the
-        // centre of mass 113x the journey's median step, right on this seam.
-        const bridgeD = ramp;
-        densJ = densJ * (1 - handoff) + bridgeD * handoff;
+        // PRESENCE IS THE FORM'S COMPLEMENT — the cloud is exactly as present
+        // as the form is absent, so the total on screen never changes. It opens
+        // at 0 where the gathered droplets arrive absorbed at 0, so the seam
+        // needs no blend of its own.
+        densJ = bridgePresence(mState);
         bindJ = 1; // the §3.3 bridge is analytic-exact — physics hands off
         clusJ = -1;
         depth = 0; // the services body is the near plane, always

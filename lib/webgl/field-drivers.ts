@@ -113,8 +113,39 @@ export function bridgeRadiusEnvelope(p: number): number {
  * into beads) in a fraction of the timeline it used to spend there.
  */
 export const BRIDGE_RAMP = 0.25;
-export const bridgePresence = (p: number): number =>
-  Math.pow(bridgeRadiusEnvelope(p), BRIDGE_RAMP);
+/** Exponent turning a form's presence q into its share of visible AREA. */
+export const BRIDGE_AREA = 0.55;
+/**
+ * THE MELT IS ONE BODY OF CONSTANT MASS.
+ *
+ * Droplet presence is the EXACT COMPLEMENT of the form weight, so the liquid on
+ * screen is the same amount at every p — the cloud takes over precisely as much
+ * as the form gives up. Its own envelope closed at p≈0.87 while formPhase does
+ * not bring the incoming form to full until p=1, and in that gap the droplets
+ * were already gone and the form was only ~46% there: total mass fell from 40k
+ * to 18.6k and snapped back, which is the "it just appears and vanishes" hole.
+ *
+ * This is safe because the two really are interchangeable: measured on the page
+ * mid-melt, the bridge cloud carries 40861 px against the form's ~40000. That
+ * equivalence is what the whole §3.3 design rests on — CLOUDS[n] IS form n's
+ * metaball decomposition — and it is worth re-checking with scripts/ if the
+ * services scale or the iso level is ever retuned.
+ */
+export function bridgePresence(p: number): number {
+  // Against the forms' PRESENCE, not their field weight. formPresence keeps the
+  // weight near 1 for most of a fade and lets EROSION do the visible work, so
+  // complementing the weights held the cloud suppressed through most of the
+  // melt and the liquid all but disappeared (total mass 3.7k against a resting
+  // 40k). These are the same q values formPhase feeds formPresence.
+  const qA = 1 - smooth01(p / BRIDGE);
+  const qB = smooth01((p - (1 - BRIDGE)) / BRIDGE);
+  // A form's visible AREA is not linear in q — erosion pulls the boundary in
+  // slowly, so a form at q = 0.5 still covers well over half its footprint.
+  // Complementing q directly therefore left both present at the crossovers and
+  // the liquid swelled ~70% (38k → 66k). This exponent is the area estimate.
+  const area = (q: number) => Math.pow(clamp01(q), BRIDGE_AREA);
+  return clamp01(1 - area(qA) - area(qB));
+}
 
 /** Min-travel droplet matching (§3.2): greedy nearest-neighbour, O(N² log N). */
 export function matchClouds(A: Ball[], B: Ball[]): number[] {

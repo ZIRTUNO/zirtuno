@@ -1685,33 +1685,54 @@ section[id],
    empty so the liquid can be the subject. No rule between pillars — the melt
    is the transition, and a repeated border line would announce a boundary the
    liquid is working to dissolve. */
+/* TWO COLUMNS THAT NEVER MEET. Copy left, liquid right. The form used to be
+   centred over the whole width with the type composed above and below it, so
+   every melt ran across the headline and the instrument band — the transitions
+   read as broken mostly because they happened on top of the words. */
 .pillar {
   position: relative;
   display: grid;
-  grid-template-rows: auto 1fr auto;
+  grid-template-columns: 1fr;
+  align-content: center;
   min-height: 100svh;
   /* the fixed topbar overlays the first rows of every stage */
-  padding-top: calc(var(--topbar-h) + clamp(1.5rem, 5vh, 3rem));
+  padding-top: calc(var(--topbar-h) + clamp(2.5rem, 8vh, 5rem));
   padding-bottom: clamp(2rem, 6vh, 4rem);
   scroll-margin-top: calc(var(--topbar-h) + 2rem);
+}
+/* The liquid's column. Empty by design; on narrow stages it becomes a band
+   ABOVE the copy instead, which is where the scene puts the form too. */
+.pillar-stage {
+  min-height: clamp(13rem, 32vh, 20rem);
+}
+@media (min-width: 60rem) {
+  .pillar {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-items: center;
+    gap: clamp(2rem, 5vw, 5rem);
+  }
+  /* the form holds the full height of its column and the copy centres beside
+     it — nothing in the left column may ever cross into the right */
+  .pillar-stage {
+    min-height: 60svh;
+  }
+}
+.pillar-copy {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(1.5rem, 4vh, 2.75rem);
 }
 .pillar > * {
   position: relative;
   z-index: 1;
 }
-/* The form's own space. It must never collapse — an auto-height middle row
-   would let the type close over the liquid on short viewports. */
-.pillar-stage {
-  min-height: clamp(14rem, 34vh, 22rem);
-}
-/* Narrow on purpose: the form is centred, so the head has to live entirely to
-   the LEFT of it. A wider column runs under the liquid and the name becomes
-   unreadable exactly when its form arrives. */
+/* The head now owns its own column, so it no longer has to dodge a centred
+   form — it may use the full width the copy column gives it. */
 .pillar-head {
-  max-width: 24rem;
+  max-width: 32rem;
 }
 .pillar-foot {
-  max-width: 46rem;
+  max-width: 34rem;
 }
 /* Static tiers have no liquid to leave room for, so the empty middle becomes
    dead space; collapse it and let the chapter read as a document. */
@@ -1745,7 +1766,7 @@ section[id],
    form, rather than three stacked paragraphs reading as a card */
 .pillar-blocks {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
   gap: 1.75rem;
   margin: 0;
   padding-top: 1.25rem;

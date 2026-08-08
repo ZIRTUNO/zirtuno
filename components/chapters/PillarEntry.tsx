@@ -5,15 +5,17 @@ import type { PillarKey } from "@/lib/content/services";
 /**
  * One of the seven forms (S4).
  *
- * The liquid holds the CENTRE of the stage and this type frames it: the name
- * across the top, an instrument band across the bottom. Nothing sits in the
- * middle, because the middle is where the form lives — that hole is the
- * composition, not a gap in it.
+ * TWO COLUMNS, and they never meet: the copy owns the left, the liquid owns the
+ * right and holds it for the whole pillar. The form used to be centred over the
+ * full width with type composed above and below it, which meant every melt
+ * played out on top of the headline and the instrument band — the transitions
+ * were unreadable not because the liquid was wrong but because it was on the
+ * words. A locked column also makes the melt legible as a CHANGE OF SHAPE:
+ * nothing travels, so the only thing the eye has to follow is the silhouette.
  *
  * The is/solves/creates block is the commercial core and is never omitted; it
- * is set as three labelled columns rather than a stacked definition list, so
- * it reads as one instrument panel under the form instead of a card of body
- * copy. The serif-italic accent stays a secondary poetic note.
+ * stacks in the copy column beneath the name. The serif-italic accent stays a
+ * secondary poetic note.
  */
 export function PillarEntry({
   index,
@@ -36,16 +38,13 @@ export function PillarEntry({
 
   return (
     <article className="pillar" data-pillar={index}>
-      {/* ── the head: the form rises into this ─────────────────────────────── */}
+      {/* ── the copy column: everything readable lives here, and only here ── */}
+      <div className="pillar-copy">
       <header className="pillar-head">
         <p className="pillar-counter">{t("counter", { n: num })}</p>
         <h3 className="pillar-name type-feature-title">{t(`${base}.name`)}</h3>
         <p className="font-poetic pillar-accent">{t(`${base}.accent`)}</p>
       </header>
-
-      {/* The form's own space. Empty by design and never collapsed: it is what
-          gives the liquid a place to be the subject rather than a backdrop. */}
-      <div className="pillar-stage" aria-hidden="true" />
 
       {/* ── the instrument band ────────────────────────────────────────────── */}
       <div className="pillar-foot">
@@ -93,6 +92,11 @@ export function PillarEntry({
           )}
         </div>
       </div>
+      </div>
+
+      {/* The form's own column. Empty by design and never collapsed: it is what
+          gives the liquid a place to be the subject rather than a backdrop. */}
+      <div className="pillar-stage" aria-hidden="true" />
     </article>
   );
 }
