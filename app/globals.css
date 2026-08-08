@@ -2690,9 +2690,22 @@ section[id],
       0 0 4px var(--color-ink),
       0 0 14px var(--color-ink);
   }
-  #content .liquid-glass:not(.liquid-glass-lit) {
-    filter: drop-shadow(0 0 4px var(--color-ink))
-      drop-shadow(0 0 14px var(--color-ink));
+  /* TEXT-SHADOW INHERITS, and that is the whole hazard. Excluding the clipped
+     elements from the selector above is not enough: the hero headline is an h1
+     that CONTAINS gradient-clipped spans, so the h1 takes the halo and the
+     spans inherit it. Their glyphs are transparent — the fill is the element's
+     background — so the inherited shadow paints straight through the fill and
+     greys the word out. It has to be stopped where it lands, not where it is
+     declared. Same rule .liquid-glass-lit documents: on clipped type a shadow
+     belongs in a filter, never in text-shadow.
+
+     Only these four are clipped below 768px; the .liquid-journey title set is
+     gated to ≥768px and still wants the halo down here. No filter is added in
+     exchange — lab.css deliberately keeps blur passes off these glyphs because
+     they are painted while the shader is running. */
+  #content
+    :is(.liquid-glass, .lab-strong, .lab-word-char, .lab-word-face) {
+    text-shadow: none;
   }
   .mobile-menu-scrim {
     background: color-mix(in srgb, var(--color-ink) 88%, transparent);
