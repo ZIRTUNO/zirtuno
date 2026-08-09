@@ -47,6 +47,7 @@ import {
   permFor,
   packBridge,
   bridgePresence,
+  BRIDGE_SWELL,
   formPresence,
   formPhase,
   type SiteCallbacks,
@@ -758,14 +759,19 @@ export function makeSiteScene(cbs: SiteCallbacks = {}): SceneModule {
         // contact with each other, since they only neck while their gap is
         // under 0.83 x radius. Shrinking radius on the way in and out is what
         // used to shed the loose beads at both ends of every melt.
-        const bridgeR = (aa[2] + (bb2[2] - aa[2]) * trr) * jScale;
+        // The cloud THICKENS by exactly as much as it is standing in for the
+        // form (see BRIDGE_SWELL): full swell where it carries the frame alone,
+        // none at either end where it hands back at its canonical size.
+        const pres = bridgePresence(mState);
+        const bridgeR =
+          (aa[2] + (bb2[2] - aa[2]) * trr) * jScale * (1 + BRIDGE_SWELL * pres);
         const handoff = smooth01(clamp01(mState / 0.14));
         jr = jr * (1 - handoff) + bridgeR * handoff;
         // PRESENCE IS THE FORM'S COMPLEMENT — the cloud is exactly as present
         // as the form is absent, so the total on screen never changes. It opens
         // at 0 where the gathered droplets arrive absorbed at 0, so the seam
         // needs no blend of its own.
-        densJ = bridgePresence(mState);
+        densJ = pres;
         bindJ = 1; // the §3.3 bridge is analytic-exact — physics hands off
         clusJ = -1;
         depth = 0; // the services body is the near plane, always

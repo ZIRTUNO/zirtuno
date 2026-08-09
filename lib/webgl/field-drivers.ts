@@ -36,7 +36,70 @@ export type { Ball };
 // ── §3.3 melt constants (single source — hero + services scrub) ───────────────
 export const STAGGER = 0.25; // fraction of the timeline sweeping left → right
 export const RADIUS_LEAD = 1.18; // radius finishes ~18% ahead of position
-export const BRIDGE = 0.38; // p-window where a form hands off to / from droplets
+// p-window where a form hands off to / from droplets.
+//
+// Form A's weight support is p ∈ [0, BRIDGE] and form B's is p ∈ [1 - BRIDGE, 1],
+// so at 0.38 the two are DISJOINT: across p ∈ [0.38, 0.62] — a quarter of every
+// melt — neither form has any weight and the droplet cloud carries the picture
+// alone. That is the DESIGN, not a bug: the cloud interpolates POSITIONS, which
+// is the only real morph available here, and the note on bridgePresence below
+// says the two are interchangeable.
+//
+// They stopped being interchangeable, which is what produced the "midway it
+// jumps to the last morph" report. Measured through one melt at 1440x900, lit
+// liquid area per frame against the endpoints:
+//   m=0.19  100%   (form A solid)
+//   m=0.30   49%   <- half the liquid gone in a single scroll step
+//   m=0.41…0.70  ~52%   <- the void; droplets only, at half a form's solidity
+//   m=0.82   94%   <- destination form slams back
+// Widening the morph window (MELT_LO/HI 0.35/0.65 → 0.12/0.88) stretched that
+// hole from ~65px of scroll to ~164px, which is why a long-standing shortfall
+// only became visible now. The fix is BRIDGE_SWELL below — restore the cloud's
+// solidity — NOT a wider BRIDGE.
+//
+// Widening it was tried and measured, and is wrong. The field is THRESHOLDED,
+// so summing two different shapes at partial weight is a cross-dissolve, not a
+// morph: at 0.70 both forms sit at ~0.57 and neither clears the iso level (85%
+// avg with a 46% dip); at 0.82 both sit at ~0.93 and their UNION clears it
+// everywhere (125% avg — the liquid visibly swells). 0.50 + BRIDGE_SWELL scored
+// the same as 0.38 + BRIDGE_SWELL (mid-avg 102% vs 101%), so the original value
+// stands and the shared hero melt keeps its signed-off timing.
+export const BRIDGE = 0.38;
+/**
+ * How much the bridge cloud THICKENS while it is standing in for a form.
+ *
+ * The §3.3 design assumes cloud and form are interchangeable. Measured on the
+ * page they are not — not in SIZE, but in SOLIDITY. Their bounding boxes match
+ * exactly (179x105 in the capture), yet the fraction of that box actually lit
+ * differs: the droplets sit far enough apart that they never neck into one
+ * body, so the same silhouette comes out substantially less solid. That is the
+ * "the liquid halves mid-morph, then the last shape snaps back" report.
+ *
+ * Radius is the safe lever, and only in this direction. Two droplets neck while
+ * their gap is under 0.83 x radius, so GROWING them merges the cloud — the
+ * hazard the rest of this file warns about is SHRINKING, which pulls droplets
+ * out of contact and sheds beads. The swell rides bridgePresence, so it is at
+ * full strength exactly when the cloud is carrying the frame alone, and is
+ * identically 0 at both ends where the form has taken back over and the cloud
+ * must hand off at its canonical size.
+ *
+ * THE DEFICIT IS PER-FORM, AND THIS CONSTANT IS A COMPROMISE. Measured with
+ * scripts/capture-melt-profile.mjs (mid-melt area as % of the endpoint forms,
+ * where 100% = one body of constant mass):
+ *
+ *   swell   melt 1->2                 melt 4->5
+ *   0.00    62%  (fill 18 vs 32)      90%  (fill 21 vs 24)
+ *   0.15    84%  (fill 25 vs 31)     115%  (fill 29 vs 24)
+ *   0.30   101%  (fill 32 vs 32)     144%  (fill 37 vs 24)
+ *
+ * Melt 1->2 was the broken one; melt 4->5 was already close, because form 5's
+ * own decomposition packs tighter. A single global value therefore cannot zero
+ * both — 0.30 fixes 1->2 and visibly swells 4->5; 0.15 minimises the mean error
+ * across the pair (24% -> 15.5%) and leaves no melt with a hole. The complete
+ * fix is a per-form calibration table; capture-melt-profile.mjs is the tool
+ * that would build it, one PAIR= run per melt.
+ */
+export const BRIDGE_SWELL = 0.15;
 
 /** Standard cubic-bezier easing evaluator (Newton + bisection fallback). */
 function cubicBezier(p1x: number, p1y: number, p2x: number, p2y: number) {
