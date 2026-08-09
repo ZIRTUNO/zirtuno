@@ -1092,7 +1092,8 @@ protected by `verify-cinematics.mjs` and the full-page transition diagnostics.
 | `?fphys=0`                | legacy integrator bypass                                    |
 | `?fphysv3=0`              | roll back area/viscosity/footprint physics (default ON)     |
 | `?fobstacles=0`           | roll back cached type/form avoidance (default ON)           |
-| `?fglass=1`               | restore the glass MATERIAL (default OFF — flat branch)      |
+| `?fglass=0`               | drop the glass MATERIAL to the flat branch (default ON)     |
+| `?fstrain=1`              | restore deformation-responsive optics (default OFF)         |
 | `?fshape=0`               | roll back velocity-aligned deformation + optics (default ON)|
 | `?fgrade=0`               | exact optics/grade bypass                                   |
 | `?fgov=0`                 | disable the idle energy governor for QA                     |

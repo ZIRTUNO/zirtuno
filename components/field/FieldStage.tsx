@@ -130,19 +130,21 @@ export default function FieldStage({
     if (!container) return;
     let disposed = false;
 
-    // THE GLASS MATERIAL IS OFF BY DEFAULT (owner's call: the shading read as
-    // glitchy). The liquid renders through the shader's flat branch — a solid
-    // brand-cyan silhouette, no dome, specular, fresnel or absorption — which
-    // is the same path the `lite` rung has always used. `?fglass=1` restores
-    // the full material; nothing was deleted, so that switch is the whole
-    // difference between the two looks.
-    //
-    // Knock-on effects, all deliberate: the R5-C grade (iExpo/iKey/iAbsorb/
-    // iDepthFx) becomes inert because the flat branch returns before it, and
-    // the strain optics go with it. Deformation still shapes the FIELD, so the
-    // liquid keeps stretching under its own motion — that is geometry, not
-    // shading, and it survives.
-    const glassRequested = /[?&]fglass=1(?:&|$)/.test(window.location.search);
+    // THE GLASS MATERIAL IS ON — its core lighting is what gives the liquid
+    // depth, and the flat branch's constant fill reads as a sticker. What is
+    // OFF is the STRAIN layer below: the two were removed together when the
+    // shading looked wrong, and putting the lighting back while leaving the
+    // newest layer out is the actual fix. `?fglass=0` is the rollback to flat.
+    const glassRequested = !/[?&]fglass=0(?:&|$)/.test(window.location.search);
+    // DEFORMATION-RESPONSIVE OPTICS, OFF BY DEFAULT. Anisotropic specular, a
+    // brightened leading edge, thinned absorption and advected striations —
+    // added this session and shipped default-on without ever being judged on
+    // moving liquid. Striations crawling across a surface that is already
+    // stretching is precisely what reads as glitchy, and this is the newest,
+    // least-proven thing in the material. The locked lighting underneath it
+    // (dome, wrapped diffuse, specular, sheen, fresnel) is untouched and is
+    // where the depth actually comes from. `?fstrain=1` puts it back.
+    const strainRequested = /[?&]fstrain=1(?:&|$)/.test(window.location.search);
     // Velocity-aware deformation is the DEFAULT material behaviour: liquid that
     // cannot stretch under its own motion reads as sliding discs. It stays off
     // for lite/reduced paths, which cannot afford the uniforms or must not
@@ -350,6 +352,8 @@ export default function FieldStage({
       gov: 0,
       glassRequested: glassRequested ? 1 : 0,
       glass: 0, // 1 only while the material is actually being shaded
+      strainRequested: strainRequested ? 1 : 0,
+      strain: 0, // 1 only while the deformation optics are actually driven
       shapeRequested: shapeRequested ? 1 : 0,
       shapeShader: shapeShaderActive ? 1 : 0,
       shape: 0,
@@ -385,9 +389,8 @@ export default function FieldStage({
       if (!ta) return f; // the driver's form isn't built yet — fallback stays
       const tb = textures[f.b] ?? ta;
       const formBWeight = textures[f.b] ? f.fb : 0;
-      // The glass MATERIAL is off by default (see glassRequested). The rung set
-      // still gates it, so `?fglass=1` restores the full ladder behaviour
-      // rather than forcing glass onto a machine that cannot hold it.
+      // `?fglass=0` drops to the flat branch; otherwise the rung set decides,
+      // exactly as before.
       const glass = glassRequested && GLASS_RUNGS.has(liveTier);
       const postChain = post;
       const usePost = postChain !== null && liveTier === "full";
@@ -441,13 +444,18 @@ export default function FieldStage({
       const shape = shapeTierActive ? 1 : 0;
       if (shapeShaderActive) {
         gl.uniform4fv(layer.U("iBallVelocity"), ballVelocity);
-        // The optics ride the same gate as the geometry: liquid that is not
-        // allowed to deform must not be lit as though it were. ?fgrade=0 keeps
-        // its meaning as the exact-optics bypass.
-        gl.uniform1f(layer.U("iStrain"), gradeOn && shape ? SDF_STRAIN : 0);
+        // The optics ride the same gate as the geometry — liquid that is not
+        // allowed to deform must not be lit as though it were — and on top of
+        // that they are OFF unless asked for (see strainRequested). ?fgrade=0
+        // keeps its meaning as the exact-optics bypass.
+        gl.uniform1f(
+          layer.U("iStrain"),
+          gradeOn && shape && strainRequested ? SDF_STRAIN : 0,
+        );
       }
       gl.uniform1f(layer.U("iBallShape"), shape);
       diag.shape = shape;
+      diag.strain = gradeOn && shape && strainRequested ? 1 : 0;
       diag.shapeSpeed = speed;
       diag.shapeReduced = motionReduced ? 1 : 0;
       // R5-C grade: score-driven light + stage absorption/depth. All exact

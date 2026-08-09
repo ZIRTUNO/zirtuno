@@ -675,7 +675,8 @@ Retired architecture is not an alternate path. Do not create:
 | `?fphys=0`                | legacy integrator bypass                                       |
 | `?fphysv3=0`              | roll back area/viscosity/footprint physics (default ON)        |
 | `?fobstacles=0`           | roll back cached typography/form flow (default ON)             |
-| `?fglass=1`               | restore the glass MATERIAL (default OFF — flat branch)         |
+| `?fglass=0`               | drop the glass MATERIAL to the flat branch (default ON)        |
+| `?fstrain=1`              | restore deformation-responsive optics (default OFF)            |
 | `?fshape=0`               | roll back velocity-aligned deformation + optics (default ON)   |
 | `?fgrade=0`               | exact optics bypass (no post, grade uniforms at 0 identity)    |
 | `?fgov=0`                 | idle-cadence governor bypass                                   |

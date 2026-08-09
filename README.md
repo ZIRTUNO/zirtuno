@@ -257,10 +257,13 @@ images; a green process exit does not replace visual judgment.
 - `?fphys=0` — bypass fluid physics through the legacy low-pass.
 - `?fphysv3=0` — roll back the area-weighted/viscous physics (default ON).
 - `?fobstacles=0` — roll back cached typography/form avoidance (default ON).
-- `?fglass=1` — restore the liquid-glass MATERIAL (default OFF). The shading is
-  off site-wide by owner decision: the liquid renders through the shader's flat
-  branch, a solid brand-cyan silhouette. Nothing was deleted — this flag is the
-  whole difference between the two looks, and the optics gates ask for it.
+- `?fglass=0` — drop the liquid-glass MATERIAL to the flat brand-cyan branch
+  (default ON). The core lighting — dome, wrapped diffuse, specular, sheen,
+  fresnel — is what gives the liquid its depth; flat reads as a sticker.
+- `?fstrain=1` — restore the deformation-responsive OPTICS (default OFF):
+  anisotropic specular, brightened leading edge, thinned absorption and
+  advected striations. Off because striations crawling over liquid that is
+  already stretching read as glitchy. `verify-deformation` asks for it.
 - `?fshape=0` — roll back velocity-aligned deformation and its glass optics (default ON).
 - `?fgrade=0` — bypass the optics chain and grade (exact pre-optics output).
 - `?fgov=0` — disable the idle-cadence governor.

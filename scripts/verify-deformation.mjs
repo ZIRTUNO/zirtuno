@@ -7,6 +7,9 @@
 //      geometry + optics uniforms (iBallShape / iStrain) are driven non-zero
 //      while liquid moves. A silent fallback to the plain field would leave the
 //      page looking correct-ish and quietly ship sliding discs.
+//      NOTE: the strain OPTICS are opt-in on the live site (they read as
+//      glitchy on moving liquid), so every URL here carries ?fstrain=1. The
+//      deformation GEOMETRY is still the shipped default and needs no flag.
 //   2. THE LIQUID IS ALIVE AT REST — with no scroll and no pointer, droplets
 //      still travel. The legacy integrator (?fphys=0) is the control: it has no
 //      curl current, so it should be markedly stiller. "Alive between the
@@ -263,7 +266,7 @@ async function run(query, { scroll }) {
 }
 
 console.log("== default (shipped material), scrolling ==");
-const scrolled = await run("ftier=full&fglass=1", { scroll: true });
+const scrolled = await run("ftier=full&fstrain=1", { scroll: true });
 console.log("  optics:", JSON.stringify(scrolled.optics));
 console.log(
   `  iBallShape max=${scrolled.tap.shapeMax} (${scrolled.tap.shapeSamples} uploads) · iStrain max=${scrolled.tap.strainMax} (${scrolled.tap.strainSamples})`,
@@ -274,13 +277,13 @@ console.log(
 );
 
 console.log("\n== default (shipped material), idle ==");
-const idle = await run("ftier=full&fglass=1", { scroll: false });
+const idle = await run("ftier=full&fstrain=1", { scroll: false });
 console.log(
   `  travel: ${idle.stats.perSecond.toFixed(4)} uv/s · ${idle.stats.frames} frames`,
 );
 
 console.log("\n== control: legacy integrator (?fphys=0), idle ==");
-const legacy = await run("ftier=full&fglass=1&fphys=0", { scroll: false });
+const legacy = await run("ftier=full&fstrain=1&fphys=0", { scroll: false });
 console.log(
   `  travel: ${legacy.stats.perSecond.toFixed(4)} uv/s · ${legacy.stats.frames} frames`,
 );
