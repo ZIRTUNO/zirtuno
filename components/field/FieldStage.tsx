@@ -199,6 +199,11 @@ export default function FieldStage({
     // contexts without a renderable offscreen format
     let post = gradeOn && tier === "full" ? makePostChain(gl) : null;
 
+    // makePostChain initializes its own shaders and leaves the composite
+    // program bound. Restore the liquid program before assigning its static
+    // uniforms; otherwise WebGL rejects these locations and both SDF samplers
+    // remain on texture unit 0, making form A reappear during form B's landing.
+    gl.useProgram(layer.prog);
     gl.uniform1f(layer.U("iThick"), SDF_THICK);
     gl.uniform2f(layer.U("iTexel"), 1 / SDF_RES, 1 / SDF_RES);
     gl.uniform1i(layer.U("iSDF"), 0);

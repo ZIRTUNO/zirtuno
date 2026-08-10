@@ -185,6 +185,39 @@ const ctx = await browser.newContext({
   deviceScaleFactor: 1,
   reducedMotion: "no-preference",
 });
+
+// A post-chain program used to remain active while FieldStage assigned the
+// liquid program's static uniforms. WebGL rejected those cross-program
+// locations, leaving both iSDF samplers on texture unit 0. Record the program
+// ownership of the two sampler writes so the source-form flash cannot return.
+await ctx.addInitScript(() => {
+  const tracked = new WeakMap();
+  const writes = [];
+  window.__liquidSamplerWrites = writes;
+  const getUniformLocation = WebGL2RenderingContext.prototype.getUniformLocation;
+  const uniform1i = WebGL2RenderingContext.prototype.uniform1i;
+
+  WebGL2RenderingContext.prototype.getUniformLocation = function (program, name) {
+    const location = getUniformLocation.call(this, program, name);
+    if (location && (name === "iSDF" || name === "iSDF2")) {
+      tracked.set(location, { program, name });
+    }
+    return location;
+  };
+
+  WebGL2RenderingContext.prototype.uniform1i = function (location, value) {
+    const uniform = location ? tracked.get(location) : null;
+    if (uniform) {
+      writes.push({
+        name: uniform.name,
+        value,
+        correctProgram:
+          this.getParameter(this.CURRENT_PROGRAM) === uniform.program,
+      });
+    }
+    return uniform1i.call(this, location, value);
+  };
+});
 const page = await ctx.newPage();
 
 if (baselineMode) {
@@ -239,7 +272,26 @@ await settle(page, "/en?feco=0.55&ftier=full&fcine=0");
 const on = await sampleShots(page, "grade-on");
 {
   const optics = await page.evaluate(() => window.__optics ?? null);
+  const samplerWrites = await page.evaluate(
+    () => window.__liquidSamplerWrites ?? [],
+  );
   check(!!optics, "__optics diagnostic present", JSON.stringify(optics));
+  check(
+    samplerWrites.some(
+      (write) =>
+        write.name === "iSDF" &&
+        write.value === 0 &&
+        write.correctProgram,
+    ) &&
+      samplerWrites.some(
+        (write) =>
+          write.name === "iSDF2" &&
+          write.value === 1 &&
+          write.correctProgram,
+      ),
+    "liquid SDF samplers bind distinct texture units on the liquid program",
+    JSON.stringify(samplerWrites),
+  );
   if (optics?.post === 1) {
     check(true, `post chain ON (${optics.fmt})`);
     check(
