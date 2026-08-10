@@ -58,5 +58,8 @@ next-env.d.ts
 artifacts/
 s4-diag/
 
+# offline melt simulator's SDF cache (rebuilt on demand from public/brand/forms)
+/.melt-sim-cache/
+
 # verification build output (NEXT_DIST_DIR)
 /.next-*/

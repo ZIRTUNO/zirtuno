@@ -47,7 +47,8 @@ import {
   permFor,
   packBridge,
   bridgePresence,
-  BRIDGE_SWELL,
+  bridgeSwell,
+  FORM_SOLIDITY,
   formPresence,
   formPhase,
   type SiteCallbacks,
@@ -553,6 +554,8 @@ export function makeSiteScene(cbs: SiteCallbacks = {}): SceneModule {
           stag,
           meltP,
           scratchD,
+          FORM_SOLIDITY[hState],
+          FORM_SOLIDITY[hTarget],
         );
         heroBridge = true;
       }
@@ -760,11 +763,15 @@ export function makeSiteScene(cbs: SiteCallbacks = {}): SceneModule {
         // under 0.83 x radius. Shrinking radius on the way in and out is what
         // used to shed the loose beads at both ends of every melt.
         // The cloud THICKENS by exactly as much as it is standing in for the
-        // form (see BRIDGE_SWELL): full swell where it carries the frame alone,
-        // none at either end where it hands back at its canonical size.
+        // form (see FORM_SOLIDITY): this droplet crosses from form A's
+        // shortfall to form B's on its own radius ramp, and the correction
+        // rides presence — full where the cloud carries the frame alone, and
+        // identically 0 at both ends where it hands back at canonical size.
         const pres = bridgePresence(mState);
         const bridgeR =
-          (aa[2] + (bb2[2] - aa[2]) * trr) * jScale * (1 + BRIDGE_SWELL * pres);
+          (aa[2] + (bb2[2] - aa[2]) * trr) *
+          jScale *
+          (1 + bridgeSwell(FORM_SOLIDITY[pa], FORM_SOLIDITY[pb], trr, pres));
         const handoff = smooth01(clamp01(mState / 0.14));
         jr = jr * (1 - handoff) + bridgeR * handoff;
         // PRESENCE IS THE FORM'S COMPLEMENT — the cloud is exactly as present

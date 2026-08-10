@@ -35,6 +35,7 @@ import {
   STAG,
   clamp01,
   packBridge,
+  FORM_SOLIDITY,
   formPhase,
   permFor,
 } from "@/lib/webgl/field-drivers";
@@ -104,7 +105,8 @@ export default function FieldMorphHero({
       count = 1;
     }
     if (melt)
-      count = packBridge(buf, count, CLOUDS[a], CLOUDS[b], permFor(a, b), STAG[a], m, dens);
+      count = packBridge(buf, count, CLOUDS[a], CLOUDS[b], permFor(a, b), STAG[a], m, dens,
+        FORM_SOLIDITY[a], FORM_SOLIDITY[b]);
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
 
     const draw = () => {
