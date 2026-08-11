@@ -135,6 +135,7 @@ export default function SdfGlassField({
     // droplet / warp uniforms default to 0) → the exact static rest render.
     gl.uniform1f(U("iFormA"), 1);
     gl.uniform1f(U("iGlass"), 1);
+    gl.uniform1f(U("iGloss"), 0); // clean brand-cyan material — see FieldStage
 
     let sdfReady = false;
     let announced = false;

@@ -167,8 +167,16 @@ const browser = await chromium.launch(LAUNCH);
     const p1 = PNG.sync.read(shot1);
     const p2 = PNG.sync.read(shot2);
     let delta = 0;
-    for (let i = 0; i < p1.data.length; i += 16)
+    // Brand cyan carries almost no red (#00E3FE). The old red-only probe made
+    // clean cyan motion numerically invisible and happened to pass only while
+    // the glass stack injected white highlights. Measure the rendered colour,
+    // not one channel, so this remains a liquid-motion gate rather than an
+    // accidental gloss-presence gate.
+    for (let i = 0; i < p1.data.length; i += 16) {
       delta += Math.abs(p1.data[i] - p2.data[i]);
+      delta += Math.abs(p1.data[i + 1] - p2.data[i + 1]);
+      delta += Math.abs(p1.data[i + 2] - p2.data[i + 2]);
+    }
     check(delta > 500, `liquid alive over ${label}`, `delta=${delta}`);
     fs.writeFileSync(
       path.join(OUT_DIR, `alive-${label.replace(/\s+/g, "-")}.png`),

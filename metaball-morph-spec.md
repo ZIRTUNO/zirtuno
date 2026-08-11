@@ -504,15 +504,22 @@ logic. Reduced-motion and static paths submit without requiring animation.
 `FieldStage` owns the WebGL2 context, SDF textures, uniform updates, field
 draw, resize, context-loss recovery, tier resolution, and watchdog.
 
-The current internal glass:
+The default material is clean brand cyan:
 
-- rounded dome from distance;
-- wrapped diffuse with a fixed upper-left key;
-- tight wet specular;
-- broad sheen;
-- Fresnel rim;
-- cyan-deep to cyan-glow internal range;
+- `#00E3FE` is the colour anchor rather than one endpoint of a deep-to-glow
+  range;
+- one broad page-space key wash lets separated masses share the same light;
+- the recovered May 30 soft-dome technique samples the unified field several
+  texels apart before deriving its shallow normal, keeping the shadow smooth
+  across field noise and droplet boundaries;
+- no wet specular, broad sheen, Fresnel rim, or centre-weighted absorption;
+- depth remains a lightweight motion cue, not a map of individual droplets;
 - no external glow halo in the base pass.
+
+`iGloss=1` / `?fgloss=1` restores the complete signed-off wet glass material
+(rounded dome, wrapped diffuse, specular, sheen, Fresnel rim, cyan-deep to
+cyan-glow range, and original absorption/depth strength) for owner comparison.
+At `iGloss=0`, none of that shape-revealing stack leaks into the clean material.
 
 Lite renders flat brand cyan. Problem may use controlled desaturation through
 `iMute` to communicate fragmentation.

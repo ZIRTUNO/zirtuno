@@ -136,6 +136,17 @@ export default function FieldStage({
     // shading looked wrong, and putting the lighting back while leaving the
     // newest layer out is the actual fix. `?fglass=0` is the rollback to flat.
     const glassRequested = !/[?&]fglass=0(?:&|$)/.test(window.location.search);
+    // …and the GLOSS material is OFF. Owner's call: the wet read — white-hot
+    // specular, broad sheen, glassy fresnel rim, and deep-to-glow domes — pulls
+    // the field away from the primary cyan and reveals each component blob.
+    //
+    // This is deliberately NOT `?fglass=0`. That branch paints one constant
+    // colour, which is how the material was removed the first time and why it
+    // came straight back: it deletes every depth cue. The clean material keeps
+    // a broad shared light wash and a whisper of surface response, so the field
+    // still has volume without outlining edges or dense centres. `?fgloss=1`
+    // restores the complete signed-off glass material for review.
+    const glossRequested = /[?&]fgloss=1(?:&|$)/.test(window.location.search);
     // DEFORMATION-RESPONSIVE OPTICS, OFF BY DEFAULT. Anisotropic specular, a
     // brightened leading edge, thinned absorption and advected striations —
     // added this session and shipped default-on without ever being judged on
@@ -357,6 +368,8 @@ export default function FieldStage({
       gov: 0,
       glassRequested: glassRequested ? 1 : 0,
       glass: 0, // 1 only while the material is actually being shaded
+      glossRequested: glossRequested ? 1 : 0,
+      gloss: 0, // 1 only while the wet highlights are actually drawn
       strainRequested: strainRequested ? 1 : 0,
       strain: 0, // 1 only while the deformation optics are actually driven
       shapeRequested: shapeRequested ? 1 : 0,
@@ -428,7 +441,9 @@ export default function FieldStage({
       gl.uniform1f(layer.U("iWarp"), f.warp);
       gl.uniform1f(layer.U("iMute"), f.mute);
       gl.uniform1f(layer.U("iGlass"), glass ? 1 : 0);
+      gl.uniform1f(layer.U("iGloss"), glass && glossRequested ? 1 : 0);
       diag.glass = glass ? 1 : 0;
+      diag.gloss = glass && glossRequested ? 1 : 0;
       gl.uniform3fv(layer.U("iBalls"), ballBuf);
       gl.uniform1i(layer.U("iBallCount"), f.count);
       // Deformation is its OWN rung, not a passenger of the glass. Measured at

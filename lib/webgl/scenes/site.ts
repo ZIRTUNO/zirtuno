@@ -33,6 +33,10 @@ import {
   gatherTiming,
   gatherDepth,
   gatherRadius,
+  gatherOffsetX,
+  gatherLeftEdge,
+  FIELD_MIN_W,
+  recede as gatherRecede,
   arrivalPulse,
   familyOffset,
   fuse as gatherFuse,
@@ -41,13 +45,9 @@ import {
 } from "../gathering.mjs";
 import type { ScatterTarget } from "../phys.mjs";
 import {
-  STAGGER,
-  RADIUS_LEAD,
-  arrive,
   permFor,
+  meltDroplet,
   packBridge,
-  bridgePresence,
-  bridgeSwell,
   FORM_SOLIDITY,
   formPresence,
   formPhase,
@@ -110,6 +110,9 @@ export function makeSiteScene(cbs: SiteCallbacks = {}): SceneModule {
   let svcOx = 0;
   let svcOy = 0;
   let svcScale = ORGANISM_SCALE;
+  let ecoOx = 0; // uv x of THE GATHERING's field centre (type owns the column)
+  let stageW = 0; // viewport width — decides whether the column exists at all
+  let cachedWide = -1;
 
   // ── hero machine (autocycle / melt / queue) ─────────────────────────────────
   const texReady = new Array(STATE_COUNT).fill(false) as boolean[];
@@ -123,6 +126,10 @@ export function makeSiteScene(cbs: SiteCallbacks = {}): SceneModule {
   let stag: number[] = [];
   const scratch = new Float32Array(N * 3); // hero bridge cloud (form-local)
   const scratchD = new Float32Array(N).fill(1); // …and its presence channel
+  // One Services droplet, written in place by the shared melt kernel. Keeping
+  // this fixed scratch is both allocation-free and what makes the browser run
+  // the exact geometry measured by scripts/melt-mass.mjs.
+  const serviceDrop = new Float32Array(4);
   const startMelt = (s: number) => {
     perm = permFor(hState, s);
     stag = STAG[hState];
@@ -249,6 +256,7 @@ export function makeSiteScene(cbs: SiteCallbacks = {}): SceneModule {
 
     read(g: SceneGeom, out: SceneChannels) {
       const vh = g.vh;
+      stageW = g.vw; // read runs before tick; the field split needs real px
       const cy = vh * 0.5;
       const hr = g.rect("hero");
       if (hr) out.heroPhase = clamp01(-hr.top / (hr.height * 0.72));
@@ -328,8 +336,13 @@ export function makeSiteScene(cbs: SiteCallbacks = {}): SceneModule {
 
     tick(ctx: SceneCtx) {
       const aspect = ctx.aspect;
-      if (Math.abs(aspect - cachedAspect) > 0.02) {
+      // The field split is a WIDTH decision (the column is a CSS breakpoint),
+      // so the cache key carries it too — an aspect that happens not to move
+      // across a resize must not leave the liquid composed for the other one.
+      const colWide = stageW >= FIELD_MIN_W ? 1 : 0;
+      if (Math.abs(aspect - cachedAspect) > 0.02 || colWide !== cachedWide) {
         cachedAspect = aspect;
+        cachedWide = colWide;
         // S3's liquid lives right of the copy column on wide stages
         const sCx = 0.5 + Math.min(0.14 * aspect, Math.max(aspect / 2 - 0.34, 0));
         // SERVICES: the form is the subject, so it holds the CENTRE of the
@@ -350,7 +363,22 @@ export function makeSiteScene(cbs: SiteCallbacks = {}): SceneModule {
         svcScale = wide ? 0.62 : 0.38;
         Tclu = clusterTargets(aspect, sCx);
         Tdis = wideScatter(aspect, sCx, 0.5, 0.85);
-        Teco = wideScatter(aspect, 0.5, 0.5, 1);
+        // THE GATHERING's dispersed field is scattered inside the FIELD, not
+        // across the whole stage. A full-bleed scatter put loose liquid behind
+        // the chapter's own type for the entire runway, which is the other half
+        // of why the names read as dropped on top of something — they were.
+        // The tighter spread also makes the constellation a composition rather
+        // than confetti: the eye can see three groups in it.
+        ecoOx = gatherOffsetX(aspect, stageW);
+        Teco = wideScatter(aspect, 0.5 + ecoOx, 0.5, 0.74);
+        // …and hold every target inside the field. wideScatter's own clamp is
+        // measured from the stage centre, which keeps liquid in FRAME but says
+        // nothing about the column, so the scatter's left tail reached under
+        // the type. Soft, not hard: the outermost targets compress toward the
+        // edge rather than stacking on it, which would read as a wall.
+        const edge = gatherLeftEdge(aspect, stageW);
+        for (const t of Teco)
+          if (t.tx < edge) t.tx = edge - (edge - t.tx) * 0.18;
       }
       const dt = ctx.dt;
       const ch = ctx.ch;
@@ -390,7 +418,22 @@ export function makeSiteScene(cbs: SiteCallbacks = {}): SceneModule {
       // what removes the seam, so the mass survives most of the fall.
       EXW = 1 - smooth01(clamp01((EXD - 0.72) / 0.28));
       jScale = ORGANISM_SCALE + (svcScale - ORGANISM_SCALE) * SP;
-      jOx = svcOx * SP;
+      // The body fuses inside THE GATHERING's field and then travels to the
+      // Services column. Both are right of centre, so the handoff is a short
+      // move rather than the old jump from dead centre — and at SP = 1 this is
+      // still exactly svcOx, so every Services rest and melt is unchanged.
+      //
+      // Ramped on the GATHER clock, not on travel. Travel completes inside
+      // roughly one viewport as the runway's top crosses the fold, so hanging
+      // the field offset on it moved the mark's whole footprint across the
+      // stage in that short window — the boundary gate reads that as a
+      // teleport at the seam, and it is right to: it is a lateral slide with
+      // no cause on screen. The runway is three and a half viewports long, so
+      // the same move spread over its first third is under the per-frame
+      // threshold at every scroll speed, and it lands long before the fuse
+      // makes the mark's position matter.
+      const ecoIn = smooth01(clamp01(gather / 0.34));
+      jOx = ecoOx * ecoIn * (1 - SP) + svcOx * SP;
       // One write carries the whole departure: the form's own offset, the
       // droplets' home footprint and the §3.3 bridge all read jOy, so the body
       // and its liquid leave together instead of separating on the way out.
@@ -655,8 +698,17 @@ export function makeSiteScene(cbs: SiteCallbacks = {}): SceneModule {
       // field IS the gathering's starting state; travel only eases it into the
       // runway's frame, and each capability makes the rest of the journey
       // itself, on its own schedule, as part of arriving.
-      tx += (eco.tx - tx) * TR * 0.42;
-      ty += (eco.ty - ty) * TR * 0.42;
+      // …and then the GATHER clock finishes it. 0.42 alone was right when the
+      // eco scatter was centred on the stage: the destination was barely a move,
+      // so a partial one was enough. Now the field is a real place — it is the
+      // half of the stage the type does not own — and stopping at 42% of the way
+      // there left loose liquid drifting across the column for the whole
+      // chapter, which is the same "type with blobs on it" the composition
+      // exists to end. The connective liquid is being drawn in too; letting the
+      // clock carry it home is both the fix and the more honest physics.
+      const ecoPull = Math.max(TR * 0.42, smooth01((gather - 0.04) / 0.5));
+      tx += (eco.tx - tx) * ecoPull;
+      ty += (eco.ty - ty) * ecoPull;
 
       // the mark's own footprint — where everything ends up once fused
       const mx = 0.5 + jOx + (bb[0] - 0.5) * jScale;
@@ -679,7 +731,7 @@ export function makeSiteScene(cbs: SiteCallbacks = {}): SceneModule {
         e = gatherEnv(gather, { d: tm.d + fam.lead * 0.03, w: tm.w });
         depth = gatherDepth(node, gather);
         const pulse = arrivalPulse(node, gather);
-        const anchor = gatherAnchor(node, aspect);
+        const anchor = gatherAnchor(node, aspect, stageW);
         const ax = anchor.x + fam.x;
         const ay = anchor.y + fam.y;
         // arrive at the lobe, then be drawn into the body by the fuse
@@ -702,7 +754,19 @@ export function makeSiteScene(cbs: SiteCallbacks = {}): SceneModule {
       // The blend IS the travel — there is no separate "converge" transform.
       let jx = tx + (gx - tx) * e;
       let jy = ty + (gy - ty) * e;
-      let jr = bb[2] * jScale * VARY[i] * (1 - e) + gr * e;
+      // THE RECEDE. The un-gathered half of this blend used to hold the mark's
+      // own footprint radius, which is a constant: a droplet that had not been
+      // called yet was the same size and the same brightness at the start of
+      // the runway as it was two viewports later. That is why the middle of the
+      // chapter had no motion in it to follow — the only thing the clock
+      // actually changed was position, and a scatter shuffling inside its own
+      // bounds does not read as change. Falling back into the dark first gives
+      // the arrival something to arrive FROM.
+      const rec = gatherRecede(TR);
+      let jr = bb[2] * jScale * VARY[i] * rec * (1 - e) + gr * e;
+      // …and the same for light: depth is the chapter's argument, so unarrived
+      // liquid has to actually be far, not merely elsewhere.
+      depth = Math.min(1, depth + (1 - rec) * (1 - e));
       // THE HANDOFF. The droplets are how the mark arrives, not what it is:
       // as the fuse closes, they drain and the form's exact silhouette takes
       // over. Without this the thirty gathered masses simply pile onto the
@@ -738,7 +802,22 @@ export function makeSiteScene(cbs: SiteCallbacks = {}): SceneModule {
       }
       // Free while crossing, exact once fused under the mark. The middle is
       // deliberately loose: that is where the merging is visible.
-      bindJ = Math.max(e * 0.35, fused);
+      //
+      // THE CLAIM is the third term. At bind ≈ 0 a droplet barely tracks its
+      // authored target at all — it is advected by curl, repulsion and
+      // cohesion — so "the scatter lives in the field" was true of the targets
+      // and not of the liquid: droplets drifted out of the field and settled
+      // on the column, which the obstacle could only partly push back.
+      //
+      // This is not a bind bypass dressed up as composition. The chapter's
+      // claim is that this liquid is being CLAIMED — drawn out of a dispersed
+      // state into one body — so the degree to which the authored composition
+      // governs it should rise with the gather clock by construction. It is
+      // still a minority term: the field goes on merging, drifting and
+      // answering the cursor, it simply stops wandering out of frame. Zero at
+      // the fracture (The Problem is untouched) and superseded by `fused`.
+      const claimed = 0.3 * smooth01(gather) * (1 - SP);
+      bindJ = Math.max(e * 0.35, fused, claimed);
       if (fused > 0.7) clusJ = -1;
       // the fracture's unstable chunks still cohere before the gathering starts
       if (TR < 0.6 && F < 0.85 && e < 0.1)
@@ -749,47 +828,56 @@ export function makeSiteScene(cbs: SiteCallbacks = {}): SceneModule {
           B = CLOUDS[pb];
         const pm = permFor(pa, pb),
           st = STAG[pa];
-        const lm = clamp01(mState * (1 + STAGGER) - STAGGER * st[i]);
-        const tp = arrive(lm);
-        const trr = arrive(clamp01(lm * RADIUS_LEAD));
-        const aa = A[i],
-          bb2 = B[pm[i]];
-        jx = 0.5 + jOx + (aa[0] + (bb2[0] - aa[0]) * tp - 0.5) * jScale;
-        jy = 0.5 + jOy + (aa[1] + (bb2[1] - aa[1]) * tp - 0.5) * jScale;
+        meltDroplet(
+          serviceDrop,
+          i,
+          A,
+          B,
+          pm,
+          st,
+          mState,
+          FORM_SOLIDITY[pa],
+          FORM_SOLIDITY[pb],
+        );
+        jx = 0.5 + jOx + (serviceDrop[0] - 0.5) * jScale;
+        jy = 0.5 + jOy + (serviceDrop[1] - 0.5) * jScale;
         // RADIUS IS NEVER SCALED HERE. The whole handoff is carried by presence
         // (which is the form's exact complement), so the cloud keeps the size
         // that makes it the same body as the form — and keeps its droplets in
         // contact with each other, since they only neck while their gap is
         // under 0.83 x radius. Shrinking radius on the way in and out is what
         // used to shed the loose beads at both ends of every melt.
-        // The cloud THICKENS by exactly as much as it is standing in for the
-        // form (see FORM_SOLIDITY): this droplet crosses from form A's
-        // shortfall to form B's on its own radius ramp, and the correction
-        // rides presence — full where the cloud carries the frame alone, and
-        // identically 0 at both ends where it hands back at canonical size.
-        const pres = bridgePresence(mState);
-        const bridgeR =
-          (aa[2] + (bb2[2] - aa[2]) * trr) *
-          jScale *
-          (1 + bridgeSwell(FORM_SOLIDITY[pa], FORM_SOLIDITY[pb], trr, pres));
+        // The shared kernel also owns the measured per-form solidity and the
+        // density schedule, so live Services and the off-GPU gate cannot drift.
+        const bridgeR = serviceDrop[2] * jScale;
         const handoff = smooth01(clamp01(mState / 0.14));
         jr = jr * (1 - handoff) + bridgeR * handoff;
         // PRESENCE IS THE FORM'S COMPLEMENT — the cloud is exactly as present
         // as the form is absent, so the total on screen never changes. It opens
         // at 0 where the gathered droplets arrive absorbed at 0, so the seam
         // needs no blend of its own.
-        densJ = pres;
+        densJ = serviceDrop[3];
         bindJ = 1; // the §3.3 bridge is analytic-exact — physics hands off
         clusJ = -1;
         depth = 0; // the services body is the near plane, always
       } else if (node >= 0) {
-        // A hovered capability swells and pulls its own family forward — the
-        // system answering a touch, on the same channel the circuit used.
+        // THE RACK FOCUS. Touching a capability does not just swell its own
+        // mass — it changes which plane the field is focused on. The touched
+        // family comes to the front and everything else falls back, the way a
+        // lens answers, so the response reads as the composition attending to
+        // one thing rather than as a bead getting bigger.
         const hov = ctx.ch.hov ?? -1;
-        if (hov === node && e > 0.05 && fused < 0.85) {
-          const w = (1 - fused) * e;
-          jr *= 1 + 0.5 * w;
-          depth *= 1 - 0.55 * w;
+        if (hov >= 0 && e > 0.05 && fused < 0.98) {
+          const w = (1 - 0.35 * fused) * e;
+          if (hov === node) {
+            jr *= 1 + 0.5 * w;
+            depth *= 1 - 0.75 * w;
+          } else {
+            // the rest of the body steps back — never out of sight, just off
+            // the plane the reader is being pointed at
+            jr *= 1 - 0.14 * w;
+            depth = Math.min(1, depth + 0.42 * w);
+          }
         }
       }
 

@@ -81,6 +81,8 @@ export default function FieldMorphHero({
     gl.uniform1i(layer.U("iSDF"), 0);
     gl.uniform1i(layer.U("iSDF2"), 1);
     gl.uniform1f(layer.U("iGlass"), 1);
+    // clean brand-cyan material, like the page; set explicitly for exact QA
+    gl.uniform1f(layer.U("iGloss"), 0);
 
     let disposed = false;
     let texA: WebGLTexture | null = null;

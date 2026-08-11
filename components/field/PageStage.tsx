@@ -16,13 +16,13 @@ import {
   GATHER_N,
   GATHER_SYSTEMS,
   SYS_OF_NODE,
-  gatherAnchor,
   gatherTiming,
   systemTiming,
   arrivalPulse,
   fuse as gatherFuse,
 } from "@/lib/webgl/gathering.mjs";
 import { makeConductor } from "@/lib/webgl/conductor.mjs";
+
 import {
   FLUID_OBSTACLE_MAX,
   FLUID_OBSTACLE_STRIDE,
@@ -50,6 +50,9 @@ import { HeroLiquidContext, type HeroLiquid } from "./hero-liquid-context";
 const FieldStage = dynamic(() => import("@/components/field/FieldStage"), {
   ssr: false,
 });
+
+/** The three systems are beats, not items — numerals read as order, not count. */
+const ROMAN = ["I", "II", "III"];
 
 export type EcoNode = { name: string; tooltip: string };
 
@@ -166,10 +169,31 @@ export function PageStage({
   const [ecoKeyboardEnabled, setEcoKeyboardEnabled] = useState(false);
   const [openEcoNode, setOpenEcoNode] = useState<number | null>(null);
   const [hovSlot, setHovSlot] = useState(-1);
+  // The most recently ARRIVED capability. The readout is never blank once the
+  // gathering has started: with nothing touched it reports what just landed,
+  // which turns the column's footer into a live log of the convergence rather
+  // than an empty slot waiting for a hover that may never come.
+  const [landedSlot, setLandedSlot] = useState(-1);
   const [ecoHost, setEcoHost] = useState<HTMLElement | null>(null);
   const nodeEls = useRef<(HTMLLIElement | null)[]>([]);
   const centerEl = useRef<HTMLSpanElement>(null);
   const systemEls = useRef<(HTMLLIElement | null)[]>([]);
+  const fusedRef = useRef(0);
+  const landedRef = useRef(-1);
+  // THE COLUMN AS AN OBSTACLE. The type-aware flow already exists for exactly
+  // this — a small set of reading surfaces free liquid is asked to respect —
+  // but its geometry cache is document-relative, and the column lives in a
+  // STICKY layer, so its document position moves every frame while its
+  // on-screen position does not. Measured against the host instead: that
+  // offset is constant, and while the chapter is pinned the host IS the
+  // viewport, so one measurement holds for the whole runway.
+  const ecoObstacle = useRef<{
+    l: number;
+    t: number;
+    w: number;
+    h: number;
+  } | null>(null);
+  const ecoObstacleOn = useRef(false);
   const hudMeterEl = useRef<HTMLSpanElement | null>(null);
   const pillarEls = useRef<(HTMLLIElement | null)[]>([]);
   const stageEl = useRef<HTMLElement | null>(null);
@@ -244,10 +268,15 @@ export function PageStage({
       __liquid?: SceneChannels;
       __scenes?: Record<string, SceneChannels>;
       __cine?: { score: typeof conductor.score; stats: typeof conductor.stats };
+      // the live physics input — the obstacle set is the only part of the
+      // composition that is invisible in a screenshot, so it needs a way to be
+      // asserted rather than eyeballed
+      __flow?: typeof conductor.input;
     };
     w.__liquid = site;
     w.__scenes = conductor.raw;
     w.__cine = { score: conductor.score, stats: conductor.stats };
+    w.__flow = conductor.input;
   }, [site, conductor]);
 
   const setManual = useCallback(
@@ -291,120 +320,92 @@ export function PageStage({
     return () => window.removeEventListener(EXHALE_EVENT, onExhale);
   }, [conductor]);
 
-  // THE CIRCULATION's geometry: sockets, vein paths and labels all evaluate
-  // gathering.mjs's shared functions in the sticky layer's pixel space — the
-  // liquid beads (site scene), the SVG veins and the type can never drift.
-  // Origin founding pillars keep their fixed anchors beside the mark's lobes.
+  // THE GATHERING's type no longer has a geometry problem to solve.
+  //
+  // Everything below used to place the chapter's type in JS: three blocks
+  // positioned at their lobes' pixel heights, de-overlapped against each other
+  // by a 1-D relaxation pass, clamped off the chapter-index rail, and joined to
+  // their masses by ten leader lines redrawn every frame. That is a great deal
+  // of machinery whose entire purpose was to stop composed type from colliding
+  // with a moving body — and it still read as loose, because type that is
+  // placed by a solver has no relationship to the page's own grid.
+  //
+  // The column is CSS. It sits in the page gutter, it does not move, and the
+  // liquid has its own field beside it (gathering.mjs owns that split), so
+  // there is nothing to dodge and nothing to draw a line across. All that is
+  // left for JS is handing each row the timing of the mass it names — which is
+  // the one thing that genuinely has to come from the liquid's own clock.
+  // Origin's founding pillars keep their fixed anchors beside the mark's lobes.
   useEffect(() => {
     const layer = layerRef.current;
     if (!layer) return;
-    const px = (p: { x: number; y: number }, aspect: number, w: number, h: number) => ({
-      x: ((p.x - 0.5) / aspect + 0.5) * w,
-      y: (1 - p.y) * h,
-    });
     const layout = () => {
       const r = layer.getBoundingClientRect();
       if (r.width < 2 || r.height < 2) return;
       const w = r.width;
       const h = r.height;
       const aspect = w / h;
-      const topbarBottom =
-        document.querySelector<HTMLElement>(".topbar")?.getBoundingClientRect()
-          .bottom ?? 0;
-      // No veins. The circuit drew lines between organs because a diagram has
-      // to; the gathering's whole claim is that nothing needs to be drawn
-      // between them — they stop being separate. Type sits ON the liquid.
-      //
-      // the right chapter-index rail owns this column — labels stay clear.
-      // Measured, not guessed: the rail rests at its numbers-only width, so the
-      // circuit's labels get back the column the old always-open label held.
-      const railEl = document.querySelector<HTMLElement>(".side-index");
-      const railBox = railEl?.getBoundingClientRect();
-      const RAIL =
-        railBox && railBox.width > 0
-          ? Math.ceil(w - (railBox.left - r.left)) + 16
-          : 0;
-      // Each capability's label rides its own mass. The label is anchored to
-      // the SAME gatherAnchor the liquid uses, so type and liquid arrive
-      // together — the name is what the mass is, not a caption beside it.
-      const minY = Math.max(0, topbarBottom - r.top) + 22;
-      // The label sits just BELOW its mass, never on it: type over a bright
-      // cyan body is unreadable, and the mass is the thing being named — it
-      // should not be hidden by its own name. A small alternating x-nudge
-      // keeps neighbours inside a tight lobe from stacking on each other.
-      const LABEL_DROP = 30;
-      // Placed boxes, kept so the system markers can steer clear of the names
-      // they belong to instead of trusting a tuned offset to hold at every
-      // viewport. Centre-anchored (the labels translate -50%, -50%).
-      const placed: { x: number; y: number; w: number; h: number }[] = [];
-      nodeEls.current.forEach((el, s) => {
+      // THE CLOCK, handed to the type. Each block and each row carries the
+      // envelope of the SYSTEM or MASS it names, so a name ignites at the
+      // instant its liquid lands rather than on a timer of its own. This is the
+      // whole of the type's relationship to the liquid now — no placement, no
+      // leaders, no collision pass. Position is the column's job and the column
+      // is CSS.
+      GATHER_SYSTEMS.forEach((_sys, si) => {
+        const el = systemEls.current[si];
         if (!el) return;
-        const p = px(gatherAnchor(s, aspect), aspect, w, h);
-        const w0 = el.offsetWidth || 120;
-        const h0 = el.offsetHeight || 20;
-        const nudge = (SYS_OF_NODE[s]?.wi ?? 0) % 2 === 0 ? -0.28 : 0.28;
-        const x = Math.min(
-          Math.max(p.x + nudge * w0, w0 / 2 + 12),
-          w - RAIL - w0 / 2,
-        );
-        const y = Math.min(Math.max(p.y + LABEL_DROP, minY), h - 30);
-        el.style.left = `${x.toFixed(1)}px`;
-        el.style.top = `${y.toFixed(1)}px`;
-        placed[s] = { x, y, w: w0, h: h0 };
-        const t = gatherTiming(s);
-        el.style.setProperty("--d", String(t.d));
-        el.style.setProperty("--w", String(t.w));
-      });
-      // The three system markers sit at their lobe's centre of mass — the
-      // average of the capabilities that belong to them, so a marker can never
-      // drift away from the group it names.
-      systemEls.current.forEach((el, si) => {
-        if (!el) return;
-        const group = GATHER_SYSTEMS[si].nodes;
-        let sx = 0;
-        let sy = 0;
-        for (const n of group) {
-          const a = gatherAnchor(n, aspect);
-          sx += a.x / group.length;
-          sy += a.y / group.length;
-        }
-        // Pushed OUTWARD from the stage centre until it clears its OWN
-        // capability names. Parked at the centre of mass it landed exactly
-        // where those names are; a fixed push then cleared some lobes and not
-        // others, because the lobes have different shapes and the names have
-        // different lengths. Stepping out until the boxes separate is the only
-        // version that holds at every viewport and in both locales.
-        const p = px({ x: sx, y: sy }, aspect, w, h);
-        const ox = p.x - w / 2;
-        const oy = p.y - h / 2;
-        const len = Math.hypot(ox, oy) || 1;
-        const w0 = el.offsetWidth || 140;
-        const h0 = el.offsetHeight || 20;
-        const hits = (cx: number, cy: number) =>
-          group.some((n) => {
-            const b = placed[n];
-            if (!b) return false;
-            const GAP = 10;
-            return (
-              Math.abs(cx - b.x) < (w0 + b.w) / 2 + GAP &&
-              Math.abs(cy - b.y) < (h0 + b.h) / 2 + GAP
-            );
-          });
-        let lx = p.x + (ox / len) * 56;
-        let ly = p.y + (oy / len) * 56 * 0.62;
-        for (let step = 0; step < 8 && hits(lx, ly); step++) {
-          lx += (ox / len) * 22;
-          ly += (oy / len) * 22 * 0.62;
-        }
-        el.style.left = `${Math.min(Math.max(lx, w0 / 2 + 12), w - RAIL - w0 / 2).toFixed(1)}px`;
-        el.style.top = `${Math.min(Math.max(ly, minY), h - 30).toFixed(1)}px`;
         const t = systemTiming(si);
         el.style.setProperty("--d", String(t.d));
         el.style.setProperty("--w", String(t.w));
       });
+      nodeEls.current.forEach((el, s) => {
+        if (!el) return;
+        const t = gatherTiming(s);
+        el.style.setProperty("--d", String(t.d));
+        el.style.setProperty("--w", String(t.w));
+      });
+      // the column's footprint inside the sticky host — one measurement, held
+      // for the runway. The height is the FULL extension, not the current one:
+      // an obstacle that grew with the column would push liquid around as the
+      // chapter advanced, which is a force with no cause on screen.
+      const host = ecoHost;
+      const col = host?.querySelector<HTMLElement>(".gather-col");
+      if (host && col && getComputedStyle(col).display !== "none") {
+        const hb = host.getBoundingClientRect();
+        const cb = col.getBoundingClientRect();
+        // A standoff on the right edge, so liquid is turned before it reaches
+        // the words rather than after it has already landed on one.
+        //
+        // And the box runs OFF-STAGE to the left. The core ejects a droplet
+        // through its nearest edge, so a box that merely wrapped the column
+        // pushed anything left of the column's own centreline further left —
+        // a 130px traverse straight across the words to escape, against a
+        // target pulling it back the other way. Droplets settled mid-word
+        // exactly there. With the left edge past the viewport there is no
+        // "nearest left edge" to leave by: everything is ejected right, back
+        // into the field, which is also where the composition wants it.
+        const STANDOFF = 44;
+        const OFFSTAGE = Math.max(hb.width * 0.6, 560);
+        ecoObstacle.current = {
+          l: cb.left - hb.left - OFFSTAGE,
+          t: cb.top - hb.top,
+          w: cb.width + STANDOFF + OFFSTAGE,
+          h: Math.max(cb.height, h * 0.72),
+        };
+      } else {
+        ecoObstacle.current = null;
+      }
       // the founding-pillar labels ride the mark's lobes, clamped into the
       // stage exactly like the circuit's labels — the un-clamped percentages
-      // walked clean off a portrait viewport, so the beat lost them entirely
+      // walked clean off a portrait viewport, so the beat lost them entirely.
+      // The right chapter-index rail owns its column: measured, not guessed.
+      const railBox = document
+        .querySelector<HTMLElement>(".side-index")
+        ?.getBoundingClientRect();
+      const RAIL =
+        railBox && railBox.width > 0
+          ? Math.ceil(w - (railBox.left - r.left)) + 16
+          : 0;
       pillarEls.current.forEach((el, i) => {
         if (!el) return;
         const a = PILLAR_ANCHORS[i % PILLAR_ANCHORS.length];
@@ -433,7 +434,13 @@ export function PageStage({
   // first and the rest of the body after. There is no graph to walk any more —
   // membership is the relationship the chapter is arguing for, so distance is
   // "same lobe / other lobe", and the delay makes that structure audible.
+  //
+  // TOUCH, not readout: this is the slot the reader is pointing at, and it must
+  // stay -1 when they are pointing at nothing, because it drives the liquid's
+  // rack focus. The column's readout falls back to the last ARRIVED capability
+  // separately, so an idle stage still reads as instrumented.
   const activeSlot = hovSlot >= 0 ? hovSlot : (openEcoNode ?? -1);
+  const readoutSlot = activeSlot >= 0 ? activeSlot : landedSlot;
   useEffect(() => {
     site.hov = activeSlot;
     const root = ecoLayerEl.current;
@@ -479,10 +486,15 @@ export function PageStage({
       lastS = svcPos;
       lastEcoDesktop = desktop;
       const fade = 1 - smooth01(svcPos);
-      // The gathering becomes keyboard-operable once the body is whole.
-      // Before/after that beat it leaves the tab order; the semantic stack
-      // remains available on mobile and every static path.
-      const interactive = enabled && desktop && grow >= 0.8 && fade >= 0.55;
+      // The column answers as soon as it has rows to answer with. This used to
+      // wait for grow >= 0.8 — the body being whole — which meant the first two
+      // systems were on screen and inert for most of the runway, and the rack
+      // focus (the chapter's one real interaction) was only reachable in its
+      // last beat. A row is touchable once its own mass has landed; the CSS
+      // envelope is what stops an unarrived row from being under the cursor.
+      const interactive = enabled && desktop && grow >= 0.2 && fade >= 0.55;
+      // the column only displaces liquid while it is actually on screen
+      ecoObstacleOn.current = desktop && grow > 0.01 && grow < 0.999 && fade > 0.05;
       if (interactive !== lastEcoInteractive) {
         lastEcoInteractive = interactive;
         ecoInteractiveRef.current = interactive;
@@ -504,23 +516,34 @@ export function PageStage({
         root.style.setProperty("--eco-fade", fade.toFixed(3));
         root.style.setProperty("--eco-fuse", gatherFuse(grow).toFixed(3));
       }
-      if (centerEl.current)
-        centerEl.current.style.opacity = String(gatherFuse(grow) * fade);
+      fusedRef.current = gatherFuse(grow);
       // Per-label arrival: the pulse peaks exactly as its mass lands, so the
       // name ignites on the arrival rather than on a timer of its own.
       nodeEls.current.forEach((el, s) => {
         if (!el) return;
         el.style.setProperty("--pulse", arrivalPulse(s, grow).toFixed(3));
       });
-      if (hudMeterEl.current) {
-        let lit = 0;
-        for (let s = 0; s < GATHER_N; s++) {
-          const t = gatherTiming(s);
-          if (grow >= t.d + t.w * 0.6) lit++;
+      // The meter and the readout share one pass over the clock: how many have
+      // landed, and which one landed LAST. The second is what keeps the column
+      // footer alive while nobody is touching anything.
+      let lit = 0;
+      let last = -1;
+      for (let s = 0; s < GATHER_N; s++) {
+        const t = gatherTiming(s);
+        if (grow >= t.d + t.w * 0.6) {
+          lit++;
+          if (last < 0 || gatherTiming(last).d < t.d) last = s;
         }
+      }
+      if (hudMeterEl.current) {
         const meter = `${String(lit).padStart(2, "0")} / ${GATHER_N}`;
         if (hudMeterEl.current.textContent !== meter)
           hudMeterEl.current.textContent = meter;
+      }
+      // guarded: this changes ten times across the whole runway, not per frame
+      if (last !== landedRef.current) {
+        landedRef.current = last;
+        setLandedSlot(last);
       }
     };
     let lastP = -1;
@@ -706,6 +729,29 @@ export function PageStage({
         out[dst + 2] = (width * 0.5 + padding) / md;
         out[dst + 3] = (height * 0.5 + padding) / md;
         out[dst + 4] = obstacleDoc[src + 4];
+        count++;
+      }
+      // THE COLUMN. Viewport-fixed while the chapter is pinned, so it is
+      // appended directly rather than translated out of document space. This
+      // is what finally keeps beads off the type: the field edge decides where
+      // liquid is PULLED, and free physics was still carrying a few droplets
+      // across the gap. Now the type displaces them, which is also the better
+      // effect — the words push the liquid aside instead of being under it.
+      const eco = ecoObstacle.current;
+      if (eco && ecoObstacleOn.current && count < FLUID_OBSTACLE_MAX) {
+        const dst = count * FLUID_OBSTACLE_STRIDE;
+        out[dst] = 0.5 + (eco.l + eco.w * 0.5 - vw * 0.5) / md;
+        out[dst + 1] = 0.5 - (eco.t + eco.h * 0.5 - vh * 0.5) / md;
+        out[dst + 2] = (eco.w * 0.5 + padding) / md;
+        out[dst + 3] = (eco.h * 0.5 + padding) / md;
+        // Weight is a multiplier on the avoidance acceleration, and this
+        // surface needs more of it than a headline does. The others are single
+        // lines that free liquid crosses in under a second; this is a
+        // full-height column that liquid would otherwise SETTLE on, and at
+        // weight 1 the push lost to curl and repulsion often enough to leave a
+        // bead sitting on a word. Raising it here rather than raising
+        // FLUID.OBSTACLE_A keeps every other chapter's flow untouched.
+        out[dst + 4] = 2.6;
         count++;
       }
       conductor.input.obstacleCount = count;
@@ -1003,91 +1049,142 @@ export function PageStage({
                   setOpenEcoNode(null);
               }}
             >
-              {/* The three systems, named at their lobe's centre of mass.
-                  These are the reader's three beats — ten names at once is a
-                  list, three groups arriving in order is a structure. */}
-              <ul className="gather-systems" aria-hidden="true">
+              {/* ── THE COLUMN ─────────────────────────────────────────────
+                  ONE type zone, in the page's own gutter, for a chapter that
+                  used to have five: three blocks solved onto the stage at
+                  their lobes' heights, a centre label above the mark, a
+                  bottom-right readout, ten leader lines and a corner-tick
+                  frame. Each of those was individually defensible and the sum
+                  was scattered — five things arranged against the liquid is
+                  not a composition, it is an overlay.
+
+                  The column does not move, does not resize, and does not
+                  dodge: the liquid has its own field beside it. Everything in
+                  here is measured against the SPINE, which is also the
+                  chapter's progress — so the one element that has to say "how
+                  far along is this" is structural instead of a number parked
+                  in a corner. */}
+              <div className="gather-col">
+                <div className="gather-col-spine" aria-hidden="true">
+                  <i />
+                </div>
+                <p className="gather-col-head">
+                  <span className="eco-hud-meter" ref={hudMeterEl} />
+                </p>
+                {/* THREE BLOCKS that ACCUMULATE. Each system is one composed
+                    unit — numeral, name, rule, and its capabilities as an
+                    aligned stack — and it stays once it has arrived, so the
+                    column is visibly longer at every beat. That growth is what
+                    the runway is for: the old layout had all three blocks
+                    present from the first screen with their rows dimmed, so
+                    two viewports of scroll changed nothing you could see. */}
+                <ul className="gather-plate" aria-label={ecosystemLabel}>
                 {GATHER_SYSTEMS.map((sys, si) => (
                   <li
                     key={sys.id}
-                    className="gather-system"
+                    className="gather-block"
+                    data-sys={sys.id}
                     ref={(el) => {
                       systemEls.current[si] = el;
                     }}
                   >
-                    <span className="gather-system-rule" />
-                    <span className="gather-system-name">
-                      {systems[si] ?? sys.id}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-              <span className="organism-center" ref={centerEl}>
-                {centerLabel}
-              </span>
-              <ul className="organism-nodes" aria-label={ecosystemLabel}>
-                {Array.from({ length: GATHER_N }, (_, slot) => {
-                  const n = nodes[slot];
-                  if (!n) return null;
-                  const descriptionId = `ecosystem-node-${slot}-description`;
-                  const open = openEcoNode === slot;
-                  return (
-                    <li
-                      key={n.name}
-                      className="organism-node"
-                      data-open={open ? "true" : "false"}
-                      ref={(el) => {
-                        nodeEls.current[slot] = el;
-                      }}
-                    >
-                      <button
-                        type="button"
-                        className="organism-node-trigger"
-                        tabIndex={ecoKeyboardEnabled ? 0 : -1}
-                        aria-expanded={open}
-                        aria-controls={descriptionId}
-                        aria-describedby={descriptionId}
-                        onClick={() => setOpenEcoNode(open ? null : slot)}
-                        onPointerEnter={() => setHovSlot(slot)}
-                        onPointerLeave={() => setHovSlot(-1)}
-                        onFocus={() => setHovSlot(slot)}
-                        onBlur={() => setHovSlot(-1)}
-                      >
-                        <span className="organism-node-index">
-                          {String(slot + 1).padStart(2, "0")}
-                        </span>
-                        <span className="organism-node-name">{n.name}</span>
-                      </button>
-                      {/* read by AT via aria-describedby; sighted users read
-                          the same line in the HUD readout */}
-                      <span id={descriptionId} className="organism-node-cap">
-                        {n.tooltip}
+                    {/* the meta line — numeral, rule, count. Small and quiet;
+                        it is the measure the name below hangs from. Setting the
+                        system and its capabilities at the SAME mono size, which
+                        is what the head did before, left nothing leading the
+                        reading. */}
+                    <p className="gather-block-head">
+                      <span className="gather-block-numeral">
+                        {ROMAN[si] ?? si + 1}
                       </span>
+                      <span className="gather-block-rule" />
+                      <span className="gather-block-count">
+                        {String(sys.nodes.length).padStart(2, "0")}
+                      </span>
+                    </p>
+                    {/* masked so the name RISES as its system lands */}
+                    <p className="gather-block-title">
+                      <span className="gather-block-name">
+                        {systems[si] ?? sys.id}
+                      </span>
+                    </p>
+                    <ul className="gather-rows">
+                      {sys.nodes.map((slot) => {
+                        const n = nodes[slot];
+                        if (!n) return null;
+                        const descriptionId = `ecosystem-node-${slot}-description`;
+                        const open = openEcoNode === slot;
+                        return (
+                          <li
+                            key={n.name}
+                            className="gather-row"
+                            data-open={open ? "true" : "false"}
+                            ref={(el) => {
+                              nodeEls.current[slot] = el;
+                            }}
+                          >
+                            <button
+                              type="button"
+                              className="gather-row-trigger"
+                              tabIndex={ecoKeyboardEnabled ? 0 : -1}
+                              aria-expanded={open}
+                              aria-controls={descriptionId}
+                              aria-describedby={descriptionId}
+                              onClick={() => setOpenEcoNode(open ? null : slot)}
+                              onPointerEnter={() => setHovSlot(slot)}
+                              onPointerLeave={() => setHovSlot(-1)}
+                              onFocus={() => setHovSlot(slot)}
+                              onBlur={() => setHovSlot(-1)}
+                            >
+                              <span className="gather-row-index">
+                                {String(slot + 1).padStart(2, "0")}
+                              </span>
+                              <span className="gather-row-name">{n.name}</span>
+                            </button>
+                            {/* read by AT via aria-describedby; sighted users
+                                read the same line in the HUD readout */}
+                            <span id={descriptionId} className="gather-row-cap">
+                              {n.tooltip}
+                            </span>
+                          </li>
+                        );
+                      })}
+                      </ul>
                     </li>
-                  );
-                })}
-              </ul>
-              {/* the readout — mission-control line for the touched organ */}
-              <div className="eco-hud" aria-hidden="true">
-                <span className="eco-hud-meter" ref={hudMeterEl} />
-                {activeSlot >= 0 && nodes[activeSlot] ? (
-                  <>
-                    <span className="eco-hud-line">
-                      <b>{String(activeSlot + 1).padStart(2, "0")}</b>
-                      {" · "}
-                      {nodes[activeSlot].name}
-                      <i>
-                        {" — "}
-                        {systems[SYS_OF_NODE[activeSlot]?.si ?? 0]}
-                      </i>
-                    </span>
-                    <span className="eco-hud-cap">
-                      {nodes[activeSlot].tooltip}
-                    </span>
-                  </>
-                ) : (
-                  <span className="eco-hud-line">{centerLabel}</span>
-                )}
+                  ))}
+                </ul>
+                {/* THE RESOLUTION. The centre label used to float above the
+                    mark, which put the chapter's payoff in the one place it
+                    could collide with the lowest lobe. It belongs at the foot
+                    of the column, where the accumulation it concludes can
+                    actually be read above it: ten capabilities, three systems,
+                    and then the thing they add up to. */}
+                <p className="gather-col-sum" aria-hidden="true">
+                  <span className="organism-center" ref={centerEl}>
+                    {centerLabel}
+                  </span>
+                </p>
+                {/* the readout — one live line, in the column, not parked in a
+                    corner of the stage. With nothing touched it reports the
+                    capability that just landed, so it is never an empty slot. */}
+                <div className="eco-hud" aria-hidden="true">
+                  {readoutSlot >= 0 && nodes[readoutSlot] ? (
+                    <>
+                      <span className="eco-hud-line">
+                        <b>{String(readoutSlot + 1).padStart(2, "0")}</b>
+                        {" · "}
+                        {nodes[readoutSlot].name}
+                        <i>
+                          {" — "}
+                          {systems[SYS_OF_NODE[readoutSlot]?.si ?? 0]}
+                        </i>
+                      </span>
+                      <span className="eco-hud-cap">
+                        {nodes[readoutSlot].tooltip}
+                      </span>
+                    </>
+                  ) : null}
+                </div>
               </div>
             </div>,
             ecoHost,

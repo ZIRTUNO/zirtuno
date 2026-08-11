@@ -373,11 +373,18 @@ Additional stop-the-line gates:
   (landmarks, one h1, labels, skip link, keyboard menu, focus visibility,
   effective-background contrast, pt/en key parity, reduced-motion story).
 - Ecosystem gathering change (`gathering.mjs`, the S3 scene block, the
-  capability names, system markers, or HUD): `node scripts/verify-ecosystem.mjs`
-  — ten names
-  drawn, 10 sockets + 10 labels clear of the chapter-index rail, hover AND
-  keyboard raise the same graph-staggered pulse plus dock swell (`hov`
-  channel), HUD follows, and reduced motion keeps the eco-stack story.
+  capability names, system markers, or the column): `node
+  scripts/verify-ecosystem.mjs` — ten names and three system markers drawn,
+  clear of the chapter-index rail and of each other, **all type on ONE vertical
+  axis**, the column fits the stage at full extension and visibly accumulates
+  between beats, no leaders or plate frame remain, hover AND keyboard raise the
+  same system-staggered pulse plus the liquid's rack focus (`hov` channel), the
+  readout follows, and reduced motion keeps the eco-stack story.
+  S3 is a two-part composition: the liquid owns a FIELD and the type owns a
+  COLUMN in the page gutter. `FIELD_MIN_W` in `gathering.mjs` and the
+  `min-width: 1024px` guard on `.gather-col` are the SAME breakpoint — if one
+  moves, move the other, or the liquid composes itself for a column that is not
+  there (or centres itself under one that is).
 - Emulation is the regression floor, not the sign-off: iOS URL-bar collapse,
   real GPU probes, and thermal behavior still require the owner's hardware.
 

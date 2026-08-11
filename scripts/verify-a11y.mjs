@@ -75,7 +75,7 @@ const browser = await chromium.launch(LAUNCH);
   await page.waitForFunction(
     () =>
       document.querySelector(".liquid-journey")?.dataset.liquid === "live" &&
-      document.querySelector(".organism-node-trigger")?.tabIndex === 0,
+      document.querySelector(".gather-row-trigger")?.tabIndex === 0,
     { timeout: 40000 },
   );
   await page.locator("#problem a.cta").focus();
@@ -83,13 +83,13 @@ const browser = await chromium.launch(LAUNCH);
   await page.waitForTimeout(1000);
   const first = await page.evaluate(() => ({
     trigger: document.activeElement?.classList.contains(
-      "organism-node-trigger",
+      "gather-row-trigger",
     ),
     label: document.activeElement?.textContent?.trim(),
     visible:
       document.activeElement instanceof HTMLElement &&
       Number(
-        getComputedStyle(document.activeElement.closest(".organism-node"))
+        getComputedStyle(document.activeElement.closest(".gather-row"))
           .opacity,
       ) > 0.9,
   }));
@@ -102,7 +102,7 @@ const browser = await chromium.launch(LAUNCH);
   await page.waitForTimeout(600);
   const second = await page.evaluate(() => ({
     trigger: document.activeElement?.classList.contains(
-      "organism-node-trigger",
+      "gather-row-trigger",
     ),
     label: document.activeElement?.textContent?.trim(),
   }));

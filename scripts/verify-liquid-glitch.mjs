@@ -156,6 +156,7 @@ const result = await page.evaluate(
       gl.uniform1f(U("iEroA"), 0);
       gl.uniform1f(U("iEroB"), 0);
       gl.uniform1f(U("iGlass"), glass ? 1 : 0);
+      gl.uniform1f(U("iGloss"), 0);
       gl.uniform3fv(U("iBalls"), balls);
       // solid — the identity every consumer must upload (unset reads 0, which
       // multiplies the ball field away entirely)

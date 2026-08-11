@@ -27,7 +27,7 @@ await page.evaluate(() =>
 await page.waitForTimeout(2600);
 await page.screenshot({ path: path.join(OUT, "eco-pulse-idle.png") });
 
-await page.hover(".organism-node:nth-child(5) .organism-node-trigger");
+await page.locator(".gather-row-trigger").nth(4).hover();
 await page.waitForTimeout(1400); // pulse fully propagated + dock swollen
 await page.screenshot({ path: path.join(OUT, "eco-pulse-hover.png") });
 

@@ -43,64 +43,103 @@ page.on("console", (m) => {
   if (m.type() === "error") errors.push(m.text());
 });
 
-/** Visible label boxes in the gathering layer, with their text. */
+/**
+ * Visible label boxes in the gathering layer, plus the collisions between them.
+ *
+ * Collisions are computed IN THE PAGE, because the only way to tell a real
+ * clash from a container is DOM ancestry: a `.gather-block` encloses its own
+ * `.gather-row` children by construction, and comparing raw rectangles counted
+ * every one of those as an overlap. That is what this check was reporting —
+ * ten "collisions", each one a row sitting inside its own system block.
+ */
 const readLabels = () =>
   page.evaluate(() => {
     const vis = (el) => {
       const cs = getComputedStyle(el);
       return cs.display !== "none" && parseFloat(cs.opacity) > 0.35;
     };
-    const box = (el) => {
-      const r = el.getBoundingClientRect();
-      return {
-        text: (el.textContent || "").trim().replace(/\s+/g, " "),
-        left: r.left,
-        right: r.right,
-        top: r.top,
-        bottom: r.bottom,
-      };
-    };
-    const nodes = [...document.querySelectorAll(".organism-node")].filter(vis);
-    const systems = [...document.querySelectorAll(".gather-system")].filter(vis);
-    // the centre label is type in the same layer and collided with the lowest
-    // lobe once — it belongs in the collision set, not outside it
-    const centre = [...document.querySelectorAll(".organism-center")].filter(vis);
+    const label = (el) => ({
+      el,
+      text: (el.textContent || "").trim().replace(/\s+/g, " ").slice(0, 40),
+      r: el.getBoundingClientRect(),
+    });
+    const box = (l) => ({
+      text: l.text,
+      left: l.r.left,
+      right: l.r.right,
+      top: l.r.top,
+      bottom: l.r.bottom,
+    });
+    const nodes = [...document.querySelectorAll(".gather-row")]
+      .filter(vis)
+      .map(label);
+    const systems = [...document.querySelectorAll(".gather-block")]
+      .filter(vis)
+      .map(label);
+    // the resolution line is type in the same column and belongs in the
+    // collision set, not outside it
+    const centre = [...document.querySelectorAll(".organism-center")]
+      .filter(vis)
+      .map(label);
+    const all = [...nodes, ...systems, ...centre];
+    const PAD = -3; // kerning slivers are not collisions
+    const clash = [];
+    for (let i = 0; i < all.length; i++)
+      for (let j = i + 1; j < all.length; j++) {
+        const a = all[i];
+        const b = all[j];
+        // containment is layout, not collision
+        if (a.el.contains(b.el) || b.el.contains(a.el)) continue;
+        if (
+          a.r.right + PAD > b.r.left - PAD &&
+          a.r.left - PAD < b.r.right + PAD &&
+          a.r.bottom + PAD > b.r.top - PAD &&
+          a.r.top - PAD < b.r.bottom + PAD
+        )
+          clash.push(`${a.text} × ${b.text}`);
+      }
+    const col = document.querySelector(".gather-col")?.getBoundingClientRect();
+    // …measured against the STAGE, not the viewport. The deterministic hold
+    // freezes the clock without scrolling to the runway, so a viewport-relative
+    // bottom is wherever the page happens to be sitting. The sticky host is a
+    // full-viewport box and is what the column actually has to fit inside.
+    const host = document
+      .querySelector("#ecosystem-interactions-host")
+      ?.getBoundingClientRect();
     const rail = document.querySelector(".side-index")?.getBoundingClientRect();
     return {
       nodes: nodes.map(box),
       systems: systems.map(box),
       centre: centre.map(box),
-      rail: rail ? { left: rail.left, right: rail.right, top: rail.top, bottom: rail.bottom } : null,
+      clash,
+      // THE ONE AXIS. Every visible block and row is measured against the same
+      // left edge. This is the redesign's core claim in a number: type that
+      // sits on more than one axis is the "loose, scattered" reading the
+      // chapter used to have, and it cannot regress silently.
+      axes: new Set(
+        [...nodes, ...systems].map((l) => Math.round(l.r.left)),
+      ).size,
+      // …and the column has to FIT. It accumulates as systems arrive, so its
+      // full extension is the state that can overflow the stage.
+      colFits: col && host ? col.bottom - host.top <= host.height - 4 : false,
+      colBottom: col && host ? Math.round(col.bottom - host.top) : -1,
+      rail: rail
+        ? { left: rail.left, right: rail.right, top: rail.top, bottom: rail.bottom }
+        : null,
       meter: document.querySelector(".eco-hud-meter")?.textContent ?? "",
       hudLine: document.querySelector(".eco-hud-line")?.textContent ?? "",
+      // the chrome this redesign removed stays removed
+      chrome:
+        document.querySelectorAll(".gather-leader, .gather-frame").length,
       grow: document.querySelector(".journey-interactions")?.style.getPropertyValue("--eco-grow"),
     };
   });
-
-/** Pairs of boxes that genuinely overlap (a few px of touch is not a clash). */
-function overlaps(boxes) {
-  const PAD = -3; // shrink each box slightly: kerning slivers are not collisions
-  const hits = [];
-  for (let i = 0; i < boxes.length; i++)
-    for (let j = i + 1; j < boxes.length; j++) {
-      const a = boxes[i];
-      const b = boxes[j];
-      if (
-        a.right + PAD > b.left - PAD &&
-        a.left - PAD < b.right + PAD &&
-        a.bottom + PAD > b.top - PAD &&
-        a.top - PAD < b.bottom + PAD
-      )
-        hits.push(`${a.text} × ${b.text}`);
-    }
-  return hits;
-}
 
 const settle = async (feco) => {
   await page.goto(`${BASE}/en?ftier=full&feco=${feco}`, {
     waitUntil: "networkidle",
   });
-  await page.waitForSelector(".organism-node", { timeout: 30000 });
+  await page.waitForSelector(".gather-row", { timeout: 30000 });
   await page.waitForTimeout(2200);
 };
 
@@ -108,7 +147,6 @@ console.log("A · the gathered body");
 await settle(1);
 const a = await readLabels();
 const all = [...a.nodes, ...a.systems, ...a.centre];
-const clash = overlaps(all);
 const railHit = a.rail
   ? all.filter(
       (n) =>
@@ -122,10 +160,13 @@ check(a.nodes.length === 10, "ten capability names visible", `${a.nodes.length}`
 check(a.systems.length === 3, "three system markers visible", `${a.systems.length}`);
 check(railHit === 0, "type clear of the chapter-index rail", `overlaps=${railHit}`);
 check(
-  clash.length === 0,
+  a.clash.length === 0,
   "no label collides with another",
-  clash.length ? clash.join(" · ") : "clean",
+  a.clash.length ? a.clash.join(" · ") : "clean",
 );
+check(a.axes === 1, "all type sits on ONE vertical axis", `${a.axes} axes`);
+check(a.colFits, "the column fits the stage at full extension", `bottom=${a.colBottom}`);
+check(a.chrome === 0, "no leaders or plate frame remain", `${a.chrome} elements`);
 check(a.meter.includes("10"), "HUD meter reads complete", a.meter);
 check(a.hudLine.length > 0, "HUD idle line present", a.hudLine);
 
@@ -145,19 +186,41 @@ check(
   `${early.nodes.length} → ${mid.nodes.length}`,
 );
 check(
-  overlaps([...early.nodes, ...early.systems]).length === 0 &&
-    overlaps([...mid.nodes, ...mid.systems]).length === 0,
+  early.clash.length === 0 && mid.clash.length === 0,
   "type stays clear of itself mid-gather too",
+  [...early.clash, ...mid.clash].join(" · ") || "clean",
+);
+// the column GROWS: the accumulation is the reason the runway has a length,
+// and the old layout — three blocks at full height from the first screen with
+// their rows dimmed — is what made two viewports of scroll look identical.
+check(
+  mid.colBottom > early.colBottom + 40,
+  "the column visibly accumulates between beats",
+  `${early.colBottom} → ${mid.colBottom}`,
+);
+check(
+  early.axes === 1 && mid.axes === 1,
+  "one axis holds mid-gather too",
+  `${early.axes} / ${mid.axes}`,
 );
 
 console.log("C · the system response (pointer)");
 await settle(1);
 const before = await page.evaluate(() => window.__liquid?.hov ?? -99);
-await page.hover(".organism-node:nth-child(5) .organism-node-trigger");
+// The row at DOM index 4 is NOT capability 4: rows are grouped by system
+// (identity · growth · operation), so reading order and slot order differ by
+// construction. Ask the DOM which slot it is rather than assuming — the old
+// hardcoded 4 was asserting an ordering the chapter has never had.
+const TOUCH = 4;
+const touched = await page.evaluate((i) => {
+  const t = document.querySelectorAll(".gather-row-trigger")[i];
+  return Number(t.querySelector(".gather-row-index").textContent.trim()) - 1;
+}, TOUCH);
+await page.locator(".gather-row-trigger").nth(TOUCH).hover();
 await page.waitForTimeout(450);
 const c = await page.evaluate(() => {
   const root = document.querySelector(".journey-interactions");
-  const delays = [...document.querySelectorAll(".organism-node")].map((n) =>
+  const delays = [...document.querySelectorAll(".gather-row")].map((n) =>
     n.style.getPropertyValue("--pd"),
   );
   return {
@@ -170,13 +233,21 @@ const c = await page.evaluate(() => {
 });
 check(before === -1, "hov channel idle before touch", `hov=${before}`);
 check(c.pulse === "true", "data-pulse raised on the layer");
-check(c.hov === 4, "the hov channel carries the touched capability", `hov=${c.hov}`);
+check(
+  c.hov === touched,
+  "the hov channel carries the touched capability",
+  `hov=${c.hov} expected=${touched}`,
+);
 check(
   c.distinct >= 3,
   "the pulse reaches its own system before the rest of the body",
   `${c.distinct} distinct delays`,
 );
-check(c.hudLine.includes("05"), "HUD line shows the capability index", c.hudLine);
+check(
+  c.hudLine.includes(String(touched + 1).padStart(2, "0")),
+  "readout shows the capability index",
+  c.hudLine,
+);
 check(c.hudCap.length > 8, "HUD shows the capability line", c.hudCap.slice(0, 40));
 await page.mouse.move(20, 20);
 await page.waitForTimeout(350);
@@ -195,7 +266,7 @@ check(
 console.log("D · the system response (keyboard)");
 const k = await page.evaluate(() => {
   const trigger = document.querySelector(
-    ".organism-node:nth-child(1) .organism-node-trigger",
+    ".gather-row:nth-child(1) .gather-row-trigger",
   );
   trigger.focus();
   return { focused: document.activeElement === trigger };
@@ -225,7 +296,7 @@ const rmPage = await rmCtx.newPage();
 await rmPage.goto(`${BASE}/en`, { waitUntil: "networkidle" });
 await rmPage.waitForTimeout(1200);
 const d = await rmPage.evaluate(() => ({
-  live: !!document.querySelector(".organism-node"),
+  live: !!document.querySelector(".gather-row"),
   stack: [...document.querySelectorAll(".eco-stack-item")].length,
   stackVisible: (() => {
     const el = document.querySelector(".eco-stack");

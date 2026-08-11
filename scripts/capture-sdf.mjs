@@ -1,14 +1,16 @@
-// SDF-GLASS rest renderer sheet (metaball-morph-spec v1.2 §6.1): render each FORM
-// SVG as liquid glass by feeding its signed-distance field into the locked glass
-// math (lib/webgl/sdf-glass-shader). Silhouette + holes are EXACT (from the SVG);
-// the material matches the metaball glass (image-3 look).
+// SDF material rest sheet: render each FORM by feeding its signed-distance field
+// into the shipped clean-cyan material (or GLOSS=1 legacy review rollback) in
+// lib/webgl/sdf-glass-shader. Silhouette + holes remain EXACT from the SVG.
 //
 // Renders with the SAME constants (SDF_RES/DRAW/BLUR/THICK) and the SAME injected
 // EDT math (lib/webgl/sdf-core) as the live component (SdfGlassField), so this
-// sheet is exactly what ships. Renders every form SVG that exists — mark always;
+// sheet is exactly what ships by default. Renders every form SVG that exists —
+// mark always;
 // the 7 pillars from public/brand/forms/{key}.svg.
 // Writes captures/sdf-glass-sheet.png + per-form PNGs.
-//   node scripts/capture-sdf.mjs   (THICK=… RES=… DRAW=… BLUR=… to tune)
+//   node scripts/capture-sdf.mjs   (clean cyan, shipped default)
+//   GLOSS=1 node scripts/capture-sdf.mjs   (signed-off legacy-glass rollback)
+//   THICK=… RES=… DRAW=… BLUR=… remain the geometry tuning surface.
 
 import { chromium } from "playwright";
 import fs from "node:fs";
@@ -32,6 +34,7 @@ const RES = Number(process.env.RES) || SDF_RES;
 const DRAW = Number(process.env.DRAW) || SDF_DRAW;
 const BLUR = process.env.BLUR != null ? Number(process.env.BLUR) : SDF_BLUR;
 const THICK = Number(process.env.THICK) || SDF_THICK;
+const GLOSS = process.env.GLOSS === "1";
 fs.mkdirSync(OUT, { recursive: true });
 
 const KEYS = ["mark", "web", "software", "ai", "automation", "data", "branding", "marketing"];
@@ -107,7 +110,7 @@ window.__renderForm = async (svgText, RES, DRAW, thick, blur) => {
   // 4. render glass (v1.7 unified shader: weight form A fully, glass on; form B /
   //    warp / droplet uniforms default to 0 → the exact static rest render)
   gl.uniform1i(U('iSDF'),0); gl.uniform1f(U('iThick'),thick); gl.uniform1f(U('iFormA'),1);
-  gl.uniform1f(U('iGlass'),1);
+  gl.uniform1f(U('iGlass'),1); gl.uniform1f(U('iGloss'),${GLOSS ? 1 : 0});
   gl.uniform2f(U('iRes'),cv.width,cv.height); gl.uniform2f(U('iTexel'),1/RES,1/RES);
   gl.viewport(0,0,cv.width,cv.height);
   gl.clearColor(0,0,0,1); gl.clear(gl.COLOR_BUFFER_BIT);
@@ -151,4 +154,4 @@ await sheet.setContent(
 await sheet.waitForTimeout(250);
 await sheet.locator("body").screenshot({ path: path.join(OUT, "sdf-glass-sheet.png") });
 await browser.close();
-console.log(`→ captures/sdf-glass-sheet.png  (RES ${RES} · DRAW ${DRAW} · BLUR ${BLUR} · THICK ${THICK})`);
+console.log(`→ captures/sdf-glass-sheet.png  (${GLOSS ? "legacy glass" : "clean cyan"} · RES ${RES} · DRAW ${DRAW} · BLUR ${BLUR} · THICK ${THICK})`);

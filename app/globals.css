@@ -1362,213 +1362,83 @@ section[id],
 }
 
 /* ===========================================================================
-   THE CIRCULATION (S4 remake) — the ecosystem as a circulatory system. SVG
-   veins (three arteries + one closed loop), organ sockets where the liquid
-   docks, instrument-grade labels along each socket's outward normal, and a
-   mission-control readout. Everything derives its envelope from TWO vars the
-   measurement loop writes (--eco-grow, --eco-fade) plus per-element --d/--w
-   timings that layout() copies from eco-circuit — the same clock the liquid
-   beads march to. Touching an organ sets data-pulse on the layer and the
-   brightening travels the graph via per-element --pd delays (BFS hops).
+   S3 · THE GATHERING — THE COLUMN.
+
+   The chapter is a two-part composition and nothing else: the liquid owns a
+   FIELD (gathering.mjs draws the split), and the type owns a COLUMN in the
+   page's own gutter. That is the whole layout.
+
+   What this replaces: three system blocks solved onto the stage at their
+   lobes' pixel heights and de-overlapped by a relaxation pass, a centre label
+   floating above the mark, a readout parked bottom-right, ten leader lines
+   redrawn every frame, and a corner-tick frame drawn to give all of it
+   something to align to. Every one of those existed to make type survive
+   sitting on top of a moving body. None of them is needed once the type is
+   not sitting on top of it.
+
+   Everything here is measured against the SPINE — including the chapter's own
+   progress, which fills it. The column ACCUMULATES: a system takes up no room
+   until it has arrived, so the composition is visibly different at every beat
+   instead of standing at full height with its rows dimmed.
+
+   Two vars from the measurement loop drive it all: --eco-grow (the gather
+   clock) and --eco-fade (the departure into Services), plus --eco-fuse for the
+   resolution. Each block and row derives its own envelope from --eco-grow via
+   the inline --d/--w that layout() copies from gathering.mjs — the same clock
+   the liquid masses march to, so a name ignites as its mass lands.
    =========================================================================== */
-.organism-center {
+.gather-col {
+  --gc-row: max(32px, 2.9vh);
   position: absolute;
-  left: 50%;
-  /* ABOVE the mark. It appears only at the fuse — the business is not a node
-     in the diagram, it is what the ten became — and every position BELOW the
-     mark is contested by construction, because Operation is the bottom lobe
-     and owns that band. The air above the body is the only space no lobe
-     claims. */
-  top: 14%;
-  transform: translateX(-50%);
-  font-family: var(--font-mono);
-  font-size: var(--text-mono-sm);
-  font-weight: 500;
-  line-height: var(--text-mono-sm--line-height);
-  letter-spacing: var(--tracking-label-wide);
-  text-transform: uppercase;
-  color: var(--color-cyan);
-  white-space: nowrap;
-  opacity: 0; /* revealed with the circuit (imperative) */
-}
-/* THE GATHERING's type. No veins, no sockets, no chips: the names ride the
-   liquid masses themselves. Each label derives its envelope from --eco-grow
-   via the inline --d/--w that layout() copies from gathering.mjs — the same
-   clock the masses march to — and --pulse peaks on its own arrival, so a name
-   ignites at the instant its mass lands rather than on a timer of its own. */
-.organism-nodes {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-}
-.organism-node {
-  --e: clamp(0, (var(--eco-grow, 0) - var(--d, 0)) / var(--w, 1), 1);
-  position: absolute;
+  left: var(--page-padding, 3rem);
+  /* Anchored TOP, not centred. The column grows downward as systems arrive;
+     a centred column would drift up and down on every beat, which is exactly
+     the instability this redesign exists to remove. */
+  /* floor clears the 72px topbar at every stage height */
+  top: clamp(5rem, 11vh, 6.5rem);
+  width: clamp(17rem, 23vw, 22.5rem);
   display: none;
-  /* Names recede as the body closes (--eco-fuse): once it is one thing,
-     naming the parts is the wrong emphasis. A HALVING reads as stepping back;
-     the 0.34 this first shipped at read as "switched off", and the ten
-     capabilities are the chapter's actual content — they have to stay
-     readable while the mark resolves over them. */
-  opacity: calc(
-    var(--e) * var(--eco-fade, 1) * (1 - 0.5 * var(--eco-fuse, 0))
-  );
-  transform: translate(-50%, -50%)
-    scale(calc(0.94 + 0.06 * var(--e) + 0.05 * var(--pulse, 0)));
-  pointer-events: none;
-  white-space: nowrap;
-  text-align: center;
-  transition: opacity 300ms var(--ease-arrive);
+  padding-left: 1.5rem;
+  opacity: var(--eco-fade, 1);
+  transition: opacity 320ms var(--ease-arrive);
 }
 /* the gathering needs real room — below lg the eco-stack carries the
    capabilities instead (in-app browsers and tablets included) */
 @media (min-width: 1024px) {
-  .organism-node {
+  .gather-col {
     display: block;
   }
 }
-.journey-interactions[data-interactive="true"] .organism-node {
-  pointer-events: auto;
+/* ── THE SPINE ───────────────────────────────────────────────────────────────
+   One hairline the full height of the column, and the chapter's progress fills
+   it. This is the element that replaced the floating "10 / 10": a measure that
+   is part of the composition rather than a number dropped in a corner, and the
+   axis every block and row in the column is aligned to. */
+.gather-col-spine {
+  position: absolute;
+  left: 0;
+  top: 0.35rem;
+  bottom: 0.35rem;
+  width: 1px;
+  background: color-mix(in srgb, var(--color-paper) 11%, transparent);
+  overflow: hidden;
 }
-.journey-interactions[data-pulse="true"] .organism-node {
-  transition-delay: var(--pd, 0ms);
-}
-.organism-node:focus-within {
-  opacity: 1 !important;
-  pointer-events: auto;
+.gather-col-spine i {
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: calc(clamp(0, var(--eco-grow, 0), 1) * 100%);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-cyan) 78%, transparent),
+    color-mix(in srgb, var(--color-cyan) 30%, transparent)
+  );
 }
 
-/* ── the three systems ──────────────────────────────────────────────────────
-   Three beats instead of ten items. Each marker sits at its lobe's centre of
-   mass and holds a short rule that draws itself as the system arrives — the
-   one piece of line-work that survived, because it measures a group rather
-   than asserting a connection between two things. */
-.gather-systems {
-  position: absolute;
-  inset: 0;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  pointer-events: none;
-}
-.gather-system {
-  --e: clamp(0, (var(--eco-grow, 0) - var(--d, 0)) / var(--w, 1), 1);
-  position: absolute;
-  display: none;
-  align-items: center;
-  gap: 0.6rem;
-  transform: translate(-50%, -50%);
-  font-family: var(--font-mono);
-  font-size: var(--text-mono-sm);
-  font-weight: 500;
-  letter-spacing: var(--tracking-label-wide);
-  text-transform: uppercase;
-  white-space: nowrap;
-  color: color-mix(in srgb, var(--color-cyan) 74%, var(--color-paper));
-  /* strongest while its own system is arriving, then it steps back and lets
-     the capabilities carry the reading */
-  opacity: calc(
-    var(--e) * var(--eco-fade, 1) * (1 - 0.6 * var(--eco-fuse, 0))
-  );
-  transition:
-    opacity 320ms var(--ease-arrive),
-    color 260ms var(--ease-arrive);
-}
-@media (min-width: 1024px) {
-  .gather-system {
-    display: inline-flex;
-  }
-}
-.gather-system-rule {
-  display: block;
-  width: calc(var(--e) * 2.4rem);
-  height: 1px;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    color-mix(in srgb, var(--color-cyan) 60%, transparent)
-  );
-}
-.journey-interactions[data-pulse="true"] .gather-system {
-  transition-delay: var(--pd, 0ms);
-}
-/* instrument annotation, not a sticker: no chip, no border — the hit area
-   is padding pulled back with negative margins so type sits on its anchor */
-.organism-node-trigger {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5em;
-  min-width: 44px;
-  min-height: 44px;
-  padding: 0.7rem 0.75rem;
-  margin: -0.7rem -0.75rem;
-  border: 0;
-  background: none;
-  color: inherit;
-  cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
-}
-.organism-node-trigger:focus-visible {
-  outline-offset: 5px;
-  border-radius: 2px;
-}
-.organism-node-index {
-  font-family: var(--font-mono);
-  font-size: var(--text-mono-sm);
-  font-weight: 500;
-  line-height: var(--text-mono-sm--line-height);
-  letter-spacing: var(--text-mono-sm--letter-spacing);
-  font-variant-numeric: tabular-nums;
-  color: color-mix(in srgb, var(--color-cyan) 72%, transparent);
-}
-.organism-node-name {
-  font-family: var(--font-mono);
-  font-size: var(--text-mono-sm);
-  font-weight: 500;
-  line-height: var(--text-mono-sm--line-height);
-  letter-spacing: var(--text-mono-sm--letter-spacing);
-  text-transform: uppercase;
-  color: var(--color-paper-mute);
-  text-shadow: 0 1px 10px rgb(0 0 0 / 0.85);
-  transition: color 220ms var(--ease-arrive);
-}
-.organism-node:hover .organism-node-name,
-.organism-node:focus-within .organism-node-name,
-.organism-node[data-open="true"] .organism-node-name {
-  color: var(--color-paper);
-}
-.journey-interactions[data-pulse="true"] .organism-node-name {
-  color: var(--color-paper);
-  transition-delay: var(--pd, 0ms);
-}
-/* the capability line reaches AT through aria-describedby; sighted users
-   read the same words in the HUD readout */
-.organism-node-cap {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip-path: inset(50%);
-  white-space: nowrap;
-}
-/* the readout — quiet mission-control line, bottom-left of the stage */
-.eco-hud {
-  position: absolute;
-  left: clamp(1.5rem, 6vw, 5rem);
-  bottom: clamp(2.2rem, 7vh, 4.5rem);
-  display: none;
-  flex-direction: column;
-  gap: 0.4rem;
-  max-width: 22rem;
-  opacity: calc(
-    clamp(0, (var(--eco-grow, 0) - 0.1) / 0.18, 1) * var(--eco-fade, 1)
-  );
-  pointer-events: none;
-}
-@media (min-width: 1024px) {
-  .eco-hud {
-    display: flex;
-  }
+/* the head — the meter, and nothing else. The chapter already has a label and
+   a headline above the runway; repeating either here would be the "filling
+   space with text" this pass is removing. */
+.gather-col-head {
+  margin: 0 0 clamp(0.85rem, 1.9vh, 1.2rem);
 }
 .eco-hud-meter {
   font-family: var(--font-mono);
@@ -1577,6 +1447,249 @@ section[id],
   letter-spacing: var(--tracking-label-wide);
   font-variant-numeric: tabular-nums;
   color: var(--color-cyan);
+}
+
+.gather-plate {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* ── THE BLOCKS ──────────────────────────────────────────────────────────────
+   A system takes up NO ROOM until it arrives. max-height on the envelope is
+   what makes the column accumulate: the cap is generous (a four-row block is
+   well under it), so an arrived block is never clipped, and a mid-arrival one
+   unrolls rather than fading in at full height. */
+.gather-block {
+  --e: clamp(0, (var(--eco-grow, 0) - var(--d, 0)) / var(--w, 1), 1);
+  overflow: hidden;
+  /* room slightly ahead of content, so the cap is never a SECOND clip on a
+     word the mask above is already revealing — but only slightly, because this
+     is also what makes the column accumulate, and opening it early would give
+     the space back to empty air. */
+  max-height: calc(clamp(0, var(--e) * 1.35, 1) * 24rem);
+  margin-bottom: calc(var(--e) * clamp(0.8rem, 1.9vh, 1.25rem));
+  /* Blocks recede as the body closes (--eco-fuse): once it is one thing,
+     naming the parts is the wrong emphasis. A HALVING reads as stepping back —
+     the capabilities are the chapter's content and stay readable throughout. */
+  opacity: calc(var(--e) * (1 - 0.5 * var(--eco-fuse, 0)));
+  transition: opacity 320ms var(--ease-arrive);
+}
+.journey-interactions[data-pulse="true"] .gather-block {
+  transition-delay: var(--pd, 0ms);
+}
+
+/* the meta line: numeral, rule, count. Small, quiet, and the measure the big
+   name below hangs from. */
+.gather-block-head {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 0 0 0.35rem;
+}
+.gather-block-numeral {
+  font-family: var(--font-mono);
+  font-size: var(--text-mono-sm);
+  font-weight: 500;
+  letter-spacing: var(--tracking-label-wide);
+  color: color-mix(in srgb, var(--color-cyan) 78%, transparent);
+}
+.gather-block-rule {
+  flex: 1 1 auto;
+  height: 1px;
+  transform: scaleX(var(--e));
+  transform-origin: left;
+  background: color-mix(in srgb, var(--color-paper) 18%, transparent);
+}
+.gather-block-count {
+  font-family: var(--font-mono);
+  font-size: var(--text-mono-sm);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-paper-dim);
+}
+
+/* THE TYPE REVEAL. The system name rises out of a mask as its liquid lands —
+   the one moment in the chapter that gets a real typographic entrance, because
+   three of them across the runway is a rhythm and ten would be a tic.
+
+   --r runs at 3× the block's own envelope, and that ratio is the whole point.
+   A scroll-driven reveal is not an animation the reader watches once: it is a
+   position they can STOP inside, and a word frozen half-out of its mask reads
+   as a rendering fault, not as motion. Completing the rise in the first third
+   of the beat means almost every resting position shows a finished word, while
+   anyone actually scrolling still sees it arrive. */
+.gather-block-title {
+  --r: clamp(0, (var(--eco-grow, 0) - var(--d, 0)) / (var(--w, 1) * 0.34), 1);
+  display: block;
+  overflow: hidden;
+  margin: 0 0 0.5rem;
+}
+.gather-block-name {
+  display: block;
+  font-family: var(--font-grotesk);
+  font-size: clamp(1.4rem, 0.98rem + 1.05vw, 2.05rem);
+  font-weight: 500;
+  line-height: 1.02;
+  letter-spacing: -0.018em;
+  text-transform: uppercase;
+  color: var(--color-paper);
+  transform: translateY(calc((1 - var(--r, 1)) * 105%));
+}
+
+.gather-rows {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.gather-row {
+  --e: clamp(0, (var(--eco-grow, 0) - var(--d, 0)) / var(--w, 1), 1);
+  position: relative;
+  opacity: var(--e);
+  transform: translateY(calc((1 - var(--e)) * 0.55rem));
+  transition:
+    opacity 300ms var(--ease-arrive),
+    transform 300ms var(--ease-arrive);
+}
+/* THE TICK. A short cyan mark on the spine at the touched row's own height —
+   the refined descendant of the ten leader lines. It answers "which one is
+   that?" by lighting the axis at the row, instead of drawing a line across the
+   composition to the mass. */
+.gather-row::before {
+  content: "";
+  position: absolute;
+  left: -1.5rem;
+  top: 50%;
+  width: 0.6rem;
+  height: 1px;
+  background: var(--color-cyan);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 240ms var(--ease-arrive);
+}
+.gather-row:hover::before,
+.gather-row:focus-within::before,
+.gather-row[data-open="true"]::before {
+  transform: scaleX(1);
+}
+.journey-interactions[data-interactive="true"] .gather-row {
+  pointer-events: auto;
+}
+.journey-interactions[data-pulse="true"] .gather-row {
+  transition-delay: var(--pd, 0ms);
+}
+.gather-row:focus-within {
+  opacity: 1 !important;
+}
+
+/* instrument annotation, not a sticker: no chip, no border — the row IS the
+   hit area, so the target comes from padding rather than a box */
+.gather-row-trigger {
+  display: flex;
+  align-items: baseline;
+  gap: 0.7em;
+  width: 100%;
+  min-height: var(--gc-row);
+  padding: 0.3rem 0.5rem 0.3rem 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.gather-row-trigger:focus-visible {
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+.gather-row-index {
+  flex: none;
+  font-family: var(--font-mono);
+  font-size: var(--text-mono-sm);
+  font-weight: 500;
+  line-height: var(--text-mono-sm--line-height);
+  letter-spacing: var(--text-mono-sm--letter-spacing);
+  font-variant-numeric: tabular-nums;
+  color: color-mix(in srgb, var(--color-cyan) 55%, transparent);
+  transition: color 220ms var(--ease-arrive);
+}
+.gather-row-name {
+  font-family: var(--font-mono);
+  font-size: var(--text-mono-sm);
+  font-weight: 500;
+  line-height: var(--text-mono-sm--line-height);
+  letter-spacing: var(--text-mono-sm--letter-spacing);
+  text-transform: uppercase;
+  color: var(--color-paper-mute);
+  transition: color 220ms var(--ease-arrive);
+}
+.gather-row:hover .gather-row-name,
+.gather-row:focus-within .gather-row-name,
+.gather-row[data-open="true"] .gather-row-name {
+  color: var(--color-paper);
+}
+.gather-row:hover .gather-row-index,
+.gather-row:focus-within .gather-row-index,
+.gather-row[data-open="true"] .gather-row-index {
+  color: var(--color-cyan);
+}
+.journey-interactions[data-pulse="true"] .gather-row-name {
+  color: var(--color-paper);
+  transition-delay: var(--pd, 0ms);
+}
+/* the capability line reaches AT through aria-describedby; sighted users
+   read the same words in the column's readout */
+.gather-row-cap {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* ── THE RESOLUTION ──────────────────────────────────────────────────────────
+   The payoff line, at the foot of the column where the accumulation it
+   concludes can be read above it. It arrives on --eco-fuse: not a fourth item
+   in the list, but the thing the ten became. */
+.gather-col-sum {
+  margin: 0;
+  overflow: hidden;
+  max-height: calc(var(--eco-fuse, 0) * 8rem);
+}
+.gather-col-sum::before {
+  content: "";
+  display: block;
+  width: calc(var(--eco-fuse, 0) * 100%);
+  height: 1px;
+  margin-bottom: 0.7rem;
+  background: color-mix(in srgb, var(--color-cyan) 40%, transparent);
+}
+.organism-center {
+  display: block;
+  font-family: var(--font-grotesk);
+  font-size: clamp(1.4rem, 0.98rem + 1.05vw, 2.05rem);
+  font-weight: 500;
+  line-height: 1.02;
+  letter-spacing: -0.018em;
+  text-transform: uppercase;
+  color: var(--color-cyan);
+  transform: translateY(calc((1 - var(--eco-fuse, 0)) * 105%));
+}
+
+/* ── THE READOUT ─────────────────────────────────────────────────────────────
+   One live line, in the column. With nothing touched it reports the capability
+   that just landed, so the footer is a log of the convergence rather than an
+   empty slot waiting for a hover. */
+.eco-hud {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  margin-top: clamp(0.85rem, 2vh, 1.3rem);
+  min-height: 2.7rem;
+  opacity: calc(
+    clamp(0, (var(--eco-grow, 0) - 0.1) / 0.18, 1) * var(--eco-fade, 1)
+  );
+  pointer-events: none;
 }
 .eco-hud-line {
   font-family: var(--font-mono);
@@ -1601,8 +1714,74 @@ section[id],
   line-height: var(--text-body-s--line-height);
   letter-spacing: var(--text-body-s--letter-spacing);
   color: var(--color-paper-mute);
-  min-height: calc(var(--text-body-s--line-height) * 1em);
+  text-wrap: pretty;
 }
+
+/* NOTE ON ORDER: the short-stage tiers below MUST stay after every rule they
+   override. A media query adds no specificity, so a `@media` block placed
+   above the base declarations loses to them on source order alone — which is
+   exactly what happened when these sat next to the column's display guard:
+   only the two properties whose base rule came earlier had any effect, and the
+   rest of the tier was silently inert. */
+/* SHORT STAGES. The column is the one element here whose height is content, not
+   layout: ten rows, three titles and a resolution line have a floor, and on a
+   720px-tall laptop that floor was 56px past the bottom of the stage. The vh
+   terms in the metrics above are all dominated by their rem minimums at that
+   height, so the relief has to be explicit rather than emergent. Everything
+   shrinks together — row pitch, top air and the display size — so the
+   composition is the same one, set smaller. */
+@media (min-width: 1024px) and (max-height: 880px) {
+  .gather-col {
+    --gc-row: max(26px, 2.4vh);
+  }
+  .gather-block-name,
+  .organism-center {
+    font-size: clamp(1.2rem, 0.85rem + 0.9vw, 1.7rem);
+  }
+  .gather-block-title {
+    margin-bottom: 0.35rem;
+  }
+  .eco-hud {
+    min-height: 2.4rem;
+  }
+}
+/* …and on the shortest stages the relief has to come out of the ROWS, not the
+   top air: the column starts below a 72px topbar, and buying height by moving
+   it up simply slides the meter behind the chrome. */
+@media (min-width: 1024px) and (max-height: 800px) {
+  /* The row's height is its PADDING plus its line box, not --gc-row: the mono
+     line alone is ~19px and the block padding puts it past the min-height, so
+     lowering the minimum on its own changes nothing. Padding is the lever, and
+     0.18rem is as far as it goes — it lands the row at ~24px, the floor for a
+     conforming pointer target (WCAG 2.5.8). */
+  .gather-col {
+    --gc-row: max(24px, 2.2vh);
+  }
+  .gather-row-trigger {
+    padding-block: 0.18rem;
+  }
+  .gather-block-name,
+  .organism-center {
+    font-size: clamp(1.1rem, 0.8rem + 0.8vw, 1.5rem);
+  }
+  .gather-block {
+    margin-bottom: calc(var(--e) * 0.45rem);
+  }
+  .gather-col-head {
+    margin-bottom: 0.5rem;
+  }
+  .gather-block-title {
+    margin-bottom: 0.25rem;
+  }
+  .gather-col-sum::before {
+    margin-bottom: 0.5rem;
+  }
+  .eco-hud {
+    margin-top: 0.6rem;
+    min-height: 1.9rem;
+  }
+}
+
 
 /* The capability stack — narrow viewports, static tiers and assistive tech.
    On lg+ with the live liquid, the orbital labels take over. */
@@ -3304,3 +3483,5 @@ html[data-zveil="seen"] .entry-veil {
     transition-duration: 0.001ms !important;
   }
 }
+
+

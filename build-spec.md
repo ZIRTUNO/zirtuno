@@ -447,13 +447,15 @@ no liquid response at all.
 ### 5.7 Field renderer — CURRENT R5-A/B
 
 The renderer combines exact SDF form fields and bounded inverse-square
-droplets into one iso-surface, then applies the locked internal cyan-glass
-lighting. It supports:
+droplets into one iso-surface, then applies the clean brand-cyan material. Its
+recovered soft-dome pass samples a low-pass gradient of the unified field, so a
+broad key and lightweight shadow preserve volume without tracing each
+droplet's rim, dense centre, or internal field structure. It supports:
 
 - two exact form textures;
 - up to 80 balls;
 - form erosion/weight/offset/scale/warp;
-- glass or flat cyan branch;
+- clean brand cyan, signed-off legacy glass (`?fgloss=1`), or flat cyan branch;
 - context-loss recovery;
 - runtime resolution downshift;
 - transparent canvas over the ink-black page.
@@ -509,11 +511,14 @@ baseline.
 
 **Current ladder:**
 
-- full: glass + post + depth;
-- full-nofx: glass without post;
+- full: clean cyan material + post + lightweight depth;
+- full-nofx: clean cyan material without post;
 - lite: flat cyan, DPR 1, no post;
 - half: flat cyan, DPR 0.5, live floor;
 - none: initial static fallback only.
+
+`?fgloss=1` restores the complete wet cyan-glass material for owner comparison
+without changing the tier or the liquid field.
 
 The runtime probe measures the actual field workload and is cached per session.
 Do not use GPU-name heuristics.
