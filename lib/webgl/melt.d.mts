@@ -1,6 +1,8 @@
 /** Types for the §3.3 melt kernel (melt.mjs). Keep in sync. */
 import type { Ball } from "./phys.d.mts";
 
+/** Legacy left→right stagger key. Retained as the degenerate-axis fallback
+ *  only — the schedule is owned by the WIN/WAVE constants below. */
 export declare const STAGGER: number;
 export declare const RADIUS_LEAD: number;
 export declare const BRIDGE: number;
@@ -8,7 +10,17 @@ export declare const BRIDGE_RAMP: number;
 /** Per-form cloud/form solidity shortfall, indexed like METABALL_STATES. */
 export declare const FORM_SOLIDITY: number[];
 
+/** The per-droplet transport schedule (§5.2). */
+export declare const WIN_SPAN: number;
+export declare const WIN_MIN: number;
+export declare const WIN_POW: number;
+export declare const WAVE: number;
+export declare const MASS_LAG: number;
+export declare const WAVE_JITTER: number;
+
 export declare const arrive: (x: number) => number;
+/** The melt's transport curve — symmetric in-out, in phase with the cloud. */
+export declare const flow: (x: number) => number;
 export declare const bridgeRadiusEnvelope: (p: number) => number;
 export declare const bridgePresence: (p: number) => number;
 export declare const bridgeSwell: (

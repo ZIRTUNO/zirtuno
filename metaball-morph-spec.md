@@ -179,8 +179,9 @@ forms.
 Each state has exactly 48 droplets. For a transition A → B:
 
 1. compute a stable greedy min-travel assignment;
-2. cache the permutation for the session;
-3. keep droplet identity stable for every repeated A → B transition.
+2. relax it toward a **continuous** displacement field (§5.6);
+3. cache the permutation for the session;
+4. keep droplet identity stable for every repeated A → B transition.
 
 Droplets never pop in or out. Radius may continuously shrink to zero at bridge
 edges, but identity and arrays remain stable.
@@ -190,14 +191,60 @@ edges, but identity and arrays remain stable.
 Locked constants:
 
 - duration: `DURATIONS.morph = 1400 ms`;
-- easing: `arrive = cubic-bezier(0.22,1,0.36,1)`;
-- regional stagger: `STAGGER = 0.25`;
+- transport easing: `flow = calm = cubic-bezier(0.65,0,0.35,1)`;
 - radius lead: `RADIUS_LEAD = 1.18`;
-- form/droplet handoff window: `BRIDGE = 0.38`.
+- form/droplet handoff window: `BRIDGE = 0.38`;
+- transport schedule: `WIN_SPAN 0.76`, `WIN_MIN 0.72`, `WIN_POW 0.5`,
+  `WAVE 0.7`, `MASS_LAG 0.18`, `WAVE_JITTER 0.07`.
 
-The position stagger sweeps by each endpoint’s baked spatial order. Radius
-arrives about 18% ahead of position so features bud, neck, and fuse instead of
-sliding as rigid discs.
+Transport must be IN PHASE with the cloud's own visibility. Position rode
+`arrive` (a hard ease-out) until it was measured against `bridgePresence` and
+found to be in anti-phase: 67% of every journey completed by p = 0.2, while the
+cloud was still under 27% present, leaving 8% of the motion for the half of the
+timeline the droplets actually carry alone. Every melt therefore played as
+appear → hold still → snap. `flow` is the symmetric in-out, so peak speed now
+lands at mid-melt where presence is 1. This also brings the droplets over
+`SHAPE_SPEED_MIN` while they are on screen, so §11's velocity-aligned
+deformation engages during the melt instead of before it.
+
+Each droplet then gets its own window `[start, start + win]` instead of one
+shared stagger: `win` scales mildly with travel, and `start` is a wave sweeping
+along that melt's own net transport direction — so the seven melts no longer
+share a single left→right wipe, and the leading edge reaches before the body
+follows. `start ≥ 0` and `start + win ≤ 1` hold by construction, which is what
+keeps both endpoints exact for any tuning of the constants above.
+
+Radius arrives about 18% ahead of position so features bud, neck, and fuse
+instead of sliding as rigid discs.
+
+`STAGGER = 0.25` is retained as an export for the legacy left→right key but no
+longer drives the schedule; it survives only as the degenerate-case fallback
+when two forms sit on top of each other and the transport axis is meaningless.
+
+### 5.6 Correspondence continuity
+
+Min-travel alone is a shuffle, not a deformation. It minimises total distance
+and says nothing about whether NEIGHBOURS agree, so it routinely sends two
+droplets on the same lobe to targets pointing in opposite directions. Measured
+across the seven melts, the roughness of the displacement field — each
+droplet's displacement against the mean of its own neighbourhood, over the mean
+displacement — was 0.94, and the rendered cloud's velocity coherence was the
+same number, 1.04. That is a ceiling: a liquid deformation is a continuous map,
+and no easing, stagger or flow field can recover a property the correspondence
+never had.
+
+`matchClouds` therefore keeps the greedy result as a seed and relaxes it by
+2-opt swaps against
+
+```text
+E = Σ |D_i|² + W · Σ_edges |D_i − D_j|²
+```
+
+on a symmetric k-nearest graph over the source cloud (`SMOOTH_K = 4`,
+`SMOOTH_W = 2.4`, ≤ 24 passes). Deterministic iteration order, so §5.1's
+stability guarantee is unchanged. Measured: map roughness 0.94 → 0.53, velocity
+coherence 1.04 → 0.84, trajectory crossings 20 → 13. It costs travel and buys
+continuity.
 
 ### 5.3 Handoff sequence
 
@@ -534,7 +581,8 @@ The chain (post-chain.ts + post-shaders.mjs, full tier only):
 4. final opaque composite with selective bloom;
 5. blue-noise dither;
 6. luminance-gated grain at or below 2.5%;
-7. depth bands and exposure/absorption controls.
+7. depth bands, exposure/absorption controls, and the field-native volume
+   shadow.
 
 Identity requirements:
 
@@ -551,6 +599,18 @@ Depth contract:
 - `iDepthFx=0` is identity;
 - far droplets become dimmer sub-surface material, not a new hue;
 - depth cannot reduce legibility or make exact endpoints appear doubled.
+
+Dynamic shadow contract:
+
+- `iShadow=0` is exact identity; `?fgrade=0` forces it to 0 and
+  `?fshadow=0` isolates only this layer for A/B review;
+- soft ambient occlusion follows pseudo-distance thickness and the locked key;
+- intersection shadow comes from contributor concentration in the existing
+  main field loop, so merges and splits respond without extra field samples;
+- near/far contributor variance deepens layered intersections, while the
+  velocity build adds a bounded trailing shadow that dissolves as motion rests;
+- the result only multiplies luminance inside the cyan material. It cannot add
+  a halo, a drop shadow, a new hue, or a second renderer.
 
 ### 10.3 Cinematic consumer — CURRENT R5-D
 
@@ -686,6 +746,7 @@ Retired architecture is not an alternate path. Do not create:
 | `?fstrain=1`              | restore deformation-responsive optics (default OFF)            |
 | `?fshape=0`               | roll back velocity-aligned deformation + optics (default ON)   |
 | `?fgrade=0`               | exact optics bypass (no post, grade uniforms at 0 identity)    |
+| `?fshadow=0`              | isolate dynamic volume-shadow rollback; the rest of grade stays |
 | `?fgov=0`                 | idle-cadence governor bypass                                   |
 | `?fcine=0`                | cinematic bypass (neutral score, no veils, flash cannot latch) |
 
@@ -778,7 +839,7 @@ Budget 3–6 owner review rounds on real hardware for:
 - Problem fracture readability;
 - Ecosystem seek and convergence weight;
 - physics feel in free pours/currents;
-- R5-C bloom, absorption, depth, dither, and grain;
+- R5-C bloom, absorption, dynamic volume shadow, depth, dither, and grain;
 - Origin fusion/flash/afterglow;
 - Contact gather/exhale and Footer release.
 
