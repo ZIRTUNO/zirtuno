@@ -257,6 +257,7 @@ const off = await sampleShots(page, "fgrade0");
 {
   const optics = await page.evaluate(() => window.__optics ?? null);
   check(optics && optics.post === 0, "fgrade=0: post chain reports OFF", JSON.stringify(optics));
+  check(optics?.shadow === 0, "fgrade=0: dynamic shadow is exact identity", JSON.stringify(optics));
   const dF = Math.abs(off.fieldMean - base.fieldMean);
   const dC = Math.abs(off.cropMean - base.cropMean);
   const dFB = Math.abs(off.fieldBlackFrac - base.fieldBlackFrac);
@@ -276,6 +277,17 @@ const on = await sampleShots(page, "grade-on");
     () => window.__liquidSamplerWrites ?? [],
   );
   check(!!optics, "__optics diagnostic present", JSON.stringify(optics));
+  // The volume shadow is OPT-IN, so the grade being live is not enough to
+  // drive it: measured at a gathering stop it costs interior luminance
+  // (169 -> 144) for contrast the absorption term already carries, and the
+  // approved material is a body at full brand cyan with dark patches under it.
+  // This asserts the DEFAULT, and the request flag is what turns it on.
+  check(optics?.shadow === 0, "volume shadow is opt-in, off by default", JSON.stringify(optics));
+  check(
+    optics?.shadowRequested === 0,
+    "…and not requested unless ?fshadow=1",
+    JSON.stringify(optics),
+  );
   check(
     samplerWrites.some(
       (write) =>

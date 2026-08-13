@@ -96,7 +96,9 @@ The ten named transitions are `assembly`, `pour`, `fracture`, `seek`,
   (light-score driven), `iAbsorb`
   (internal absorption — thick cores read dense), and `iBallZ[80]` +
   `iDepthFx` depth bands (the ambient family packs at depth 0.62 and reads
-  as a dim sub-surface). All grade uniforms default to 0 = exact identity;
+  as a dim sub-surface), plus `iShadow`: soft field-native thickness AO,
+  intersection darkening from contributor overlap, near/far depth variance,
+  and a bounded deformation trail. All grade uniforms default to 0 = exact identity;
   `?fgrade=0` bypasses everything, verified statistically against the
   recorded pre-C baseline and byte-exactly via settled stills
   (`verify-rest-exact.mjs`). The watchdog gains the `full-nofx` rung
@@ -171,7 +173,7 @@ Conductor — damping, presence, droplet handoffs, form arbiter, score
         └── shared 48-droplet identity + ambient/extras
         │
         ▼
-FieldStage + sdf-glass shader (identity-gated grade: expo/key/absorb/depth)
+FieldStage + sdf-glass shader (identity-gated grade: expo/key/absorb/depth/shadow)
         │
         ├── post-chain (R5-C): bright pass → bloom → opaque composite
         │   (dither + grain) · full-nofx rung · ~30 Hz idle governor
@@ -266,6 +268,9 @@ images; a green process exit does not replace visual judgment.
   already stretching read as glitchy. `verify-deformation` asks for it.
 - `?fshape=0` — roll back velocity-aligned deformation and its glass optics (default ON).
 - `?fgrade=0` — bypass the optics chain and grade (exact pre-optics output).
+- `?fshadow=1` — enable the field-native dynamic volume shadow (OFF by
+  default: it costs the body ~15% of its brand luminance for contrast the
+  absorption term already provides).
 - `?fgov=0` — disable the idle-cadence governor.
 - `?fcine=0` — disable the cinematic layer (neutral score, no veils/flash).
 - `window.__scenes` — live scene channels for diagnostics.

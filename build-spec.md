@@ -503,6 +503,14 @@ New shader controls, identity by default:
 - `iExposure` — global exposure;
 - `iKeyBoost` — additive modulation of the locked key light, never re-aimed;
 - `iBallZ[80]` and `iDepthFx` — near/far bands and sub-surface depth.
+- `iShadow` — identity-gated field-native volume shadow. It combines soft
+  thickness occlusion, contributor overlap at merge necks, near/far depth
+  variance, and velocity-aligned trailing shadow without a second geometry pass
+  or any external/drop shadow. It is OPT-IN — `?fshadow=1` enables it for
+  review. Measured at a gathering stop it takes the body's interior luminance
+  from 169 to 144 for the same 36% shadow depth, and the approved material is a
+  body at full brand cyan with dark patches under it, so the depth it buys is
+  already carried by `iAbsorb`. The default therefore stays at 0 = identity.
 
 A true key-light re-aim requires an explicit owner decision and new exact visual
 baseline.

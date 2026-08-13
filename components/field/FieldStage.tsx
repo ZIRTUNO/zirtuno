@@ -201,6 +201,15 @@ export default function FieldStage({
     // ?fgrade=0 — the R5-C exact optics bypass (spec §14.1): no post chain,
     // every grade uniform at its 0 identity → pre-C pixels.
     const gradeOn = !/[?&]fgrade=0/.test(window.location.search);
+    // Isolated owner-review rollback for the dynamic volume shadow. The full
+    // grade stays live so captures differ only by self-shadow/AO.
+    // OPT-IN. The field-native AO stacks on top of the absorption shadow and
+    // pulls the body off its brand value — measured at a gathering stop,
+    // interior luminance 169 without it against 144 with, for the same 36%
+    // shadow depth. The reference material is a body at full neon cyan with
+    // dark patches under it, so the AO costs brightness for contrast that
+    // absorption already provides. `?fshadow=1` puts it back for review.
+    const shadowRequested = /[?&]fshadow=1(?:&|$)/.test(window.location.search);
     // Signature-visual review path only. The uniform remains exactly 0 unless
     // explicitly requested, the renderer is still at the full tier, motion is
     // allowed, and the frame is a free droplet-only composition.
@@ -370,6 +379,8 @@ export default function FieldStage({
       glass: 0, // 1 only while the material is actually being shaded
       glossRequested: glossRequested ? 1 : 0,
       gloss: 0, // 1 only while the wet highlights are actually drawn
+      shadowRequested: shadowRequested ? 1 : 0,
+      shadow: 0, // field-native AO is actually uploaded and active
       strainRequested: strainRequested ? 1 : 0,
       strain: 0, // 1 only while the deformation optics are actually driven
       shapeRequested: shapeRequested ? 1 : 0,
@@ -485,6 +496,9 @@ export default function FieldStage({
       gl.uniform1f(layer.U("iKey"), grade ? (f.key ?? 0) : 0);
       gl.uniform1f(layer.U("iAbsorb"), grade ? SDF_GRADE.ABSORB : 0);
       gl.uniform1f(layer.U("iDepthFx"), grade ? SDF_GRADE.DEPTH : 0);
+      const shadow = grade && shadowRequested;
+      gl.uniform1f(layer.U("iShadow"), shadow ? SDF_GRADE.SHADOW : 0);
+      diag.shadow = shadow ? 1 : 0;
       gl.uniform1fv(layer.U("iBallZ"), zBuf);
       gl.uniform1fv(layer.U("iBallDensity"), dBuf);
       gl.clearColor(0, 0, 0, 0);
