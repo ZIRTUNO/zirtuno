@@ -537,6 +537,152 @@ button.cta {
   box-shadow: 0 0 28px -6px var(--color-cyan-glow);
 }
 
+/* ===========================================================================
+   THE MEMBRANE — the vector liquid over a CTA (lib/motion/membrane.mjs)
+   ---------------------------------------------------------------------------
+   Everything above stays exactly as it was and remains the whole button under
+   reduced motion, without JS, and before hydration. `Membrane.tsx` sets
+   `data-membrane` on the host only once it has mounted and drawn its first
+   frame, and every rule below is gated on that attribute. If the vector layer
+   never arrives, nothing here applies and the CSS sweep is the button.
+
+   What the membrane REPLACES, and why:
+     · the 1 px CSS border  → a live Bézier contour that deforms under a hand
+     · the L→R sweep fill   → a flood that enters where you actually pressed
+     · the cyan box-shadow  → nothing. A halo is a light effect bolted onto a
+       rectangle; the membrane changes the MATERIAL instead (the interior
+       wets, the meniscus catches more light), which is the same information
+       carried by the same visual language as the rest of the page.
+     · the focus outline    → a parallel contour offset 4.5 px along the ring's
+       own normals. Still a real, high-contrast, non-color-only indicator.
+   =========================================================================== */
+.mem {
+  position: absolute;
+  inset: 0;
+  display: block;
+  pointer-events: none;
+}
+.mem-svg {
+  /* PAD in Membrane.tsx — room for the deformation to leave the border box */
+  position: absolute;
+  inset: -18px;
+  width: calc(100% + 36px);
+  height: calc(100% + 36px);
+  overflow: visible;
+  pointer-events: none;
+}
+.mem-edge,
+.mem-focus {
+  fill: none;
+  stroke: var(--color-cyan);
+  stroke-width: 1;
+  /* the viewBox is 1:1 with the CSS box, but a sub-pixel resize must never
+     make the brand's hairline thicken */
+  vector-effect: non-scaling-stroke;
+}
+.mem-edge {
+  transition: stroke 200ms var(--ease-arrive);
+}
+.mem-skin,
+.mem-flood {
+  fill: var(--color-cyan);
+  stroke: none;
+}
+.mem-focus {
+  opacity: 0;
+  transition: opacity 200ms var(--ease-arrive);
+}
+
+.cta-primary[data-membrane] {
+  overflow: visible;
+  border-color: transparent;
+  box-shadow: none;
+}
+.cta-primary[data-membrane] .cta-fill {
+  display: none;
+}
+/* The meniscus catches more light as it wets — a material change, not a halo. */
+.cta-primary[data-membrane]:hover .mem-edge {
+  stroke: var(--color-cyan-glow);
+}
+/* Hover no longer flips the label: the flood does that on press, along a
+   curved front, and a label that pre-flips would fight it.
+
+   `:not(.cta-label-ink)` is load-bearing. The ink copy carries `.cta-label`
+   too (it must, to inherit the type), so without the exclusion this rule wins
+   at (0,3,0) and paints the INK copy paper-white as well — leaving the flood
+   cyan with unreadable white type on it at roughly 1.2:1. */
+.cta-primary[data-membrane]:hover .cta-label:not(.cta-label-ink),
+.cta-primary[data-membrane]:focus-visible .cta-label:not(.cta-label-ink) {
+  color: var(--color-paper);
+}
+.cta-primary[data-membrane]:focus-visible {
+  outline: none;
+}
+.cta-primary[data-membrane]:focus-visible .mem-focus {
+  opacity: 0.7;
+}
+
+/* The ink copy of the label, revealed by clipping to the flood front. Inherits
+   its flex alignment from the host so it lands on the paper copy exactly,
+   whether the CTA is content-width (desktop) or full-width (≤420px).
+
+   The selector carries `.cta-primary` deliberately: the ink copy also carries
+   `.cta-label`, and `.cta-primary .cta-label` sets `position: relative` at
+   (0,2,0). A bare `.cta-label-ink` at (0,1,0) loses that cascade, the ink copy
+   stays IN FLOW, and every primary CTA on the site renders at double width. */
+.cta-primary .cta-label.cta-label-ink {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  align-items: inherit;
+  justify-content: inherit;
+  padding: inherit;
+  gap: inherit;
+  color: var(--color-ink);
+  text-align: inherit;
+  white-space: inherit;
+  pointer-events: none;
+  user-select: none;
+  /* Resting state is CLIPPED AWAY, not `none` — the ink copy must be invisible
+     until a flood exists to reveal it. It also means a browser without
+     `clip-path: path()` degrades to a label that simply never flips, rather
+     than to ink-on-black. */
+  clip-path: circle(0);
+}
+/* Before the membrane mounts there is no flood to clip to, so the ink copy
+   would sit opaque over the paper one. */
+.cta-primary:not([data-membrane]) .cta-label.cta-label-ink {
+  display: none;
+}
+
+/* ── The thread: the same material under a secondary CTA ────────────────────
+   Same gating as the membrane. `.cta-secondary::after` — the scaleX rule —
+   stays untouched and is still the whole hover state without JS; the thread
+   simply takes over when it mounts. */
+.thr {
+  position: absolute;
+  inset: 0;
+  display: block;
+  pointer-events: none;
+}
+.thr-svg {
+  position: absolute;
+  inset: -6px 0; /* PAD in Thread.tsx — room for the pulse to swell */
+  width: 100%;
+  height: calc(100% + 12px);
+  overflow: visible;
+  pointer-events: none;
+}
+.thr-fill {
+  fill: currentColor;
+  stroke: none;
+}
+.cta-secondary[data-thread]::after {
+  display: none;
+}
+
 /* Secondary — text + trailing arrow; hover nudges arrow, draws underline. */
 .cta-secondary {
   position: relative;

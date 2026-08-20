@@ -4,6 +4,8 @@ import type { MouseEvent } from "react";
 import { useTranslations } from "next-intl";
 import { Link, usePathname } from "@/lib/i18n/config";
 import { getLenis } from "@/lib/animation/lenis-store";
+import { Membrane } from "@/components/chrome/Membrane";
+import { Thread } from "@/components/chrome/Thread";
 import { cn } from "@/lib/utils";
 
 // build-spec S1.15 — the load-bearing CTA system.
@@ -95,9 +97,21 @@ export function CtaButton({
       className={cn(VARIANT_CLASS[variant], className)}
     >
       {variant === "primary" && (
-        <span className="cta-fill" aria-hidden="true" />
+        <>
+          {/* The CSS sweep stays as the no-JS / reduced-motion state. The
+              membrane hides it when it mounts (see globals.css). */}
+          <span className="cta-fill" aria-hidden="true" />
+          <Membrane filled />
+          {/* The ink copy of the label, clipped to the flood front so the
+              words flip along a curved liquid edge. Hidden from the a11y tree
+              and from selection — the real label is the sibling above. */}
+          <span className="cta-label cta-label-ink" aria-hidden="true">
+            {text}
+          </span>
+        </>
       )}
       <span className="cta-label">{text}</span>
+      {variant === "secondary" && <Thread />}
       {showArrow && (
         <span className="cta-arrow" aria-hidden="true">
           →

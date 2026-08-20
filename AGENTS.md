@@ -3,8 +3,9 @@
 > Read this at the start of every session. This file is the authority for
 > behavior, taste, protected invariants, and delivery order. `build-spec.md`
 > owns detailed product and acceptance requirements.
-> `metaball-morph-spec.md` owns liquid-engine mechanics. If detail conflicts
-> with a rule here, this file wins.
+> `metaball-morph-spec.md` owns liquid-engine mechanics.
+> `cta-membrane-spec.md` owns the CTA membrane — the vector half of the same
+> liquid. If detail conflicts with a rule here, this file wins.
 
 ## 1. The Project
 
@@ -123,6 +124,14 @@ The site is in R5, “One Continuous Liquid.”
     `build-spec.md §7.2`. Every contact CTA carries its entry-intent tag.
     Homepage CTAs use Lenis smooth-scroll plus `history.replaceState`; cross-page
     CTAs keep routed navigation.
+    The CTA surface itself is the MEMBRANE (`cta-membrane-spec.md`): the field's
+    hand and strike run on a vector contour, with the same character constants.
+    It is strictly ADDITIVE — `data-membrane` is set only after it mounts and
+    draws, and every rule that changes the button is gated on that attribute, so
+    reduced motion, no-JS and pre-hydration keep the original CSS button. Do not
+    move button state out of `globals.css` and into the membrane. Devices
+    without hover run the autonomous TIDE; it suspends exact rest while a CTA is
+    on screen and must never rival a deliberate press.
 12. **Conversion copy stays server-rendered.** Problem, Ecosystem, Services,
     Method, Work, Origin, Studio, and Contact meaning must remain in semantic
     RSC/HTML. WebGL is enhancement, never the only carrier of information.
@@ -251,6 +260,14 @@ Ask before adding any dependency or substituting any layer.
   The post chain grades the liquid; the veils grade the page. Keep the split.
 - `lib/webgl/field-drivers.ts` remains the shared §3.3 melt kernel, deterministic
   harness contract, and special-page driver home—not a second homepage brain.
+- `lib/motion/membrane.mjs` is the vector liquid's kernel: DOM-free and
+  deterministic like the `.mjs` field kernels, so `verify-membrane.mjs` runs it
+  in plain node. `lib/motion/membrane-runtime.ts` owns the ONE rAF, the one
+  pointer listener and the one scroll listener that every membrane and thread on
+  a page shares — do not give a button its own loop.
+  Gates: `verify-membrane.mjs` (physics), `verify-membrane-mobile.mjs` (the
+  autonomous half, in real device profiles), `capture-membrane.mjs` (state
+  stills, virtual-clock driven).
 - **There is deliberately no `app/[locale]/loading.tsx`.** Its Suspense boundary
   flushed the document shell — and a 200 status — before `notFound()` could run,
   so every unmatched path answered as a soft 404. Route transitions are covered

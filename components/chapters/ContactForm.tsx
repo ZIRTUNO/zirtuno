@@ -11,6 +11,7 @@ import {
   type ContactIntent,
 } from "@/lib/forms/contact";
 import { trackEvent } from "@/lib/analytics/client";
+import { Membrane } from "@/components/chrome/Membrane";
 
 function isConfirmedDelivery(value: unknown): boolean {
   if (!value || typeof value !== "object") return false;
@@ -354,6 +355,14 @@ export function ContactForm({
         data-cursor="hover"
       >
         <span className="cta-fill" aria-hidden="true" />
+        <Membrane filled />
+        <span className="cta-label cta-label-ink" aria-hidden="true">
+          {isSubmitting
+            ? t("sending")
+            : status === "pending"
+              ? t("receivedPending")
+              : t("submit")}
+        </span>
         <span className="cta-label">
           {isSubmitting
             ? t("sending")
