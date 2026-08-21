@@ -69,6 +69,15 @@ export type FieldFrame = {
   expo?: number; // R5-C score-driven exposure DELTA (0 = neutral)
   key?: number; // R5-C score-driven key-light boost (0 = neutral)
   energy?: number; // R5-C cadence-governor energy (absent = always active)
+  /** The FORM's share of the interaction, uploaded as iTouch: pointer xy in
+   *  field uv, influence radius, displacement gain (0 = exact identity). */
+  touch?: Float32Array;
+  /** Live strikes as [x, y, front radius, displacement amplitude] × slots,
+   *  uploaded as iShock. A spent slot carries amplitude 0. */
+  shock?: Float32Array;
+  /** True while anything above is non-zero — lets the stage upload the
+   *  identity arrays instead, so a stale dent cannot outlive the pointer. */
+  touchLive?: boolean;
 };
 export type FieldDriver = {
   /** SDF state indices to prefetch; forms[0] gates the first paint. */

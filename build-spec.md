@@ -113,9 +113,12 @@ The page is **70% strategic clarity and 30% poetic brand atmosphere**.
 ### 2.3 Brand meaning
 
 The liquid is the breath made visible: quiet force that gives form to dispersed
-parts. Zéfiro + Ventura remains a subtle grace note. The main Origin is the true
-story of two brothers, three founding pillars, and a shared drive to build what
-does not yet exist.
+parts. Zéfiro + Ventura IS the Origin — two ideas, not two people. Zéfiro is the
+west wind: force that changes the shape of what it touches without noise.
+Ventura is direction, and the courage to take it. Neither is sufficient alone,
+which is the chapter's argument and the reason the two masses on the stage have
+to meet. The three founding pillars and the drive to build what does not yet
+exist follow from that fusion; the founders are not the subject.
 
 ### 2.4 Voice
 
@@ -150,7 +153,7 @@ the liquid and light compose them into acts.
 | I — Signal     | Entry veil → Hero              | establish the brand and offer immediately               | particles assemble the wordmark, hand off to the mark, then cycle the seven forms                   | black field, first cyan bloom                                 |
 | II — Argument  | Problem → Ecosystem → Services | name fragmentation, prove connection, show capabilities | mark pours, fractures by symptom, seeks itself, reunifies, blooms through the seven forms           | slow dip through Problem, rise at convergence                 |
 | III — Practice | Método → Work                  | show strategic process and proof                        | five rehearsal states become a quiet current behind the work grid; hovered card receives a meniscus | neutral/workmanlike; fade-to-black boundary before Work       |
-| IV — Soul      | Origin → Studio                | reveal the true origin and human reason                 | two brother-masses fuse into the exact mark, echo into satellites, remain behind the role grid      | one cyan-white flash, afterglow, settle; boundary into Studio |
+| IV — Soul      | Origin → Studio                | reveal the true origin and human reason                 | the two idea-masses (Zéfiro · Ventura) fuse into the exact mark, echo into satellites, remain behind the role grid | one cyan-white flash, afterglow, settle; boundary into Studio |
 | V — Invitation | Contact → Footer               | convert and close the narrative                         | all droplets gather into the mark, submit exhales, one droplet releases beyond the footer           | calm and final return to black                                |
 
 ### 3.1 Named transitions
@@ -732,13 +735,19 @@ form stills remain approved placeholder art only for the labeled demo set.
 
 **Business job:** reveal why Zirtuno exists after the business case is proven.
 
-Five scrubbed beats:
+Five scrubbed beats. FIVE is structural, not stylistic: the scene's envelopes
+are keyed to a p that runs evenly across this runway, so adding a beat slides
+every copy block off the liquid it describes.
 
-1. two brother-masses enter from opposite sides;
-2. they fuse and a third form resolves into the exact Zirtuno mark; small mono
-   labels identify Social · Saúde · Finanças / Social · Health · Finance;
-3. the mark holds and breathes under the purpose statement;
-4. the mark multiplies into an ecosystem echo;
+1. the two idea-masses enter from opposite sides, each NAMED by a plate that
+   holds its side of an empty centre gutter — Zéfiro, the force · Ventura, the
+   direction;
+2. the tension — “force without direction is only weather; direction without
+   force is only a map” — while the two masses close and fuse into the exact
+   Zirtuno mark;
+3. the mark resolves and holds; small mono labels identify
+   Social · Saúde · Finanças / Social · Health · Finance;
+4. the mark multiplies into an ecosystem echo under the purpose statement;
 5. droplets drain as CPU wordmark particles assemble ZIRTUNO, followed by
    “Construímos o que ainda não existe / We build what doesn’t exist yet.”
 
@@ -749,9 +758,11 @@ Then the manifesto coda:
 - Direção, não apenas execução.
 - Discreto. Preciso. Transformador.
 
-The Zéfiro/Ventura etymology remains a single dim grace note unless the owner
-chooses otherwise. Three founding pillars are the WHY; seven services are the
-HOW. Never style or count them as the same system.
+The Zéfiro/Ventura etymology IS the chapter, not a grace note beside it — it is
+the only version of this story a reader can actually be shown, because two
+named ideas can be put on the two masses and an anonymous pair of founders
+cannot. Three founding pillars are the WHY; seven services are the HOW. Never
+style or count them as the same system.
 
 **Flash — CURRENT R5-D:** exact mark fusion triggers the site’s one controlled
 cyan-white flash, then afterglow. It fires once per traversal and never under
@@ -1178,7 +1189,7 @@ a second visual engine, or a replacement renderer.
 | Portfolio content      | form-still placeholders in dev; real work or explicit selected architectures at launch | launch credibility          |
 | Verified outcomes      | use narrative until source/owner verifies a metric                                     | metric claims               |
 | Studio people          | anonymous role grid                                                                    | portrait production         |
-| Origin founders        | anonymous brothers                                                                     | names/portrait beat         |
+| Origin founders        | not the subject — the Origin is two IDEAS (Zéfiro · Ventura)                            | any founder-led beat        |
 | Three founding pillars | broad “forces that move business and life” framing                                     | sharper Origin copy         |
 | Contact/footer facts   | environment-backed real values required                                                | production launch           |
 | Audio                  | out                                                                                    | any audio design/dependency |

@@ -61,7 +61,7 @@ canvases or chapter hairlines.
 | I — Signal     | Entry veil, Hero             | wordmark assembly hands off to the living mark and seven forms                                  | black, then the first cyan presence                         |
 | II — Argument  | Problem, Ecosystem, Services | pour → fracture → THE GATHERING (ten capability masses drawn forward out of depth, arriving in three systems, fusing into the mark) → AS SETE FORMAS (one body taking each service's exact form) | exposure falls through the problem and rises at the fuse |
 | III — Practice | Método, Work                 | the liquid rehearses the client transformation, then becomes a quiet current behind honest work | neutral and workmanlike, with an act boundary before Work   |
-| IV — Soul      | Origin, Studio               | two brother-masses fuse into the mark; one controlled flash; echoes continue behind the studio  | emotional peak, afterglow, then settle                      |
+| IV — Soul      | Origin, Studio               | two idea-masses (Zéfiro · Ventura) fuse into the mark; one controlled flash; echoes continue behind the studio | emotional peak, afterglow, then settle                      |
 | V — Invitation | Contact, Footer              | every droplet gathers into the mark; submit exhales; one droplet releases beyond the footer     | calm return to black                                        |
 
 The ten named transitions are `assembly`, `pour`, `fracture`, `seek`,
@@ -85,7 +85,14 @@ The ten named transitions are `assembly`, `pour`, `fracture`, `seek`,
 - R5-B: velocity-based fluid core with fixed substeps, goal-seek, repulsion,
   cohesion, analytic curl drift, page-wide cursor forces, pinch-off satellites,
   and the `bind` contract. `?fphys=0` preserves the legacy integrator for A/B
-  and rollback.
+  and rollback. Interaction covers the whole field: the hand is a
+  volume-conserving displacement well with a velocity-signed wake, a click is a
+  travelling strike wave (crest out, trough back, irregular front, crown spray),
+  a held pointer is a press gain, and the ambient beads and the spray answer the
+  same forces through one shared definition. The eight SVG FORMS answer too, as
+  a displacement of the SDF sample domain in a separate compile variant — so the
+  source the exact-rest stills compile stays byte-identical. `?fstrike=0` rolls
+  back the click, `?fformtouch=0` the forms' answer.
 - R5-C: the optics chain. An offscreen scene target (RGBA16F where the
   context renders it, RGBA8 fallback) feeds a half-res bright pass,
   separable gaussian ping-pong, and an opaque ink-black composite with
@@ -227,6 +234,7 @@ npm run chapters:sheet   # chapter sheet across field tiers/locales
 npm run endpoints        # regenerate registered 48-droplet endpoints
 
 node scripts/verify-conductor.mjs
+node scripts/verify-strike.mjs        # click physics: wiring, passivity, rollback, a11y
 node scripts/verify-canvas-count.mjs
 node scripts/verify-cta.mjs
 node scripts/verify-entry-veil.mjs
@@ -259,6 +267,10 @@ images; a green process exit does not replace visual judgment.
 - `?fphys=0` — bypass fluid physics through the legacy low-pass.
 - `?fphysv3=0` — roll back the area-weighted/viscous physics (default ON).
 - `?fobstacles=0` — roll back cached typography/form avoidance (default ON).
+- `?fstrike=0` — roll back click physics: no strike wave, no crown, no press
+  gain (default ON). Hover physics stays.
+- `?fformtouch=0` — roll back the FORMS answering the pointer (default ON):
+  the eight SVG forms stop denting and rippling, the droplets carry on.
 - `?fglass=0` — drop the liquid-glass MATERIAL to the flat brand-cyan branch
   (default ON). The core lighting — dome, wrapped diffuse, specular, sheen,
   fresnel — is what gives the liquid its depth; flat reads as a sticker.

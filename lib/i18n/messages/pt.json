@@ -291,15 +291,33 @@
   },
   "name": {
     "chapterLabel": "07 — A Origem",
-    "headline": "A origem da Zirtuno.",
-    "b1": "Tudo começou com dois irmãos e uma mesma inquietação: e se construíssemos o que ainda não existe?",
-    "b2": "De uma só visão nasceram três pilares — social, saúde e finanças. As forças que movem cada negócio e cada vida.",
+    "headline": "Duas ideias, um nome.",
+    "open": "A Zirtuno não começou com pessoas. Começou com duas ideias — e nenhuma delas bastava sozinha.",
+    "ideas": [
+      {
+        "kicker": "A força",
+        "word": "Zéfiro",
+        "gloss": "o vento oeste",
+        "line": "Atravessa em vez de empurrar. O que ele toca muda de forma, sem ruído."
+      },
+      {
+        "kicker": "A direção",
+        "word": "Ventura",
+        "gloss": "o que está por vir",
+        "line": "Escolhe o rumo enquanto o caminho ainda não existe."
+      }
+    ],
+    "tension": [
+      "Força sem direção é só clima.",
+      "Direção sem força é só um mapa."
+    ],
+    "fusion": "Uma palavra guarda as duas: movimento que sabe para onde vai.",
+    "pillarsLead": "Três terrenos onde essa diferença aparece primeiro.",
     "pillars": ["Social", "Saúde", "Finanças"],
-    "b3": "A Zirtuno nasceu para transformar ideias em estrutura. Para dar forma a sistemas, soluções e tecnologias que ainda esperavam para existir.",
-    "b4": "De dois irmãos a um estúdio digital completo. De uma ideia a um ecossistema — software, IA, automação, branding e estratégia.",
+    "purpose": "Damos forma ao que ainda espera para existir.",
+    "echo": "De duas ideias a um ecossistema — software, IA, automação, branding e estratégia.",
     "wordmark": "Zirtuno",
     "closing": "Construímos o que ainda não existe.",
-    "graceNote": "ZIRTUNO — o sopro que dá forma.",
     "manifesto": [
       "Movimento sem ruído.",
       "Forma para o que estava disperso.",

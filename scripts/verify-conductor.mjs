@@ -12,6 +12,9 @@
 //                     output finite, ball count within budget
 //   5. budget       — extras can never overflow the ball buffer
 //   6. sticky gap   — all presences at 0: weights hold, output stays finite
+//   7. the strike   — a click is a travelling wave that leaves bind=1 exact,
+//                     never rings, throws spray only from liquid that was
+//                     there, saturates under a mash, and rolls back cleanly
 //   node scripts/verify-conductor.mjs
 
 import {
@@ -21,6 +24,7 @@ import {
   FLASH_DECAY_MS,
 } from "../lib/webgl/conductor.mjs";
 import { N, PHYS } from "../lib/webgl/phys.mjs";
+import { FLUID } from "../lib/webgl/fluid-core.mjs";
 import { SDF_BALL_MAX, SDF_WARP_REST } from "../lib/webgl/sdf-glass-shader.mjs";
 
 const failures = [];
@@ -616,6 +620,491 @@ const mkJumpScene = (bind) => ({
       if (!Number.isFinite(buf[i])) allFinite = false;
   }
   ok(allFinite, "physics-v3: non-finite output under force/obstacle stress");
+}
+
+// ── P8: the STRIKE — click physics (wave, crown, saturation, rollback) ──────
+{
+  // A composition of free liquid on a small disc, quiet enough that anything
+  // that moves in these checks moved because of the strike.
+  const disc = [];
+  for (let i = 0; i < N; i++) {
+    const a = i * 2.39996; // golden angle — an even fill with no ring in it
+    const rr = 0.19 * Math.sqrt((i + 0.5) / N);
+    disc.push([0.5 + rr * Math.cos(a), 0.5 + rr * Math.sin(a)]);
+  }
+  const mkPool = (bind, radius = 0.02) => ({
+    id: "K",
+    forms: [0],
+    channels: { p: 1 },
+    presence: () => 1,
+    target: (i, ctx, out) => {
+      out.x = disc[i][0];
+      out.y = disc[i][1];
+      out.r = radius;
+      out.bind = bind;
+      out.cluster = -1;
+      out.z = 0;
+    },
+    form: () => null,
+    ambient: () => 0,
+    activity: () => 0,
+  });
+  const settle = (c, frames = 200, t0 = 0) => {
+    let t = t0;
+    for (let fr = 0; fr < frames; fr++) {
+      t += 16.7;
+      c.driver.frame(t, buf, 1.5);
+    }
+    return t;
+  };
+  const snapshot = () => {
+    const out = [];
+    for (let i = 0; i < N; i++) out.push([buf[i * 3], buf[i * 3 + 1]]);
+    return out;
+  };
+
+  // ── bind=1: what the interaction may and may not do to bound liquid.
+  //
+  // Bound droplets — the §3.3 melts, resting footprints, the exact mark — take
+  // the form's displacement at RENDER time, because mid-morph the stage is
+  // nothing but bound droplets and the liquid would otherwise go dead to the
+  // hand precisely when it is most alive to look at. What that must NOT touch
+  // is the choreography underneath. Three claims, in order of severity.
+  {
+    const legacyBuf = new Float32Array(SDF_BALL_MAX * 3);
+
+    // 1. UNTOUCHED means untouched. With no hand and no live wave, bound liquid
+    //    is byte-identical to the legacy trajectory — this is exact rest and
+    //    every melt in every capture, and it is not negotiable.
+    {
+      const quiet = makeConductor([mkPool(1)], { physicsV3: true });
+      const legacy = makeConductor([mkPool(1)], { physics: false });
+      let t = 0;
+      let parity = true;
+      for (let fr = 0; fr < 260; fr++) {
+        t += 16.7;
+        quiet.driver.frame(t, buf, 1.5);
+        legacy.driver.frame(t, legacyBuf, 1.5);
+        for (let i = 0; i < N; i++)
+          if (
+            buf[i * 3] !== legacyBuf[i * 3] ||
+            buf[i * 3 + 1] !== legacyBuf[i * 3 + 1]
+          )
+            parity = false;
+      }
+      ok(
+        parity,
+        "bind=1: bound liquid diverged from legacy with NOTHING touching it",
+      );
+    }
+
+    // 2. Under a hand and a strike it moves — that is the point — but only by
+    //    the form's displacement, which is bounded by construction. A droplet
+    //    escaping that envelope would mean a force had leaked into the body.
+    const MAX_FORM_DISP =
+      FLUID.FORM_TOUCH * (1 + FLUID.CURSOR_PRESS) * 1.2 +
+      FLUID.FORM_SHOCK * 2 * 1.2 * (1 + FLUID.SHOCK_IRREG);
+    {
+      const struck = makeConductor([mkPool(1)], { physicsV3: true });
+      const legacy = makeConductor([mkPool(1)], { physics: false });
+      let t = 0;
+      let moved = 0;
+      let worst = 0;
+      for (let fr = 0; fr < 200; fr++) {
+        t += 16.7;
+        if (fr === 40) struck.strike(0.5, 0.5, 2);
+        if (fr === 70) struck.strike(0.42, 0.55, 2);
+        struck.input.pon = 1;
+        struck.input.px = 0.5;
+        struck.input.py = 0.5;
+        struck.input.press = 1;
+        struck.driver.frame(t, buf, 1.5);
+        legacy.driver.frame(t, legacyBuf, 1.5);
+        for (let i = 0; i < N; i++) {
+          const d = Math.hypot(
+            buf[i * 3] - legacyBuf[i * 3],
+            buf[i * 3 + 1] - legacyBuf[i * 3 + 1],
+          );
+          if (d > moved) moved = d;
+          if (d > worst) worst = d;
+        }
+      }
+      ok(
+        moved > 0.004,
+        `bind=1: bound liquid ignored the hand entirely (${moved.toFixed(4)}) — a morph would read dead`,
+      );
+      ok(
+        worst < MAX_FORM_DISP,
+        `bind=1: bound liquid moved ${worst.toFixed(4)} uv, past the form-displacement envelope ${MAX_FORM_DISP.toFixed(4)} — a force has leaked into the body`,
+      );
+    }
+
+    // 3. And it RETURNS. This is the one that proves the displacement is a pure
+    //    render offset: once the hand leaves and the waves expire, bound liquid
+    //    is back on the legacy trajectory byte-for-byte. Any leakage into the
+    //    physics body or the legacy shadow would show up here as a permanent
+    //    offset, however small.
+    {
+      const struck = makeConductor([mkPool(1)], { physicsV3: true });
+      const legacy = makeConductor([mkPool(1)], { physics: false });
+      let t = 0;
+      for (let fr = 0; fr < 120; fr++) {
+        t += 16.7;
+        if (fr === 30) struck.strike(0.5, 0.5, 2);
+        struck.input.pon = 1;
+        struck.input.px = 0.5;
+        struck.input.py = 0.5;
+        struck.input.press = 1;
+        struck.driver.frame(t, buf, 1.5);
+        legacy.driver.frame(t, legacyBuf, 1.5);
+      }
+      struck.input.pon = 0;
+      struck.input.press = 0;
+      let parity = true;
+      let firstDiff = -1;
+      for (let fr = 0; fr < 260; fr++) {
+        t += 16.7;
+        struck.driver.frame(t, buf, 1.5);
+        legacy.driver.frame(t, legacyBuf, 1.5);
+        if (fr < 120) continue; // let the press damp out and the waves expire
+        for (let i = 0; i < N; i++)
+          if (
+            buf[i * 3] !== legacyBuf[i * 3] ||
+            buf[i * 3 + 1] !== legacyBuf[i * 3 + 1]
+          ) {
+            parity = false;
+            if (firstDiff < 0) firstDiff = i;
+          }
+      }
+      ok(
+        parity,
+        `bind=1: bound liquid never returned to the legacy trajectory (droplet ${firstDiff}) — the render offset leaked into the body`,
+      );
+    }
+  }
+
+  // ── it TRAVELS. A click that moves every droplet on the same frame is an
+  // explosion; liquid carries a blow outward at a finite speed.
+  {
+    const c = makeConductor([mkPool(0)], { physicsV3: true });
+    let t = settle(c);
+    const base = snapshot();
+    c.strike(0.5, 0.5, 1);
+    const arrive = new Array(N).fill(-1);
+    for (let fr = 0; fr < 200; fr++) {
+      t += 16.7;
+      c.driver.frame(t, buf, 1.5);
+      for (let i = 0; i < N; i++) {
+        if (arrive[i] >= 0) continue;
+        const d = Math.hypot(buf[i * 3] - base[i][0], buf[i * 3 + 1] - base[i][1]);
+        if (d > 0.004) arrive[i] = fr * 16.7;
+      }
+    }
+    const rows = [];
+    for (let i = 0; i < N; i++)
+      rows.push({
+        d: Math.hypot(base[i][0] - 0.5, base[i][1] - 0.5),
+        at: arrive[i],
+      });
+    const near = rows.filter((r) => r.d < 0.07 && r.at >= 0);
+    const far = rows.filter((r) => r.d > 0.15 && r.at >= 0);
+    ok(near.length > 0 && far.length > 0, "strike: no measurable response");
+    const nearAt = near.reduce((a, r) => a + r.at, 0) / Math.max(near.length, 1);
+    const farAt = far.reduce((a, r) => a + r.at, 0) / Math.max(far.length, 1);
+    ok(
+      farAt - nearAt > 40,
+      `strike: front is not travelling — near ${nearAt.toFixed(0)}ms vs far ${farAt.toFixed(0)}ms`,
+    );
+
+    // … and it is NOT A RING. phys.mjs refuses accidental rings in its scatter
+    // generator for the same reason: a clean circle is the signature of
+    // arithmetic. Droplets at a comparable distance must not arrive together.
+    const band = rows.filter((r) => r.d > 0.09 && r.d < 0.16 && r.at >= 0);
+    const ats = band.map((r) => r.at);
+    ok(
+      band.length > 6 && Math.max(...ats) - Math.min(...ats) > 50,
+      `strike: the front arrives as a ring (spread ${(Math.max(...ats) - Math.min(...ats)).toFixed(0)}ms over ${band.length} droplets)`,
+    );
+
+  }
+
+  // ── it SETTLES. The ambient curl never stops, so "back where it started" is
+  // the wrong question — every measurement of a strike has to be taken against
+  // an identical UNSTRUCK conductor, which isolates the wave exactly.
+  {
+    const hit = makeConductor([mkPool(0)], { physicsV3: true });
+    const control = makeConductor([mkPool(0)], { physicsV3: true });
+    const ctlBuf = new Float32Array(SDF_BALL_MAX * 3);
+    let t = 0;
+    for (let fr = 0; fr < 200; fr++) {
+      t += 16.7;
+      hit.driver.frame(t, buf, 1.5);
+      control.driver.frame(t, ctlBuf, 1.5);
+    }
+    hit.strike(0.5, 0.5, 1);
+    let peak = 0;
+    let peakMs = 0;
+    let quiet = -1;
+    for (let fr = 0; fr < 420; fr++) {
+      t += 16.7;
+      hit.driver.frame(t, buf, 1.5);
+      control.driver.frame(t, ctlBuf, 1.5);
+      let maxD = 0;
+      for (let i = 0; i < N; i++)
+        maxD = Math.max(
+          maxD,
+          Math.hypot(
+            buf[i * 3] - ctlBuf[i * 3],
+            buf[i * 3 + 1] - ctlBuf[i * 3 + 1],
+          ),
+        );
+      if (maxD > peak) {
+        peak = maxD;
+        peakMs = fr * 16.7;
+      }
+      if (quiet < 0 && fr * 16.7 > peakMs && peak > 0 && maxD < peak * 0.12)
+        quiet = fr * 16.7;
+    }
+    ok(peak > 0.02, `strike: barely registered (peak ${peak.toFixed(4)} uv)`);
+    ok(
+      quiet >= 0 && quiet < 2500,
+      `strike: liquid never settled after the wave passed (peak ${peak.toFixed(4)} at ${peakMs.toFixed(0)}ms, still ringing)`,
+    );
+  }
+
+  // ── the crown comes from LIQUID, never from empty space ────────────────────
+  {
+    // Spray SWELLS in — packSatellites drives its density off the lifetime
+    // envelope precisely so a satellite cannot pop into being as a hard bead —
+    // so the crown is not in the buffer on the very frame it was thrown.
+    const crownPeak = (strikeX, strikeY) => {
+      const c = makeConductor([mkPool(0)], { physicsV3: true });
+      let t = settle(c);
+      let before = Infinity;
+      for (let fr = 0; fr < 12; fr++) {
+        t += 16.7;
+        before = Math.min(before, c.driver.frame(t, buf, 1.5).count);
+      }
+      c.strike(strikeX, strikeY, 1);
+      let peak = 0;
+      for (let fr = 0; fr < 30; fr++) {
+        t += 16.7;
+        peak = Math.max(peak, c.driver.frame(t, buf, 1.5).count);
+      }
+      return { before, peak };
+    };
+    const onLiquid = crownPeak(0.5, 0.5);
+    ok(
+      onLiquid.peak > onLiquid.before,
+      `strike: no crown thrown from liquid it landed on (${onLiquid.before} → ${onLiquid.peak})`,
+    );
+    ok(
+      onLiquid.peak - onLiquid.before <= FLUID.SHOCK_SPRAY,
+      `strike: crown exceeded its budget (${onLiquid.peak - onLiquid.before} > ${FLUID.SHOCK_SPRAY})`,
+    );
+
+    // inside the wave's reach, far outside any droplet: the front still
+    // travels, but there was nothing there to throw
+    const onNothing = crownPeak(0.5, 0.94);
+    ok(
+      onNothing.peak === onNothing.before,
+      `strike: spray appeared out of empty space (${onNothing.before} → ${onNothing.peak})`,
+    );
+  }
+
+  // ── the ATMOSPHERE answers too. The ambient beads are analytic, so this is
+  // the one family that could silently keep ignoring the pointer.
+  {
+    const air = {
+      ...mkPool(0, 0),
+      ambient: () => 1,
+    };
+    const still = makeConductor([air], { physicsV3: true });
+    const hit = makeConductor([air], { physicsV3: true });
+    let t = 0;
+    for (let fr = 0; fr < 200; fr++) {
+      t += 16.7;
+      still.driver.frame(t, buf, 1.5);
+    }
+    const stillBuf = new Float32Array(SDF_BALL_MAX * 3);
+    t = 0;
+    for (let fr = 0; fr < 200; fr++) {
+      t += 16.7;
+      hit.driver.frame(t, buf, 1.5);
+    }
+    hit.strike(0.5, 0.5, 1.4);
+    let moved = 0;
+    let tt = t;
+    for (let fr = 0; fr < 90; fr++) {
+      tt += 16.7;
+      still.driver.frame(tt, stillBuf, 1.5);
+      const fr2 = hit.driver.frame(tt, buf, 1.5);
+      for (let i = 0; i < fr2.count; i++)
+        moved = Math.max(
+          moved,
+          Math.hypot(
+            buf[i * 3] - stillBuf[i * 3],
+            buf[i * 3 + 1] - stillBuf[i * 3 + 1],
+          ),
+        );
+    }
+    ok(moved > 0.002, "strike: the ambient family ignored the wave");
+    ok(
+      moved < FLUID.AMB_MAX * 2.1,
+      `strike: ambient displacement ${moved.toFixed(4)} escaped its clamp`,
+    );
+    // … and returns. The atmosphere rocks; it does not relocate.
+    for (let fr = 0; fr < 220; fr++) {
+      tt += 16.7;
+      still.driver.frame(tt, stillBuf, 1.5);
+      hit.driver.frame(tt, buf, 1.5);
+    }
+    let residual = 0;
+    for (let i = 0; i < PHYS.AMBIENT_N; i++)
+      residual = Math.max(
+        residual,
+        Math.hypot(
+          buf[i * 3] - stillBuf[i * 3],
+          buf[i * 3 + 1] - stillBuf[i * 3 + 1],
+        ),
+      );
+    ok(
+      residual < 0.004,
+      `strike: ambient bead never returned to its anchor (${residual.toFixed(4)})`,
+    );
+  }
+
+  // ── the HAND DISPLACES, it does not EVACUATE. A monotone repulsion carries
+  // net outward flux, so held long enough it clears a hole and keeps clearing;
+  // the well profile has to reach an equilibrium and stay there.
+  {
+    const c = makeConductor([mkPool(0)], { physicsV3: true });
+    let t = settle(c);
+    const meanDist = () => {
+      let sum = 0;
+      for (let i = 0; i < N; i++)
+        sum += Math.hypot(buf[i * 3] - 0.5, buf[i * 3 + 1] - 0.5);
+      return sum / N;
+    };
+    const rest = meanDist();
+    c.input.pon = 1;
+    c.input.px = 0.5;
+    c.input.py = 0.5;
+    c.input.press = 1;
+    let early = 0;
+    for (let fr = 0; fr < 700; fr++) {
+      t += 16.7;
+      c.driver.frame(t, buf, 1.5);
+      if (fr === 120) early = meanDist();
+    }
+    const late = meanDist();
+    ok(
+      early - rest > 0.002,
+      `hover: a pressed hand barely moved the liquid (${(early - rest).toFixed(4)})`,
+    );
+    ok(
+      late - early < 0.004,
+      `hover: the hand is evacuating, not displacing — mean radius still growing (${(late - early).toFixed(4)} after 10s)`,
+    );
+  }
+
+  // ── a MASH stays finite, bounded and inside the ball budget ────────────────
+  {
+    const c = makeConductor([mkPool(0)], { physicsV3: true });
+    let t = settle(c, 120);
+    let allFinite = true;
+    let maxExcursion = 0;
+    let maxCount = 0;
+    for (let fr = 0; fr < 1200; fr++) {
+      t += fr % 97 === 0 ? 91 : 16.7;
+      if (fr < 70) c.strike(0.5 + (fr % 7) * 0.012, 0.5, 1.7);
+      const frame = c.driver.frame(t, buf, 1.5);
+      if (!finiteFrame(frame)) allFinite = false;
+      maxCount = Math.max(maxCount, frame.count);
+      for (let i = 0; i < frame.count * 3; i++)
+        if (!Number.isFinite(buf[i])) allFinite = false;
+      for (let i = 0; i < N; i++)
+        maxExcursion = Math.max(
+          maxExcursion,
+          Math.hypot(buf[i * 3] - 0.5, buf[i * 3 + 1] - 0.5),
+        );
+    }
+    ok(allFinite, "strike: non-finite output under a strike mash");
+    ok(
+      maxExcursion < 0.45,
+      `strike: a mash threw liquid ${maxExcursion.toFixed(3)} uv from centre (runaway)`,
+    );
+    ok(
+      maxCount <= SDF_BALL_MAX,
+      `strike: a mash overflowed the ball budget (${maxCount} > ${SDF_BALL_MAX})`,
+    );
+  }
+
+  // ── the governor cannot sleep through a click ──────────────────────────────
+  {
+    const c = makeConductor([mkPool(0)], { physicsV3: true });
+    let t = settle(c, 400);
+    const idle = c.driver.frame((t += 16.7), buf, 1.5).energy;
+    c.strike(0.5, 0.5, 1);
+    const struck = c.driver.frame((t += 16.7), buf, 1.5).energy;
+    ok(
+      struck > idle + 0.3,
+      `strike: energy ${idle.toFixed(2)} → ${struck.toFixed(2)} — the cadence governor would play the wave at 30 Hz`,
+    );
+  }
+
+  // ── ?fstrike=0 removes the blow and keeps the hand ─────────────────────────
+  {
+    const off = makeConductor([mkPool(0)], { physicsV3: true, strike: false });
+    const ctl = makeConductor([mkPool(0)], { physicsV3: true, strike: false });
+    const ctlBuf = new Float32Array(SDF_BALL_MAX * 3);
+    let t = 0;
+    for (let fr = 0; fr < 200; fr++) {
+      t += 16.7;
+      off.driver.frame(t, buf, 1.5);
+      ctl.driver.frame(t, ctlBuf, 1.5);
+    }
+    off.strike(0.5, 0.5, 2);
+    off.input.press = 1;
+    let moved = 0;
+    for (let fr = 0; fr < 200; fr++) {
+      t += 16.7;
+      off.driver.frame(t, buf, 1.5);
+      ctl.driver.frame(t, ctlBuf, 1.5);
+      for (let i = 0; i < N; i++)
+        moved = Math.max(
+          moved,
+          Math.hypot(
+            buf[i * 3] - ctlBuf[i * 3],
+            buf[i * 3 + 1] - ctlBuf[i * 3 + 1],
+          ),
+        );
+    }
+    ok(
+      moved === 0,
+      `?fstrike=0: a strike (or its press gain) still moved liquid (${moved.toExponential(2)})`,
+    );
+
+    // … and the hand is still there. The flag removes the blow, not the field.
+    off.input.pon = 1;
+    off.input.px = 0.5;
+    off.input.py = 0.5;
+    let hovered = 0;
+    for (let fr = 0; fr < 200; fr++) {
+      t += 16.7;
+      off.driver.frame(t, buf, 1.5);
+      ctl.driver.frame(t, ctlBuf, 1.5);
+      for (let i = 0; i < N; i++)
+        hovered = Math.max(
+          hovered,
+          Math.hypot(
+            buf[i * 3] - ctlBuf[i * 3],
+            buf[i * 3 + 1] - ctlBuf[i * 3 + 1],
+          ),
+        );
+    }
+    ok(hovered > 0.004, "?fstrike=0: hover physics went with it");
+  }
 }
 
 // ═══ OPTICS PLUMBING (R5-C: depth pack, energy, score passthrough) ════════════

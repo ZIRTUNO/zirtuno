@@ -28,9 +28,7 @@ export default async function HomePage({
   const query = await searchParams;
   setRequestLocale(locale);
   const tEco = await getTranslations("ecosystem");
-  const tName = await getTranslations("name");
   const ecoNodes = tEco.raw("nodes") as EcoNode[];
-  const pillars = tName.raw("pillars") as string[];
   const first = (value: string | string[] | undefined) =>
     Array.isArray(value) ? value[0] : value;
   const initialIntent = resolveContactIntent(first(query.intent));
@@ -58,7 +56,6 @@ export default async function HomePage({
           tEco("systems.growth"),
           tEco("systems.operation"),
         ]}
-        pillars={pillars}
       >
         <Hero />
         <ChapterProblem />

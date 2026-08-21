@@ -152,10 +152,15 @@ export type Conductor = {
     pvx: number;
     pvy: number;
     pon: number;
+    /** 0/1 — the pointer is held down. Damped internally into the field gain. */
+    press: number;
     /** Fixed-stride field-space avoidance bounds for the opt-in v3 review. */
     obstacles: Float32Array;
     obstacleCount: number;
   };
+  /** Queue a click/tap at (x, y) in field uv; `strength` scales the blow.
+   *  Applied on the conductor's next frame, on the conductor's clock. */
+  strike(x: number, y: number, strength?: number): void;
   /** The merged light score after each frame (stable object, mutated). */
   score: LightScore;
   /** Diagnostics: arbiter violations, current holder, energy, active count,

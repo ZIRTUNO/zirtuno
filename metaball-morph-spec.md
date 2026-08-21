@@ -412,10 +412,38 @@ and bounded frame delta.
 - **Repulsion:** short-range soft-core separation based on combined radii.
 - **Cohesion:** droplets with the same cluster ID pull toward their centroid.
 - **Curl drift:** analytic divergence-free gyres create organic free motion.
-- **Cursor field:** radial push, tangential vortex, and pointer-velocity drag
-  across the page on fine pointers.
+- **Cursor field:** a volume-conserving displacement well — an outward lobe at
+  q≈0.30 and a return lobe at q≈0.70 whose area-weighted integrals cancel —
+  plus a velocity-signed wake and pointer-velocity drag. The whole field gains
+  while the pointer is held down.
+- **Strike:** a click or tap injects a travelling pressure ring: a crest that
+  pushes outward, a trough behind it that pulls back into the cavity, a finite
+  propagation speed, per-body arrival jitter and angular lobing so it never
+  reads as a ring, geometric plus temporal decay, and a crown of spray thrown
+  from liquid within `SHOCK_CROWN_R` of the impact.
 - **Pinch-off:** sufficiently strained, loosely bound droplets shed one or two
   inherited-velocity micro-droplets that shrink over a TTL.
+- **Mass response:** interaction forces divide by an area-derived mass, clamped
+  either side, so small beads spray and heavy bodies shrug. Goal-seek,
+  repulsion, cohesion, curl and scroll are unchanged.
+- **Form displacement:** the hand and the strikes also reach the FORMS, as a
+  displacement of the SDF sample domain rather than a force. A droplet
+  integrates a force through a spring; a form is a static SDF with no velocity
+  state, so it answers with that spring's equilibrium — the same spatial
+  profile, taken as a displacement. See §10.4.
+
+The interaction forces have ONE definition — `cursorAccel` and `shockAccel` —
+reached from three places: the canonical 48 inside the substep loop, the
+satellite pool, and, through the exported `probe()`, the conductor's analytic
+ambient family, which gains a small damped displacement body around each anchor
+rather than a change to its lava-lamp path. A second copy of what the hand does
+to liquid is the failure mode that arrangement exists to prevent.
+
+Absolute `performance.now()` timestamps in this core are Float64. A Float32
+mantissa is exact only to ~16.7e6 ms, and rounding a double to the nearest float
+can round UP — so `now − stored` came out slightly NEGATIVE on the same frame a
+value was written. That is not a long-session hazard but an every-frame one, and
+it is what swallowed the first strike's crown before the type changed.
 
 Velocities, forces, distances, spawn rates, and pool sizes are clamped. Retuning
 belongs in the exported `FLUID` table and requires diagnostics plus owner feel
@@ -440,6 +468,25 @@ Do not set everything to bind 0 to make it “more fluid.” That destroys exact
 choreography. Do not set everything to bind 1 to stabilize it. That returns the
 site to target chasing.
 
+**The one interaction exception.** Bound droplets take the FORM's displacement
+at render time, scaled by `bind`, applied when the conductor packs the ball
+buffer and nowhere else. Without it a morph is dead to the pointer: mid-melt the
+stage is nothing but bound droplets, so switching every environmental force off
+switched off the whole picture — and those droplets share one iso-surface with
+form halves that were already being displaced at draw time, so leaving them
+behind also pulled the one liquid apart. Scaling by `bind` keeps the total
+response continuous across the blend, since free liquid already answers through
+the physics and receives nothing here.
+
+What it must never do is touch the choreography underneath, and
+`verify-conductor.mjs` asserts all three parts of that:
+
+- with nothing touching, bind = 1 is byte-identical to the legacy trajectory;
+- under a hand and a strike it moves, but only within the form-displacement
+  envelope — anything past that means a force has leaked into the body;
+- once the hand leaves and the waves expire it is byte-identical again, which
+  is what proves the offset never reached `P`, `XP` or `XL`.
+
 ### 8.4 Rollback and parity
 
 `?fphys=0` makes the conductor bypass `fluid-core` and use the original
@@ -450,6 +497,11 @@ per-droplet low-pass. Keep the bypass until R5-E. The conductor harness checks:
 - finite state over long simulation;
 - satellite budget;
 - arbiter invariants.
+
+`?fstrike=0` removes the click — the strike wave, its crown and the press gain
+— and keeps hover physics. `?fphys=0` removes both. The conductor drains its
+strike queue on its own clock whether or not a core is listening, so the queue
+cannot fill once and then swallow every later click.
 
 Physics-v3 is now the DEFAULT material behaviour; `?fphysv3=0` is its rollback.
 Its area-weighted response, local viscosity/attraction, and bounded
@@ -544,6 +596,32 @@ Contact submit dispatches one semantic exhale event to the contact scene. The
 event provides visual feedback after valid submission; it is not form control
 logic. Reduced-motion and static paths submit without requiring animation.
 
+### 9.4 The strike
+
+A click or tap anywhere on the page starts one travelling wave. The whole
+viewport is the one liquid, so there is no interactive region to be inside of.
+
+- registered in field uv on `pointerdown`, queued, and applied on the
+  conductor's next frame — the DOM clock and the render clock never have to
+  agree;
+- strength scales with pointer speed at the moment of contact;
+- every listener is passive and none calls `preventDefault`: links, buttons,
+  form fields, text selection and scrolling behave exactly as they did before;
+- a held pointer is a PRESS — a damped gain on the whole cursor field, which is
+  also what gives coarse pointers the drag-stir a mouse gets from hover;
+- repeats inside `SHOCK_MERGE_MS` / `SHOCK_MERGE_R` deepen the live wave
+  instead of starting a second front a few ms behind it; beyond that window,
+  amplitude divides by a decaying strike load, so an agitated surface absorbs a
+  blow the way a real one does;
+- absent under reduced motion, on static tiers, and on `?fstrike=0`.
+
+Spray must come from a body of liquid and never from empty space: a click on
+bare page still sends the front outward, but throws nothing.
+
+The forms are struck too — §10.4 — so a wave crossing a resting mark ripples it
+on the way past, and so are the BOUND droplets beside them, which is what keeps
+a morph from going dead under the hand. See §8.3.
+
 ## 10. Rendering and Optics
 
 ### 10.1 Current renderer
@@ -630,6 +708,71 @@ scores feed `CinematicVeils` via CSS vars PageStage writes once per frame
 
 The post chain handles liquid optics. Cinematic veils handle page exposure and
 act boundaries. Keep those responsibilities separate.
+
+### 10.4 Forms answering the pointer
+
+The eight owner-traced forms render from SDF textures. Nothing in `fluid-core`
+could reach them, so until now the largest liquid on the page was the only part
+of it that ignored a hand.
+
+They answer through `formTouch()` in the fragment shader, which displaces the
+SDF SAMPLE DOMAIN inside `formOnlyField()`:
+
+```glsl
+vec2 tw = formTouch(uv);          // displacement, field uv
+if (tw != vec2(0.0)) fuv -= tw / fs;
+```
+
+Displacing the domain moves the surface with its normals intact, so the bulge
+lights itself — there is no separate shading term, and the four gradient taps
+pick it up for free because they run through the same function. Divided by
+`iFormScale` because the displacement is authored in field uv while `fuv` is
+form-local.
+
+The split between CPU and shader is deliberate. Everything time-dependent — how
+far each front has travelled, how much amplitude is left — is resolved in
+`fluid-core.formUniforms()` against the same wave state the droplets read, and
+arrives as `iTouch` (pointer xy, radius, gain) and `iShock[SDF_FORM_SHOCKS]`
+(centre xy, front radius, amplitude). The shader evaluates only a spatial
+profile, and the profile's constants are INJECTED into the GLSL source from the
+`FLUID` table, so a physics retune cannot move the droplets and leave the forms
+answering the old law. A spent slot carries amplitude 0, the shader's
+exact-identity case.
+
+Two naturality notes. The hand is the same displacement well the droplets feel,
+so a form dents under the pointer and piles up at the rim rather than merely
+retreating; `FORM_TOUCH` / `FORM_SHOCK` are smaller than the droplet response
+because a form is a large body of liquid and a droplet is a bead. And a
+continuous surface has no equivalent of the per-droplet arrival jitter that
+keeps a strike from reading as a ring, so the form breaks its own circle with
+angular harmonics seeded from the strike's position.
+
+This is a SEPARATE COMPILE VARIANT. `makeGlassFrag(withShape, withTouch)`
+produces four sources and `FieldStage` passes them to `makeLayer` as a
+preference list, most capable first, so a driver that refuses the widest uniform
+block still gets whichever half it can afford — and a refusal costs an
+interaction, never the canvas. Keeping it out of `SDF_GLASS_FRAG` is what lets
+the exact-rest contract stay a claim about UNCHANGED CODE: the source the
+deterministic rest stills compile contains no `iTouch`, no `iShock` and no
+`formTouch` at all, which `verify-strike.mjs` §0 asserts rather than assumes.
+
+`fluid-core.formDisplace()` evaluates the same displacement at a single point
+on the CPU, reading the very `touchU`/`shockU` arrays that were uploaded — so
+the amplitudes are computed exactly once and the two evaluators cannot disagree
+about how far along a wave is. Only the profile SHAPE is written twice, once per
+language, and both take their constants from `FLUID`. (GLSL `fract()` is
+`x - floor(x)`, which is not JS's `%` for negatives; the strike's angular seed
+has to match or the form and the droplets beside it would finger in different
+directions.) Its consumer is the bound liquid of §8.3.
+
+The effect is gated per frame on the live watchdog rung (the same
+`DEFORM_RUNGS` set deformation uses) and on reduced motion, and the stage
+uploads zeroed arrays rather than skipping the upload — a stale `iTouch` would
+leave a dent parked in the form after the pointer had gone.
+
+`?fformtouch=0` is the rollback: the droplets keep answering the hand and the
+forms stop. It is not `?fstrike=0`, which removes the click everywhere and
+reaches the forms for free, since no shocks are ever registered.
 
 ## 11. Journey State Map
 
@@ -760,6 +903,7 @@ npm run chapters:sheet
 npm run endpoints
 
 node scripts/verify-conductor.mjs
+node scripts/verify-strike.mjs
 node scripts/verify-canvas-count.mjs
 node scripts/verify-perf.mjs
 node scripts/verify-postfx.mjs
@@ -810,6 +954,32 @@ keyboard raise `data-pulse`, the pulse reaches the touched capability's own
 system before the rest of the body, the `hov` channel swells its mass, the HUD
 reads index · name · system · capability), release on leave, and the reduced-
 motion story (no live gathering; the eco-stack carries all ten capabilities).
+
+`verify-strike.mjs` is the click gate's browser half. The conductor harness
+proves the FORCE against the pure core (it travels, it is not a ring, the crown
+has provenance, a mash saturates, bind=1 stays byte-exact, `?fstrike=0` rolls
+back); this proves the WIRING that harness cannot see — a real pointer event
+reaching the conductor, the liquid answering it, the press toggling, the field
+settling afterwards, the click staying passive under a real control, and no
+strike or press wiring at all under reduced motion.
+
+It reads the GL BALL BUFFER, not pixels: an init script maps uniform locations
+to names and snapshots `iBalls` / `iBallCount` on each `drawArrays`, so every
+droplet's position is exact and per-frame. Screenshots cannot measure this — the
+surface never stops moving, so two captures of the same build differ by ~1% of
+pixels, the same order as the effect. Against the buffer the live page reports a
+peak displacement of 0.045 uv where the node sim predicts 0.045, run to run,
+which is what makes tight thresholds possible at all. Scroll is driven with
+`page.mouse.wheel` because Lenis owns it and `scrollTo` injects its own jitter.
+It also walks the whole Services morph asserting NO DEAD BAND — no scroll
+position where liquid is on stage and a click does nothing, which is the
+regression bound droplets were introduced to close (§8.3). That walk measures on
+the ball buffer too: through a scroll-driven morph the COMPOSITION is moving, so
+a pixel baseline is swamped by the choreography itself.
+
+The viewport is deliberately small: a full-size field on a software rasteriser
+trips the FPS watchdog, which would disable the code under test and then report
+a pass.
 
 `verify-boundaries.mjs` is the seam gate for acts II–III: no DEAD BAND (a
 scroll position with neither droplets nor form on stage) and no centre-of-mass

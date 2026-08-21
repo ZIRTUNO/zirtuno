@@ -148,6 +148,58 @@ export function makeSiteScene(cbs: SiteCallbacks = {}): SceneModule {
   let lastPair = "0-0";
   let mState = 0;
 
+  /**
+   * THE PARCELS — which droplet of the current form's cloud each slot carries.
+   *
+   * The §3.3 correspondence is defined PER PAIR: slot i runs A[i] → B[perm[i]].
+   * So a slot that finishes melt a→b sits at CLOUDS[b][perm_ab[i]], and the next
+   * melt b→c then asks that same slot to START at CLOUDS[b][i] — a DIFFERENT
+   * droplet of the same cloud. The silhouette is identical either way, which is
+   * why this survived so long, but per droplet it is a full teleport: measured
+   * over the seven pillar boundaries the relabel displaces a slot by 0.35 cloud
+   * uv on average and up to 0.76.
+   *
+   * It was visible because it lands exactly where the cloud is dying. Presence
+   * reaches 0 at both endpoints, but the conductor low-passes density over
+   * PHYS.TAU_RADIUS and only culls under 0.004, while a metaball breaks the
+   * surface at BALL_CORE² = 0.0324 — so for several frames after every boundary
+   * the droplets are still hard-edged beads, and bind = 1 renders the jump as a
+   * fast slide instead of absorbing it. Recorded off the live page, the frame
+   * after a pillar flip stepped droplets 0.050 uv against the 0.0002 they were
+   * doing the frame before: a 250x jump, six frames of it, then all 48 dropped
+   * under the iso at once. That is the flash of specks at the end of a morph.
+   *
+   * Carrying the assignment forward makes the boundary EXACTLY continuous —
+   * slot i's new target is the position it already holds. The rendered set of
+   * balls is unchanged at every m; this is a relabel, not new geometry.
+   */
+  const svcIdx = new Uint8Array(N);
+  const resetParcels = () => {
+    for (let i = 0; i < N; i++) svcIdx[i] = i;
+  };
+  resetParcels();
+
+  /**
+   * Carry the parcel assignment across a pillar boundary. Pairs always chain by
+   * one (read() derives both from a single pillar index), so a forward step is
+   * (a,b) → (b,c) and a backward one (b,c) → (a,b). Anything else is a scroll
+   * that skipped a pillar outright, where no correspondence survives and the
+   * canonical labelling is the honest answer.
+   */
+  const carryParcels = (la: number, lb: number, na: number, nb: number) => {
+    if (lb === na) {
+      if (la === lb) return; // a degenerate pair carries no melt to speak of
+      const p = permFor(la, lb); // forward — the melt that just finished
+      for (let i = 0; i < N; i++) svcIdx[i] = p[svcIdx[i]];
+    } else if (nb === la) {
+      if (na === nb) return;
+      const p = permFor(na, nb); // backward — undo the melt we are re-entering
+      const inv = new Uint8Array(N);
+      for (let j = 0; j < N; j++) inv[p[j]] = j;
+      for (let i = 0; i < N; i++) svcIdx[i] = inv[svcIdx[i]];
+    } else resetParcels();
+  };
+
   // ── per-frame factors (computed once in tick, read by target/form/extras) ──
   let F = 0; // fracture
   let TR = 0; // travel
@@ -158,6 +210,9 @@ export function makeSiteScene(cbs: SiteCallbacks = {}): SceneModule {
   let jOx = 0;
   let jOy = 0;
   let inSvcMelt = false;
+  let svcBridge = false; // the §3.3 bridge owns the droplets (whole pillar)
+  let svcB = 0; // …its destination form (= pa on the degenerate last pillar)
+  let svcM = 0; // …and its progress (0 there, so it is that form's rest cloud)
   let pa = 0;
   let pb = 0;
   let heroBridge = false;
@@ -391,6 +446,8 @@ export function makeSiteScene(cbs: SiteCallbacks = {}): SceneModule {
       const pairKey = pa + "-" + pb;
       const mRaw = clamp01(ch.pairM);
       if (pairKey !== lastPair) {
+        const cut = lastPair.indexOf("-");
+        carryParcels(+lastPair.slice(0, cut), +lastPair.slice(cut + 1), pa, pb);
         lastPair = pairKey;
         mState = mRaw;
       } else {
@@ -439,6 +496,17 @@ export function makeSiteScene(cbs: SiteCallbacks = {}): SceneModule {
       // and its liquid leave together instead of separating on the way out.
       jOy = svcOy * SP - exitDrop;
       const inServices = pa !== pb || pa > 0;
+      // The bridge owns the Services droplets for the WHOLE pillar range, not
+      // only while a melt is strictly in flight. Gating it to the open interval
+      // handed them back to the gathered target — the mark's own footprint, a
+      // form away — on every rest plateau: a second teleport on top of the
+      // parcel relabel, landing in the same still-surfacing frames. A
+      // degenerate pair (the last pillar) is simply its own rest cloud at m = 0.
+      svcBridge = inServices;
+      svcB = pa === pb ? pa : pb;
+      svcM = pa === pb ? 0 : mState;
+      // …while this still means "a melt is MOVING", which is the only thing the
+      // cadence governor and the key-light lift should answer to.
       inSvcMelt = pa !== pb && mState > 0.0005 && mState < 0.9995;
       hOx = ch.heroOx;
       hOy = ch.heroOy;
@@ -822,22 +890,22 @@ export function makeSiteScene(cbs: SiteCallbacks = {}): SceneModule {
       // the fracture's unstable chunks still cohere before the gathering starts
       if (TR < 0.6 && F < 0.85 && e < 0.1)
         clusJ = Math.min((hash(i, 11) * 4) | 0, 3);
-      if (inSvcMelt) {
-        // the §3.3 services bridge is the journey target while melting
+      if (svcBridge) {
+        // the §3.3 services bridge is the journey target across the pillar
         const A = CLOUDS[pa],
-          B = CLOUDS[pb];
-        const pm = permFor(pa, pb),
+          B = CLOUDS[svcB];
+        const pm = permFor(pa, svcB),
           st = STAG[pa];
         meltDroplet(
           serviceDrop,
-          i,
+          svcIdx[i], // the parcel this slot carries — see svcIdx
           A,
           B,
           pm,
           st,
-          mState,
+          svcM,
           FORM_SOLIDITY[pa],
-          FORM_SOLIDITY[pb],
+          FORM_SOLIDITY[svcB],
         );
         jx = 0.5 + jOx + (serviceDrop[0] - 0.5) * jScale;
         jy = 0.5 + jOy + (serviceDrop[1] - 0.5) * jScale;
@@ -850,7 +918,12 @@ export function makeSiteScene(cbs: SiteCallbacks = {}): SceneModule {
         // The shared kernel also owns the measured per-form solidity and the
         // density schedule, so live Services and the off-GPU gate cannot drift.
         const bridgeR = serviceDrop[2] * jScale;
-        const handoff = smooth01(clamp01(mState / 0.14));
+        // The radius seam exists ONCE — where the gathered body hands its
+        // droplets to the first pillar melt. From pillar 1 on the bridge already
+        // owns them, so re-opening this blend at every boundary would step the
+        // radius back to the gathered one for exactly the frames the density
+        // tail is still above the iso.
+        const handoff = pa === 0 ? smooth01(clamp01(svcM / 0.14)) : 1;
         jr = jr * (1 - handoff) + bridgeR * handoff;
         // PRESENCE IS THE FORM'S COMPLEMENT — the cloud is exactly as present
         // as the form is absent, so the total on screen never changes. It opens

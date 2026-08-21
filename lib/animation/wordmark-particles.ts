@@ -14,6 +14,15 @@ export function runWordmarkAssembly(
   textEl: HTMLElement,
   text: string,
   onSettled: () => void,
+  /**
+   * Backing-store cap in CSS px. The canvas is stretched to its host by
+   * `width: 100%`, so a cap BELOW the host's width is an upscale: the origin
+   * wordmark's stage is 736px wide, and at the old fixed 520 every particle
+   * and every sampled letterform was blown up 1.4x and softened — at the one
+   * moment the brand name is supposed to resolve. The default keeps the entry
+   * veil (S1.10), whose stage is min(78vw, 520px), byte-identical.
+   */
+  maxWidth = 520,
 ): () => void {
   let raf = 0;
   let running = true;
@@ -25,7 +34,7 @@ export function runWordmarkAssembly(
       onSettled();
       return;
     }
-    const W = Math.min(host.clientWidth || 360, 520);
+    const W = Math.min(host.clientWidth || 360, maxWidth);
     const H = Math.round(W * 0.26);
     canvas.width = W;
     canvas.height = H;

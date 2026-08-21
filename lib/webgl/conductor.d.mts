@@ -18,6 +18,8 @@ export declare function makeConductor(
     physicsV3?: boolean;
     /** Opt-in cached typography/card flow; requires physicsV3 (?fobstacles=1). */
     obstacleFlow?: boolean;
+    /** false = no click strike and no press gain (?fstrike=0); default true. */
+    strike?: boolean;
     /** false = neutral score, no veils/flash (?fcine=0); default true. */
     cine?: boolean;
   },

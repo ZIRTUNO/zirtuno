@@ -288,15 +288,33 @@
   },
   "name": {
     "chapterLabel": "07 — The Origin",
-    "headline": "The origin of Zirtuno.",
-    "b1": "It began with two brothers and a single restlessness: what if we built what doesn't exist yet?",
-    "b2": "From one vision, three pillars were born — social, health, and finance. The forces that move every business and every life.",
+    "headline": "Two ideas, one name.",
+    "open": "Zirtuno did not begin with people. It began with two ideas — and neither was enough on its own.",
+    "ideas": [
+      {
+        "kicker": "The force",
+        "word": "Zéfiro",
+        "gloss": "the west wind",
+        "line": "It crosses rather than pushes. What it touches changes shape, without noise."
+      },
+      {
+        "kicker": "The direction",
+        "word": "Ventura",
+        "gloss": "what is to come",
+        "line": "It picks the heading while the road still does not exist."
+      }
+    ],
+    "tension": [
+      "Force without direction is only weather.",
+      "Direction without force is only a map."
+    ],
+    "fusion": "One word holds both: movement that knows where it is going.",
+    "pillarsLead": "Three grounds where that difference shows first.",
     "pillars": ["Social", "Health", "Finance"],
-    "b3": "Zirtuno was born to turn ideas into structure — to give form to the systems, solutions, and technologies still waiting to exist.",
-    "b4": "From two brothers to a complete digital studio. From an idea to an ecosystem — software, AI, automation, branding, and strategy.",
+    "purpose": "We give form to what is still waiting to exist.",
+    "echo": "From two ideas to an ecosystem — software, AI, automation, branding, and strategy.",
     "wordmark": "Zirtuno",
     "closing": "We build what doesn't exist yet.",
-    "graceNote": "ZIRTUNO — the breath that gives shape.",
     "manifesto": [
       "Movement without noise.",
       "Form for what was dispersed.",

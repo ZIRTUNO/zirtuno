@@ -28,9 +28,10 @@ automatic translations. Shipped copy lives only in
 ## 2. Brand Essence
 
 Zirtuno joins the quiet transforming force of Zéfiro with the direction and
-courage of Ventura. The current Origin story is grounded in the real company:
-two brothers, three founding pillars, and the drive to build what does not yet
-exist. Mythology is a dim grace note, not the chapter’s main claim.
+courage of Ventura. That join IS the Origin story (S7): TWO IDEAS, not two
+people. Force without direction is only weather; direction without force is
+only a map. The three founding pillars and the drive to build what does not yet
+exist follow from the fusion — they are not a second origin beside it.
 
 The brand is quiet but powerful: transformation without noise, structure given
 to what was dispersed.
@@ -55,6 +56,31 @@ The site is in R5, “One Continuous Liquid.”
   deformation with strain-driven glass optics is the default renderer on glass
   tiers (`?fshape=0` rolls back). `verify-deformation.mjs` is the machine gate;
   the conductor harness asserts bind=1 parity *under scroll*.
+  Interaction is now the whole field. The hand is a volume-conserving
+  DISPLACEMENT well with a velocity-signed wake — not the monotone repulsion
+  that used to evacuate its own neighbourhood — a click or tap is a travelling
+  STRIKE (crest out, trough back, per-body arrival jitter, a crown of spray
+  thrown only from liquid that was actually there), a held pointer is a press
+  gain, and the ambient family and the spray answer the same forces through one
+  shared definition. Every term scales by (1 − bind), so melts and exact rest
+  are untouched. And the FORMS answer as well: the eight owner-traced SVGs
+  render from SDF textures and never entered the droplet buffer, so no force
+  could reach them — the most prominent liquid on the page was the only part of
+  it that ignored a hand. They now take the same hand and the same waves as a
+  DOMAIN DISPLACEMENT, which moves the surface with its normals intact so the
+  bulge lights itself, and the BOUND droplets beside them take the same
+  displacement at render time — without that a morph is dead to the pointer,
+  because mid-melt the stage is nothing but bound droplets. That is the bind
+  contract's one interaction exception: render-only, zero when nothing is
+  touching, and byte-identical to the legacy trajectory again the moment the
+  hand leaves (§8.3). The shader half lives in a separate compile variant,
+  which is what
+  keeps `SDF_GLASS_FRAG` — the source the deterministic rest stills compile —
+  byte-identical, so the exact-rest contract stays a claim about unchanged code
+  rather than about floating point. `?fstrike=0` rolls back the click and keeps
+  the hand; `?fformtouch=0` rolls back the forms' answer and keeps the
+  droplets'; `verify-strike.mjs` is the wiring gate beside the conductor
+  harness's force gate.
 - **R5-C is complete:** the framebuffer post chain (selective bloom, blue-noise
   dither, luminance-gated grain), identity-gated in-shader grade (exposure,
   key boost, internal absorption, `iBallZ` depth bands), the `full-nofx`
@@ -417,8 +443,9 @@ and flag it:
   label is the current default.
 - Portfolio: real projects and which outcomes are verifiable.
 - Studio: anonymous role grid is the default; portraits require supplied assets.
-- Origin: confirm the precise meaning of social/health/finance and whether the
-  brothers remain anonymous.
+- Origin: confirm the precise meaning of social/health/finance. The founders'
+  anonymity is no longer a blocker — the chapter's subject is the two ideas
+  (Zéfiro · Ventura), so there is no founder beat to name.
 - Contact/footer: real WhatsApp, domain email, site URL, and social handles.
 - Audio: out for v1.
 

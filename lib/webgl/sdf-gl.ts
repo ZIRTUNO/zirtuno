@@ -49,6 +49,13 @@ export function makeLayer(
     alpha: true,
     premultipliedAlpha: false,
     antialias: false,
+    // The page-wide liquid is the single heaviest thing this site draws, and
+    // it was the ONE context that never asked for the fast GPU — HeroRibbon,
+    // a soft decorative stream rendered at 0.7 CSS px, has requested it since
+    // R4. On a hybrid-graphics laptop the default lets the browser answer with
+    // the integrated adapter, which is precisely the class of GPU this shader
+    // is fill-bound on.
+    powerPreference: "high-performance",
   });
   if (!gl) return null;
   const floatLinear = !!gl.getExtension("OES_texture_float_linear");

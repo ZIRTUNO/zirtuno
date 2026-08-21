@@ -911,11 +911,15 @@ section[id],
 }
 
 /* S8 Beat 5 — wordmark convergence (CPU particles → crisp text crossfade) */
+/* The canvas samples its font as floor(H * 0.62), so the STAGE height is what
+   sets the particle letterforms. At 5.5rem it assembled ZIRTUNO at ~54px and
+   then crossfaded to crisp text at up to 140px: the climax of the whole site
+   rendered as a 250px smudge. Height now follows the wordmark itself. */
 .origin-wordmark {
   position: relative;
   display: grid;
   place-items: center;
-  min-height: 5.5rem;
+  min-height: calc(var(--text-wordmark) * 1.55);
 }
 .origin-wordmark-canvas {
   width: 100%;
@@ -1070,15 +1074,19 @@ section[id],
     .origin-open,
     .origin-coda,
     .origin-closing,
-    .origin-grace,
-    .founding-pillars,
+    .origin-idea-kicker,
+    .origin-idea-gloss,
+    .origin-idea-line,
+    .origin-fusion,
+    .origin-pillars-lead,
+    .founding-pillar,
     .name-word,
     .name-word-text,
     .manifesto-line,
     .eco-stack-name,
     .eco-stack-cap,
     .eco-stack-center,
-    .origin-pillar-label
+    .founding-pillar
   ),
 .side-index-num {
   text-shadow:
@@ -1272,12 +1280,16 @@ section[id],
       #work .type-section-title,
       #work .type-lead-copy,
       #name .origin-open,
-      #name .founding-pillars,
+      #name .origin-headline,
+      #name .origin-idea-line,
+      #name .origin-fusion,
+      #name .origin-pillars-lead,
+      #name .origin-tension-line,
+      #name .founding-pillar,
       #name .origin-statement,
       #name .origin-coda,
       #name .name-word-text,
       #name .origin-closing,
-      #name .origin-grace,
       #name .manifesto-line,
       #studio .studio-lead,
       #studio .type-feature-title,
@@ -1289,12 +1301,9 @@ section[id],
 
   /* the aperture hugs the words on short, non-filling lines */
   .liquid-journey
-    :is(#services .pillar-accent, #name .manifesto-line, #name .founding-pillars) {
+    :is(#services .pillar-accent, #name .manifesto-line) {
     width: fit-content;
     max-width: 100%;
-  }
-  .liquid-journey #name .founding-pillars {
-    margin-inline: auto;
   }
 
   .liquid-journey :is(.cta-secondary, .cta-ghost) {
@@ -2581,7 +2590,7 @@ section[id],
    sentence. */
 .origin-beat {
   display: flex;
-  min-height: 86vh;
+  min-height: 78vh;
   flex-direction: column;
   align-items: center;
   justify-content: flex-end;
@@ -2595,7 +2604,37 @@ section[id],
   justify-content: center;
   padding-bottom: 0;
 }
-/* Beat 1 — a quiet opening (the two masses drift in behind) */
+/* Beat 1 — TWO IDEAS, APART.
+   The two masses are still travelling in from opposite sides here, so the type
+   is composed as two plates around an EMPTY CENTRE: the gutter is the space
+   they are about to meet in, and each plate sits over the mass it names. The
+   inner rules point at that gutter, which is what turns two paragraphs into a
+   confrontation. Before this the beat was one centred sentence with two
+   unlabelled blobs behind it — the reader had no way to know the masses meant
+   anything at all. */
+/* doubled class on purpose: `.origin-beat:first-child` above is (0,2,0) and
+   this beat IS the first child, so a single-class rule would lose its height */
+.origin-beat.origin-beat--ideas {
+  min-height: 104vh;
+  justify-content: center;
+  gap: clamp(2.5rem, 8vh, 5.5rem);
+  padding-bottom: 0;
+}
+.origin-intro {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  text-align: center;
+}
+.origin-headline {
+  max-width: 24rem;
+  font-weight: 600;
+  font-size: var(--text-display-m);
+  line-height: var(--text-display-m--line-height);
+  letter-spacing: var(--text-display-m--letter-spacing);
+  color: var(--color-paper);
+}
 .origin-open {
   max-width: 32rem;
   font-size: var(--text-poetic);
@@ -2603,9 +2642,180 @@ section[id],
   letter-spacing: var(--text-poetic--letter-spacing);
   color: var(--color-paper-mute);
 }
-/* Beat 2 — the mark forms on the stage; the pillar line reads beneath it */
+/* Capped and centred, so the plates HUG the gutter instead of spreading to the
+   page edges. The two masses sweep in from off-stage to ±0.105uv (nearly the
+   centre) across this beat, so anything parked in the outer thirds is driven
+   through by liquid — the first cut put the Ventura line straight over the
+   right-hand mass. Inboard, the masses cross behind the gutter rather than the
+   type, and the aperture below covers the moment they pass. */
+.origin-ideas {
+  display: grid;
+  width: 100%;
+  max-width: 54rem;
+  margin-inline: auto;
+  grid-template-columns: minmax(0, 1fr) clamp(5rem, 13%, 9rem) minmax(0, 1fr);
+  align-items: start;
+  padding: 0;
+  list-style: none;
+}
+.origin-ideas > li:first-child {
+  grid-column: 1;
+}
+.origin-ideas > li:last-child {
+  grid-column: 3;
+}
+.origin-idea {
+  display: flex;
+  max-width: 17rem;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+/* This is the ONE block on the runway guaranteed to be crossed by travelling
+   liquid, so it carries the house aperture (the treatment phones already use
+   for copy over the field) at every width — feathered by the shadow rather
+   than boxed, so it reads as the type displacing the field, not a panel
+   dropped on top of it. */
+.liquid-journey .origin-idea > * {
+  background: rgb(0 0 0 / 0.72);
+  box-shadow: 0 0 0.9rem 0.7rem rgb(0 0 0 / 0.72);
+}
+/* The rest of the beat copy gets a heavy SHADOW rather than an aperture. The
+   aperture is a real box, and the page ground is not pure black — over the
+   stretches with no liquid under them these read as faint grey slabs floating
+   behind the words (the evolution line was a visible rectangle). The idea
+   plates above keep theirs because they sit directly on travelling masses. */
+.liquid-journey
+  :is(.origin-open, .origin-fusion, .origin-pillars-lead, .founding-pillar, .origin-coda) {
+  text-shadow:
+    0 0 8px rgb(0 0 0 / 0.95),
+    0 0 18px rgb(0 0 0 / 0.9),
+    0 0 40px rgb(0 0 0 / 0.72);
+}
+/* Display lines get a HEAVIER shadow instead of an aperture: a slab behind
+   3rem italic reads as a plaque, and these lines are meant to sit IN the field.
+   The mark is at its brightest under exactly these two. */
+.liquid-journey :is(.origin-tension-line, .origin-statement, .origin-headline) {
+  text-shadow:
+    0 0 10px rgb(0 0 0 / 0.92),
+    0 0 28px rgb(0 0 0 / 0.8),
+    0 0 60px rgb(0 0 0 / 0.6);
+}
+.origin-ideas > li:first-child .origin-idea {
+  margin-left: auto;
+  border-right: 1px solid var(--color-paper-dim);
+  padding-right: 1.35rem;
+  text-align: right;
+}
+.origin-ideas > li:last-child .origin-idea {
+  margin-right: auto;
+  border-left: 1px solid var(--color-paper-dim);
+  padding-left: 1.35rem;
+  text-align: left;
+}
+.origin-idea-kicker {
+  font-family: var(--font-mono);
+  font-size: var(--text-mono-sm);
+  font-weight: 500;
+  line-height: var(--text-mono-sm--line-height);
+  letter-spacing: var(--tracking-label-wide);
+  text-transform: uppercase;
+  color: var(--color-cyan);
+}
+.origin-idea-word {
+  font-family: var(--font-display);
+  font-size: var(--text-display-m);
+  line-height: 1.02;
+  letter-spacing: var(--text-display-m--letter-spacing);
+  color: var(--color-paper);
+}
+.origin-idea-gloss {
+  display: block;
+  margin-top: 0.3rem;
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: var(--text-body-l);
+  line-height: 1.25;
+  letter-spacing: 0;
+  color: var(--color-paper-mute);
+}
+.origin-idea-line {
+  font-size: var(--text-body);
+  line-height: var(--text-body--line-height);
+  letter-spacing: var(--text-body--letter-spacing);
+  color: var(--color-paper-mute);
+}
+/* Beat 2 — THE TENSION. Two clauses, two lines: the argument is symmetric, so
+   the setting is too. The masses collide behind exactly this. */
+.origin-beat--tension {
+  justify-content: center;
+  padding-bottom: 0;
+}
+.origin-tension {
+  display: flex;
+  max-width: 30rem;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+.origin-tension-line {
+  display: block;
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 400;
+  font-size: var(--text-display-m);
+  line-height: 1.12;
+  letter-spacing: var(--text-display-m--letter-spacing);
+  color: var(--color-paper);
+  text-shadow: 0 0 24px rgb(0 0 0 / 0.55);
+}
+/* A narrow stage has no room for a gutter wide enough to hold two masses, and
+   forcing one gives two ~7rem columns of ragged type. The plates stack, keep
+   ONE shared inner rule, and the beat grows to carry them. */
+@media (max-width: 900px) {
+  .origin-ideas {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 2.25rem;
+    justify-items: center;
+  }
+  .origin-ideas > li:first-child,
+  .origin-ideas > li:last-child {
+    grid-column: 1;
+  }
+  .origin-ideas > li:first-child .origin-idea,
+  .origin-ideas > li:last-child .origin-idea {
+    margin: 0;
+    border-right: 0;
+    border-left: 1px solid var(--color-paper-dim);
+    padding-right: 0;
+    padding-left: 1.1rem;
+    text-align: left;
+  }
+  .origin-beat.origin-beat--ideas {
+    min-height: 120vh;
+  }
+}
+/* Beat 3 — the fusion line, then the founding pillars beneath the mark */
+.origin-fusion {
+  max-width: 30rem;
+  font-size: var(--text-lead);
+  line-height: var(--text-lead--line-height);
+  letter-spacing: var(--text-lead--letter-spacing);
+  color: var(--color-paper);
+}
+.origin-pillars-lead {
+  margin-top: 1.6rem;
+  max-width: 26rem;
+  font-size: var(--text-body);
+  line-height: var(--text-body--line-height);
+  color: var(--color-paper-mute);
+}
+/* Beat 3 — the mark forms on the stage; the fusion line and the founding
+   triptych read over it. CENTRED, not bottom-anchored: at flex-end the copy
+   arrived a full viewport after the tension line had scrolled away, which left
+   a dead frame at p ~0.45 with nothing legible on screen at all. */
 .origin-beat--mark {
-  min-height: 96vh;
+  min-height: 88vh;
+  justify-content: center;
+  padding-bottom: 0;
 }
 /* Beat 3 — the purpose: the dominant line, CENTRED over the breathing mark */
 .origin-beat--hold {
@@ -2630,13 +2840,13 @@ section[id],
 }
 /* Beat 5 — the resolution: the wordmark assembles as the liquid drains */
 .origin-beat--resolve {
-  min-height: 96vh;
+  min-height: 92vh;
   justify-content: center;
   padding-bottom: 0;
 }
 .origin-wordmark-wrap {
   width: 100%;
-  max-width: 28rem;
+  max-width: min(46rem, 88vw);
 }
 /* the static mark (reduced motion / "none" tier) — hidden while live via the
    shared .journey-static rule */
@@ -2645,41 +2855,6 @@ section[id],
   aspect-ratio: 2950 / 3200;
   margin-bottom: 2.5rem;
 }
-/* the three FOUNDING-pillar labels float beside the mark's lobes (decorative;
-   the accessible line lives in the beat-2 copy) */
-.origin-pillar-labels {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-}
-.origin-pillar-label {
-  position: absolute;
-  transform: translate(-50%, -50%);
-  font-family: var(--font-mono);
-  font-size: var(--text-mono-sm);
-  font-weight: 500;
-  line-height: var(--text-mono-sm--line-height);
-  letter-spacing: var(--tracking-label-wide);
-  text-transform: uppercase;
-  color: var(--color-paper-mute);
-  white-space: nowrap;
-  opacity: 0; /* arrives with the mark (imperative) */
-}
-/* Narrow stages have no room beside the mark for three floating labels — the
-   percentages put them off-stage, where the layer's overflow simply ate them.
-   Below md the authored pillar LINE carries the three founding pillars instead,
-   live or static, so the beat never loses its content. */
-@media (max-width: 767px) {
-  .origin-pillar-labels {
-    display: none;
-  }
-  .liquid-journey[data-liquid="live"][data-field-ready="true"]
-    #name
-    .founding-pillars.journey-static {
-    display: block;
-  }
-}
-
 /* static path: collapse the runway to the plain reading column (the
    data-liquid flag lives on the page-wide PageStage wrapper since R5) */
 .liquid-journey[data-liquid="static"] .origin-beat {
@@ -2687,11 +2862,31 @@ section[id],
   padding: 3rem 0 1.5rem;
   justify-content: center;
 }
-.liquid-journey[data-liquid="static"] .origin-pillar-labels {
-  display: none;
+/* THE THREE FOUNDING PILLARS — one composed triptych, not three loose labels.
+   Each sits under its own hairline, on a shared baseline, evenly divided: the
+   beat's whole claim about them is that there are THREE and they are peers, so
+   the setting says that before a word is read. */
+.origin-founding {
+  display: flex;
+  width: 100%;
+  max-width: 34rem;
+  margin-top: 1.6rem;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.1rem;
 }
 .founding-pillars {
-  margin-top: 1.75rem;
+  display: grid;
+  width: 100%;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(0.75rem, 3vw, 1.75rem);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.founding-pillar {
+  padding-top: 0.7rem;
+  border-top: 1px solid var(--color-paper-dim);
   font-family: var(--font-mono);
   font-size: var(--text-mono-sm);
   font-weight: 500;
@@ -2699,6 +2894,7 @@ section[id],
   letter-spacing: var(--tracking-label-wide);
   text-transform: uppercase;
   color: var(--color-paper-mute);
+  text-align: center;
 }
 .origin-closing {
   margin-top: 2.25rem;

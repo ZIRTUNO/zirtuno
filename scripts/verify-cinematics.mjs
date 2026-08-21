@@ -35,7 +35,14 @@ async function sampleAt(page, y, settleMs = 550) {
   await page.evaluate((yy) => window.scrollTo(0, yy), y);
   await page.waitForTimeout(settleMs);
   return page.evaluate(() => {
-    const wrap = document.querySelector(".liquid-journey");
+    // The score vars are written on the layer that CONSUMES them (.cine-veils)
+    // rather than on the page-wide .liquid-journey wrapper: a custom property
+    // set on an ancestor invalidates style for everything beneath it, and
+    // these move every frame. .liquid-journey stays as the fallback so this
+    // gate still reads a pre-scoping build.
+    const wrap =
+      document.querySelector(".cine-veils") ??
+      document.querySelector(".liquid-journey");
     const num = (v) => {
       const s = wrap ? getComputedStyle(wrap).getPropertyValue(v).trim() : "";
       const n = parseFloat(s);
@@ -214,8 +221,11 @@ const browser = await chromium.launch(LAUNCH);
   for (const s of samples) if (s.veil === peak) peakY = s.y;
   await sampleAt(page, peakY, 650);
   const worst = await page.evaluate(() => {
-    const wrap = document.querySelector(".liquid-journey");
-    const veil = parseFloat(getComputedStyle(wrap).getPropertyValue("--cine-veil")) || 0;
+    const wrap =
+      document.querySelector(".cine-veils") ??
+      document.querySelector(".liquid-journey");
+    const veil =
+      parseFloat(getComputedStyle(wrap).getPropertyValue("--cine-veil")) || 0;
     const lumaOf = (rgb) => {
       const m = rgb.match(/[\d.]+/g)?.map(Number) ?? [0, 0, 0];
       const a = m.length > 3 ? m[3] : 1;

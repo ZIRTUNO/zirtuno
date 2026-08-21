@@ -131,8 +131,8 @@ const RANGES = [
     frames: 30,
   },
   {
-    // S8's five scrubbed beats: two brothers → the mark (+ pillar labels) →
-    // the hold → the ecosystem echo → the drain under the particle wordmark
+    // S8's five scrubbed beats: two ideas → the tension → the mark (+ pillar
+    // labels) → the ecosystem echo → the drain under the particle wordmark
     id: "origin-beats",
     start: (anchors.originTop ?? 0) - anchors.vh * 0.3,
     end: (anchors.originTop ?? 0) + (anchors.originH ?? 0),

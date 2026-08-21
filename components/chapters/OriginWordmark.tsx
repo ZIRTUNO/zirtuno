@@ -29,8 +29,15 @@ export function OriginWordmark({ text }: { text: string }) {
       setSettled(true);
       return;
     }
-    return runWordmarkAssembly(canvas, host, textEl, text, () =>
-      setSettled(true),
+    // 780 ≥ the stage's max-width, so the backing store is 1:1 with the pixels
+    // it is drawn at rather than a 520px canvas stretched over it.
+    return runWordmarkAssembly(
+      canvas,
+      host,
+      textEl,
+      text,
+      () => setSettled(true),
+      780,
     );
   }, [reduced, seen, stageRef, text]);
 

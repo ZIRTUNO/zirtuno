@@ -35,11 +35,7 @@ import type {
 import { makeSiteScene } from "@/lib/webgl/scenes/site";
 import { makeMethodScene } from "@/lib/webgl/scenes/method";
 import { makeWorkScene } from "@/lib/webgl/scenes/work";
-import {
-  makeOriginScene,
-  PILLAR_ANCHORS,
-  ORIGIN_OY,
-} from "@/lib/webgl/scenes/origin";
+import { makeOriginScene } from "@/lib/webgl/scenes/origin";
 import { makeStudioScene } from "@/lib/webgl/scenes/studio";
 import { makeContactScene, EXHALE_EVENT } from "@/lib/webgl/scenes/contact";
 import { makeFooterScene } from "@/lib/webgl/scenes/footer";
@@ -98,9 +94,13 @@ function makeJourneyRuntime(
   // beads read as one substance instead of independent discs. ?fphysv3=0 and
   // ?fobstacles=0 roll each back independently.
   // ?fcine=0 keeps the light score neutral (no veils/flash/score grade).
+  // ?fstrike=0 keeps the hand but removes the click: the strike wave, its
+  // crown of spray and the press gain all go, hover physics stays. One flag
+  // per force, the same rollback grammar as the rest of R5-B.
   const physics = search?.get("fphys") !== "0";
   const physicsV3 = physics && search?.get("fphysv3") !== "0";
   const obstacleFlow = physicsV3 && search?.get("fobstacles") !== "0";
+  const strike = physics && search?.get("fstrike") !== "0";
   const cine = search?.get("fcine") !== "0";
 
   return [
@@ -108,6 +108,7 @@ function makeJourneyRuntime(
       physics,
       physicsV3,
       obstacleFlow,
+      strike,
       cine,
     }),
     scenes,
@@ -146,7 +147,6 @@ export function PageStage({
   centerLabel,
   ecosystemLabel,
   systems,
-  pillars,
   children,
 }: {
   nodes: EcoNode[];
@@ -154,7 +154,6 @@ export function PageStage({
   ecosystemLabel: string;
   /** the three organ-system names (identity · growth · operation) */
   systems: string[];
-  pillars: string[];
   children: ReactNode;
 }) {
   const reduced = useReducedMotion();
@@ -195,7 +194,6 @@ export function PageStage({
   } | null>(null);
   const ecoObstacleOn = useRef(false);
   const hudMeterEl = useRef<HTMLSpanElement | null>(null);
-  const pillarEls = useRef<(HTMLLIElement | null)[]>([]);
   const stageEl = useRef<HTMLElement | null>(null);
   const ecoLayerEl = useRef<HTMLDivElement | null>(null);
   const ecoInteractiveRef = useRef(false);
@@ -335,16 +333,13 @@ export function PageStage({
   // there is nothing to dodge and nothing to draw a line across. All that is
   // left for JS is handing each row the timing of the mass it names — which is
   // the one thing that genuinely has to come from the liquid's own clock.
-  // Origin's founding pillars keep their fixed anchors beside the mark's lobes.
   useEffect(() => {
     const layer = layerRef.current;
     if (!layer) return;
     const layout = () => {
       const r = layer.getBoundingClientRect();
       if (r.width < 2 || r.height < 2) return;
-      const w = r.width;
       const h = r.height;
-      const aspect = w / h;
       // THE CLOCK, handed to the type. Each block and each row carries the
       // envelope of the SYSTEM or MASS it names, so a name ignites at the
       // instant its liquid lands rather than on a timer of its own. This is the
@@ -395,28 +390,13 @@ export function PageStage({
       } else {
         ecoObstacle.current = null;
       }
-      // the founding-pillar labels ride the mark's lobes, clamped into the
-      // stage exactly like the circuit's labels — the un-clamped percentages
-      // walked clean off a portrait viewport, so the beat lost them entirely.
-      // The right chapter-index rail owns its column: measured, not guessed.
-      const railBox = document
-        .querySelector<HTMLElement>(".side-index")
-        ?.getBoundingClientRect();
-      const RAIL =
-        railBox && railBox.width > 0
-          ? Math.ceil(w - (railBox.left - r.left)) + 16
-          : 0;
-      pillarEls.current.forEach((el, i) => {
-        if (!el) return;
-        const a = PILLAR_ANCHORS[i % PILLAR_ANCHORS.length];
-        const halfW = (el.offsetWidth || 90) / 2;
-        const x = (a.dx / aspect + 0.5) * w;
-        const y = (1 - (0.5 + ORIGIN_OY + a.dy)) * h;
-        const minX = halfW + 12;
-        const maxX = Math.max(minX, w - RAIL - halfW - 12);
-        el.style.left = `${Math.min(Math.max(x, minX), maxX).toFixed(1)}px`;
-        el.style.top = `${Math.min(Math.max(y, 26), h - 26).toFixed(1)}px`;
-      });
+      // The founding-pillar labels used to be positioned here, floated at fixed
+      // anchors "beside the mark's lobes" and clamped into the stage. Removed:
+      // photographed at the beat they annotate, the three landed as debris —
+      // SOCIAL alone at the left margin, HEALTH in the top right, FINANCE
+      // orphaned near the bottom, none of them touching the mark. They are a
+      // composed triptych in ChapterName now, which is both the composition the
+      // beat wanted and one fewer imperative layout pass per resize.
     };
     layout();
     // label widths shift when the mono face lands — re-run the edge safety
@@ -428,7 +408,7 @@ export function PageStage({
       alive = false;
       ro.disconnect();
     };
-  }, [nodes.length, pillars.length, ecoHost, enabled]);
+  }, [nodes.length, ecoHost, enabled]);
 
   // The system response: touching one capability answers through its SYSTEM
   // first and the rest of the body after. There is no graph to walk any more —
@@ -546,48 +526,48 @@ export function PageStage({
         setLandedSlot(last);
       }
     };
-    let lastP = -1;
-    const applyOriginLabels = (p: number) => {
-      if (Math.abs(p - lastP) < 0.002) return;
-      lastP = p;
-      // The three labels arrive staggered as the mark fuses and clear BEFORE the
-      // echo beat (q4 opens at p 0.62). They used to hold until p 0.84, which
-      // put them underneath the evolution paragraph and the wordmark beat — the
-      // collisions the audit captured. Their window is now beat 2 + the purpose
-      // hold: exactly the passage they annotate.
-      const gone = 1 - smooth01((p - 0.56) / 0.08);
-      pillarEls.current.forEach((el, i) => {
-        if (!el) return;
-        const e = smooth01((p - (0.24 + i * 0.035)) / 0.08) * gone;
-        el.style.opacity = String(e);
-        el.style.transform = `translate(-50%, -50%) translateY(${((1 - e) * 8).toFixed(1)}px)`;
-      });
-    };
+    // WHERE a custom property is written is a performance decision, not a
+    // stylistic one. Every var below used to be set on `wrap` — the element
+    // that contains the entire page — and a custom property written on an
+    // ancestor invalidates style for everything that inherits from it. Four of
+    // them move every frame, so the page paid a full-document style recalc per
+    // frame to animate three fixed overlays and one hairline: measured in a
+    // devtools trace of a coasting scroll, ~1.6 ms/frame in UpdateLayoutTree,
+    // on a frame budget of 6.9 ms.
+    //
+    // Each of these has exactly ONE consumer in the stylesheet, so each is
+    // written on that consumer instead and the invalidation stops there. If a
+    // target is absent (a static tier renders no veils) the write is simply
+    // skipped — nothing reads the value in that case either.
+    const methodRunway =
+      wrap.querySelector<HTMLElement>(".method-runway") ?? wrap;
     let lastFlow = -1;
     const applyMethodFlow = (flow: number) => {
       if (Math.abs(flow - lastFlow) < 0.004) return;
       lastFlow = flow;
-      wrap.style.setProperty("--method-flow", flow.toFixed(4));
+      methodRunway.style.setProperty("--method-flow", flow.toFixed(4));
     };
     // R5-D: the merged light score → the veil CSS vars, once per frame (the
     // conductor mutates `score` inside driver.frame from the render loop;
     // reading it here is at most one frame behind — invisible at veil speeds)
+    const veils = wrap.querySelector<HTMLElement>(".cine-veils");
     let lastVeil = -1;
     let lastVig = -1;
     let lastFlash = -1;
     const applyScore = () => {
+      if (!veils) return;
       const s = conductor.score;
       if (Math.abs(s.veil - lastVeil) > 0.002) {
         lastVeil = s.veil;
-        wrap.style.setProperty("--cine-veil", s.veil.toFixed(3));
+        veils.style.setProperty("--cine-veil", s.veil.toFixed(3));
       }
       if (Math.abs(s.vignette - lastVig) > 0.002) {
         lastVig = s.vignette;
-        wrap.style.setProperty("--cine-vig", s.vignette.toFixed(3));
+        veils.style.setProperty("--cine-vig", s.vignette.toFixed(3));
       }
       if (Math.abs(s.flash - lastFlash) > 0.002) {
         lastFlash = s.flash;
-        wrap.style.setProperty("--cine-flash", s.flash.toFixed(3));
+        veils.style.setProperty("--cine-flash", s.flash.toFixed(3));
       }
     };
 
@@ -607,7 +587,8 @@ export function PageStage({
       site.exit = 0;
       conductor.input.vel = 0;
       applyEcoLabels(site.gather, 0);
-      wrap.style.setProperty("--method-flow", "1"); // static thread reads full
+      // static thread reads full (scoped to its own consumer, as above)
+      methodRunway.style.setProperty("--method-flow", "1");
       return;
     }
 
@@ -858,16 +839,26 @@ export function PageStage({
       });
     }
 
-    // page-wide pointer → the cursor force field (R5-B; fine pointers only).
+    // page-wide pointer → the cursor force field (R5-B) and the strike.
     // Field uv + velocity; velocity decays in the rAF loop so a resting hand
     // stops dragging the liquid.
     let lastPT = 0;
     let lastPX = 0.5;
     let lastPY = 0.5;
-    const onPageMove = (e: PointerEvent) => {
+    let pressing = false;
+    const pageUv = (e: PointerEvent) => {
       const md = Math.min(window.innerWidth, window.innerHeight);
-      const px = 0.5 + (e.clientX - window.innerWidth / 2) / md;
-      const py = 0.5 - (e.clientY - window.innerHeight / 2) / md;
+      return [
+        0.5 + (e.clientX - window.innerWidth / 2) / md,
+        0.5 - (e.clientY - window.innerHeight / 2) / md,
+      ] as const;
+    };
+    const onPageMove = (e: PointerEvent) => {
+      // A coarse pointer has no hover to speak of, so it drove nothing here.
+      // A finger held ON the glass is a different claim entirely — track it for
+      // as long as it is down, and touch gains the drag-stir the mouse has.
+      if (!canHover && !pressing) return;
+      const [px, py] = pageUv(e);
       const now = performance.now();
       if (lastPT > 0) {
         const dts = Math.min(Math.max((now - lastPT) / 1000, 1e-3), 0.1);
@@ -884,10 +875,38 @@ export function PageStage({
     const onPageLeave = () => {
       conductor.input.pon = 0;
     };
-    if (canHover) {
-      window.addEventListener("pointermove", onPageMove, { passive: true });
+    // The strike. Anywhere on the page, because the whole viewport IS the one
+    // liquid — there is no interactive region to be inside of. Every listener
+    // here is passive and none of them calls preventDefault: this observes the
+    // gesture, it never consumes it, so links, buttons, form fields, text
+    // selection and scrolling behave exactly as they did before.
+    const onPageDown = (e: PointerEvent) => {
+      const [px, py] = pageUv(e);
+      pressing = true;
+      lastPT = performance.now();
+      lastPX = px;
+      lastPY = py;
+      conductor.input.px = px;
+      conductor.input.py = py;
+      conductor.input.pon = 1;
+      conductor.input.press = 1;
+      // A stab hits harder than a resting tap, and the hand's own speed at the
+      // moment of contact is the only honest measure of that.
+      const speed = Math.hypot(conductor.input.pvx, conductor.input.pvy);
+      conductor.strike(px, py, 1 + Math.min(speed * 0.3, 0.7));
+    };
+    const endPress = () => {
+      pressing = false;
+      conductor.input.press = 0;
+      // a finger leaving the glass leaves no hover behind it
+      if (!canHover) conductor.input.pon = 0;
+    };
+    window.addEventListener("pointermove", onPageMove, { passive: true });
+    window.addEventListener("pointerdown", onPageDown, { passive: true });
+    window.addEventListener("pointerup", endPress, { passive: true });
+    window.addEventListener("pointercancel", endPress, { passive: true });
+    if (canHover)
       document.documentElement.addEventListener("pointerleave", onPageLeave);
-    }
 
     let raf = 0;
     let lastY = window.scrollY;
@@ -934,7 +953,6 @@ export function PageStage({
 
       // DOM choreography (writes AFTER all reads — no layout thrash)
       applyEcoLabels(site.gather, site.svcPos);
-      applyOriginLabels(conductor.raw.origin.p);
       applyMethodFlow(clamp01(conductor.raw.method.u / methodPhases));
       applyScore();
     };
@@ -968,13 +986,17 @@ export function PageStage({
       }
       if (workTouchRelease) window.clearTimeout(workTouchRelease);
       setWorkCard(null);
-      if (canHover) {
-        window.removeEventListener("pointermove", onPageMove);
+      window.removeEventListener("pointermove", onPageMove);
+      window.removeEventListener("pointerdown", onPageDown);
+      window.removeEventListener("pointerup", endPress);
+      window.removeEventListener("pointercancel", endPress);
+      conductor.input.press = 0;
+      conductor.input.pon = 0;
+      if (canHover)
         document.documentElement.removeEventListener(
           "pointerleave",
           onPageLeave,
         );
-      }
     };
   }, [
     enabled,
@@ -1012,21 +1034,6 @@ export function PageStage({
               />
             </div>
           )}
-          {/* decorative founding-pillar labels (S8 beat 2) — the accessible
-              pillar line lives in the beat-2 copy block (static path) */}
-          <ul className="origin-pillar-labels" aria-hidden="true">
-            {pillars.map((p, i) => (
-              <li
-                key={p}
-                className="origin-pillar-label"
-                ref={(el) => {
-                  pillarEls.current[i] = el;
-                }}
-              >
-                {p}
-              </li>
-            ))}
-          </ul>
         </div>
         {/* R5-D: the cinematic layer — a SIBLING of the sticky layer (which
             is its own stacking context at z-0; nesting the fixed veils there

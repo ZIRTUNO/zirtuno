@@ -1,6 +1,7 @@
 /**
  * ORIGIN scene (R5-A) — the faithful port of makeOriginDriver: S8's five
- * scrubbed beats. Two brother-masses enter from opposite sides and drift
+ * scrubbed beats. TWO IDEA-MASSES — Zéfiro, the force, and Ventura, the
+ * direction — enter from opposite sides and drift
  * together → fuse onto the mark's droplet footprint while the EXACT mark
  * grows from its skeleton → the hold (breathing) → half the droplets reborn
  * as the ecosystem echo → everything sinks and drains under the assembling
@@ -109,7 +110,9 @@ export function makeOriginScene(): SceneModule {
         const halfW = Math.max(aspect, 0.6) / 2;
         const sx = Math.min(Math.max(aspect * 0.8, 1), 1.45);
         T = base.map((_, i) => {
-          const side = i % 2 === 0 ? -1 : 1; // brother A / brother B, interleaved
+          // idea A (Zéfiro, left) / idea B (Ventura, right), interleaved so
+          // both masses carry the same mix of droplet sizes
+          const side = i % 2 === 0 ? -1 : 1;
           const ma = hash(i, 54) * Math.PI * 2;
           const md = 0.03 + 0.09 * hash(i, 55);
           const oa = hash(i, 56) * Math.PI * 2;
@@ -143,7 +146,7 @@ export function makeOriginScene(): SceneModule {
         (SDF_WARP_MORPH - SDF_WARP_REST) * 0.6 * Math.sin(Math.PI * q2);
 
       // ── act IV light (R5-D): the emotional peak ────────────────────────────
-      // The key lifts as the brothers fuse and stays lifted while the mark
+      // The key lifts as the two ideas fuse and stays lifted while the mark
       // holds; the vignette closes over the approach (intimacy) and OPENS at
       // the fusion. The flash channel is only the RAW signal — the scene says
       // "the fusion is complete" across a scrub-proof window; the conductor
@@ -196,7 +199,7 @@ export function makeOriginScene(): SceneModule {
       out.x = x;
       out.y = y;
       out.r = r;
-      // physics attributes (R5-B): the two brothers travel as COHERENT liquid
+      // physics attributes (R5-B): the two ideas travel as COHERENT liquid
       // bodies (side clusters + low bind), fuse into exactness (bind → 1 with
       // lt2), and the echo breaks free again
       out.bind = clamp01(lt2 * (1 - echo));

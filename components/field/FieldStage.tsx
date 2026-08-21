@@ -36,6 +36,9 @@ import {
   SDF_GLASS_VERT,
   SDF_GLASS_FRAG,
   SDF_GLASS_FRAG_SHAPE,
+  SDF_GLASS_FRAG_TOUCH,
+  SDF_GLASS_FRAG_SHAPE_TOUCH,
+  SDF_FORM_SHOCKS,
   SDF_BALL_MAX,
   SDF_THICK,
   SDF_RES,
@@ -79,6 +82,11 @@ const GLASS_RUNGS = new Set<LiveTier>([
 
 /** Rungs that can still afford velocity-aligned deformation (~1.49× the pass). */
 const DEFORM_RUNGS = new Set<LiveTier>(["full", "fullnofx", "glass1x"]);
+// Uploaded in place of the live interaction whenever the forms must not answer
+// (a demoted rung, reduced motion, nothing touching). Zero is the shader's
+// exact-identity case, so this is the resting silhouette by construction.
+const ZERO_TOUCH = new Float32Array(4);
+const ZERO_SHOCK = new Float32Array(SDF_FORM_SHOCKS * 4);
 
 /** Buffer scale per rung — the cheapest lever, so it is spent before the glass. */
 const RUNG_SCALE: Record<LiveTier, number | "max"> = {
@@ -164,16 +172,39 @@ export default function FieldStage({
     const motionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
     const shapeWanted =
       shapeRequested && tier === "full" && !motionQuery.matches;
+    // The forms answering the pointer is a SEPARATE axis from deformation, and
+    // a cheaper one: it costs 1 + SDF_FORM_SHOCKS uniform vectors and a branch
+    // that most fragments skip on a distance test. It therefore survives to lite
+    // — where the shader is flat cyan but the SILHOUETTE is still the thing a
+    // visitor is looking at — while the live tier gates the effect per frame.
+    // Its OWN flag, not the strike's. ?fstrike=0 removes the click everywhere,
+    // which reaches the forms for free — no shocks are registered, so iShock
+    // stays zero — while leaving hover physics alone. ?fformtouch=0 is the
+    // narrower rollback: the droplets keep answering the hand and the forms
+    // stop, which is also the only control that isolates the form's own share
+    // of a response for measurement.
+    const touchWanted =
+      !/[?&]fformtouch=0(?:&|$)/.test(window.location.search) &&
+      !motionQuery.matches;
     // Preference list, not a prediction: the driver decides whether the wider
     // uniform block links, and the plain field is always the last resort so a
-    // refusal costs deformation, never the canvas.
-    const layer = makeLayer(
-      container,
-      SDF_GLASS_VERT,
-      shapeWanted ? [SDF_GLASS_FRAG_SHAPE, SDF_GLASS_FRAG] : SDF_GLASS_FRAG,
-    );
+    // refusal costs an interaction, never the canvas. Ordered most-capable
+    // first, so a driver that refuses the widest block still gets whichever
+    // half it can afford.
+    const variants: string[] = [];
+    if (shapeWanted && touchWanted) variants.push(SDF_GLASS_FRAG_SHAPE_TOUCH);
+    if (shapeWanted) variants.push(SDF_GLASS_FRAG_SHAPE);
+    if (touchWanted) variants.push(SDF_GLASS_FRAG_TOUCH);
+    variants.push(SDF_GLASS_FRAG);
+    const layer = makeLayer(container, SDF_GLASS_VERT, variants);
     if (!layer) return; // no WebGL2 → shell's SVG fallback stays
-    const shapeShaderActive = shapeWanted && layer.variant === 0;
+    const linked = variants[layer.variant];
+    const shapeShaderActive =
+      linked === SDF_GLASS_FRAG_SHAPE ||
+      linked === SDF_GLASS_FRAG_SHAPE_TOUCH;
+    const touchShaderActive =
+      linked === SDF_GLASS_FRAG_TOUCH ||
+      linked === SDF_GLASS_FRAG_SHAPE_TOUCH;
     const gl = layer.gl;
 
     // §12.5: on loss the loop PARKS (no zombie GL, no fake frame counts, no
@@ -388,14 +419,56 @@ export default function FieldStage({
       shape: 0,
       shapeSpeed: 0,
       shapeReduced: motionReduced ? 1 : 0,
+      touch: 0,
+      // watchdog surface: the panel's measured vsync, the slow-frame threshold
+      // derived from it, and the live strike count. Without these the ladder
+      // is unfalsifiable from the outside — which is how a 60 Hz-only `dt > 34`
+      // survived on a 144 Hz machine.
+      vsync: 0,
+      slowMs: 0,
+      wdSlow: 0,
+      scale: 0, // live buffer scale (CSS px → device px) after the budget
       demote: () => {},
     };
     (window as unknown as { __optics?: typeof diag }).__optics = diag;
 
+    // The "max" rungs used to spend devicePixelRatio outright, which made the
+    // buffer a function of the visitor's WINDOWS DPI SETTING rather than of
+    // anything this GPU can actually shade. This pass is very nearly pure
+    // fill: walking the ladder on an Intel UHD at 144 Hz, the frame cost
+    // tracks buffer AREA and almost nothing else —
+    //
+    //   1.77 Mpx → 24.3 ms   1.13 Mpx → 17.3 ms   0.55 Mpx → 10.4 ms
+    //
+    // — while shedding the deformation at a fixed buffer cost 0.1 ms. The
+    // pixels ARE the frame time. And at dpr 1.25 on a 1436×788 stage the old
+    // rule asked for 1.77 Mpx, so the machine opened on a rung it could only
+    // run at 41 fps: the stutter was budgeted in at load, before the watchdog
+    // had seen a single frame.
+    //
+    // So "max" is a BUDGET now, not a multiplier: spend dpr only until the
+    // buffer would cross FULL_BUDGET_PX. Two properties matter as much as the
+    // saving:
+    //   · the floor is 1 CSS pixel — never below — so this can only ever give
+    //     back supersampling, never take real resolution away; and
+    //   · at dpr 1 it is identically 1, which is what keeps the deterministic
+    //     capture path (capture-rest-forms → verify-rest-exact, both dpr 1)
+    //     byte-for-byte unchanged.
+    // A soft, out-of-focus glass body has no edge detail that survives
+    // supersampling anyway — HeroRibbon has rendered its own stream at 0.7 CSS
+    // px for exactly this reason since R4.
+    // ?fbudget=0 restores the old spend-all-dpr behaviour (A/B + rollback).
+    const budgetOn = !/[?&]fbudget=0/.test(window.location.search);
+    const FULL_BUDGET_PX = 1_300_000;
     const maxDpr = Math.min(window.devicePixelRatio || 1, 2);
     const scaleFor = () => {
       const s = RUNG_SCALE[liveTier];
-      return s === "max" ? maxDpr : s;
+      if (s !== "max") return s;
+      if (!budgetOn) return maxDpr;
+      const css =
+        Math.max(container.clientWidth, 1) * Math.max(container.clientHeight, 1);
+      // the budget is an AREA, the scale is a linear factor → sqrt
+      return Math.min(maxDpr, Math.max(1, Math.sqrt(FULL_BUDGET_PX / css)));
     };
 
     const drawFrame = (tMs: number) => {
@@ -451,6 +524,28 @@ export default function FieldStage({
       gl.uniform1f(layer.U("iFormScale"), f.scale ?? 1);
       gl.uniform1f(layer.U("iWarp"), f.warp);
       gl.uniform1f(layer.U("iMute"), f.mute);
+      // The forms answer the hand and the strike as a DOMAIN DISPLACEMENT (see
+      // formTouch in the shader). Gated on the live rung like deformation is —
+      // a demoted machine sheds the effect without losing the material — and
+      // zeroed rather than skipped, because a stale iTouch would leave a dent
+      // parked in the form after the pointer had gone.
+      if (touchShaderActive) {
+        const touchTierActive =
+          !motionReduced &&
+          DEFORM_RUNGS.has(liveTier) &&
+          !!f.touchLive &&
+          !!f.touch &&
+          !!f.shock;
+        gl.uniform4fv(
+          layer.U("iTouch"),
+          touchTierActive ? f.touch! : ZERO_TOUCH,
+        );
+        gl.uniform4fv(
+          layer.U("iShock"),
+          touchTierActive ? f.shock! : ZERO_SHOCK,
+        );
+        diag.touch = touchTierActive ? 1 : 0;
+      }
       gl.uniform1f(layer.U("iGlass"), glass ? 1 : 0);
       gl.uniform1f(layer.U("iGloss"), glass && glossRequested ? 1 : 0);
       diag.glass = glass ? 1 : 0;
@@ -521,6 +616,29 @@ export default function FieldStage({
     // frames), so scroll flicks, tab stalls or capture harnesses can never
     // demote a healthy canvas. Downshifts lower resolution only; the liquid
     // NEVER freezes.
+    //
+    // The slow-frame test was a hardcoded `dt > 34` — written as "two missed
+    // vsyncs", which is only true at 60 Hz. It is really two things at once: a
+    // RELATIVE rule (missing vsyncs) and an ABSOLUTE product bar (~30 fps is
+    // the floor below which this liquid is not worth showing). Below 60 Hz the
+    // relative half is wrong; the absolute half is sound and stays.
+    //
+    // Resist the temptation to make this strict on a fast panel. Measured on
+    // Intel UHD at 144 Hz this shader costs 15–25 ms at the upper rungs, so a
+    // 20 ms bar ("50 fps or it has failed") is unmeetable by construction: the
+    // ladder then walks all the way down to `half` — flat cyan, no glass — and
+    // trades the site's entire material for a target the GPU was never going
+    // to hit. That was tried here and photographed; it is worse than the
+    // stutter it was meant to cure. The frame cost is fixed by making frames
+    // CHEAPER (see the buffer budget above), not by making the bar angrier.
+    //
+    // So: the same ~30 fps product bar for everyone, expressed relatively for
+    // panels slower than 60 Hz. At 60 Hz this is 33.4 ms — what it has always
+    // been — so nothing changes for the majority of visitors.
+    const SLOW_FLOOR_MS = 30;
+    let vsync = 16.7; // running estimate: the fastest interval yet observed
+    let prevGoverned = false;
+
     let lastTick = 0;
     let raf = 0;
     let wdWarm = 0;
@@ -589,11 +707,18 @@ export default function FieldStage({
       lastDraw = now;
       const dt = now - lastTick;
       lastTick = now;
+      // rAF cannot fire faster than the display, so the smallest interval we
+      // have ever seen IS the panel's vsync. Clamped at 4 ms (250 Hz) so a
+      // freak sub-millisecond sample cannot latch the estimate at nonsense.
+      if (dt >= 4 && dt < vsync) vsync = dt;
+      const slowMs = Math.max(SLOW_FLOOR_MS, vsync * 2);
       const watchdogReady = announced && now >= watchdogReadyAt;
-      if (watchdogReady && ++wdWarm > 5 && !governed) {
-        // missing 2+ vsyncs counts up; smooth frames pay it back down
-        // (governed frames are INTENTIONALLY ~33 ms — never counted)
-        if (dt > 34) {
+      // The frame that LEAVES the idle governor carries the whole governed gap
+      // in its dt — an intentional ~33 ms that says nothing about this rung.
+      if (watchdogReady && ++wdWarm > 5 && !governed && !prevGoverned) {
+        // missing 2+ of THIS display's vsyncs counts up; smooth frames pay it
+        // back down (governed frames are INTENTIONALLY ~33 ms — never counted)
+        if (dt > slowMs) {
           if (++wdSlow >= 30) downshift();
         } else {
           wdSlow = Math.max(0, wdSlow - 2);
@@ -602,6 +727,10 @@ export default function FieldStage({
         wdWarm = 0;
         wdSlow = 0;
       }
+      prevGoverned = governed;
+      diag.vsync = +vsync.toFixed(2);
+      diag.slowMs = +slowMs.toFixed(2);
+      diag.wdSlow = wdSlow;
       const f = drawFrame(now);
       const e = f?.energy ?? 1;
       if (e < GOV_LOW) {
@@ -624,6 +753,7 @@ export default function FieldStage({
 
     const resize = () => {
       const scale = scaleFor();
+      diag.scale = +scale.toFixed(3);
       const w = Math.max(1, Math.round((container.clientWidth || 1) * scale));
       const h = Math.max(1, Math.round((container.clientHeight || 1) * scale));
       if (layer.canvas.width !== w || layer.canvas.height !== h) {
