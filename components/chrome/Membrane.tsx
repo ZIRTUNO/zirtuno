@@ -62,6 +62,7 @@ export function Membrane({ filled = false }: MembraneProps) {
     if (!holderEl || !host || !svg) return;
 
     const edge = svg.querySelector(".mem-edge") as SVGPathElement;
+    const back = svg.querySelector(".mem-back") as SVGPathElement | null;
     const skin = svg.querySelector(".mem-skin") as SVGPathElement | null;
     const flood = svg.querySelector(".mem-flood") as SVGPathElement | null;
     const clip = svg.querySelector(".mem-clip-path") as SVGPathElement | null;
@@ -147,6 +148,7 @@ export function Membrane({ filled = false }: MembraneProps) {
       if (d !== lastD) {
         lastD = d;
         edge.setAttribute("d", d);
+        back?.setAttribute("d", d);
         skin?.setAttribute("d", d);
         clip?.setAttribute("d", d);
         ring.setAttribute("d", m.path(FOCUS_OFFSET));
@@ -246,6 +248,7 @@ export function Membrane({ filled = false }: MembraneProps) {
       lastD = "";
       const d = mem.path();
       edge.setAttribute("d", d);
+      back?.setAttribute("d", d);
       skin?.setAttribute("d", d);
       clip?.setAttribute("d", d);
       ring.setAttribute("d", mem.path(FOCUS_OFFSET));
@@ -255,6 +258,7 @@ export function Membrane({ filled = false }: MembraneProps) {
     // first paint: the authored rest form, drawn once
     const d0 = mem.path();
     edge.setAttribute("d", d0);
+    back?.setAttribute("d", d0);
     skin?.setAttribute("d", d0);
     clip?.setAttribute("d", d0);
     ring.setAttribute("d", mem.path(FOCUS_OFFSET));
@@ -287,6 +291,14 @@ export function Membrane({ filled = false }: MembraneProps) {
             </clipPath>
           </defs>
         )}
+        {/* The BACKING plate. Transparent unless a caller's CSS fills it.
+            A CTA that needs to stay legible over the live liquid carries a
+            semi-opaque black behind its label — and as a CSS `background` that
+            plate is a RECTANGLE, so the moment the membrane bulges, the bulge
+            shows raw liquid while the rest of the button sits on black. Over a
+            black page nobody sees it; over the hero's stream it is a seam.
+            Drawn from the same path, it deforms with the surface. */}
+        {filled && <path className="mem-back" d="" />}
         {filled && <path className="mem-skin" d="" fillOpacity="0.02" />}
         {filled && (
           <g clipPath={`url(#${clipId})`}>

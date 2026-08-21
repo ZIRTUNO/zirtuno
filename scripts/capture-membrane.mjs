@@ -30,6 +30,13 @@ const TAG = process.env.TAG ?? "membrane";
 const W = Number(process.env.W ?? 1440);
 const H = Number(process.env.H ?? 900);
 const PAD = 26; // shoot a margin around the button so overflow is visible
+// ONLY=hero|thread|cta|rm — shoot one section. Iterating on the hero meant
+// sitting through the other three every run.
+const ONLY = (process.env.ONLY ?? "").toLowerCase();
+const want = (name) => !ONLY || ONLY === name;
+
+/** Every section appends its readings here; printed once at the end. */
+const log = [];
 
 fs.mkdirSync(OUT, { recursive: true });
 
@@ -47,6 +54,8 @@ const ctx = await browser.newContext({
   deviceScaleFactor: 2,
 });
 const page = await ctx.newPage();
+if (want("cta")) {
+
 
 // ?ftier=none keeps the WebGL field off these stills and ?fcine=0 the veils;
 // the membrane is the subject.
@@ -164,7 +173,6 @@ const wash = () =>
     return el.querySelector(".mem-skin")?.getAttribute("fill-opacity") ?? "-";
   });
 
-const log = [];
 const frame = async (name, extra = "") => {
   // Virtual time drives the MEMBRANE; it does not drive CSS. The transitions
   // on `.mem-edge`'s stroke and `.mem-focus`'s opacity run on the browser's own
@@ -255,7 +263,9 @@ await page.evaluate(() => {
 });
 await page.keyboard.press("Tab");
 await advance(500);
-await page.waitForTimeout(320); // the contour's opacity transition is CSS-timed
+await page.waitForTimeout(900); // the contour’s opacity transition is CSS-timed
+// and the keypress that starts it can lag on a heavy page — 320 ms caught it
+// mid-transition and reported a working focus ring as a missing one.
 const focusOk = await page.evaluate(() => {
   const el = document.querySelectorAll(".cta-primary")[0];
   const ring = el.querySelector(".mem-focus");
@@ -275,7 +285,7 @@ await frame("8-focus", `(${JSON.stringify(focusOk)})`);
 // scroll, and it drags the viewport back off the element between the scroll
 // and the shutter. A fresh context scrolls normally first, then takes the
 // clock, which is the same order the primary got.
-{
+if (want("thread")) {
   const tCtx = await browser.newContext({
     viewport: { width: W, height: H },
     deviceScaleFactor: 2,
@@ -387,9 +397,139 @@ await frame("8-focus", `(${JSON.stringify(focusOk)})`);
     log.push(`
   secondary NOT CAPTURED (off-screen: ${JSON.stringify(sec)})`);
   }
+  await tCtx.close();
+}
+
+// Every section from here gets the browser to itself. With the main context and
+// the thread context still open, `mouse.down()` in a THIRD context dispatched no
+// pointerdown at all — the move landed (hover still deformed, because that runs
+// off a window listener) but the press never reached the element, which reads
+// exactly like a covered button. Closing each context when its block ends fixes
+// it and costs nothing.
+}
+if (want("cta")) await ctx.close();
+
+// ── the HERO CTA ───────────────────────────────────────────────────────────
+// Its own context: it sits at the top of the page, so it needs no scroll fight,
+// and it is the CTA that forced `.mem-back` to exist — it is the only one that
+// sits over the LIVE liquid stream, where a rectangular CSS backing behind a
+// deforming outline would show a seam. Shot with the field ON for that reason.
+if (want("hero")) {
+  const hCtx = await browser.newContext({
+    viewport: { width: W, height: H },
+    deviceScaleFactor: 2,
+  });
+  const hp = await hCtx.newPage();
+  await hp.goto(`${BASE}/en?fcine=0`, { waitUntil: "load" });
+  await hp.waitForTimeout(3200);
+
+  const hero = await hp.evaluate(async () => {
+    const el = document.querySelector(".lab-cta");
+    if (!el) return null;
+    const hide = document.createElement("style");
+    hide.textContent = ".cursor-dot,.cursor-ring{display:none!important}";
+    document.head.appendChild(hide);
+    el.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+    }, true);
+    await new Promise((r) => setTimeout(r, 300));
+    const r = el.getBoundingClientRect();
+    return { x: r.x, y: r.y, w: r.width, h: r.height, mode: el.getAttribute("data-membrane") };
+  });
+
+  if (hero && hero.mode) {
+    await hp.evaluate(() => {
+      let vt = performance.now();
+      const queue = [];
+      window.requestAnimationFrame = (cb) => queue.push(cb);
+      window.cancelAnimationFrame = () => {};
+      performance.now = () => vt;
+      window.__advance = (ms, step = 16.7) => {
+        for (let acc = 0; acc < ms; acc += step) {
+          vt += step;
+          for (const cb of queue.splice(0)) cb(vt);
+        }
+      };
+    });
+    const hAdv = (ms) => hp.evaluate((m) => window.__advance(m), ms);
+    const hClip = async () => {
+      const r = await hp.evaluate(() => {
+        const b = document.querySelector(".lab-cta").getBoundingClientRect();
+        return { x: b.x, y: b.y, w: b.width, h: b.height };
+      });
+      return {
+        x: Math.max(0, Math.round(r.x - PAD)),
+        y: Math.max(0, Math.round(r.y - PAD)),
+        width: Math.round(r.w + PAD * 2),
+        height: Math.round(r.h + PAD * 2),
+      };
+    };
+    const hFrame = async (name, extra = "") => {
+      await hp.waitForTimeout(240);
+      const info = await hp.evaluate(() => {
+        const el = document.querySelector(".lab-cta");
+        const d = el.querySelector(".mem-edge").getAttribute("d") || "";
+        const r = el.getBoundingClientRect();
+        const n = d.match(/-?\d+(?:\.\d+)?/g)?.map(Number) ?? [];
+        let out = 0;
+        for (let i = 0; i + 1 < n.length; i += 2)
+          out = Math.max(out, Math.hypot(
+            Math.max(-n[i], 0, n[i] - r.width),
+            Math.max(-n[i + 1], 0, n[i + 1] - r.height)));
+        const ink = el.querySelector(".lab-cta-ink");
+        const flooded = (ink?.style.clipPath || "").startsWith("path");
+        return {
+          out: +out.toFixed(2),
+          flooded,
+          floodLen: (el.querySelector(".mem-flood")?.getAttribute("d") || "").length,
+        };
+      });
+      log.push(
+        `${name.padEnd(17)} out-of-box ${String(info.out).padStart(5)} px   flood ${String(info.floodLen).padStart(4)}${info.flooded ? " +ink" : ""}   ${extra}`,
+      );
+      await hp.screenshot({ path: `${OUT}/${TAG}-${name}.png`, clip: await hClip() });
+    };
+
+    log.push(`
+  hero ${hero.w.toFixed(0)}x${hero.h.toFixed(0)}  data-membrane=${hero.mode}  (over the live stream)`);
+    await hp.mouse.move(20, 20);
+    await hAdv(1500);
+    await hFrame("h1-rest", "(the backing must follow the outline, not a box)");
+    // Aim through the LOCATOR, not through a rect.
+    //
+    // The hero CTA rides `.lab-plane`, which the cinematic camera tilts in 3-D
+    // from the pointer. `getBoundingClientRect()` returns the axis-aligned
+    // bounding box of that rotated quad, so a point 26% across the box can sit
+    // outside the quad — and it did: `pointerdown` fired at exactly the
+    // computed coordinate and landed on `DIV.lab-plane`, never reaching the
+    // button. `elementFromPoint` disagreed and said the point was inside,
+    // because the tilt keeps moving between the probe and the press.
+    // Playwright's locator actions re-resolve the element and hit-test it, so
+    // they land on the button whatever the camera is doing.
+    const hitPoint = { x: hero.w * 0.3, y: hero.h * 0.5 };
+    await hp.locator(".lab-cta").hover({ position: hitPoint });
+    await hAdv(500);
+    await hFrame("h2-hover");
+    await hp.locator(".lab-cta").hover({ position: hitPoint });
+    await hp.mouse.down();
+    await hAdv(150);
+    await hFrame("h3-press-150ms");
+    await hAdv(280);
+    await hFrame("h4-press-430ms", "(label AND arrow flip)");
+    await hp.mouse.up();
+    await hp.mouse.move(20, 20);
+    await hAdv(2600);
+    await hFrame("h5-settled", "(back to exact rest)");
+  } else {
+    log.push(`
+  hero NOT CAPTURED (${JSON.stringify(hero)})`);
+  }
+  await hCtx.close();
 }
 
 // ── 9. reduced motion — the membrane must not exist at all ─────────────────
+if (want("rm")) {
 const rmCtx = await browser.newContext({
   viewport: { width: W, height: H },
   deviceScaleFactor: 2,
@@ -409,6 +549,7 @@ const rmState = await rm.evaluate(() => {
   };
 });
 console.log("\nreduced motion:", JSON.stringify(rmState));
+}
 
 console.log(`\n${log.join("\n")}\n\nstills → ${OUT}/${TAG}-*.png`);
 await browser.close();

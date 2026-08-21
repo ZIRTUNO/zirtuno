@@ -31,6 +31,24 @@ crest-then-trough pulse along it.
 
 Resting 0 px · poured 2.3 px · press crest 3.7 px · press trough 1.8 px.
 
+### Hero (`.lab-cta`) — the same membrane over live liquid
+
+The hero CTA is a separate component from the CTA system (its own class, its own
+sheen, a trailing arrow) and it carries the full membrane, with two differences
+that the site's own hierarchy asks for:
+
+- Its edge keeps the hero's dimmer weight — `cyan 55%` at rest, full cyan on
+  hover, exactly what `border-color` did. The membrane inherits the hierarchy;
+  it does not flatten it.
+- It is the only CTA sitting over the **live liquid stream**, which is why
+  `.mem-back` exists (see below). Both the label *and* the arrow have ink copies,
+  so the whole button flips along the flood front.
+
+What it loses when the membrane mounts: the sheen sweep, the `translateY(-1px)`
+lift and the cyan box-shadow. Those are the three things the membrane exists
+instead of — nothing moves the element under the reader's eye any more, the
+surface answers.
+
 ### Ghost (`.cta-ghost`) — untouched, deliberately
 
 The 12 px muted mono links in the top bar and footer keep their existing hover.
@@ -79,6 +97,26 @@ membrane scrolled out of view fades its tide and returns to exact rest within
 
 ---
 
+## 2b. The backing plate (`.mem-back`)
+
+Any CTA that needs to stay legible over the liquid carries a semi-opaque black
+behind its label. As a CSS `background` that plate is a **rectangle** — so the
+moment the membrane bulges, the bulge shows raw liquid while the rest of the
+button still sits on black, and the seam traces exactly the border box the
+deformation was supposed to escape. Over a black page nobody sees it; over the
+hero's stream it is obvious.
+
+`.mem-back` is drawn from the same path as the outline, so the plate deforms
+with the surface. It is transparent by default; a caller fills it and clears the
+element's own background:
+
+```css
+.your-cta[data-membrane] { background: transparent; }
+.your-cta[data-membrane] .mem-back { fill: rgb(0 0 0 / 0.68); }
+```
+
+Both `.liquid-journey .cta-primary` and `.lab-cta` do this.
+
 ## 3. Guarantees
 
 1. **Exact rest.** With nothing touching it and no tide, every displacement
@@ -110,7 +148,9 @@ lib/motion/membrane.d.mts        its types (keep in sync by hand)
 lib/motion/membrane-runtime.ts   one rAF, one pointer listener, one scroll listener
 components/chrome/Membrane.tsx   the primary's SVG + input wiring
 components/chrome/Thread.tsx     the secondary's ribbon
+components/hero/Hero.tsx         the hero CTA (and components/lab/LabHero.tsx)
 app/globals.css                  everything under "THE MEMBRANE"
+app/lab.css                      the hero CTA's membrane rules
 ```
 
 ### Adding it to a new button
@@ -164,9 +204,11 @@ scroll reaches it, tap outranks the tide, stops off-screen, reduced motion off.
 
 ```bash
 BASE=http://localhost:3021 node scripts/capture-membrane.mjs
+ONLY=hero BASE=http://localhost:3021 node scripts/capture-membrane.mjs
 ```
 
-State stills of a real CTA. Uses a **virtual clock** — rAF and `performance.now`
+State stills of all four surfaces — primary, thread, hero, reduced motion.
+`ONLY=cta|thread|hero|rm` shoots one of them. Uses a **virtual clock** — rAF and `performance.now`
 are replaced after the page settles, so a frame labelled "140 ms after the
 press" was taken at exactly that age. Note that CSS transitions still run on the
 browser's own clock, which is why `frame()` also waits in real time.
@@ -200,3 +242,18 @@ browser's own clock, which is why `frame()` also waits in real time.
   type — which means every `.cta-primary .cta-label` rule hits it too. That
   caused a double-width button and a white-on-cyan label. Selectors around it
   are deliberate.
+- **A backing `background` is a rectangle.** See §2b. This is invisible on a
+  black page and obvious over the liquid, so it hid until the hero got a
+  membrane.
+- **The hero rides a 3-D plane, so a rect is not a target.** `.lab-plane` is
+  tilted from the pointer, and `getBoundingClientRect()` returns the
+  axis-aligned bounding box of a rotated quad — a point 26% across that box can
+  land *outside* the quad. In `capture-membrane.mjs` the synthetic `pointerdown`
+  fired at exactly the computed coordinate and hit `DIV.lab-plane`, never
+  reaching the button, while `elementFromPoint` insisted the point was inside
+  (the tilt keeps moving between probe and press). Drive that button through
+  Playwright **locator** actions, which re-resolve and hit-test the element.
+- **A CSS transition needs REAL time.** The capture harness freezes rAF, but
+  `.mem-focus`'s opacity transition runs on the browser's clock — and the
+  keypress that starts it can lag on a heavy page. Sampling too early reported a
+  working focus ring as a missing accessibility indicator, twice.

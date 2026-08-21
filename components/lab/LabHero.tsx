@@ -11,6 +11,7 @@ import {
   useCinematicCamera,
   useCinematicCycle,
 } from "@/components/hero/useCinematicHero";
+import { Membrane } from "@/components/chrome/Membrane";
 
 /** Isolated visual lab. The extra ribbon canvas is intentionally lab-only. */
 export function LabHero() {
@@ -64,9 +65,16 @@ export function LabHero() {
           <div className="lab-actions">
             <Link href="/?intent=analysis#contact" className="lab-cta">
               <span className="lab-cta-sheen" aria-hidden="true" />
+              <Membrane filled />
               <span className="lab-cta-label">{t("cta")}</span>
               <span className="lab-cta-arrow" aria-hidden="true">
                 →
+              </span>
+              {/* The ink copy, clipped to the flood front. Last in the DOM so it
+                  paints over the paper label and arrow without a z-index race. */}
+              <span className="lab-cta-ink cta-label-ink" aria-hidden="true">
+                <span className="lab-cta-label">{t("cta")}</span>
+                <span className="lab-cta-arrow">→</span>
               </span>
             </Link>
           </div>

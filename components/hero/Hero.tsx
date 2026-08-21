@@ -12,6 +12,7 @@ import {
   useCinematicCycle,
 } from "./useCinematicHero";
 import "@/app/lab.css";
+import { Membrane } from "@/components/chrome/Membrane";
 
 /**
  * The reference's hierarchy rebuilt as a native Zirtuno hero: a quiet two-line
@@ -71,9 +72,16 @@ export function Hero() {
               data-analytics-placement="hero"
             >
               <span className="lab-cta-sheen" aria-hidden="true" />
+              <Membrane filled />
               <span className="lab-cta-label">{t("cta")}</span>
               <span className="lab-cta-arrow" aria-hidden="true">
                 →
+              </span>
+              {/* The ink copy, clipped to the flood front. Last in the DOM so it
+                  paints over the paper label and arrow without a z-index race. */}
+              <span className="lab-cta-ink cta-label-ink" aria-hidden="true">
+                <span className="lab-cta-label">{t("cta")}</span>
+                <span className="lab-cta-arrow">→</span>
               </span>
             </Link>
           </div>

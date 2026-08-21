@@ -588,6 +588,14 @@ button.cta {
   fill: var(--color-cyan);
   stroke: none;
 }
+/* The backing plate: transparent until a caller fills it. Any CTA that needs an
+   opaque plate to stay legible over the live liquid should fill THIS rather
+   than set a `background` on the element — see the note by `.liquid-journey
+   .cta-primary` for why a rectangle behind a deforming outline shows a seam. */
+.mem-back {
+  fill: transparent;
+  stroke: none;
+}
 .mem-focus {
   opacity: 0;
   transition: opacity 200ms var(--ease-arrive);
@@ -1194,6 +1202,17 @@ section[id],
    width: the liquid still reads through it, the label always wins. */
 .liquid-journey .cta-primary {
   background: rgb(0 0 0 / 0.68);
+}
+/* …but once the membrane is live the backing has to be the MEMBRANE'S, because
+   a CSS `background` is a rectangle. The moment the surface bulges, the bulge
+   shows raw liquid while the rest of the button still sits on black — a seam
+   that traces the border box the deformation was supposed to escape. Handing
+   the same fill to `.mem-back` makes the plate deform with the outline. */
+.liquid-journey .cta-primary[data-membrane] {
+  background: transparent;
+}
+.liquid-journey .cta-primary[data-membrane] .mem-back {
+  fill: rgb(0 0 0 / 0.68);
 }
 
 /* The chapter display type over the journey canvas takes the glass.

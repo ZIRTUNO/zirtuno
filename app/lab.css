@@ -683,6 +683,76 @@ body:has(.lab-page) .side-index {
   transform: translateX(5px);
 }
 
+/* ── the hero CTA as a MEMBRANE (see cta-membrane-spec.md) ────────────────────
+   Same contract as the CTA system: everything above stays the whole button
+   under reduced motion, without JS and before hydration, and every rule below
+   is gated on `data-membrane`, which `Membrane.tsx` sets only once it has
+   mounted and drawn.
+
+   This one sits over the live liquid stream, which is why it is the CTA that
+   forced `.mem-back` to exist: its legibility plate cannot be a CSS
+   `background`, because a rectangle behind a deforming outline shows a seam
+   the moment the surface bulges. */
+.lab-cta[data-membrane] {
+  overflow: visible;
+  border-color: transparent;
+  background: transparent;
+}
+.lab-cta[data-membrane] .mem-back {
+  fill: color-mix(in srgb, var(--color-ink) 68%, transparent);
+}
+/* The hero's edge is deliberately dimmer than a journey CTA's — it carries the
+   same 55% mix the border did, and comes to full cyan on hover exactly as
+   `border-color` used to. The membrane inherits the hierarchy, it does not
+   flatten it. */
+.lab-cta[data-membrane] .mem-edge {
+  stroke: color-mix(in srgb, var(--color-cyan) 55%, transparent);
+}
+.lab-cta[data-membrane]:hover .mem-edge,
+.lab-cta[data-membrane]:focus-visible .mem-edge {
+  stroke: var(--color-cyan);
+}
+/* The sheen was the generic sweep the membrane replaces; the lift and the halo
+   are the two things the membrane exists instead of. Nothing moves the element
+   under the reader's eye any more — the SURFACE answers. */
+.lab-cta[data-membrane] .lab-cta-sheen {
+  display: none;
+}
+.lab-cta[data-membrane]:hover,
+.lab-cta[data-membrane]:focus-visible {
+  box-shadow: none;
+  transform: none;
+}
+.lab-cta[data-membrane]:focus-visible {
+  outline: none;
+}
+.lab-cta[data-membrane]:focus-visible .mem-focus {
+  opacity: 0.7;
+}
+
+/* The ink copy of the label AND the arrow, revealed by clipping to the flood
+   front. Inherits its box from the host so it lands on the paper copies
+   exactly; `circle(0)` is the resting state so it is invisible until a flood
+   exists, and so a browser without `clip-path: path()` degrades to a label
+   that simply never flips rather than to ink on ink. */
+.lab-cta .lab-cta-ink {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  align-items: inherit;
+  justify-content: inherit;
+  padding: inherit;
+  gap: inherit;
+  color: var(--color-ink);
+  pointer-events: none;
+  user-select: none;
+  clip-path: circle(0);
+}
+.lab-cta:not([data-membrane]) .lab-cta-ink {
+  display: none;
+}
+
 /* ── the liquid stream ──────────────────────────────────────────────────── */
 /* It is not a panel that ends where the Hero ends. The stream BLEEDS past the
    section boundary and dissolves into the chapter below, so the page reads as
