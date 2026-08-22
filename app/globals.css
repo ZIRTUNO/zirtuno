@@ -1182,8 +1182,9 @@ section[id],
    material, one cyan, everywhere (owner directive); legibility comes from
    composition. R5-D adds the sanctioned exceptions ON TOP of it: the merged
    light score may grade exposure/key IN the material (hue never changes) and
-   the two act-boundary veils + one Origin flash live on the separate
-   .cine-veils layer — motivated act light, not a legibility dim hack.
+   the two act-boundary veils live on the separate .cine-veils layer —
+   motivated act light, not a legibility dim hack. Origin fusion has no
+   full-page flash surface.
    =========================================================================== */
 .liquid-journey {
   position: relative;
@@ -1639,7 +1640,7 @@ section[id],
 }
 
 /* ===========================================================================
-   CINEMATIC VEILS (R5-D §10.3) — page light, conductor-scored. Three fixed
+   CINEMATIC VEILS (R5-D §10.3) — page light, conductor-scored. Two fixed
    pointer-transparent sheets whose opacities are the CSS vars PageStage
    writes once per frame from the merged light score. Everything defaults to
    0 = invisible; the component never mounts on static/reduced/QA paths.
@@ -1653,8 +1654,7 @@ section[id],
   pointer-events: none;
 }
 .cine-veil,
-.cine-vignette,
-.cine-flash {
+.cine-vignette {
   position: absolute;
   inset: 0;
   will-change: opacity;
@@ -1675,20 +1675,6 @@ section[id],
   );
   opacity: var(--cine-vig, 0);
 }
-/* the ONE Origin flash — cyan-white, conductor-latched ≤400 ms envelope.
-   The 0.88 scale keeps the peak near 85% luminance (WCAG-reviewed); the hue
-   stays inside the brand cyan family (rule §4.8). */
-.cine-flash {
-  background: radial-gradient(
-    90% 70% at 50% 46%,
-    #eafdff 0%,
-    rgba(151, 240, 255, 0.9) 30%,
-    rgba(0, 227, 254, 0.42) 58%,
-    rgba(0, 227, 254, 0) 78%
-  );
-  opacity: calc(var(--cine-flash, 0) * 0.88);
-}
-
 /* S4's converge runway — the scroll distance the liquid choreography is
    scrubbed across (no pins; the sticky layer holds the stage).
    R5-E shortened it: at 230vh the reader crossed a full desktop viewport, and
@@ -4402,5 +4388,3 @@ html[data-zveil="seen"] .entry-veil {
     transition-duration: 0.001ms !important;
   }
 }
-
-

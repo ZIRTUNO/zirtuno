@@ -93,7 +93,7 @@ function makeJourneyRuntime(
   // default behaviour rather than a review path — they are what makes separated
   // beads read as one substance instead of independent discs. ?fphysv3=0 and
   // ?fobstacles=0 roll each back independently.
-  // ?fcine=0 keeps the light score neutral (no veils/flash/score grade).
+  // ?fcine=0 keeps the light score neutral (no veils or score grade).
   // ?fstrike=0 keeps the hand but removes the click: the strike wave, its
   // crown of spray and the press gain all go, hover physics stays. One flag
   // per force, the same rollback grammar as the rest of R5-B.
@@ -258,9 +258,7 @@ export function PageStage({
   }, [enabled]);
 
   // QA visibility: the live raw channels + the merged light score (read-only
-  // diagnostics; verify-cinematics reads __cine.stats.flashes for the
-  // one-flash gate — it exists on EVERY path, including reduced motion,
-  // where it must stay at zero because no frame ever runs)
+  // diagnostics for the cinematic and renderer harnesses).
   useEffect(() => {
     const w = window as unknown as {
       __liquid?: SceneChannels;
@@ -588,7 +586,6 @@ export function PageStage({
     const veils = wrap.querySelector<HTMLElement>(".cine-veils");
     let lastVeil = -1;
     let lastVig = -1;
-    let lastFlash = -1;
     const applyScore = () => {
       if (!veils) return;
       const s = conductor.score;
@@ -599,10 +596,6 @@ export function PageStage({
       if (Math.abs(s.vignette - lastVig) > 0.002) {
         lastVig = s.vignette;
         veils.style.setProperty("--cine-vig", s.vignette.toFixed(3));
-      }
-      if (Math.abs(s.flash - lastFlash) > 0.002) {
-        lastFlash = s.flash;
-        veils.style.setProperty("--cine-flash", s.flash.toFixed(3));
       }
     };
 

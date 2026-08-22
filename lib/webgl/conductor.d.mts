@@ -4,9 +4,6 @@ import type { SceneModule, Conductor } from "./scenes/types";
 
 export declare const EPS_PRESENCE: number;
 export declare const EPS_FORM: number;
-export declare const FLASH_ATTACK_MS: number;
-export declare const FLASH_DECAY_MS: number;
-export declare const FLASH_GLOW_MS: number;
 
 export declare function makeConductor(
   scenes: SceneModule[],
@@ -20,7 +17,7 @@ export declare function makeConductor(
     obstacleFlow?: boolean;
     /** false = no click strike and no press gain (?fstrike=0); default true. */
     strike?: boolean;
-    /** false = neutral score, no veils/flash (?fcine=0); default true. */
+    /** false = neutral score and no veils (?fcine=0); default true. */
     cine?: boolean;
   },
 ): Conductor;

@@ -94,10 +94,10 @@ The site is in R5, “One Continuous Liquid.”
   behind the grid + the hovered-card meniscus), the studio ECHO orbits, the
   contact GATHER, and the footer RELEASE (the mark's lowest droplet exits
   past the page bottom). Scenes author the light score; it drives the R5-C
-  in-liquid grade AND `CinematicVeils` (exposure veil, vignette, flash).
+  in-liquid grade AND `CinematicVeils` (exposure veil, vignette).
   Exactly two act-boundary fades (Método→Work, Origin→Studio; peak ≤ 0.4,
-  contrast-audited) and exactly ONE Origin flash — latched in the conductor
-  per page load, ≤400 ms by construction, absent under reduced motion.
+  contrast-audited). The former full-page Origin flash is removed; fusion light
+  now comes only from the continuously scored liquid material and afterglow.
   `Reveal variant="blur"` carries the Soul/Invitation copy. `?fcine=0` is
   the cinematic escape hatch; `verify-cinematics.mjs` is the machine gate.
 - **R5-E closes:** device, battery, context-loss, accessibility, locale,
@@ -139,8 +139,8 @@ The site is in R5, “One Continuous Liquid.”
    hardcode type sizes.
 8. **Color discipline is cyan on black.** No purple, green, rainbow
    iridescence, or off-brand gradients. Use only the tokens in §6. Bloom,
-   exposure, depth, and the one cyan-white flash may change light—not the brand
-   hue.
+   exposure, and depth may change light—not the brand hue. Do not reintroduce a
+   full-page white/cyan-white flash at Origin fusion.
 9. **Never invent proof.** Portfolio outcomes are verified metrics, honest
    narratives, or explicitly labeled “Arquitetura selecionada / Selected
    architecture.” Prototype data is local scaffolding, not launch proof.
@@ -164,9 +164,7 @@ The site is in R5, “One Continuous Liquid.”
     RSC/HTML. WebGL is enhancement, never the only carrier of information.
 13. **Accessibility is part of the feature.** Keyboard navigation, visible
     focus, semantic controls, AA contrast, error announcements, static
-    fallbacks, and complete reduced-motion reading paths are required. The
-    Origin flash occurs once, lasts at most 400 ms, stays within WCAG flash
-    limits, and is absent under reduced motion.
+    fallbacks, and complete reduced-motion reading paths are required.
 14. **The liquid never freezes as a performance fallback.** The watchdog lowers
     effects, cadence, or resolution. Full → full-nofx → lite → half is the
     shipped ladder, and the idle governor floors at ~30 Hz — never zero.
@@ -189,7 +187,7 @@ five acts:
 | I — Signal | Entry intro → Hero | draw · meet · flood · drain |
 | II — Argument | Problem → Ecosystem → Services | pour → fracture → seek → bloom |
 | III — Practice | Método → Work | rehearse → current |
-| IV — Soul | Origin → Studio | fuse + flash |
+| IV — Soul | Origin → Studio | fuse + afterglow |
 | V — Invitation | Contact → Footer | gather → release |
 
 The liquid and light motivate transitions. Repeated chapter border lines do
@@ -369,7 +367,7 @@ rounds:
 - pour/fracture readability and seek/converge weight;
 - page-wide physics feel, including cursor and pinch-off;
 - R5-C bloom, depth, banding, exposure, and grain;
-- Origin fusion, single flash, afterglow, and pacing;
+- Origin fusion, flash-free afterglow, and pacing;
 - Contact gather/exhale and Footer release.
 
 For each:
@@ -414,9 +412,8 @@ Additional stop-the-line gates:
   teeth behind "rest must remain exact"; conscious re-baselines rerun its
   `--baseline` and commit `scripts/rest-exact.json`).
 - Cinematic/scene/score change: `node scripts/verify-cinematics.mjs` —
-  exactly one flash per page load (never re-fired, never under reduced
-  motion or `?fcine=0`), exactly two act-fade bands on their seams (peak
-  ≤ 0.41, released at every reading rest), living liquid over Work/Studio/
+  no Origin flash surface or score channel, exactly two act-fade bands on their
+  seams (peak ≤ 0.41, released at every reading rest), living liquid over Work/Studio/
   the footer release, meniscus wiring, and the transient-contrast floor
   (≥ 3.5:1 under the fade peak; standing reads are veil-free).
 - Tier/viewport/renderer-lifecycle change (R5-E hardening gates):

@@ -383,18 +383,15 @@ This invariant prevents form-to-form crossfades at scene boundaries.
 
 The conductor already merges optional scene values:
 
-- light score: exposure product; veil/flash/vignette maximum;
+- light score: exposure product; veil/vignette maximum;
 - energy: scene activity plus scroll velocity;
 - stats: current form holder, active count, violations.
 
 These are CURRENT data surfaces. R5-C consumes energy for cadence/effects.
-R5-D consumes score twice: exposure/key in the liquid grade, and
-veil/vignette/flash on the `CinematicVeils` page layer. The conductor also
-OWNS the flash: scenes only raise the raw channel; the first rising edge
-latches for the page load and plays a fixed 70 ms attack + 310 ms decay
-(≤400 ms total) with a ~900 ms exposure afterglow. `stats.flashes` counts
-latches (≤1 by construction) and `?fcine=0` (`opts.cine=false`) keeps the
-whole score neutral.
+R5-D consumes score twice: exposure/key in the liquid grade, and veil/vignette
+on the `CinematicVeils` page layer. Origin fusion has no flash channel or
+full-page flash surface; its restrained afterglow is the scene-scored material
+exposure/key lift. `?fcine=0` (`opts.cine=false`) keeps the whole score neutral.
 
 ## 8. Fluid Physics v2 — CURRENT R5-B
 
@@ -694,15 +691,14 @@ Dynamic shadow contract:
 
 The field does not directly paint page-wide white/black veils. Scene light
 scores feed `CinematicVeils` via CSS vars PageStage writes once per frame
-(`--cine-veil` / `--cine-vig` / `--cine-flash`, wrap-scoped):
+(`--cine-veil` / `--cine-vig`, wrap-scoped):
 
 - black exposure veil — ONLY the two act-boundary fades (Método→Work,
   Origin→Studio), scroll-scrubbed `sin(π·bp)`, peak `VEIL_ACT = 0.4`
   (contrast-audited: standing reads are veil-free; every visible text node
   clears 3.5:1 under the transient peak);
-- one cyan-white Origin flash — the conductor-latched envelope, rendered at
-  ≈85% peak luminance inside the brand cyan family;
 - vignette — a whisper (≤0.3) through Problem and the Soul act;
+- no full-page white/cyan-white Origin flash surface or score channel;
 - mounted only on the live path: never under reduced motion, static tiers,
   deterministic QA holds, or `?fcine=0`; z-20 (above copy, below chrome).
 
@@ -785,7 +781,7 @@ reaches the forms for free, since no shocks are ever registered.
 | Services/Bloom     | seven exact forms              | scrubbed §3.3 bridges                                                                           | high                     | no physics drift at endpoints                    |
 | Método/Rehearse    | exact mark only at Integration | probe, lattice, clusters, satellites                                                            | phase-specific           | three masses use cohesion                        |
 | Work/Current       | no dominant form               | Método's satellites become the gyre (i%3=0) + 5-droplet meniscus at the hovered card            | low (0.12; meniscus 0.4) | CURRENT R5-D · z 0.55 sub-surface · act fade III |
-| Origin/Fuse        | exact mark at fusion           | two clusters → mark → echo                                                                      | low → high → low         | flash external to field                          |
+| Origin/Fuse        | exact mark at fusion           | two clusters → mark → echo                                                                      | low → high → low         | continuous material afterglow                    |
 | Studio             | no dominant form               | origin echo survives as sparse orbits (i%6=0)                                                   | low (0.08)               | CURRENT R5-D · z 0.6 · act fade IV               |
 | Contact/Gather     | exact mark                     | all droplets gather; submit exhale                                                              | low → high → low         | labeled submit remains canonical                 |
 | Footer/Release     | no form                        | the mark's lowest droplet detaches and sinks out (overshot targets vs contact's held 50% blend) | low                      | CURRENT R5-D · ends at true page bottom          |
@@ -858,7 +854,7 @@ The renderer:
 | `components/hero/FieldMorphHero.tsx`  | deterministic standalone hero QA path                         |
 | `lib/webgl/post-chain.ts`             | R5-C framebuffer pipeline (scene target, bloom, composite)    |
 | `lib/webgl/post-shaders.mjs`          | R5-C bright/blur/composite shaders + POST dial-in             |
-| `components/field/CinematicVeils.tsx` | R5-D page-light layer (veil/vignette/flash via CSS vars)      |
+| `components/field/CinematicVeils.tsx` | R5-D page-light layer (veil/vignette via CSS vars)            |
 
 Retired architecture is not an alternate path. Do not create:
 
@@ -891,7 +887,7 @@ Retired architecture is not an alternate path. Do not create:
 | `?fgrade=0`               | exact optics bypass (no post, grade uniforms at 0 identity)    |
 | `?fshadow=0`              | isolate dynamic volume-shadow rollback; the rest of grade stays |
 | `?fgov=0`                 | idle-cadence governor bypass                                   |
-| `?fcine=0`                | cinematic bypass (neutral score, no veils, flash cannot latch) |
+| `?fcine=0`                | cinematic bypass (neutral score, no veils)                    |
 
 ### 14.2 Required harnesses
 
@@ -925,11 +921,10 @@ human fidelity sheet; it is not run-reproducible (the breath overlay pulses
 above the canvas) and must not be hash-compared. The diagnostics ranges now
 cover the full page (`work-current`, `studio-echoes`,
 `contact-gather-release` beside the six originals), and
-`verify-cinematics.mjs` is the R5-D machine gate: one flash per page load
-(held across a second traversal; zero under reduced motion and `?fcine=0`),
-exactly two act-fade bands on their seams with full release at reading
-rests, living liquid over Work/Studio/the release, meniscus wiring, and the
-transient contrast floor. `verify-postfx.mjs` runs its URLs with `fcine=0`
+`verify-cinematics.mjs` is the R5-D machine gate: no Origin flash surface or
+score channel, exactly two act-fade bands on their seams with full release at
+reading rests, living liquid over Work/Studio/the release, meniscus wiring, and
+the transient contrast floor. `verify-postfx.mjs` runs its URLs with `fcine=0`
 so the optics chain stays measured in isolation against its pre-C baseline.
 
 The R5-E hardening gates: `verify-devices.mjs` is the emulated device matrix
@@ -997,7 +992,7 @@ reports an empty stage during exactly the passages a solid form is carrying.
 - A frozen watchdog fallback where WebGL remains viable: stop.
 - Melt landing changes at bind=1: stop.
 - R5-C bypass differs from pre-C pixels: stop.
-- Origin flash repeats or appears under reduced motion: stop.
+- Any Origin flash surface or score channel reappears: stop.
 
 ## 15. Visual Iteration Protocol
 
@@ -1010,7 +1005,7 @@ Budget 3–6 owner review rounds on real hardware for:
 - Ecosystem seek and convergence weight;
 - physics feel in free pours/currents;
 - R5-C bloom, absorption, dynamic volume shadow, depth, dither, and grain;
-- Origin fusion/flash/afterglow;
+- Origin fusion/flash-free afterglow;
 - Contact gather/exhale and Footer release.
 
 Tune constants in the existing system first. A new engine, new field family, or
@@ -1029,7 +1024,7 @@ The liquid system is complete when:
   remain coherent;
 - R5-C adds depth without moving the baseline or dropping below performance
   gates;
-- R5-D uses one safe flash and motivated light changes;
+- R5-D keeps Origin flash-free and uses motivated light changes;
 - full, full-nofx, lite, half, and static behavior communicate one brand;
 - all review captures and owner taste checkpoints are complete.
 

@@ -17,12 +17,7 @@
 //                     there, saturates under a mash, and rolls back cleanly
 //   node scripts/verify-conductor.mjs
 
-import {
-  makeConductor,
-  EPS_FORM,
-  FLASH_ATTACK_MS,
-  FLASH_DECAY_MS,
-} from "../lib/webgl/conductor.mjs";
+import { makeConductor, EPS_FORM } from "../lib/webgl/conductor.mjs";
 import { N, PHYS } from "../lib/webgl/phys.mjs";
 import { FLUID } from "../lib/webgl/fluid-core.mjs";
 import { SDF_BALL_MAX, SDF_WARP_REST } from "../lib/webgl/sdf-glass-shader.mjs";
@@ -1209,12 +1204,10 @@ const mkJumpScene = (bind) => ({
   );
 }
 
-// ═══ CINEMATICS (R5-D: score merge, the ONE flash, ?fcine=0) ═════════════════
+// ═══ CINEMATICS (R5-D: score merge, no flash channel, ?fcine=0) ══════════════
 
-// a scene that raises the raw flash channel whenever its `p` sits inside the
-// fusion window — the origin scene's exact grammar, stubbed
-const mkFlashScene = () => ({
-  id: "F",
+const mkScoreScene = (id, sc) => ({
+  id,
   forms: [0],
   channels: { p: 0 },
   damp: { p: false },
@@ -1230,68 +1223,18 @@ const mkFlashScene = () => ({
   form: () => null,
   ambient: () => 0,
   activity: () => 0,
-  score: (ctx) => ({ flash: ctx.ch.p > 0.42 && ctx.ch.p < 0.62 ? 1 : 0 }),
+  score: () => sc,
 });
 
-// ── D1: the flash — exactly ONE ≤400 ms envelope, ever ───────────────────────
+// ── D1: merge semantics + the removed flash channel ─────────────────────────
 {
-  const c = makeConductor([mkFlashScene()]);
-  let t = 0;
-  let onMs = 0;
-  let peak = 0;
-  let windows = 0;
-  let wasOn = false;
-  // TWO full traversals through the fusion window + a long park inside it —
-  // the raw channel rises three separate times; the envelope may fire once
-  const script = (fr) =>
-    fr < 60
-      ? 0
-      : fr < 120
-        ? 0.5
-        : fr < 180
-          ? 1
-          : fr < 240
-            ? 0.5
-            : fr < 300
-              ? 0
-              : 0.5;
-  for (let fr = 0; fr < 500; fr++) {
-    c.raw.F.p = script(fr);
-    t += 16.7;
-    c.driver.frame(t, buf, 1.5);
-    const fl = c.score.flash;
-    if (fl > 0) onMs += 16.7;
-    if (fl > peak) peak = fl;
-    if (fl > 0 && !wasOn) windows++;
-    wasOn = fl > 0;
-  }
-  ok(
-    c.stats.flashes === 1,
-    `flash: latched ${c.stats.flashes} times (want exactly 1)`,
-  );
-  ok(
-    windows === 1,
-    `flash: ${windows} visible windows (want 1 — re-scrub re-fired it)`,
-  );
-  ok(onMs <= 400, `flash: visible for ${onMs.toFixed(0)}ms (WCAG budget 400)`);
-  ok(peak > 0.9, `flash: envelope peak ${peak.toFixed(2)} never reached full`);
-  ok(
-    FLASH_ATTACK_MS + FLASH_DECAY_MS <= 400,
-    `flash: envelope constants sum to ${FLASH_ATTACK_MS + FLASH_DECAY_MS}ms > 400`,
-  );
-  ok(c.score.flash === 0, "flash: still lit long after the moment");
-}
-
-// ── D2: merge semantics + the afterglow ──────────────────────────────────────
-{
-  const mk = (id, sc) => ({
-    ...mkFlashScene(),
-    id,
-    channels: { p: 1 },
-    score: () => sc,
+  const A = mkScoreScene("A", { veil: 0.3, vignette: 0.1, exposure: 0.9 });
+  const B = mkScoreScene("B", {
+    veil: 0.5,
+    vignette: 0.05,
+    exposure: 0.9,
+    key: 0.4,
   });
-  const A = mk("A", { veil: 0.3, vignette: 0.1, exposure: 0.9 });
-  const B = mk("B", { veil: 0.5, vignette: 0.05, exposure: 0.9, key: 0.4 });
   const c = makeConductor([A, B]);
   c.driver.frame(16.7, buf, 1.5);
   ok(
@@ -1310,45 +1253,26 @@ const mkFlashScene = () => ({
     Math.abs(c.score.key - 0.4) < 1e-9,
     `merge: key ${c.score.key} (want 0.4)`,
   );
-
-  // afterglow: right after the latch the exposure lifts, then settles back
-  const c2 = makeConductor([mkFlashScene()]);
-  let t = 0;
-  for (let fr = 0; fr < 30; fr++) {
-    c2.raw.F.p = 0.5; // inside the window from frame 0 — latch immediately
-    t += 16.7;
-    c2.driver.frame(t, buf, 1.5);
-  }
   ok(
-    c2.score.exposure > 1.02,
-    `afterglow: exposure ${c2.score.exposure.toFixed(3)} not lifted at +500ms`,
-  );
-  for (let fr = 0; fr < 60; fr++) {
-    t += 16.7;
-    c2.driver.frame(t, buf, 1.5);
-  }
-  ok(
-    Math.abs(c2.score.exposure - 1) < 1e-6,
-    `afterglow: exposure ${c2.score.exposure.toFixed(3)} never settled`,
+    !Object.prototype.hasOwnProperty.call(c.score, "flash"),
+    "score: removed Origin flash channel returned",
   );
 }
 
-// ── D3: ?fcine=0 — the score stays neutral, the flash can never fire ────────
+// ── D2: ?fcine=0 — the score stays neutral ──────────────────────────────────
 {
-  const c = makeConductor([mkFlashScene()], { cine: false });
+  const c = makeConductor(
+    [mkScoreScene("F", { veil: 0.5, vignette: 0.3, exposure: 1.2, key: 0.4 })],
+    { cine: false },
+  );
   let t = 0;
   for (let fr = 0; fr < 200; fr++) {
-    c.raw.F.p = 0.5; // permanently inside the fusion window
     t += 16.7;
     const f = c.driver.frame(t, buf, 1.5);
     ok(f.expo === 0 && f.key === 0, `fcine: frame ${fr} carries grade`);
   }
   ok(
-    c.stats.flashes === 0,
-    `fcine: flash latched ${c.stats.flashes} times with cine off`,
-  );
-  ok(
-    c.score.veil === 0 && c.score.flash === 0 && c.score.vignette === 0,
+    c.score.veil === 0 && c.score.vignette === 0,
     "fcine: veil channels not neutral",
   );
 }

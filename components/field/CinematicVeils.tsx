@@ -1,16 +1,14 @@
 /**
  * CinematicVeils (R5-D) — the page-light layer of the cinematic cut (§10.3).
  *
- * Three fixed, pointer-transparent sheets driven ONLY by the conductor's
+ * Two fixed, pointer-transparent sheets driven ONLY by the conductor's
  * merged light score, which PageStage writes as CSS vars once per frame:
  *
  *   --cine-veil   black exposure veil — the two act-boundary fades
  *                 (Método → Work, Origin → Studio), scroll-scrubbed
  *   --cine-vig    vignette — quiet framing through Problem and the Soul act
- *   --cine-flash  the ONE cyan-white Origin moment — conductor-latched
- *                 envelope (≤400 ms by construction, once per page load)
  *
- * All three default to 0 = fully transparent. The component mounts only on
+ * Both default to 0 = fully transparent. The component mounts only on
  * the live cinematic path: never under reduced motion, static tiers, hero QA
  * stills, or `?fcine=0` — so every deterministic surface renders without it.
  *
@@ -24,7 +22,6 @@ export function CinematicVeils() {
     <div className="cine-veils" aria-hidden="true">
       <div className="cine-veil" />
       <div className="cine-vignette" />
-      <div className="cine-flash" />
     </div>
   );
 }

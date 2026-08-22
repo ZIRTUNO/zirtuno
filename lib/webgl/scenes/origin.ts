@@ -64,7 +64,6 @@ export function makeOriginScene(): SceneModule {
   let q5 = 0;
   const scoreOut: Partial<LightScore> = {
     key: 0,
-    flash: 0,
     vignette: 0,
     exposure: 1,
   };
@@ -146,16 +145,13 @@ export function makeOriginScene(): SceneModule {
         (SDF_WARP_MORPH - SDF_WARP_REST) * 0.6 * Math.sin(Math.PI * q2);
 
       // ── act IV light (R5-D): the emotional peak ────────────────────────────
-      // The key lifts as the two ideas fuse and stays lifted while the mark
-      // holds; the vignette closes over the approach (intimacy) and OPENS at
-      // the fusion. The flash channel is only the RAW signal — the scene says
-      // "the fusion is complete" across a scrub-proof window; the conductor
-      // owns the latch, the ≤400 ms envelope, and the afterglow. p is
-      // conductor-damped, so a hard scroll cannot tunnel past the window.
+      // The key lifts continuously as the two ideas fuse and stays lifted while
+      // the mark holds; the vignette closes over the approach (intimacy) and
+      // OPENS at the fusion. Exposure supplies the restrained material
+      // afterglow without a full-page white flash.
       scoreOut.key = 0.55 * q2 * (1 - 0.8 * q5);
       scoreOut.vignette = 0.2 * q1 * (1 - q2);
       scoreOut.exposure = 1 + 0.06 * q2 * (1 - q5);
-      scoreOut.flash = p > 0.42 && p < 0.62 ? 1 : 0;
     },
 
     target(i: number, ctx: SceneCtx, out: DropletOut) {

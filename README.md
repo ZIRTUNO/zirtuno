@@ -61,11 +61,11 @@ canvases or chapter hairlines.
 | I — Signal     | Entry veil, Hero             | wordmark assembly hands off to the living mark and seven forms                                  | black, then the first cyan presence                         |
 | II — Argument  | Problem, Ecosystem, Services | pour → fracture → THE GATHERING (ten capability masses drawn forward out of depth, arriving in three systems, fusing into the mark) → AS SETE FORMAS (one body taking each service's exact form) | exposure falls through the problem and rises at the fuse |
 | III — Practice | Método, Work                 | the liquid rehearses the client transformation, then becomes a quiet current behind honest work | neutral and workmanlike, with an act boundary before Work   |
-| IV — Soul      | Origin, Studio               | two idea-masses (Zéfiro · Ventura) fuse into the mark; one controlled flash; echoes continue behind the studio | emotional peak, afterglow, then settle                      |
+| IV — Soul      | Origin, Studio               | two idea-masses (Zéfiro · Ventura) fuse into the mark; echoes continue behind the studio | emotional peak, continuous material afterglow, then settle  |
 | V — Invitation | Contact, Footer              | every droplet gathers into the mark; submit exhales; one droplet releases beyond the footer     | calm return to black                                        |
 
 The ten named transitions are `assembly`, `pour`, `fracture`, `seek`,
-`bloom`, `rehearse`, `current`, `fuse + flash`, `gather`, and
+`bloom`, `rehearse`, `current`, `fuse + afterglow`, `gather`, and
 `release`. They are handoffs of one liquid, never visual swaps.
 
 ## Implementation Status
@@ -123,14 +123,14 @@ The ten named transitions are `assembly`, `pour`, `fracture`, `seek`,
   page's true bottom. Scenes author the light score (act II exposure dip
   through the fracture, first light-rise + key at convergence, origin
   fusion key + afterglow, calm act V), consumed twice: in the liquid via the
-  R5-C grade, and on the page via `CinematicVeils` (black exposure veil,
-  vignette, flash; CSS-var driven at z-20 — above copy, below all chrome).
+  R5-C grade, and on the page via `CinematicVeils` (black exposure veil and
+  vignette; CSS-var driven at z-20 — above copy, below all chrome).
   Exactly two act-boundary fades exist (Método→Work, Origin→Studio; peak
-  capped at 0.4, contrast-audited) and exactly ONE cyan-white Origin flash —
-  latched in the conductor once per page load, ≤400 ms by construction,
-  absent under reduced motion. `Reveal variant="blur"` gives the
-  Soul/Invitation copy its defocus reveal. `?fcine=0` disables the entire
-  cinematic layer; `verify-cinematics.mjs` is its machine gate.
+  capped at 0.4, contrast-audited). Origin fusion has no full-page flash; its
+  light is the continuous in-material key/exposure afterglow.
+  `Reveal variant="blur"` gives the Soul/Invitation copy its defocus reveal.
+  `?fcine=0` disables the entire cinematic layer; `verify-cinematics.mjs` is
+  its machine gate.
 
 ### Next, in this order
 
@@ -185,8 +185,8 @@ FieldStage + sdf-glass shader (identity-gated grade: expo/key/absorb/depth/shado
         ├── post-chain (R5-C): bright pass → bloom → opaque composite
         │   (dither + grain) · full-nofx rung · ~30 Hz idle governor
         │
-        └── CinematicVeils (R5-D): score → CSS vars → exposure veil ·
-            vignette · the ONE conductor-latched Origin flash (?fcine=0 off)
+        └── CinematicVeils (R5-D): score → CSS vars → exposure veil · vignette
+            (?fcine=0 off)
 ```
 
 Content remains server-rendered and crawlable. WebGL, measurements, and motion
@@ -241,7 +241,7 @@ node scripts/verify-entry-veil.mjs
 node scripts/verify-perf.mjs
 node scripts/verify-postfx.mjs        # optics gate (vs scripts/postfx-baseline.json)
 node scripts/verify-rest-exact.mjs    # settled-still byte gate (vs scripts/rest-exact.json)
-node scripts/verify-cinematics.mjs    # R5-D gate: one flash, two fades, no dead zones
+node scripts/verify-cinematics.mjs    # R5-D gate: no flash, two fades, no dead zones
 node scripts/verify-deformation.mjs   # deformable-material gate: the velocity field
                                       # linked, iBallShape/iStrain driven, ambient
                                       # current running, nothing teleports
@@ -284,12 +284,11 @@ images; a green process exit does not replace visual judgment.
   default: it costs the body ~15% of its brand luminance for contrast the
   absorption term already provides).
 - `?fgov=0` — disable the idle-cadence governor.
-- `?fcine=0` — disable the cinematic layer (neutral score, no veils/flash).
+- `?fcine=0` — disable the cinematic layer (neutral score, no veils).
 - `window.__scenes` — live scene channels for diagnostics.
 - `window.__optics` — live optics/shape state: post/fmt/tier/frames/gov +
   `demote()` for watchdog-rung drills.
-- `window.__cine` — the merged light score + `stats.flashes` (the
-  one-flash gate reads it).
+- `window.__cine` — the merged light score and cinematic diagnostics.
 
 ## Content and Environment
 

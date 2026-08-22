@@ -153,7 +153,7 @@ the liquid and light compose them into acts.
 | I — Signal     | Entry intro → Hero             | establish the brand and offer immediately               | two lines draw the mark and meet, it floods into liquid and drains into the hero's ribbon (see `entry-intro-spec.md`) | black field, first cyan bloom                                 |
 | II — Argument  | Problem → Ecosystem → Services | name fragmentation, prove connection, show capabilities | mark pours, fractures by symptom, seeks itself, reunifies, blooms through the seven forms           | slow dip through Problem, rise at convergence                 |
 | III — Practice | Método → Work                  | show strategic process and proof                        | five rehearsal states become a quiet current behind the work grid; hovered card receives a meniscus | neutral/workmanlike; fade-to-black boundary before Work       |
-| IV — Soul      | Origin → Studio                | reveal the true origin and human reason                 | the two idea-masses (Zéfiro · Ventura) fuse into the exact mark, echo into satellites, remain behind the role grid | one cyan-white flash, afterglow, settle; boundary into Studio |
+| IV — Soul      | Origin → Studio                | reveal the true origin and human reason                 | the two idea-masses (Zéfiro · Ventura) fuse into the exact mark, echo into satellites, remain behind the role grid | continuous material afterglow, settle; boundary into Studio   |
 | V — Invitation | Contact → Footer               | convert and close the narrative                         | all droplets gather into the mark, submit exhales, one droplet releases beyond the footer           | calm and final return to black                                |
 
 ### 3.1 Named transitions
@@ -168,8 +168,8 @@ These names are part of the implementation vocabulary:
 6. **Rehearse** — the liquid performs Diagnosis through Evolution.
 7. **Current** — Evolution satellites drain into a calm Work backdrop and card
    meniscus.
-8. **Fuse + flash** — two Origin masses form the exact mark and trigger the
-   site’s only flash.
+8. **Fuse + afterglow** — two Origin masses form the exact mark and settle into
+   a restrained material light lift.
 9. **Gather** — echoes and free droplets return to the Contact mark.
 10. **Release** — submit exhale and the final lone droplet leave the page.
 
@@ -280,7 +280,7 @@ morph 1400ms · autocycle 9000ms · breath 8000ms
 Only one owner controls a property. Generic repeated fade-ups are not the
 cinematic language. R5-D’s `Reveal variant="blur"` is reserved for Soul and
 Invitation copy; it fades opacity, translates gently, and resolves blur
-8px → 0. Reduced motion removes transform, blur, scrub, and flash.
+8px → 0. Reduced motion removes transform, blur, and scrub.
 
 ### 4.5 Cinematic light score — CURRENT R5-D
 
@@ -288,7 +288,6 @@ The conductor merges scene contributions into:
 
 - `exposure` — multiplicative, neutral at 1;
 - `veil` — maximum black veil;
-- `flash` — maximum white/cyan-white flash;
 - `vignette` — maximum edge darkening.
 
 `CinematicVeils` is a fixed, pointer-transparent overlay stack. It consumes
@@ -296,13 +295,9 @@ score through CSS variables written once per frame by the page shell.
 
 Rules:
 
-- one flash in the entire site, at Origin fusion;
-- no flash on reduced motion;
-- duration at most 400 ms;
-- cyan-white, approximately 85% luminance, no saturated red;
-- no more than three flashes in any one-second period—the design uses one;
+- no full-page white/cyan-white flash occurs at Origin fusion;
 - act-boundary fades occur at Método → Work and Origin → Studio;
-- the page returns to black after the flash; white is a moment, not a theme.
+- the page returns to black after the S7 dawn and afterglow.
 
 **The Dawn - S7 only.** One further light instrument, and the only place on the
 site where the GROUND moves rather than the page being graded over the top of
@@ -783,9 +778,9 @@ named ideas can be put on the two masses and an anonymous pair of founders
 cannot. Three founding pillars are the WHY; seven services are the HOW. Never
 style or count them as the same system.
 
-**Flash — CURRENT R5-D:** exact mark fusion triggers the site’s one controlled
-cyan-white flash, then afterglow. It fires once per traversal and never under
-reduced motion.
+**Fusion light — CURRENT:** exact mark fusion keeps a restrained, continuous
+material afterglow through the scene’s exposure and key score. There is no
+full-page white/cyan-white flash surface or flash score channel.
 
 **Composition and motion - CURRENT.** The chapter rests on two bands and one
 gesture, and both are structural rather than stylistic:
@@ -819,7 +814,7 @@ gesture, and both are structural rather than stylistic:
 - static/reduced-motion mode presents all beats as a plain reading sequence;
 - no chapter copy overlaps the mark, at any p and any viewport;
 - the dawn returns the ground to ink before the manifesto coda;
-- flash and reveal gates pass.
+- flash-absence and reveal gates pass.
 
 ### 6.8 Chapter 08 — The Studio
 
@@ -971,7 +966,7 @@ overflow from full-bleed layers and long localized copy.
 - Ecosystem explanations available to focus/touch, not hover-only.
 - Contact validation and status announced and associated with fields.
 - Animations never carry the only information.
-- One Origin flash stays under WCAG thresholds and is absent for reduced motion.
+- Origin fusion has no full-page white/cyan-white flash.
 - Touch targets and mobile menu remain usable at 200% zoom.
 
 ### 8.3 Performance
@@ -1077,7 +1072,7 @@ Delivered:
 - `CinematicVeils` and light-score application;
 - dedicated act/chapter scene behavior where needed;
 - Work current + card meniscus;
-- Origin flash + afterglow;
+- Origin fusion + continuous material afterglow, with no page flash;
 - Studio echo;
 - Contact gather and Footer release;
 - blur reveal;
@@ -1086,8 +1081,7 @@ Delivered:
 
 Protected gates:
 
-- exactly one flash per normal traversal;
-- zero flash under reduced motion;
+- zero Origin flash surfaces and score channels;
 - no lost text contrast across exposure states;
 - static/no-WebGL story complete;
 - CTA verification green;
@@ -1165,7 +1159,7 @@ protected by `verify-cinematics.mjs` and the full-page transition diagnostics.
 | `?fshape=0`               | roll back velocity-aligned deformation + optics (default ON)|
 | `?fgrade=0`               | exact optics/grade bypass                                   |
 | `?fgov=0`                 | disable the idle energy governor for QA                     |
-| `?fcine=0`                | disable cinematic scoring, veils, and flash                 |
+| `?fcine=0`                | disable cinematic scoring and veils                         |
 
 `window.__liquid` exposes current site channels and `window.__scenes` exposes
 all live scene channels for diagnostics.
@@ -1248,7 +1242,7 @@ The redeveloped site is done when:
 - exact forms and signed-off morphs remain intact;
 - real physics adds life without destabilizing bound choreography;
 - optics add depth without changing the baseline or destroying performance;
-- the cinematic layer has one safe flash and motivated act boundaries;
+- the cinematic layer has no Origin flash and retains motivated act boundaries;
 - every chapter remains semantic, crawlable, bilingual, keyboard usable, and
   complete under reduced motion/no WebGL;
 - portfolio and contact facts are real or explicitly framed;

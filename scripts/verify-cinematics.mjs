@@ -1,13 +1,12 @@
 // verify-cinematics (R5-D) — the machine teeth behind the cinematic cut:
 //
-//   1. THE FLASH   exactly one per page load (conductor latch), observed
-//                  ≤400 ms, never re-fired by a second traversal
+//   1. NO FLASH    no Origin flash surface or score channel exists
 //   2. ACT FADES   exactly two veil bands (Método→Work, Origin→Studio),
 //                  peaks within (0.2, 0.41], fully released at reading rests
 //   3. NO DEAD ZONES  the canvas is alive (non-black, moving) over Work,
 //                  Studio and the Footer coda — rule §4.2's machine check
 //   4. MENISCUS    hovering a project card drives the work scene's channels
-//   5. REDUCED MOTION  no veils, no flash, static liquid path
+//   5. REDUCED MOTION  no veils, static liquid path
 //   6. ?fcine=0    no veils, permanently neutral score
 //   7. CONTRAST    standing reads keep veil ≈ 0; under the transient peak
 //                  every visible text node still clears 3.5:1 against ink
@@ -53,8 +52,6 @@ async function sampleAt(page, y, settleMs = 550) {
       y: window.scrollY,
       veil: num("--cine-veil"),
       vig: num("--cine-vig"),
-      flash: num("--cine-flash"),
-      flashes: cine ? cine.stats.flashes : -1,
     };
   });
 }
@@ -82,6 +79,16 @@ const browser = await chromium.launch(LAUNCH);
     (await page.locator(".cine-veils").count()) === 1,
     "veil layer mounts exactly once on the live path",
   );
+  check(
+    (await page.locator(".cine-flash").count()) === 0,
+    "the removed Origin flash surface is absent",
+  );
+  check(
+    await page.evaluate(
+      () => !!window.__cine && !("flash" in window.__cine.score),
+    ),
+    "the removed Origin flash score channel is absent",
+  );
 
   const A = await page.evaluate(() => {
     const box = (sel) => {
@@ -101,26 +108,12 @@ const browser = await chromium.launch(LAUNCH);
   });
   check(!!(A.work && A.studio && A.origin && A.method), "anchors measurable");
 
-  // ── full traversal: dense samples, tracking veil bands + the flash ─────────
+  // ── full traversal: dense samples tracking the two veil bands ─────────────
   const samples = [];
   const STEPS = 46;
   for (let i = 0; i <= STEPS; i++) {
     samples.push(await sampleAt(page, Math.round((A.max * i) / STEPS), 420));
   }
-  const flashesAfterFirst = samples[samples.length - 1].flashes;
-  check(
-    flashesAfterFirst === 1,
-    "the Origin flash latched exactly once across the traversal",
-    `flashes=${flashesAfterFirst}`,
-  );
-
-  // second traversal through the fusion — the latch must hold
-  await sampleAt(page, 0, 700);
-  const fusionY = A.origin.top + A.origin.h * 0.45 - A.vh * 0.5;
-  await sampleAt(page, Math.round(fusionY), 900);
-  const again = await sampleAt(page, Math.round(fusionY + A.vh * 0.3), 900);
-  check(again.flashes === 1, "a second traversal never re-fires the flash", `flashes=${again.flashes}`);
-
   // ── the two act fades ───────────────────────────────────────────────────────
   const peak = Math.max(...samples.map((s) => s.veil));
   check(peak > 0.2 && peak <= 0.41, "act-fade peak within (0.2, 0.41]", `peak=${peak.toFixed(3)}`);
@@ -288,8 +281,6 @@ const browser = await chromium.launch(LAUNCH);
     await page.evaluate((y) => window.scrollTo(0, y), Math.round((max * i) / 6));
     await page.waitForTimeout(250);
   }
-  const flashes = await page.evaluate(() => window.__cine?.stats.flashes);
-  check(flashes === 0, "the flash never fires under reduced motion", `flashes=${flashes}`);
   await ctx.close();
 }
 
@@ -317,14 +308,12 @@ const browser = await chromium.launch(LAUNCH);
     const s = await page.evaluate(() => {
       const sc = window.__cine?.score;
       return sc
-        ? sc.veil !== 0 || sc.flash !== 0 || sc.vignette !== 0 || sc.exposure !== 1 || sc.key !== 0
+        ? sc.veil !== 0 || sc.vignette !== 0 || sc.exposure !== 1 || sc.key !== 0
         : null;
     });
     if (s) anyScore = true;
   }
-  const flashes = await page.evaluate(() => window.__cine?.stats.flashes);
   check(!anyScore, "score stays neutral across the whole journey");
-  check(flashes === 0, "the flash never latches with fcine=0", `flashes=${flashes}`);
   await ctx.close();
 }
 

@@ -536,7 +536,6 @@ async function openPage(query, reduced = "no-preference") {
   const state = await page.evaluate(() => ({
     press: window.__flow ? window.__flow.press : -1,
     pon: window.__flow ? window.__flow.pon : -1,
-    flashes: window.__cine ? window.__cine.stats.flashes : -1,
   }));
   await page.mouse.up();
   check(
@@ -544,7 +543,6 @@ async function openPage(query, reduced = "no-preference") {
     "no strike or press wiring under reduced motion",
     `press=${state.press} pon=${state.pon}`,
   );
-  check(state.flashes === 0, "the one-flash gate is still zero", `${state.flashes}`);
   await ctx.close();
 }
 
