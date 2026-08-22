@@ -30,7 +30,7 @@ export default function RootNotFound() {
             <h1 className="type-page-title mx-auto mt-4 text-paper">
               {copy.title}
             </h1>
-            <p className="mx-auto mt-4 max-w-lg text-body-l text-paper-mute">
+            <p className="mx-auto mt-4 max-w-lg text-body-l text-paper-lead">
               {copy.body}
             </p>
             <Link

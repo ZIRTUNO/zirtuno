@@ -201,7 +201,7 @@ export function ContactForm({
     return (
       <div className="contact-success" role="status">
         <p className="contact-success-title">{t("successTitle")}</p>
-        <p className="mt-3 text-body-l text-paper-mute">{t("successBody")}</p>
+        <p className="mt-3 text-body-l text-paper-lead">{t("successBody")}</p>
       </div>
     );
   }

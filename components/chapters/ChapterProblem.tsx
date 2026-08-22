@@ -34,7 +34,7 @@ export function ChapterProblem() {
         </Reveal>
 
         <Reveal inView delay={0.1}>
-          <p className="type-lead-copy mt-[var(--type-space-title-lead)] text-paper-mute">
+          <p className="type-lead-copy mt-[var(--type-space-title-lead)]">
             {t("lead")}
           </p>
         </Reveal>

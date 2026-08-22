@@ -38,7 +38,7 @@ export function ChapterMethod() {
         </Reveal>
 
         <Reveal inView delay={0.1}>
-          <p className="font-poetic mt-[var(--type-space-title-lead)] max-w-2xl text-poetic text-paper-mute">
+          <p className="font-poetic mt-[var(--type-space-title-lead)] max-w-2xl text-poetic text-paper-lead">
             {t("lead")}
           </p>
         </Reveal>

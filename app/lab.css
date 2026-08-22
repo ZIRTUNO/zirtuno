@@ -380,8 +380,14 @@ body:has(.lab-page) .side-index {
      MEASURED (see ProofRow), so a six-character label and a twenty-six
      character one both light at the moment the beam actually reaches them. */
   --q: clamp(0, (var(--sweep, 0) - var(--at, 0.5)) / var(--span, 0.18), 1);
-  /* and the last stretch of that crossing, where the ring becomes the check */
-  --done: clamp(0, (var(--q) - 0.74) / 0.26, 1);
+  /* and the last stretch of that crossing, where the mark resolves.
+     The MORPH itself is NOT here. The sphere and the check are one canvas and
+     the sphere's own dots travel between them (see ProofOrb). Earlier revisions
+     tried to build the change out of CSS — fade the orb out, draw a tick in,
+     glow over the seam — and every one of them was a swap wearing a
+     transition: two different drawings, and a moment that was either both or
+     neither. --done is now only for the things AROUND the mark. */
+  --done: clamp(0, (var(--q) - 0.62) / 0.38, 1);
   position: relative;
   display: flex;
   align-items: center;
@@ -390,49 +396,64 @@ body:has(.lab-page) .side-index {
 .lab-proof-mark {
   display: grid;
   place-items: center;
-  width: 16px;
-  height: 16px;
+  /* 20px, not 16: the mark carries a `thinking-orbs` canvas now, and 20 is one
+     of the package's two TUNED designs (the other is 64 — a different orb, not
+     this one scaled). The box is measured, not assumed: ProofRow anchors the
+     beam to the mark's real rect, so the row re-times itself around it. */
+  width: 20px;
+  height: 20px;
   flex: none;
-  /* a small swell as the ring resolves — peaks mid-morph, gone by the time the
-     check lands. Transform only: no layout, no repaint. */
-  scale: calc(1 + 0.5 * var(--done) * (1 - var(--done)));
+  /* No swell. The mark does not need a gesture laid over it to disguise a
+     swap, because there is no swap left to disguise. */
+}
+/* canvas and fallback occupy ONE cell — never both drawn, see below */
+.lab-proof-mark > * {
+  grid-area: 1 / 1;
 }
 .lab-proof-mark svg {
-  width: 16px;
-  height: 16px;
+  width: 20px;
+  height: 20px;
   overflow: visible;
 }
-/* The mark at rest: barely there. Nothing on this row may compete with the
-   beam — four resting callouts drawn at full contrast read as four separate
-   objects, and the light stops being the subject. */
-.lab-proof-track {
-  stroke: color-mix(in srgb, var(--color-paper) 17%, transparent);
-  stroke-width: 1;
+
+/* ── THE MARK ───────────────────────────────────────────────────────────── */
+/* The sphere and the check are the SAME OBJECT: one canvas, and the sphere's
+   own dots travel into the tick and back out of it (ProofOrb). So there is no
+   fade here, no second element, and no seam — the row only decides how present
+   the mark is, never which of two drawings is showing.
+
+   At rest it is held back. Nothing here may compete with the beam: four
+   resting marks at full contrast read as four separate objects and the light
+   stops being the subject. It reaches full by 0.55 of the crossing, before the
+   morph starts, so the dots make their journey at full strength. */
+.lab-proof-orb {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  opacity: calc(0.34 + 0.66 * clamp(0, var(--q) / 0.55, 1));
 }
-/* THE LOADING RING. r=6 → circumference 37.7. It draws from 12 o'clock as this
-   callout fills, then hands over to the check. */
-.lab-proof-ring {
-  stroke: var(--color-cyan);
-  stroke-width: 1.35;
-  stroke-linecap: round;
-  stroke-dasharray: 37.7;
-  stroke-dashoffset: calc(37.7 * (1 - var(--q)));
-  /* fill-box, or `center` resolves against the SVG user-space origin and the
-     ring swings off its own mark instead of spinning in place */
-  transform-box: fill-box;
-  transform-origin: center;
-  transform: rotate(-90deg);
-  opacity: calc(1 - 0.85 * var(--done));
-  /* no drop-shadow: this stroke's dash offset changes every frame, so the
-     filter was re-rasterised every frame too. The cyan carries itself. */
+.lab-proof-orb canvas {
+  width: 100%;
+  height: 100%;
+}
+
+/* THE FALLBACK. A plain resolved tick for the reading paths that have no
+   canvas: no JS, or an orb that never mounted. The canvas element only exists
+   once React has rendered ProofOrb, so `:has(canvas)` IS the liveness test —
+   no attribute to set and nothing to keep in sync. It is a fallback, never a
+   second thing drawn over the first. */
+.lab-proof-static {
+  opacity: 1;
+  transition: opacity 200ms var(--ease-arrive);
+}
+.lab-proof-mark:has(canvas) .lab-proof-static {
+  opacity: 0;
 }
 .lab-proof-tick {
   stroke: var(--color-cyan);
-  stroke-width: 1.6;
+  stroke-width: 1.9;
   stroke-linecap: round;
   stroke-linejoin: round;
-  stroke-dasharray: 12;
-  stroke-dashoffset: calc(12 * (1 - var(--done)));
 }
 /* a narrower contrast range than before: the label lifts as the light passes,
    but an unlit callout still has to be readable, not a ghost */
@@ -819,7 +840,10 @@ body:has(.lab-page) .side-index {
   font-size: var(--text-mono-sm);
   letter-spacing: var(--tracking-label-open);
   text-transform: uppercase;
-  color: color-mix(in srgb, var(--color-paper) 42%, transparent);
+  /* R6: 42% put the one instruction on the first screen below the floor the
+     rest of the site now holds, and it sits over the bright ribbon. */
+  color: var(--color-paper-soft);
+  text-shadow: 0 1px 10px rgb(0 0 0 / 0.78);
   animation: lab-fade 1200ms var(--ease-arrive) 1500ms both;
 }
 
@@ -914,6 +938,14 @@ body:has(.lab-page) .side-index {
   .lab-mesh span,
   .lab-badge-dot {
     animation: none;
+  }
+  /* The orb is the motion; the CHECK is the state. Reduced motion gets the
+     state — the row is held resolved, which spends the orb before it is ever
+     seen. ProofOrb also paints one static frame instead of running, so nothing
+     here is animating even if the envelope is later reopened. `--sweep` is
+     pinned here as well as by the loop so the story survives without JS. */
+  .lab-proof {
+    --sweep: 2;
   }
   .lab-word {
     transition: none;

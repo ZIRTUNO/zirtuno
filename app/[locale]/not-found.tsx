@@ -26,7 +26,7 @@ export default function NotFound() {
           <h1 className="type-poetic-title mx-auto mt-4 text-paper">
             {t("title")}
           </h1>
-          <p className="mt-4 text-body-l text-paper-mute">{t("body")}</p>
+          <p className="mt-4 text-body-l text-paper-lead">{t("body")}</p>
           <div className="mt-8 flex justify-center">
             <Link href="/" data-cursor="hover" className="cta cta-secondary">
               <span className="cta-label">{t("cta")}</span>

@@ -6,7 +6,9 @@
   "common": {
     "skipToContent": "Skip to content",
     "scrollHint": "Scroll",
-    "loading": "Zirtuno"
+    "loading": "Zirtuno",
+    "introLabel": "Zirtuno — opening sequence",
+    "skipIntro": "Skip"
   },
   "nav": {
     "location": "Curitiba, Brazil",
@@ -46,9 +48,12 @@
   "problem": {
     "chapterLabel": "02 — The Problem",
     "headline": "Most companies don't have a marketing problem. They have a structure problem.",
-    "lead": "Each piece works alone — and none work together. The site on one side, data on another, support improvised, processes manual. The result is effort without scale.",
+    "lead": "Every piece works alone. None of them work together.",
     "symptoms": [
-      { "label": "Weak website", "desc": "Pretty, but it doesn't convert." },
+      {
+        "label": "Weak website",
+        "desc": "Pretty, but it doesn't convert."
+      },
       {
         "label": "Manual processes",
         "desc": "Repetitive tasks drain the team."
@@ -57,16 +62,28 @@
         "label": "Disconnected tools",
         "desc": "Systems that don't talk to each other."
       },
-      { "label": "Slow service", "desc": "Opportunities lost after hours." },
-      { "label": "Scattered data", "desc": "Decisions made in the dark." },
-      { "label": "Weak positioning", "desc": "A brand that isn't remembered." },
-      { "label": "No ecosystem", "desc": "Nothing grows in an integrated way." }
+      {
+        "label": "Slow service",
+        "desc": "Opportunities lost after hours."
+      },
+      {
+        "label": "Scattered data",
+        "desc": "Decisions made in the dark."
+      },
+      {
+        "label": "Weak positioning",
+        "desc": "A brand that isn't remembered."
+      },
+      {
+        "label": "No ecosystem",
+        "desc": "Nothing grows in an integrated way."
+      }
     ]
   },
   "ecosystem": {
     "chapterLabel": "03 — The Ecosystem",
-    "headline": "We build digital ecosystems, not loose pieces.",
-    "lead": "Everything connected around your business. Each part strengthens the others: the brand feeds the site, the site feeds traffic, traffic feeds the CRM, AI accelerates service, automation connects processes, and dashboards show it all in real time.",
+    "headline": "We build digital ecosystems, not loose parts.",
+    "lead": "Each part feeds the next. The whole system grows together.",
     "centerLabel": "Your business",
     "systems": {
       "identity": "Identity",
@@ -78,17 +95,38 @@
         "name": "Brand",
         "tooltip": "The base of everything — how the business is perceived."
       },
-      { "name": "Website", "tooltip": "The center of the digital presence." },
-      { "name": "Traffic", "tooltip": "The flow of new opportunities." },
-      { "name": "CRM", "tooltip": "The memory of every relationship." },
-      { "name": "AI", "tooltip": "Intelligence that serves and accelerates." },
-      { "name": "Automation", "tooltip": "The work that happens on its own." },
-      { "name": "Dashboards", "tooltip": "The clear view of the numbers." },
+      {
+        "name": "Website",
+        "tooltip": "The center of the digital presence."
+      },
+      {
+        "name": "Traffic",
+        "tooltip": "The flow of new opportunities."
+      },
+      {
+        "name": "CRM",
+        "tooltip": "The memory of every relationship."
+      },
+      {
+        "name": "AI",
+        "tooltip": "Intelligence that serves and accelerates."
+      },
+      {
+        "name": "Automation",
+        "tooltip": "The work that happens on its own."
+      },
+      {
+        "name": "Dashboards",
+        "tooltip": "The clear view of the numbers."
+      },
       {
         "name": "Internal systems",
         "tooltip": "The operation that sustains the business."
       },
-      { "name": "Service", "tooltip": "The experience in every contact." },
+      {
+        "name": "Service",
+        "tooltip": "The experience in every contact."
+      },
       {
         "name": "Content",
         "tooltip": "The voice that keeps the brand present."
@@ -98,7 +136,7 @@
   "services": {
     "chapterLabel": "04 — Services",
     "headline": "Seven pillars, connected.",
-    "lead": "Each service solves a real problem — and strengthens all the others.",
+    "lead": "Each solves a real problem. Together, they solve the business.",
     "labelIs": "What it is",
     "labelSolves": "What it solves",
     "labelCreates": "What it creates",
@@ -120,7 +158,8 @@
           "Usability",
           "Responsiveness",
           "Conversion"
-        ]
+        ],
+        "promise": "A presence that converts, not just impresses."
       },
       "software": {
         "accent": "Form for the function.",
@@ -135,7 +174,8 @@
           "Dashboards",
           "Mobile apps",
           "Cross-platform"
-        ]
+        ],
+        "promise": "Systems built for how you actually operate."
       },
       "ai": {
         "accent": "The intelligence that does not sleep.",
@@ -150,7 +190,8 @@
           "Intelligent automations",
           "24/7 service",
           "Models for business"
-        ]
+        ],
+        "promise": "Support and operations that never sleep."
       },
       "automation": {
         "accent": "Movement that requires no presence.",
@@ -165,7 +206,8 @@
           "Tool connection",
           "Automatic flows",
           "APIs"
-        ]
+        ],
+        "promise": "The repetitive work stops existing."
       },
       "data": {
         "accent": "Chaos read in silence.",
@@ -180,7 +222,8 @@
           "Reports",
           "Dashboards",
           "Real-time metrics"
-        ]
+        ],
+        "promise": "Decisions from numbers, not hunches."
       },
       "branding": {
         "accent": "Presence recognized from afar.",
@@ -195,7 +238,8 @@
           "Communication",
           "Storytelling",
           "Digital authority"
-        ]
+        ],
+        "promise": "A brand recognised from a distance."
       },
       "marketing": {
         "accent": "Reach without noise.",
@@ -210,9 +254,11 @@
           "Campaigns",
           "Digital strategy",
           "Performance"
-        ]
+        ],
+        "promise": "Growth that is predictable and measured."
       }
-    }
+    },
+    "detailsLabel": "Details"
   },
   "method": {
     "chapterLabel": "05 — Method",
@@ -221,30 +267,30 @@
     "phases": [
       {
         "name": "Diagnosis",
-        "desc": "We understand the business, map the current structure, and identify what's fragmented, manual, or missing."
+        "desc": "We map what is broken, manual, or missing."
       },
       {
         "name": "Structure",
-        "desc": "We design the ecosystem architecture: what to build, in what order, and how it connects."
+        "desc": "We design the architecture: what to build, and in what order."
       },
       {
         "name": "Construction",
-        "desc": "We build each piece at a premium standard — site, software, brand, automations."
+        "desc": "Each piece is built to a premium standard."
       },
       {
         "name": "Integration",
-        "desc": "We connect everything: CRM, AI, automations, data, and systems operating as one organism."
+        "desc": "Everything starts operating as a single organism."
       },
       {
         "name": "Evolution",
-        "desc": "We measure, optimize, and expand. The ecosystem grows with the business."
+        "desc": "We measure, optimise, and expand with the business."
       }
     ]
   },
   "work": {
     "chapterLabel": "06 — Work",
     "headline": "Selected architectures.",
-    "lead": "Ways to connect strategy, technology, and operations into coherent digital systems.",
+    "lead": "Strategy, technology and operations as one system.",
     "indexTitle": "Selected architectures",
     "indexLead": "Digital system studies, presented with context and their status clearly identified.",
     "ctaCard": "See project",
@@ -283,13 +329,13 @@
     },
     "empty": "No architecture has been published in this selection.",
     "emptyLabel": "Selection in curation",
-    "emptyInvite": "In the meantime, we can map and show you the structure we would build for your business.",
-    "emptyPortfolio": "The selection is being curated. No project or concept study has been published yet."
+    "emptyInvite": "In the meantime, we can design the structure your business needs.",
+    "emptyPortfolio": "The selection is being curated."
   },
   "name": {
     "chapterLabel": "07 — The Origin",
     "headline": "Two ideas, one name.",
-    "open": "Zirtuno did not begin with people. It began with two ideas — and neither was enough on its own.",
+    "open": "Zirtuno did not begin with people. It began with two ideas.",
     "ideas": [
       {
         "kicker": "The force",
@@ -310,9 +356,13 @@
     ],
     "fusion": "One word holds both: movement that knows where it is going.",
     "pillarsLead": "Three grounds where that difference shows first.",
-    "pillars": ["Social", "Health", "Finance"],
+    "pillars": [
+      "Social",
+      "Health",
+      "Finance"
+    ],
     "purpose": "We give form to what is still waiting to exist.",
-    "echo": "From two ideas to an ecosystem — software, AI, automation, branding, and strategy.",
+    "echo": "From two ideas to one ecosystem.",
     "wordmark": "Zirtuno",
     "closing": "We build what doesn't exist yet.",
     "manifesto": [
@@ -344,7 +394,7 @@
   "contact": {
     "chapterLabel": "09 — Contact",
     "prompt": "Shall we structure your digital?",
-    "subPrompt": "Tell us where you are today. We'll send back a first read of your digital structure.",
+    "subPrompt": "Tell us where you are today. We'll send back a first read.",
     "fields": {
       "name": "Name",
       "namePlaceholder": "Your name",
@@ -392,7 +442,13 @@
     "headlineMid": "with one",
     "headlineBold": "complete digital",
     "headlineTail": "ecosystem.",
-    "words": ["future", "growth", "positioning", "operation", "outcome"],
+    "words": [
+      "future",
+      "growth",
+      "positioning",
+      "operation",
+      "outcome"
+    ],
     "subline": "Software, AI, automation, data, branding and marketing connected into a single structure.",
     "proof": [
       "7 connected fronts",

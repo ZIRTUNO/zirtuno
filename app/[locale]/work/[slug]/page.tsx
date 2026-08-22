@@ -139,7 +139,7 @@ export default async function CaseStudyPage({
           )}
           <h1 className="type-page-title mt-4 text-paper">{title}</h1>
           {isSelectedArchitecture && (
-            <p className="mt-5 max-w-2xl text-body-l text-paper-mute">
+            <p className="mt-5 max-w-2xl text-body-l text-paper-lead">
               {t("architectureNotice")}
             </p>
           )}
@@ -218,7 +218,7 @@ export default async function CaseStudyPage({
         {project.credits && (
           <section className="mt-16 max-w-3xl">
             <h2 className="case-label">{t("case.credits")}</h2>
-            <p className="mt-3 text-paper-mute">
+            <p className="mt-3 text-paper-lead">
               {localize(project.credits, locale)}
             </p>
           </section>

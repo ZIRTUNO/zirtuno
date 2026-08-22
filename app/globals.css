@@ -13,21 +13,27 @@
   --color-cyan-glow: #4decff;
   --color-cyan-deep: #00b6cc;
   --color-paper: #f2f0eb;
-  /* the secondary→faint ladder (R4.1) — a calmer, clearly-separated hierarchy
-     so muted text RECEDES in steps instead of reading as one flat loud gray:
-       mute = readable secondary (leads, descriptions, poetic accents)
-       soft = quiet mono metadata (capability lists, counters, fine print)
-       dim  = captions / input placeholders
-       faint = hairline borders + rules only.
-     R5-E raised every rung one notch. The ladder's SHAPE is unchanged — the
-     steps are still clearly separated — but the audit found muted copy losing
-     its read once the liquid, the veils and the grain were composited over it.
-     Against ink these now measure ≈7.1:1 (mute), ≈4.5:1 (soft) and ≈3.0:1
-     (dim), so secondary copy holds AA even under the transient act fades. */
-  --color-paper-mute: rgba(242, 240, 235, 0.62);
-  --color-paper-soft: rgba(242, 240, 235, 0.48);
-  --color-paper-dim: rgba(242, 240, 235, 0.36);
-  --color-paper-faint: rgba(242, 240, 235, 0.13);
+  /* R6 — THE LADDER INVERTED.
+     The previous ladder encoded importance as OPACITY: a lead paragraph, the
+     second most important thing on any screen, was painted at 0.62 and every
+     description under it at 0.62 again. That is what made the site read as
+     "grey small text" — not any single value, but the fact that rank was
+     expressed by fading rather than by size, weight and measure.
+
+     R6 expresses rank the way editorial and Apple-tier product pages do:
+       · rank 1 — display scale + the liquid-glass gradient (the signature)
+       · rank 2 — LEAD: near-full strength, smaller, and cut SHORT
+       · rank 3 — mono/cyan labels: small, but high contrast and structural
+       · rank 4 — opacity, and only for genuinely incidental text
+     So the top rungs are pulled up hard and only the bottom rung stays faint.
+     `lead` is new and is the colour secondary copy should actually use;
+     `mute` survives for poetic asides; `soft`/`dim` are now rare by design.
+     Against ink: lead ≈13.9:1, mute ≈11.2:1, soft ≈7.1:1, dim ≈4.6:1. */
+  --color-paper-lead: rgba(242, 240, 235, 0.92);
+  --color-paper-mute: rgba(242, 240, 235, 0.8);
+  --color-paper-soft: rgba(242, 240, 235, 0.62);
+  --color-paper-dim: rgba(242, 240, 235, 0.48);
+  --color-paper-faint: rgba(242, 240, 235, 0.14);
   --color-warn: #ff6b5c; /* form errors only */
 
   /* --- Fonts (S1.2 · display/text split, R4). next/font sets the family vars
@@ -364,13 +370,52 @@
     letter-spacing: var(--text-title--letter-spacing);
   }
 
+  /* R6: the lead now CARRIES ITS OWN COLOUR. Chapters used to hand it
+     `text-paper-mute`, which is how the second-most-important line on every
+     screen ended up at 62%. The role owns the decision so it cannot drift
+     back, and the measure is cut to a single breath — a lead that runs past
+     ~34ch has stopped being a lead and become a paragraph. */
   .type-lead-copy {
     max-inline-size: var(--measure-lead);
     font-family: var(--font-sans);
     font-size: var(--text-lead);
     line-height: var(--text-lead--line-height);
     letter-spacing: var(--text-lead--letter-spacing);
+    color: var(--color-paper-lead);
     text-wrap: pretty;
+  }
+
+  /* R6 · STATEMENT — one sentence that has to land on its own. Between the
+     section title and the lead: bigger than reading copy, quieter than
+     display, always full strength. This is the tier that replaces most of
+     the deleted paragraphs. */
+  .type-statement {
+    max-inline-size: var(--measure-editorial);
+    font-family: var(--font-sans);
+    font-size: var(--text-display-m);
+    font-weight: 500;
+    line-height: var(--text-display-m--line-height);
+    letter-spacing: var(--text-display-m--letter-spacing);
+    color: var(--color-paper);
+    text-wrap: balance;
+  }
+
+  /* R6 · META — the structural small text. Small, yes, but mono, uppercase,
+     open-tracked and HIGH CONTRAST, so it reads as an instrument marking
+     rather than as faded prose. Small text is only a problem when it is also
+     dim and also prose; this is neither. */
+  .type-meta {
+    font-family: var(--font-mono);
+    font-size: var(--text-mono-sm);
+    font-weight: 500;
+    line-height: var(--text-mono-sm--line-height);
+    letter-spacing: var(--tracking-label-open);
+    text-transform: uppercase;
+    font-variant-numeric: tabular-nums lining-nums;
+    color: var(--color-paper-mute);
+  }
+  .type-meta-cyan {
+    color: var(--color-cyan);
   }
 
   .type-reading-copy {
@@ -783,6 +828,123 @@ button.cta {
   background: var(--color-cyan);
 }
 
+/* ===========================================================================
+   R6 · DISCLOSURE — the mechanism that let the copy be cut.
+
+   Every paragraph removed from a chapter's standing read had to go SOMEWHERE
+   defensible: this site sells structure to businesses, and the is/solves/
+   creates detail is the commercial substance, not filler. So it is not
+   deleted — it is DEMOTED to a second layer the reader opens on intent.
+
+   Built on native <details> on purpose: it is keyboard-operable, announced
+   correctly by assistive tech, survives with JS disabled and is findable by
+   in-page search in modern engines. A div-and-onClick version of this would
+   be strictly worse in all four respects.
+   =========================================================================== */
+.disclose {
+  border-top: 1px solid var(--color-paper-faint);
+}
+.disclose-summary {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.95rem 0;
+  cursor: pointer;
+  list-style: none;
+  font-family: var(--font-mono);
+  font-size: var(--text-mono-sm);
+  font-weight: 500;
+  letter-spacing: var(--tracking-label-open);
+  text-transform: uppercase;
+  color: var(--color-paper-mute);
+  transition: color var(--dur-micro) var(--ease-arrive);
+}
+/* Safari still paints the default triangle through the shorthand above. */
+.disclose-summary::-webkit-details-marker {
+  display: none;
+}
+.disclose-summary:hover,
+.disclose-summary:focus-visible {
+  color: var(--color-cyan);
+}
+.disclose-summary:focus-visible {
+  outline: 1px solid var(--color-cyan);
+  outline-offset: 4px;
+}
+/* The marker is a PLUS that becomes a MINUS — the two states are legible at a
+   glance and at any size, unlike a rotating chevron which reads as a
+   direction rather than as open/closed. */
+.disclose-mark {
+  position: relative;
+  flex: none;
+  width: 0.7rem;
+  height: 0.7rem;
+  margin-left: auto;
+}
+.disclose-mark::before,
+.disclose-mark::after {
+  content: "";
+  position: absolute;
+  inset: 50% 0 auto 0;
+  height: 1px;
+  background: currentColor;
+  transition: transform var(--dur-short) var(--ease-arrive);
+}
+.disclose-mark::after {
+  transform: rotate(90deg);
+}
+.disclose[open] .disclose-mark::after {
+  transform: rotate(0deg);
+}
+.disclose-body {
+  padding-bottom: 1.4rem;
+}
+
+/* Smooth open/close where the engine can animate to auto. Engines without
+   ::details-content simply snap — the disclosure still works, it just does
+   not glide, which is the correct thing to lose first.
+
+   `interpolate-size` is an INHERITED property and must be in effect on an
+   ancestor of the box being sized — declaring it on ::details-content itself
+   silently does nothing, which left the panel clamped at block-size:0 in both
+   states: collapsed correctly, and permanently unopenable. It belongs on the
+   root. */
+/* THE HEIGHT IS NOT ANIMATED, AND THAT IS DELIBERATE.
+   Two height-animation techniques were built and measured against these exact
+   seven panels, and both failed in this context:
+
+     · block-size 0 → auto with `interpolate-size: allow-keywords`. A closed
+       ::details-content carries UA `content-visibility: hidden`, so its
+       subtree skips layout; `auto` resolves against a subtree with no layout,
+       measures 0, and the panel deadlocks SHUT — it never opens at all.
+       Measured: 52px closed, 52px "open", permanently.
+     · the grid 0fr → 1fr wrapper trick applied to ::details-content. The row
+       resolved to 74px against a 394px body — the fr track will not take its
+       size from content it is simultaneously clipping here.
+
+   Native toggling is instant and correct in every engine: 52px → 446px, every
+   panel, every time. So the disclosure opens at native speed and the CONTENT
+   does the arriving — a fade and a short lift on .disclose-body, which is a
+   real element where opacity and transform are entirely safe. A panel that
+   always opens beats a panel that glides. */
+.disclose-body {
+  opacity: 0;
+  transform: translateY(-6px);
+  transition:
+    opacity var(--dur-short) var(--ease-arrive),
+    transform var(--dur-short) var(--ease-arrive);
+}
+.disclose[open] .disclose-body {
+  opacity: 1;
+  transform: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .disclose-body {
+    transition: none;
+    transform: none;
+  }
+}
+
 /* Anchor offset so #hash scroll clears the fixed TopBar */
 section[id],
 [data-chapter] {
@@ -1050,6 +1212,116 @@ section[id],
   position: absolute;
   inset: 0;
 }
+
+/* S7's clock, registered so it is a real <number> in calc() rather than an
+   untyped substitution — and, more importantly, so its DEFAULTS decide what
+   every non-scrubbed surface does.
+
+   `--origin-scrub` is the switch, and it fails SAFE at 0: the live frame loop
+   raises it to 1 when it starts driving, and every other path leaves it alone
+   — static tiers, reduced motion, the hero QA still, the ?feco deterministic
+   hold, pre-hydration and JS-off. At 0 the copy masks below resolve to fully
+   OPEN and the dawn resolves to fully CLOSED, so those surfaces get plain
+   readable type on pure ink without depending on a branch remembering to say
+   so (rule #13: content is never hidden behind motion). */
+@property --origin-p {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 1;
+}
+@property --origin-on {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 0;
+}
+@property --origin-scrub {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 0;
+}
+
+/* ── THE DAWN (S7) ───────────────────────────────────────────────────────────
+   The chapter's own light, and the ONE place on the site where the ground
+   itself moves. It lives inside the sticky field layer so it holds still while
+   the runway scrolls past it.
+
+   It sits ABOVE the canvas and blends as LIGHT, and that is a measured
+   constraint rather than a preference. The GL context really is created with
+   `alpha: true, premultipliedAlpha: false` (sdf-gl.ts) and really does clear
+   to (0,0,0,0) (FieldStage), but the post chain's final pass writes
+   `o = vec4(col, 1.0)` (post-shaders.mjs) — coverage alpha survives the SDF
+   layer and dies at the composite, so the canvas ships OPAQUE and a sheet
+   behind it is simply never seen. Verified: the gradients resolved correctly
+   and painted nothing.
+
+   `mix-blend-mode: screen` is the honest reading of what a dawn is: light
+   ADDED to a scene, never a dim laid over it. Over the ink ground the sheet
+   renders at full strength; over the bright cyan liquid screen barely moves
+   the result — 1-(1-a)(1-b) with b near 1 stays near 1 — so the liquid keeps
+   its own material and the post chain keeps its output.
+
+   The score's veils (`.cine-veils`, z-20) grade the PAGE above the story; this
+   grades the ground the story stands on.
+
+   Rule #8 holds: `--color-cyan-deep` and `--color-cyan` mixed into
+   `--color-ink`, nothing else — a change of light, not of hue. Build-spec
+   §4.5's "the page returns to black; white is a moment, not a theme" holds
+   too: --dawn is an envelope, and it closes before the manifesto.
+
+   `opacity: var(--dawn)` is on the ROOT rather than only the two layers so
+   that outside S7 the element is fully transparent and the compositor has
+   nothing to blend — this is a full-viewport blended surface on a renderer
+   that is already fill-rate bound. */
+.journey-dawn {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  mix-blend-mode: screen;
+  /* how far the light has climbed the stage — keeps rising through the hold */
+  --climb: clamp(0, calc((var(--origin-p) - 0.16) / 0.62), 1);
+  /* the envelope: up over the approach, held through the fusion and the
+     purpose, closed again by the drain */
+  --dawn: calc(
+    clamp(0, calc((var(--origin-p) - 0.16) / 0.30), 1) *
+      clamp(0, calc((0.96 - var(--origin-p)) / 0.16), 1) * var(--origin-on) *
+      var(--origin-scrub)
+  );
+  --horizon: calc(5% + 72% * var(--climb));
+  opacity: var(--dawn);
+}
+/* the WASH — the graded ground the boundary leaves behind it */
+.journey-dawn::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to top,
+    color-mix(in oklab, var(--color-cyan-deep) 34%, var(--color-ink)) 0%,
+    color-mix(in oklab, var(--color-cyan-deep) 15%, var(--color-ink))
+      calc(var(--horizon) * 0.44),
+    transparent var(--horizon)
+  );
+}
+/* the BOUNDARY — a soft luminous band travelling up the stage. This is the
+   part that reads as an EVENT rather than a tint: the wash alone brightens,
+   the band arrives. */
+.journey-dawn::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  bottom: calc(var(--horizon) - 11%);
+  left: 0;
+  height: 22%;
+  background: linear-gradient(
+    to top,
+    transparent 0%,
+    color-mix(in oklab, var(--color-cyan) 19%, transparent) 46%,
+    transparent 100%
+  );
+  opacity: 0.85;
+}
+
 .journey-content {
   position: relative;
   z-index: 10;
@@ -1074,6 +1346,22 @@ section[id],
 .liquid-journey
   :is(
     .symptom-desc,
+    /* R6 additions. The symptom LABEL was left off this list when it was a
+       20px title sitting well clear of the field; at 46px display it is the
+       chapter's loudest element and the fracture's droplets drift straight
+       across it. The pillar promise, the disclosure and its panel are all new
+       standing copy, and the gather lead now sits centred over the organism. */
+    .symptom-label,
+    .pillar-promise,
+    .pillar-name,
+    .pillar-counter,
+    .disclose-summary,
+    .pillar-label,
+    .pillar-block dd,
+    .gather-lead,
+    .studio-lead,
+    .case-label,
+    .type-lead-copy,
     .pillar-accent,
     .pillar-caps,
     .method-name,
@@ -1153,9 +1441,17 @@ section[id],
    element's background, and background paints before text-shadow — a shadow
    declared here would sit on top of the fill and wash the glyph out. A filter
    applies to the finished glyph, which is where a shadow belongs. */
+/* R6 added the tight 5px black. The wide 16/26px coats seat the glyph in the
+   field beautifully over dark ground, but they fall off too gradually to
+   separate a cyan-footed letterform from a BRIGHT cyan mass — and the review
+   caught exactly that: "conectados." crossing the S4 organism, and the Problem
+   headline's last line crossing a lobe. A dense rim right at the edge is what
+   restores the cut, and being tight it does not wash out the halo the wide
+   coats create. */
 .liquid-glass-lit {
   filter:
     drop-shadow(0 1px 0 rgb(0 0 0 / 0.55))
+    drop-shadow(0 0 5px rgb(0 0 0 / 0.72))
     drop-shadow(0 0 16px rgb(0 0 0 / 0.5))
     drop-shadow(0 0 26px color-mix(in srgb, var(--color-cyan) 20%, transparent));
 }
@@ -1237,8 +1533,11 @@ section[id],
     background-image: var(--liquid-glass-fill);
     -webkit-background-clip: text;
     background-clip: text;
+    /* keep in step with .liquid-glass-lit — the tight 5px black is what cuts
+       a cyan-footed glyph out of a bright cyan mass */
     filter:
       drop-shadow(0 1px 0 rgb(0 0 0 / 0.55))
+      drop-shadow(0 0 5px rgb(0 0 0 / 0.72))
       drop-shadow(0 0 16px rgb(0 0 0 / 0.5))
       drop-shadow(0 0 26px color-mix(in srgb, var(--color-cyan) 20%, transparent));
   }
@@ -1298,17 +1597,16 @@ section[id],
       #method .method-desc,
       #work .type-section-title,
       #work .type-lead-copy,
+      /* S7's band copy is NOT in this list any more, and that is the point of
+         the band. These apertures exist where the live field crosses business
+         copy; inside .origin-frame nothing crosses it, so on a phone all they
+         did was print a visible grey slab behind every line of the chapter
+         (captures/origin-mobile/m-47.png, before). What remains are the two
+         S7 blocks that genuinely sit in open field: the opening, which reads
+         above the runway, and the manifesto coda, which reads below it. */
       #name .origin-open,
       #name .origin-headline,
-      #name .origin-idea-line,
-      #name .origin-fusion,
-      #name .origin-pillars-lead,
-      #name .origin-tension-line,
-      #name .founding-pillar,
-      #name .origin-statement,
-      #name .origin-coda,
       #name .name-word-text,
-      #name .origin-closing,
       #name .manifesto-line,
       #studio .studio-lead,
       #studio .type-feature-title,
@@ -1420,10 +1718,13 @@ section[id],
   padding-top: clamp(2rem, 6vh, 4rem);
   padding-bottom: clamp(6rem, 16vh, 11rem);
 }
+/* R6: the payoff line of the whole gathering. It was set on a 62ch reading
+   measure because it used to be a 52-word paragraph; as a single sentence it
+   wants a display measure and full strength. */
 .gather-lead {
   margin-inline: auto;
-  max-width: 62ch;
-  color: var(--color-paper-mute);
+  max-width: 34ch;
+  color: var(--color-paper-lead);
   text-align: center;
 }
 .gather-outro .eco-stack {
@@ -1481,14 +1782,19 @@ section[id],
   aspect-ratio: 2950 / 3200;
 }
 
+/* R6 — each symptom is a STATEMENT, not a list row.
+   Every shard already owns 13–18vh of scroll (one notch of the fracture), so
+   it was being given the space of a moment and the typography of a bullet.
+   The label now carries display weight and the description sits under it at
+   full reading strength; the numeral becomes structure rather than a caption. */
 .symptom {
   position: relative;
   display: grid;
-  grid-template-columns: 2.75rem 1fr;
-  gap: 0 1.4rem;
-  align-items: baseline;
-  max-width: 26rem;
-  padding: 1.5rem 0 0;
+  grid-template-columns: 3.5rem 1fr;
+  gap: 0 1.6rem;
+  align-items: start;
+  max-width: 34rem;
+  padding: 1.75rem 0 0;
   margin-bottom: 13vh;
   border-top: 1px solid var(--color-paper-faint);
 }
@@ -1515,24 +1821,29 @@ section[id],
   font-family: var(--font-mono);
   font-size: var(--text-mono);
   font-variant-numeric: tabular-nums lining-nums;
-  line-height: var(--text-mono--line-height);
+  /* optically seated against the display cap-height beside it, not the old
+     title baseline — `align-items: start` made this the honest way to do it */
+  line-height: 1.9;
   letter-spacing: var(--text-mono--letter-spacing);
   color: var(--color-cyan);
 }
 .symptom-label {
-  font-size: var(--text-title);
-  line-height: var(--text-title--line-height);
-  letter-spacing: var(--text-title--letter-spacing);
-  font-weight: 500;
+  font-family: var(--font-grotesk);
+  font-size: var(--text-display-m);
+  line-height: var(--text-display-m--line-height);
+  letter-spacing: var(--text-display-m--letter-spacing);
+  font-weight: 600;
   color: var(--color-paper);
+  text-wrap: balance;
 }
 .symptom-desc {
-  margin-top: 0.5rem;
-  font-size: var(--text-body);
-  line-height: var(--text-body--line-height);
-  letter-spacing: var(--text-body--letter-spacing);
-  color: var(--color-paper-mute);
-  max-width: 22rem;
+  margin-top: 0.7rem;
+  font-size: var(--text-body-l);
+  line-height: var(--text-body-l--line-height);
+  letter-spacing: var(--text-body-l--letter-spacing);
+  color: var(--color-paper-lead);
+  max-width: 26rem;
+  text-wrap: pretty;
 }
 
 /* ===========================================================================
@@ -1679,7 +1990,9 @@ section[id],
   font-family: var(--font-mono);
   font-size: var(--text-mono-sm);
   font-variant-numeric: tabular-nums;
-  color: var(--color-paper-dim);
+  /* R6: the last dim rung left on the standing page. A count is structure, so
+     it reads as an instrument marking rather than as faded text. */
+  color: var(--color-paper-soft);
 }
 
 /* THE TYPE REVEAL. The system name rises out of a mask as its liquid lands —
@@ -2084,7 +2397,10 @@ section[id],
 .pillar-head {
   max-width: 32rem;
 }
-.pillar-foot {
+/* R6: the disclosure and the action inherit the copy column's measure. The
+   old `.pillar-foot` wrapper is gone with the always-open instrument band. */
+.pillar-detail,
+.pillar-action {
   max-width: 34rem;
 }
 /* Static tiers have no liquid to leave room for, so the empty middle becomes
@@ -2108,27 +2424,54 @@ section[id],
   margin-top: 0.5rem;
   color: var(--color-paper);
 }
+/* R6 · THE PROMISE — the one line that has to survive a scroll-past. Full
+   strength, one notch under the name, and hard-capped at a single breath so
+   it can never grow back into the paragraph it replaced. */
+.pillar-promise {
+  margin-top: 0.85rem;
+  max-width: 30ch;
+  font-size: var(--text-body-l);
+  line-height: var(--text-body-l--line-height);
+  letter-spacing: var(--text-body-l--letter-spacing);
+  color: var(--color-paper-lead);
+  text-wrap: balance;
+}
+/* the poetic aside — now the closing note INSIDE the disclosure */
 .pillar-accent {
-  margin-top: 0.6rem;
-  font-size: var(--text-poetic);
+  margin-top: 1.25rem;
+  font-size: var(--text-body-l);
   line-height: var(--text-poetic--line-height);
   letter-spacing: var(--text-poetic--letter-spacing);
-  color: var(--color-paper-mute);
+  color: var(--color-cyan-glow);
+  opacity: 0.85;
 }
-/* the instrument band: three labelled columns reading as one panel under the
-   form, rather than three stacked paragraphs reading as a card */
+/* THE INSTRUMENT BAND — a spec sheet, not three columns.
+   Three auto-fit columns inside a 34rem measure gave ~150px tracks, and the
+   review showed the cost: "O que gera" broke across six lines while its
+   neighbour used three, so the panel read as ragged rather than engineered.
+   Label left, value right — the tech-spec row — gives each value the full
+   remaining measure and lines the three labels up on one edge. */
 .pillar-blocks {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
-  gap: 1.75rem;
+  gap: 0;
   margin: 0;
-  padding-top: 1.25rem;
-  border-top: 1px solid var(--color-paper-faint);
 }
 .pillar-block {
   display: grid;
-  gap: 0.4rem;
-  align-content: start;
+  grid-template-columns: 9.5rem minmax(0, 1fr);
+  gap: 0 1.5rem;
+  align-items: baseline;
+  padding: 0.9rem 0;
+  border-bottom: 1px solid var(--color-paper-faint);
+}
+.pillar-block:last-child {
+  border-bottom: 0;
+}
+@media (max-width: 34rem) {
+  .pillar-block {
+    grid-template-columns: 1fr;
+    gap: 0.35rem;
+  }
 }
 .pillar-label {
   font-family: var(--font-mono);
@@ -2143,18 +2486,11 @@ section[id],
   margin: 0;
   color: var(--color-paper);
 }
-.pillar-foot-row {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem 2rem;
-  margin-top: 1.5rem;
-}
-/* the capability list — quiet mono fine-print with cyan-tinted separators so
-   it reads as an organised set, not a flat gray run-on */
+/* the capability list — mono, cyan-separated, and now at readable strength
+   because it only ever appears once the reader has asked for detail */
 .pillar-caps {
   max-width: 30rem;
+  margin-top: 1.5rem;
   font-family: var(--font-mono);
   font-size: var(--text-mono-sm);
   letter-spacing: var(--tracking-label-dense);
@@ -2274,13 +2610,16 @@ section[id],
   margin-top: 0.5rem;
   color: var(--color-paper);
 }
+/* R6: each phase owns 74vh and carries exactly one supporting line. A single
+   line that the whole screen is built around is not secondary text. */
 .method-desc {
-  margin-top: 0.75rem;
-  max-width: 22rem;
+  margin-top: 0.85rem;
+  max-width: 24rem;
   font-size: var(--text-body-l);
   line-height: var(--text-body-l--line-height);
   letter-spacing: var(--text-body-l--letter-spacing);
-  color: var(--color-paper-mute);
+  color: var(--color-paper-lead);
+  text-wrap: pretty;
 }
 /* static path: the runway collapses to the clean numbered list (the
    data-liquid flag lives on the page-wide PageStage wrapper since R5) */
@@ -2552,128 +2891,229 @@ section[id],
 }
 
 /* ===========================================================================
-   The Name — etymology + manifesto (S8)
+   S7 · A ORIGEM / THE ORIGIN — THE DAWN
+
+   Act IV, the emotional peak, AFTER the business case. Two idea-masses meet
+   in the dark, fuse into the mark, and the chapter's own light comes up
+   behind them. Three instruments, one clock (`--origin-p`, the scene p that
+   also drives the liquid):
+
+     · THE HORIZON  — the ground itself (see .journey-dawn, in the field
+                      layer): a luminous boundary rises through the stage and
+                      settles back to ink before the coda.
+     · THE BANDS    — the stage owns the upper viewport, type owns the lower.
+                      They never overlap, so no copy needs a black box.
+     · THE WIPE     — one rising light band reveals and releases every block.
+                      No fades, no per-element ScrollTriggers.
    =========================================================================== */
-.name-word {
-  font-family: var(--font-grotesk);
-  font-style: normal;
-  font-weight: 600;
-  font-size: var(--text-wordmark);
-  line-height: var(--text-display-xl--line-height);
-  letter-spacing: var(--text-display-xl--letter-spacing);
-  text-transform: uppercase;
-  color: var(--color-paper);
+/* THE RUNWAY — TWO BANDS.
+
+   Measured on the live stage at 1440x900 (captures/origin/before-54.png) the
+   mark occupies viewport y 23svh–65svh. The old build centred its copy column
+   in that same space, so the fusion line ran across the logo and the
+   resolution copy wore droplets; the chapter answered with black apertures
+   behind the words, which is the panel-on-the-field look those apertures exist
+   to avoid. The split is now structural:
+
+     ABOVE  — the stage. The mark, the masses, the echo. NO type, ever.
+     BELOW  — .origin-frame, a band pinned to the foot of the viewport. All
+              chapter copy, and nothing else. No aperture, no dim, no shadow
+              fighting the field, because nothing is behind the words.
+
+   The band is STICKY-BOTTOM rather than a full-viewport frame, and that choice
+   is what makes the composition hold. A 100svh frame with bottom-aligned type
+   only puts the copy at the foot of the screen for one knife-edge instant and
+   spends the rest of the beat carrying it up across the mark. Pinned to the
+   viewport foot the copy simply arrives at the band, HOLDS there for the whole
+   beat, and is released by the mask before the band ever unpins — so the type
+   never enters the mark's half of the screen in either direction.
+
+   Beat heights are the scroll budget for those holds, and beat 1 is the long
+   one on purpose: its band is already parked when the runway's p starts at 0,
+   so it has no entry to read through and buys the time back in pin. */
+.origin-beat {
+  position: relative;
+  display: flex;
+  min-height: 106svh;
+  flex-direction: column;
+  /* The band must sit at the FOOT of the beat, and that is a requirement of
+     `position: sticky`, not a preference. A bottom inset only engages while the
+     box would otherwise fall BELOW the scrollport — it pulls the box up and
+     holds it at the bottom edge, and releases the moment its natural position
+     has risen into view. Parked at the head of the beat the natural position is
+     already in view, so the inset never engages at all and the copy simply
+     scrolls (measured: the band sat at y −229 with the mask wide open). Parked
+     at the foot it is held at the viewport bottom for H minus its own height. */
+  justify-content: flex-end;
 }
-.name-word-text {
-  margin-top: 1rem;
-  margin-inline: auto;
+.origin-beat--ideas {
+  min-height: 170svh;
+}
+.origin-beat--resolve {
+  min-height: 120svh;
+}
+/* THE HANDOFF. Consecutive beats OVERLAP in scroll, and the amount is derived:
+   a band unpins when its beat's foot reaches the viewport foot, and the next
+   band pins when its beat's head has risen by that band's own height — so the
+   dead interval between two beats is exactly the height of the band that just
+   left. Measured at 1440x900 those are 26/32/27/19/50svh, which without an
+   overlap leaves the reader four separate stretches of empty band. Pulling
+   each beat up by roughly its predecessor's band closes them to a breath of
+   5-10svh: one frame of liquid with no words on it, which at the fusion is
+   worth having. The last overlap is the big one because the wordmark makes
+   beat 5's band twice the height of any other. */
+.origin-beat--tension,
+.origin-beat--mark,
+.origin-beat--hold {
+  margin-top: -22svh;
+}
+.origin-beat--resolve {
+  margin-top: -40svh;
+}
+.origin-frame {
+  position: sticky;
+  bottom: 0;
+  padding-bottom: clamp(2rem, 7vh, 4.5rem);
+}
+
+/* ── THE HORIZON WIPE ────────────────────────────────────────────────────────
+   ONE gesture for every block in the chapter, replacing the thirteen separate
+   `Reveal variant="blur"` fade-ups this chapter used to run. Those fired on
+   their own ScrollTriggers at `top 88%`, unrelated to the liquid they were
+   describing — the "generic repeated fade-ups" build-spec §4.4 rules out.
+
+   A band of visibility travels UPWARD through the block. Below the band the
+   type has not been reached yet on the way in, or has already been let go on
+   the way out; the same rising edge does both. It is the dawn boundary applied
+   to type, so copy and ground move on one light.
+
+   --in 0→1 arrival · --out 0→1 release, both derived from --origin-p, the
+   scene's own p, written once per frame by PageStage. The four mask stops are
+   deliberately allowed out of range: CSS clamps each stop to the one before
+   it, so in=0 collapses the band to nothing and in=1/out=0 opens it past both
+   edges of the box. */
+.origin-copy {
+  --in: clamp(
+    0,
+    calc(
+      1 - var(--origin-scrub) + (var(--origin-p) - var(--from)) / var(--span)
+    ),
+    1
+  );
+  --out: clamp(
+    0,
+    calc(var(--origin-scrub) * ((var(--origin-p) - var(--until)) / var(--exit))),
+    1
+  );
+  --edge-hi: calc(var(--in) * 145% - 12%);
+  --edge-lo: calc(var(--out) * 145% - 33%);
+  -webkit-mask-image: linear-gradient(
+    to top,
+    transparent var(--edge-lo),
+    #000 calc(var(--edge-lo) + 21%),
+    #000 calc(var(--edge-hi) - 21%),
+    transparent var(--edge-hi)
+  );
+  mask-image: linear-gradient(
+    to top,
+    transparent var(--edge-lo),
+    #000 calc(var(--edge-lo) + 21%),
+    #000 calc(var(--edge-hi) - 21%),
+    transparent var(--edge-hi)
+  );
+}
+/* The beat windows are DERIVED, not guessed. Two things had to agree:
+
+   · the SCENE's envelopes — q1 <= 0.17 the masses travel in · q2 0.19-0.41
+     they collide and fuse · the mark resolves through ~0.45-0.62 · q4 0.62
+     the echo fans out · q5 0.84 the drain — so every block is legible on the
+     liquid it is actually describing; and
+   · the BAND's own scroll geometry, because the release has to finish while
+     the band is still PINNED. A moment late and the copy unpins and travels up
+     into the mark, which is the failure this whole layout exists to fix.
+
+   With the beat heights and overlaps above, the runway is 502svh, p is measured
+   across 402svh of it, and each band is pinned across:
+     ideas  -0.18 -> 0.17    tension 0.20 -> 0.38    mark 0.40 -> 0.59
+     hold    0.59 -> 0.80    resolve 0.83 -> 1.00
+   Every --until below sits inside its own pin with the --exit sweep to spare,
+   and every pin sits on its own envelope. `--until` runs past 1 for the last
+   beat: the resolution holds to the end of the runway rather than releasing
+   into an empty screen. */
+.origin-beat--ideas .origin-copy {
+  --from: 0;
+  --span: 0.04;
+  --until: 0.139;
+  --exit: 0.035;
+}
+.origin-beat--tension .origin-copy {
+  --from: 0.2;
+  --span: 0.04;
+  --until: 0.348;
+  --exit: 0.035;
+}
+.origin-beat--mark .origin-copy {
+  --from: 0.4;
+  --span: 0.04;
+  --until: 0.557;
+  --exit: 0.035;
+}
+.origin-beat--hold .origin-copy {
+  --from: 0.59;
+  --span: 0.04;
+  --until: 0.766;
+  --exit: 0.035;
+}
+.origin-beat--resolve .origin-copy {
+  --from: 0.83;
+  --span: 0.04;
+  --until: 1.3;
+  --exit: 0.035;
+}
+
+/* ── THE OPENING ─────────────────────────────────────────────────────────────
+   Label, headline and lead read BEFORE the runway, in normal flow. Inside beat
+   1 they were centred in a sticky-stage viewport and the topbar sliced the
+   headline in half in every capture. */
+.origin-open-block {
+  display: flex;
+  max-width: var(--measure-reading);
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--type-space-eyebrow-title);
+  padding-top: clamp(6rem, 16vh, 10rem);
+  padding-bottom: clamp(2rem, 6vh, 4rem);
+  text-align: left;
+}
+.origin-headline {
+  max-width: var(--measure-display);
+  font-weight: 600;
+  font-size: var(--text-display-l);
+  line-height: var(--text-display-l--line-height);
+  letter-spacing: var(--text-display-l--letter-spacing);
+  color: var(--color-paper);
+  text-wrap: balance;
+}
+.origin-open {
   max-width: var(--measure-lead);
   font-size: var(--text-lead);
   line-height: var(--text-lead--line-height);
   letter-spacing: var(--text-lead--letter-spacing);
   color: var(--color-paper-mute);
 }
-.manifesto {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 1.25rem;
-  text-align: center;
-}
-.manifesto-line {
-  font-family: var(--font-display);
-  font-style: italic;
-  font-weight: 400;
-  font-size: var(--text-display-m);
-  line-height: 1.12;
-  letter-spacing: var(--text-display-m--letter-spacing);
-  color: var(--color-paper);
-}
-.manifesto-line:last-child {
-  color: var(--color-cyan);
-}
 
-/* ---------------------------------------------------------------------------
-   A Origem / The Origin (S8). The three FOUNDING pillars (social/health/
-   finance) are the WHY — understated muted mono, deliberately distinct from
-   the seven SERVICE pillars (the HOW): never numbered, never cyan-styled.
-   --------------------------------------------------------------------------- */
-/* The five beats ride the house runway pattern (OriginFlow → .liquid-journey/
-   .journey-layer/.journey-content): each beat block owns ~a viewport of scroll
-   while the sticky liquid stage behind plays the story. Copy sits in the LOWER
-   third — the liquid (the mark) owns the centre. The static path collapses the
-   runway back to the plain reading column. */
-/* R5-E trimmed every beat. The story is unchanged; the waiting is not. The old
-   108–118vh beats plus a bottom-thirds anchor meant the chapter opened on an
-   almost empty screen and asked for a full viewport of scroll before its first
-   sentence. */
-.origin-beat {
-  display: flex;
-  min-height: 78vh;
-  flex-direction: column;
-  align-items: center;
-  justify-content: flex-end;
-  padding-bottom: 11vh;
-  text-align: center;
-}
-/* the opening beat carries its line into the reader's eyeline instead of
-   holding a near-empty viewport before it */
-.origin-beat:first-child {
-  min-height: 68vh;
-  justify-content: center;
-  padding-bottom: 0;
-}
-/* Beat 1 — TWO IDEAS, APART.
-   The two masses are still travelling in from opposite sides here, so the type
-   is composed as two plates around an EMPTY CENTRE: the gutter is the space
-   they are about to meet in, and each plate sits over the mass it names. The
-   inner rules point at that gutter, which is what turns two paragraphs into a
-   confrontation. Before this the beat was one centred sentence with two
-   unlabelled blobs behind it — the reader had no way to know the masses meant
-   anything at all. */
-/* doubled class on purpose: `.origin-beat:first-child` above is (0,2,0) and
-   this beat IS the first child, so a single-class rule would lose its height */
-.origin-beat.origin-beat--ideas {
-  min-height: 104vh;
-  justify-content: center;
-  gap: clamp(2.5rem, 8vh, 5.5rem);
-  padding-bottom: 0;
-}
-.origin-intro {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 1rem;
-  text-align: center;
-}
-.origin-headline {
-  max-width: 24rem;
-  font-weight: 600;
-  font-size: var(--text-display-m);
-  line-height: var(--text-display-m--line-height);
-  letter-spacing: var(--text-display-m--letter-spacing);
-  color: var(--color-paper);
-}
-.origin-open {
-  max-width: 32rem;
-  font-size: var(--text-poetic);
-  line-height: var(--text-poetic--line-height);
-  letter-spacing: var(--text-poetic--letter-spacing);
-  color: var(--color-paper-mute);
-}
-/* Capped and centred, so the plates HUG the gutter instead of spreading to the
-   page edges. The two masses sweep in from off-stage to ±0.105uv (nearly the
-   centre) across this beat, so anything parked in the outer thirds is driven
-   through by liquid — the first cut put the Ventura line straight over the
-   right-hand mass. Inboard, the masses cross behind the gutter rather than the
-   type, and the aperture below covers the moment they pass. */
+/* ── BEAT 1 · TWO IDEAS, APART ───────────────────────────────────────────────
+   Two plates around an EMPTY GUTTER. The gutter is the space the masses are
+   about to meet in — and because both plates live in the copy band while the
+   masses cross the stage band above, the composition survives the crossing
+   without a single aperture behind it. */
 .origin-ideas {
   display: grid;
   width: 100%;
-  max-width: 54rem;
+  max-width: 62rem;
   margin-inline: auto;
-  grid-template-columns: minmax(0, 1fr) clamp(5rem, 13%, 9rem) minmax(0, 1fr);
-  align-items: start;
+  grid-template-columns: minmax(0, 1fr) clamp(4rem, 12%, 8rem) minmax(0, 1fr);
+  align-items: end;
   padding: 0;
   list-style: none;
 }
@@ -2685,39 +3125,9 @@ section[id],
 }
 .origin-idea {
   display: flex;
-  max-width: 17rem;
+  max-width: 22rem;
   flex-direction: column;
-  gap: 0.55rem;
-}
-/* This is the ONE block on the runway guaranteed to be crossed by travelling
-   liquid, so it carries the house aperture (the treatment phones already use
-   for copy over the field) at every width — feathered by the shadow rather
-   than boxed, so it reads as the type displacing the field, not a panel
-   dropped on top of it. */
-.liquid-journey .origin-idea > * {
-  background: rgb(0 0 0 / 0.72);
-  box-shadow: 0 0 0.9rem 0.7rem rgb(0 0 0 / 0.72);
-}
-/* The rest of the beat copy gets a heavy SHADOW rather than an aperture. The
-   aperture is a real box, and the page ground is not pure black — over the
-   stretches with no liquid under them these read as faint grey slabs floating
-   behind the words (the evolution line was a visible rectangle). The idea
-   plates above keep theirs because they sit directly on travelling masses. */
-.liquid-journey
-  :is(.origin-open, .origin-fusion, .origin-pillars-lead, .founding-pillar, .origin-coda) {
-  text-shadow:
-    0 0 8px rgb(0 0 0 / 0.95),
-    0 0 18px rgb(0 0 0 / 0.9),
-    0 0 40px rgb(0 0 0 / 0.72);
-}
-/* Display lines get a HEAVIER shadow instead of an aperture: a slab behind
-   3rem italic reads as a plaque, and these lines are meant to sit IN the field.
-   The mark is at its brightest under exactly these two. */
-.liquid-journey :is(.origin-tension-line, .origin-statement, .origin-headline) {
-  text-shadow:
-    0 0 10px rgb(0 0 0 / 0.92),
-    0 0 28px rgb(0 0 0 / 0.8),
-    0 0 60px rgb(0 0 0 / 0.6);
+  gap: 0.5rem;
 }
 .origin-ideas > li:first-child .origin-idea {
   margin-left: auto;
@@ -2763,17 +3173,17 @@ section[id],
   letter-spacing: var(--text-body--letter-spacing);
   color: var(--color-paper-mute);
 }
-/* Beat 2 — THE TENSION. Two clauses, two lines: the argument is symmetric, so
-   the setting is too. The masses collide behind exactly this. */
-.origin-beat--tension {
-  justify-content: center;
-  padding-bottom: 0;
-}
+
+/* ── BEAT 2 · THE TENSION ────────────────────────────────────────────────────
+   The two plates have become ONE spine: same band, same measure, one column.
+   The setting performs the fusion the masses are performing above it. */
 .origin-tension {
   display: flex;
-  max-width: 30rem;
+  max-width: 34rem;
+  margin-inline: auto;
   flex-direction: column;
   gap: 0.35rem;
+  text-align: center;
 }
 .origin-tension-line {
   display: block;
@@ -2784,115 +3194,47 @@ section[id],
   line-height: 1.12;
   letter-spacing: var(--text-display-m--letter-spacing);
   color: var(--color-paper);
-  text-shadow: 0 0 24px rgb(0 0 0 / 0.55);
 }
-/* A narrow stage has no room for a gutter wide enough to hold two masses, and
-   forcing one gives two ~7rem columns of ragged type. The plates stack, keep
-   ONE shared inner rule, and the beat grows to carry them. */
-@media (max-width: 900px) {
-  .origin-ideas {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 2.25rem;
-    justify-items: center;
-  }
-  .origin-ideas > li:first-child,
-  .origin-ideas > li:last-child {
-    grid-column: 1;
-  }
-  .origin-ideas > li:first-child .origin-idea,
-  .origin-ideas > li:last-child .origin-idea {
-    margin: 0;
-    border-right: 0;
-    border-left: 1px solid var(--color-paper-dim);
-    padding-right: 0;
-    padding-left: 1.1rem;
-    text-align: left;
-  }
-  .origin-beat.origin-beat--ideas {
-    min-height: 120vh;
-  }
+
+/* ── BEATS 3-5 · ONE SPINE ───────────────────────────────────────────────────
+   From the fusion onward there is one column, centred on the same axis the
+   mark holds above it. */
+/* Only the two beats whose .origin-copy is a WRAPPER take the flex column.
+   Beat 4 carries the class on the <p> itself, and making that a flex container
+   broke it twice over: `max-width` stopped being centred by `align-items`, and
+   the liquid-glass fill — which is `background-clip: text` — lost the text it
+   was clipping to and painted its whole box, so the purpose line arrived as a
+   grey slab hard against the left margin. It centres the plain way instead. */
+.origin-beat--mark .origin-copy,
+.origin-beat--resolve .origin-copy {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
 }
-/* Beat 3 — the fusion line, then the founding pillars beneath the mark */
+/* The founding triptych (the WHY — never the seven services): three peers on
+   one shared baseline, evenly divided, under the line that introduces them. */
 .origin-fusion {
-  max-width: 30rem;
+  max-width: 34rem;
   font-size: var(--text-lead);
   line-height: var(--text-lead--line-height);
   letter-spacing: var(--text-lead--letter-spacing);
   color: var(--color-paper);
 }
-.origin-pillars-lead {
-  margin-top: 1.6rem;
-  max-width: 26rem;
-  font-size: var(--text-body);
-  line-height: var(--text-body--line-height);
-  color: var(--color-paper-mute);
-}
-/* Beat 3 — the mark forms on the stage; the fusion line and the founding
-   triptych read over it. CENTRED, not bottom-anchored: at flex-end the copy
-   arrived a full viewport after the tension line had scrolled away, which left
-   a dead frame at p ~0.45 with nothing legible on screen at all. */
-.origin-beat--mark {
-  min-height: 88vh;
-  justify-content: center;
-  padding-bottom: 0;
-}
-/* Beat 3 — the purpose: the dominant line, CENTRED over the breathing mark */
-.origin-beat--hold {
-  justify-content: center;
-  padding-bottom: 0;
-}
-.origin-statement {
-  max-width: 26rem;
-  font-size: var(--text-display-m);
-  line-height: 1.12;
-  letter-spacing: var(--text-display-m--letter-spacing);
-  color: var(--color-paper);
-  text-shadow: 0 0 24px rgb(0 0 0 / 0.55); /* legible over the liquid */
-}
-/* Beat 4 — the evolution: a quieter summary while the echo fans out */
-.origin-coda {
-  max-width: 36rem;
-  font-size: var(--text-body-l);
-  line-height: var(--text-body-l--line-height);
-  letter-spacing: var(--text-body-l--letter-spacing);
-  color: var(--color-paper-mute);
-}
-/* Beat 5 — the resolution: the wordmark assembles as the liquid drains */
-.origin-beat--resolve {
-  min-height: 92vh;
-  justify-content: center;
-  padding-bottom: 0;
-}
-.origin-wordmark-wrap {
-  width: 100%;
-  max-width: min(46rem, 88vw);
-}
-/* the static mark (reduced motion / "none" tier) — hidden while live via the
-   shared .journey-static rule */
-.origin-static-mark {
-  width: clamp(220px, 40vw, 360px);
-  aspect-ratio: 2950 / 3200;
-  margin-bottom: 2.5rem;
-}
-/* static path: collapse the runway to the plain reading column (the
-   data-liquid flag lives on the page-wide PageStage wrapper since R5) */
-.liquid-journey[data-liquid="static"] .origin-beat {
-  min-height: 0;
-  padding: 3rem 0 1.5rem;
-  justify-content: center;
-}
-/* THE THREE FOUNDING PILLARS — one composed triptych, not three loose labels.
-   Each sits under its own hairline, on a shared baseline, evenly divided: the
-   beat's whole claim about them is that there are THREE and they are peers, so
-   the setting says that before a word is read. */
 .origin-founding {
   display: flex;
   width: 100%;
   max-width: 34rem;
-  margin-top: 1.6rem;
+  margin-top: clamp(1.25rem, 3vh, 2rem);
   flex-direction: column;
   align-items: center;
-  gap: 1.1rem;
+  gap: 1rem;
+}
+.origin-pillars-lead {
+  max-width: 26rem;
+  font-size: var(--text-body);
+  line-height: var(--text-body--line-height);
+  color: var(--color-paper-mute);
 }
 .founding-pillars {
   display: grid;
@@ -2915,18 +3257,178 @@ section[id],
   color: var(--color-paper-mute);
   text-align: center;
 }
+/* the static mark (reduced motion / "none" tier) — hidden while live via the
+   shared .journey-static rule, so on the live path it occupies nothing and the
+   band is pure type. On the static path the runway has collapsed to a reading
+   column and it simply sits above the copy it belongs to. */
+.origin-static-mark {
+  width: clamp(200px, 34vh, 320px);
+  margin: 0 auto 2rem;
+  aspect-ratio: 2950 / 3200;
+}
+
+/* ── BEAT 4 · THE PURPOSE ────────────────────────────────────────────────────
+   The chapter's dominant line, under the echo fanning out across the stage —
+   and over the brightest ground the page ever carries. */
+.origin-statement {
+  max-width: 30rem;
+  margin-inline: auto;
+  font-size: var(--text-display-m);
+  line-height: 1.12;
+  letter-spacing: var(--text-display-m--letter-spacing);
+  color: var(--color-paper);
+  text-align: center;
+}
+
+/* ── BEAT 5 · THE RESOLUTION ─────────────────────────────────────────────────
+   The liquid drains from the stage; the particles assemble the wordmark in the
+   copy band; the closing line lands under it as the dawn settles back to ink. */
+.origin-resolve {
+  gap: clamp(0.75rem, 2.2vh, 1.35rem);
+}
+.origin-coda {
+  max-width: 38rem;
+  font-size: var(--text-body-l);
+  line-height: var(--text-body-l--line-height);
+  letter-spacing: var(--text-body-l--letter-spacing);
+  color: var(--color-paper-mute);
+}
+.origin-wordmark-wrap {
+  width: 100%;
+  max-width: min(34rem, 78vw);
+}
 .origin-closing {
-  margin-top: 2.25rem;
   font-size: var(--text-display-m);
   line-height: 1.12;
   letter-spacing: var(--text-display-m--letter-spacing);
   color: var(--color-paper);
 }
-.origin-grace {
-  margin-top: 1.25rem;
-  font-size: var(--text-body);
-  line-height: var(--text-body--line-height);
-  letter-spacing: var(--text-body--letter-spacing);
+
+/* ── NARROW STAGES ───────────────────────────────────────────────────────────
+   A narrow stage has no room for a gutter wide enough to hold two masses, and
+   forcing one gives two ~7rem columns of ragged type. The plates stack, keep
+   ONE shared inner rule, and the beat grows to carry them. */
+@media (max-width: 900px) {
+  .origin-ideas {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1.75rem;
+    justify-items: center;
+  }
+  .origin-ideas > li:first-child,
+  .origin-ideas > li:last-child {
+    grid-column: 1;
+  }
+  .origin-ideas > li:first-child .origin-idea,
+  .origin-ideas > li:last-child .origin-idea {
+    margin: 0;
+    max-width: 26rem;
+    border-right: 0;
+    border-left: 1px solid var(--color-paper-dim);
+    padding-right: 0;
+    padding-left: 1.1rem;
+    text-align: left;
+  }
+}
+@media (max-width: 767px) {
+  .origin-frame {
+    padding-bottom: clamp(1.5rem, 5vh, 3rem);
+  }
+  .origin-open-block {
+    padding-top: clamp(4.5rem, 12vh, 7rem);
+  }
+}
+
+/* ── STATIC PATH ─────────────────────────────────────────────────────────────
+   Reduced motion and the "none" tier collapse the runway to a plain reading
+   column: no scroll budget, no pinned band, no mask. Every beat is present and
+   readable in one pass (rule #13).
+
+   This is belt AND braces on purpose. `--origin-scrub` already fails safe at 0
+   — the frame loop that raises it is exactly the loop these paths never reach,
+   and at 0 the masks resolve fully open — so the rule below is not what makes
+   the copy visible. It is what stops six viewports of empty scroll budget from
+   being reserved for a stage that is not running. */
+.liquid-journey[data-liquid="static"] .origin-beat {
+  position: static;
+  min-height: 0;
+}
+.liquid-journey[data-liquid="static"] .origin-frame {
+  position: static;
+  padding-block: clamp(2rem, 6vh, 3.5rem);
+}
+.liquid-journey[data-liquid="static"] .origin-copy {
+  -webkit-mask-image: none;
+  mask-image: none;
+}
+
+/* ===========================================================================
+   THE MANIFESTO CODA — after the dawn has settled back to ink.
+   =========================================================================== */
+.manifesto {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.25rem;
+  margin-top: clamp(4rem, 12vh, 8rem);
+  padding-bottom: clamp(6rem, 16vh, 10rem);
+  text-align: center;
+}
+.manifesto-line {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 400;
+  font-size: var(--text-display-m);
+  line-height: 1.12;
+  letter-spacing: var(--text-display-m--letter-spacing);
+  color: var(--color-paper);
+}
+.manifesto-line:last-child {
+  color: var(--color-cyan);
+}
+/* The coda sits BELOW the measured runway, so --origin-p is already 1 by the
+   time it is on screen and cannot drive it. Where the browser supports a view
+   timeline the same rising wipe carries each line, staggered by index; where
+   it does not, the lines simply read. Neither path fades. */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .liquid-journey[data-liquid="live"] .manifesto-line {
+      animation: origin-wipe-in linear both;
+      animation-timeline: view();
+      animation-range: entry 8% entry calc(55% + var(--i, 0) * 10%);
+    }
+  }
+}
+@keyframes origin-wipe-in {
+  from {
+    -webkit-mask-image: linear-gradient(to top, #000 -30%, transparent 0%);
+    mask-image: linear-gradient(to top, #000 -30%, transparent 0%);
+  }
+  to {
+    -webkit-mask-image: linear-gradient(to top, #000 115%, transparent 145%);
+    mask-image: linear-gradient(to top, #000 115%, transparent 145%);
+  }
+}
+
+/* ===========================================================================
+   The Name — the plain wordmark block (non-homepage surfaces)
+   =========================================================================== */
+.name-word {
+  font-family: var(--font-grotesk);
+  font-style: normal;
+  font-weight: 600;
+  font-size: var(--text-wordmark);
+  line-height: var(--text-display-xl--line-height);
+  letter-spacing: var(--text-display-xl--letter-spacing);
+  text-transform: uppercase;
+  color: var(--color-paper);
+}
+.name-word-text {
+  margin-top: 1rem;
+  margin-inline: auto;
+  max-width: var(--measure-lead);
+  font-size: var(--text-lead);
+  line-height: var(--text-lead--line-height);
+  letter-spacing: var(--text-lead--letter-spacing);
   color: var(--color-paper-mute);
 }
 
@@ -3783,14 +4285,9 @@ section[id],
 .entry-veil {
   position: fixed;
   inset: 0;
-  z-index: 80; /* above the wipe and the route loading screen */
-  display: grid;
-  place-items: center;
-  background: var(--color-ink);
-  transition: opacity 650ms var(--ease-arrive);
-}
-.entry-veil.is-leaving {
-  opacity: 0;
+  z-index: 80; /* above the page wipe and the route loading screen */
+  overflow: hidden;
+  /* the sequence is decorative; only the skip control takes a pointer */
   pointer-events: none;
 }
 html[data-zveil="seen"] .entry-veil {
@@ -3801,32 +4298,93 @@ html[data-zveil="seen"] .entry-veil {
     display: none;
   }
 }
-.entry-veil-stage {
-  position: relative;
-  display: grid;
-  place-items: center;
-  width: min(78vw, 520px);
-  min-height: 5.5rem;
+
+/* The black plane. Taller than the viewport by the leading wave's full swing
+   so the shaped edge can rest above the screen and still reach the bottom; the
+   clip is written once from JS and only `transform` animates after that.
+   Height is set in JS beside the clip — the two must agree. */
+.entry-veil-curtain {
+  position: absolute;
+  inset-inline: 0;
+  top: 0;
+  background: var(--color-ink);
+  will-change: transform;
 }
-.entry-veil-canvas {
-  width: 100%;
-  height: auto;
-  transition: opacity 500ms var(--ease-arrive);
+/* the cyan meniscus riding the draining sheet's edge */
+.entry-veil-edge {
+  position: absolute;
+  left: 0;
+  top: 0;
+  overflow: visible;
 }
-.entry-veil-canvas.is-faded {
-  opacity: 0;
-}
-.entry-veil-text {
+
+/* The mark is a SIBLING of the plane, not a child: it is unclipped, has its
+   own fall curve, and leads the sheet out over the revealed page. */
+.entry-veil-mark {
   position: absolute;
   inset: 0;
   display: grid;
   place-items: center;
-  margin: 0;
-  transition: opacity 500ms var(--ease-arrive);
 }
-.entry-veil-text.is-hidden {
-  opacity: 0;
+.entry-veil-stage {
+  position: relative;
+  width: min(62vmin, 520px);
+  aspect-ratio: 1;
+  will-change: transform;
 }
+.entry-veil-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  /* droplets leave the silhouette and the flood front overshoots it */
+  overflow: visible;
+}
+.entry-veil-rive {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+/* The skip. A real button with a real label — the sequence is short, but a
+   visitor who does not want it must be able to say so with the keyboard as
+   well as the pointer (Escape is wired in the component). */
+.entry-veil-skip {
+  position: absolute;
+  right: clamp(1rem, 4vw, 2.5rem);
+  bottom: calc(clamp(1rem, 4vh, 2.25rem) + env(safe-area-inset-bottom));
+  padding: 0.5rem 0.9rem;
+  border: 1px solid var(--color-paper-faint);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--color-paper-soft);
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  cursor: pointer;
+  /* It ARRIVES rather than fades: it is nudged into place and only then made
+     available. Nothing in this sequence appears by becoming less transparent. */
+  transform: translateY(0.75rem);
+  visibility: hidden;
+  transition:
+    transform 400ms var(--ease-arrive),
+    border-color 200ms linear,
+    color 200ms linear;
+}
+.entry-veil-skip.is-ready {
+  visibility: visible;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+.entry-veil-skip:hover,
+.entry-veil-skip:focus-visible {
+  color: var(--color-paper);
+  border-color: var(--color-cyan-deep);
+}
+
 /* ===========================================================================
    Reduced motion (S1.13/S1.14)
    NOTE: components must keep their RESTING state visible (never animate in

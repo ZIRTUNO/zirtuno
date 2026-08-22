@@ -6,7 +6,9 @@
   "common": {
     "skipToContent": "Pular para o conteúdo",
     "scrollHint": "Role",
-    "loading": "Zirtuno"
+    "loading": "Zirtuno",
+    "introLabel": "Zirtuno — sequência de abertura",
+    "skipIntro": "Pular"
   },
   "nav": {
     "location": "Curitiba, Brasil",
@@ -46,9 +48,12 @@
   "problem": {
     "chapterLabel": "02 — O Problema",
     "headline": "A maioria das empresas não tem um problema de marketing. Tem um problema de estrutura.",
-    "lead": "Cada peça funciona sozinha — e nenhuma funciona junta. Site de um lado, dados de outro, atendimento no improviso, processos no manual. O resultado é esforço sem escala.",
+    "lead": "Cada peça funciona sozinha. Nenhuma funciona junta.",
     "symptoms": [
-      { "label": "Site fraco", "desc": "Bonito, mas não converte." },
+      {
+        "label": "Site fraco",
+        "desc": "Bonito, mas não converte."
+      },
       {
         "label": "Processos manuais",
         "desc": "Tarefas repetitivas consomem o time."
@@ -61,18 +66,24 @@
         "label": "Atendimento lento",
         "desc": "Oportunidades perdidas fora do horário."
       },
-      { "label": "Dados espalhados", "desc": "Decisões tomadas no escuro." },
+      {
+        "label": "Dados espalhados",
+        "desc": "Decisões tomadas no escuro."
+      },
       {
         "label": "Posicionamento frágil",
         "desc": "Uma marca que não é lembrada."
       },
-      { "label": "Sem ecossistema", "desc": "Nada cresce de forma integrada." }
+      {
+        "label": "Sem ecossistema",
+        "desc": "Nada cresce de forma integrada."
+      }
     ]
   },
   "ecosystem": {
     "chapterLabel": "03 — O Ecossistema",
     "headline": "Criamos ecossistemas digitais, não peças soltas.",
-    "lead": "Tudo conectado em torno do seu negócio. Cada parte fortalece as outras: a marca alimenta o site, o site alimenta o tráfego, o tráfego alimenta o CRM, a IA acelera o atendimento, a automação conecta os processos e os dashboards mostram tudo em tempo real.",
+    "lead": "Cada parte alimenta a seguinte. O sistema inteiro cresce junto.",
     "centerLabel": "Seu negócio",
     "systems": {
       "identity": "Identidade",
@@ -84,24 +95,48 @@
         "name": "Marca",
         "tooltip": "A base de tudo — como o negócio é percebido."
       },
-      { "name": "Site", "tooltip": "O centro da presença digital." },
-      { "name": "Tráfego", "tooltip": "O fluxo de novas oportunidades." },
-      { "name": "CRM", "tooltip": "A memória de cada relacionamento." },
-      { "name": "IA", "tooltip": "Inteligência que atende e acelera." },
-      { "name": "Automação", "tooltip": "O trabalho que acontece sozinho." },
-      { "name": "Dashboards", "tooltip": "A visão clara dos números." },
+      {
+        "name": "Site",
+        "tooltip": "O centro da presença digital."
+      },
+      {
+        "name": "Tráfego",
+        "tooltip": "O fluxo de novas oportunidades."
+      },
+      {
+        "name": "CRM",
+        "tooltip": "A memória de cada relacionamento."
+      },
+      {
+        "name": "IA",
+        "tooltip": "Inteligência que atende e acelera."
+      },
+      {
+        "name": "Automação",
+        "tooltip": "O trabalho que acontece sozinho."
+      },
+      {
+        "name": "Dashboards",
+        "tooltip": "A visão clara dos números."
+      },
       {
         "name": "Sistemas internos",
         "tooltip": "A operação que sustenta o negócio."
       },
-      { "name": "Atendimento", "tooltip": "A experiência em cada contato." },
-      { "name": "Conteúdo", "tooltip": "A voz que mantém a marca presente." }
+      {
+        "name": "Atendimento",
+        "tooltip": "A experiência em cada contato."
+      },
+      {
+        "name": "Conteúdo",
+        "tooltip": "A voz que mantém a marca presente."
+      }
     ]
   },
   "services": {
     "chapterLabel": "04 — Serviços",
     "headline": "Sete pilares, conectados.",
-    "lead": "Cada serviço resolve um problema real — e fortalece todos os outros.",
+    "lead": "Cada um resolve um problema real. Juntos, resolvem o negócio.",
     "labelIs": "O que é",
     "labelSolves": "O que resolve",
     "labelCreates": "O que gera",
@@ -123,7 +158,8 @@
           "Usabilidade",
           "Responsividade",
           "Conversão"
-        ]
+        ],
+        "promise": "Uma presença que converte, não só impressiona."
       },
       "software": {
         "accent": "Forma para a função.",
@@ -138,7 +174,8 @@
           "Dashboards",
           "Apps mobile",
           "Multiplataforma"
-        ]
+        ],
+        "promise": "Sistemas sob medida para a sua operação."
       },
       "ai": {
         "accent": "A inteligência que não dorme.",
@@ -153,7 +190,8 @@
           "Automações inteligentes",
           "Atendimento 24/7",
           "Modelos para negócios"
-        ]
+        ],
+        "promise": "Atendimento e operação que não dormem."
       },
       "automation": {
         "accent": "Movimento que não exige presença.",
@@ -168,7 +206,8 @@
           "Conexão de ferramentas",
           "Fluxos automáticos",
           "APIs"
-        ]
+        ],
+        "promise": "O trabalho repetitivo deixa de existir."
       },
       "data": {
         "accent": "O caos lido em silêncio.",
@@ -183,7 +222,8 @@
           "Relatórios",
           "Dashboards",
           "Métricas em tempo real"
-        ]
+        ],
+        "promise": "Decisões com números, não com achismo."
       },
       "branding": {
         "accent": "A presença que se reconhece de longe.",
@@ -198,7 +238,8 @@
           "Comunicação",
           "Storytelling",
           "Autoridade digital"
-        ]
+        ],
+        "promise": "Uma marca que se reconhece de longe."
       },
       "marketing": {
         "accent": "Alcance sem barulho.",
@@ -213,9 +254,11 @@
           "Campanhas",
           "Estratégia digital",
           "Performance"
-        ]
+        ],
+        "promise": "Crescimento previsível e medido."
       }
-    }
+    },
+    "detailsLabel": "Detalhes"
   },
   "method": {
     "chapterLabel": "05 — Método",
@@ -224,30 +267,30 @@
     "phases": [
       {
         "name": "Diagnóstico",
-        "desc": "Entendemos o negócio, mapeamos a estrutura atual e identificamos o que está fragmentado, manual ou ausente."
+        "desc": "Mapeamos o que está quebrado, manual ou ausente."
       },
       {
         "name": "Estrutura",
-        "desc": "Desenhamos a arquitetura do ecossistema: o que construir, em que ordem e como tudo se conecta."
+        "desc": "Desenhamos a arquitetura: o que construir e em que ordem."
       },
       {
         "name": "Construção",
-        "desc": "Desenvolvemos cada peça com padrão premium — site, software, marca, automações."
+        "desc": "Cada peça é construída em padrão premium."
       },
       {
         "name": "Integração",
-        "desc": "Conectamos tudo: CRM, IA, automações, dados e sistemas operam como um organismo único."
+        "desc": "Tudo passa a operar como um organismo só."
       },
       {
         "name": "Evolução",
-        "desc": "Medimos, otimizamos e expandimos. O ecossistema cresce junto com o negócio."
+        "desc": "Medimos, otimizamos e expandimos com o negócio."
       }
     ]
   },
   "work": {
     "chapterLabel": "06 — Projetos",
     "headline": "Arquiteturas selecionadas.",
-    "lead": "Formas de conectar estratégia, tecnologia e operação em sistemas digitais coerentes.",
+    "lead": "Estratégia, tecnologia e operação em um sistema só.",
     "indexTitle": "Arquiteturas selecionadas",
     "indexLead": "Estudos de sistemas digitais, apresentados com contexto e status claramente identificados.",
     "ctaCard": "Ver projeto",
@@ -286,13 +329,13 @@
     },
     "empty": "Nenhuma arquitetura publicada nesta seleção.",
     "emptyLabel": "Seleção em curadoria",
-    "emptyInvite": "Enquanto isso, podemos desenhar e mostrar a estrutura que construiríamos para o seu negócio.",
-    "emptyPortfolio": "A seleção está em curadoria. Nenhum projeto ou estudo conceitual foi publicado ainda."
+    "emptyInvite": "Enquanto isso, podemos desenhar a estrutura do seu negócio.",
+    "emptyPortfolio": "A seleção está em curadoria."
   },
   "name": {
     "chapterLabel": "07 — A Origem",
     "headline": "Duas ideias, um nome.",
-    "open": "A Zirtuno não começou com pessoas. Começou com duas ideias — e nenhuma delas bastava sozinha.",
+    "open": "A Zirtuno não começou com pessoas. Começou com duas ideias.",
     "ideas": [
       {
         "kicker": "A força",
@@ -313,9 +356,13 @@
     ],
     "fusion": "Uma palavra guarda as duas: movimento que sabe para onde vai.",
     "pillarsLead": "Três terrenos onde essa diferença aparece primeiro.",
-    "pillars": ["Social", "Saúde", "Finanças"],
+    "pillars": [
+      "Social",
+      "Saúde",
+      "Finanças"
+    ],
     "purpose": "Damos forma ao que ainda espera para existir.",
-    "echo": "De duas ideias a um ecossistema — software, IA, automação, branding e estratégia.",
+    "echo": "De duas ideias a um ecossistema.",
     "wordmark": "Zirtuno",
     "closing": "Construímos o que ainda não existe.",
     "manifesto": [
@@ -347,7 +394,7 @@
   "contact": {
     "chapterLabel": "09 — Contato",
     "prompt": "Vamos estruturar o seu digital?",
-    "subPrompt": "Conte onde você está hoje. Devolvemos uma primeira leitura da sua estrutura digital.",
+    "subPrompt": "Conte onde você está hoje. Devolvemos uma primeira leitura.",
     "fields": {
       "name": "Nome",
       "namePlaceholder": "Seu nome",
@@ -395,7 +442,13 @@
     "headlineMid": "com um",
     "headlineBold": "ecossistema digital",
     "headlineTail": "completo.",
-    "words": ["futuro", "crescimento", "posicionamento", "atendimento", "resultado"],
+    "words": [
+      "futuro",
+      "crescimento",
+      "posicionamento",
+      "atendimento",
+      "resultado"
+    ],
     "subline": "Software, IA, automação, dados, branding e marketing conectados em uma única estrutura.",
     "proof": [
       "7 frentes conectadas",

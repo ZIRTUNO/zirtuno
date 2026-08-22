@@ -49,7 +49,7 @@ export function ChapterContact({
         </Reveal>
 
         <Reveal inView delay={0.1}>
-          <p className="mx-auto mt-[var(--type-space-title-lead)] max-w-[42ch] text-body-l text-paper-mute">
+          <p className="mx-auto mt-[var(--type-space-title-lead)] max-w-[42ch] text-body-l text-paper-lead">
             {t("subPrompt")}
           </p>
         </Reveal>

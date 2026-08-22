@@ -43,6 +43,11 @@ const NO_SCRIPT_CSS = `
     transform: none !important;
     filter: none !important;
   }
+  /* The proof row derives everything from one number the loop writes. With no
+     loop, pin that number past the end of the run so the row reads as proof:
+     four resolved checks, not four blank marks. That also spends the orb, and
+     with no JS there is no canvas for it to paint into anyway. */
+  .lab-proof { --sweep: 2; }
 `;
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://zirtuno.com";
@@ -113,7 +118,10 @@ export default async function LocaleLayout({
           data-prepaint-script=""
           dangerouslySetInnerHTML={{ __html: VEIL_SKIP_MARKUP }}
         />
-        <EntryVeil label={tCommon("loading")} />
+        <EntryVeil
+          label={tCommon("introLabel")}
+          skipLabel={tCommon("skipIntro")}
+        />
         <BreathLayer />
         <SiteAnalytics />
         <NextIntlClientProvider locale={locale} messages={messages}>

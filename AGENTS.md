@@ -5,7 +5,8 @@
 > owns detailed product and acceptance requirements.
 > `metaball-morph-spec.md` owns liquid-engine mechanics.
 > `cta-membrane-spec.md` owns the CTA membrane — the vector half of the same
-> liquid. If detail conflicts with a rule here, this file wins.
+> liquid. `entry-intro-spec.md` owns S1.10, the opening sequence.
+> If detail conflicts with a rule here, this file wins.
 
 ## 1. The Project
 
@@ -185,7 +186,7 @@ five acts:
 
 | Act | Chapters | Required liquid transition |
 |---|---|---|
-| I — Signal | Entry veil → Hero | assembly |
+| I — Signal | Entry intro → Hero | draw · meet · flood · drain |
 | II — Argument | Problem → Ecosystem → Services | pour → fracture → seek → bloom |
 | III — Practice | Método → Work | rehearse → current |
 | IV — Soul | Origin → Studio | fuse + flash |
@@ -286,6 +287,14 @@ Ask before adding any dependency or substituting any layer.
   The post chain grades the liquid; the veils grade the page. Keep the split.
 - `lib/webgl/field-drivers.ts` remains the shared §3.3 melt kernel, deterministic
   harness contract, and special-page driver home—not a second homepage brain.
+- `lib/animation/intro-sequence.ts` owns the S1.10 score and is the sequence's
+  ONE clock: DrawSVG, the vector-liquid kernel and the optional Rive layer are
+  all readers of that timeline, never independent loops.
+  `components/chrome/EntryVeil.tsx` owns only what a timeline cannot — whether
+  the intro may play, the DOM it plays on, and the guarantee that it can never
+  strand the page. Geometry is GENERATED from the mark
+  (`scripts/generate-intro-trace.mjs` → `lib/animation/intro-trace.data.mjs`);
+  do not hand-author paths for it.
 - `lib/motion/membrane.mjs` is the vector liquid's kernel: DOM-free and
   deterministic like the `.mjs` field kernels, so `verify-membrane.mjs` runs it
   in plain node. `lib/motion/membrane-runtime.ts` owns the ONE rAF, the one
@@ -390,7 +399,13 @@ Additional stop-the-line gates:
 - Homepage canvas change: `node scripts/verify-canvas-count.mjs` must report
   exactly one liquid canvas.
 - CTA/navigation/form change: `node scripts/verify-cta.mjs`.
-- Entry veil change: `node scripts/verify-entry-veil.mjs`.
+- Entry-intro change: `node scripts/verify-entry-veil.mjs` — plays once,
+  releases inside its budget, never paints on a return visit or under reduced
+  motion, NEVER animates opacity on any layer, renders the drawn line and the
+  liquid body from one path, and the skip drives its own exit rather than
+  letting the hard cap do it. `npm run intro:sheet` is the review contact
+  sheet; `npm run intro:trace` regenerates the geometry from the mark and MUST
+  be re-run if `public/brand/zirtuno-logo-mark.svg` ever changes.
 - Performance/tier change: chapter sheets plus `verify-perf.mjs` on relevant
   hardware.
 - Optics/grade change: `node scripts/verify-postfx.mjs` (statistical `?fgrade=0`

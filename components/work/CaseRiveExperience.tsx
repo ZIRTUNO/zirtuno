@@ -145,7 +145,7 @@ export function CaseRiveExperience({
         >
           {title}
         </h2>
-        <p className="text-body-l max-w-2xl text-paper-mute">{description}</p>
+        <p className="text-body-l max-w-2xl text-paper-lead">{description}</p>
       </div>
 
       <div

@@ -150,7 +150,7 @@ the liquid and light compose them into acts.
 
 | Act            | Chapter span                   | Business job                                            | Liquid behavior                                                                                     | Light behavior                                                |
 | -------------- | ------------------------------ | ------------------------------------------------------- | --------------------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
-| I — Signal     | Entry veil → Hero              | establish the brand and offer immediately               | particles assemble the wordmark, hand off to the mark, then cycle the seven forms                   | black field, first cyan bloom                                 |
+| I — Signal     | Entry intro → Hero             | establish the brand and offer immediately               | two lines draw the mark and meet, it floods into liquid and drains into the hero's ribbon (see `entry-intro-spec.md`) | black field, first cyan bloom                                 |
 | II — Argument  | Problem → Ecosystem → Services | name fragmentation, prove connection, show capabilities | mark pours, fractures by symptom, seeks itself, reunifies, blooms through the seven forms           | slow dip through Problem, rise at convergence                 |
 | III — Practice | Método → Work                  | show strategic process and proof                        | five rehearsal states become a quiet current behind the work grid; hovered card receives a meniscus | neutral/workmanlike; fade-to-black boundary before Work       |
 | IV — Soul      | Origin → Studio                | reveal the true origin and human reason                 | the two idea-masses (Zéfiro · Ventura) fuse into the exact mark, echo into satellites, remain behind the role grid | one cyan-white flash, afterglow, settle; boundary into Studio |
@@ -303,6 +303,25 @@ Rules:
 - no more than three flashes in any one-second period—the design uses one;
 - act-boundary fades occur at Método → Work and Origin → Studio;
 - the page returns to black after the flash; white is a moment, not a theme.
+
+**The Dawn - S7 only.** One further light instrument, and the only place on the
+site where the GROUND moves rather than the page being graded over the top of
+it. `.journey-dawn` is a viewport sheet inside the sticky field layer, driven by
+`--origin-p` (the origin scene's own p, written per frame by PageStage beside
+`--method-flow`): a luminous horizon rises through the stage across the approach,
+holds through the fusion and the purpose, and closes again before the manifesto
+coda. Constraints it is built to respect:
+
+- it is `--color-cyan-deep` / `--color-cyan` mixed into `--color-ink` and
+  nothing else - a change of light, never of hue (AGENTS.md rule #8);
+- `--dawn` is an envelope that returns to 0, so the page still returns to black
+  and white remains a moment;
+- it paints ABOVE the canvas with `mix-blend-mode: screen`, because the post
+  chain's final pass writes alpha 1 and the canvas therefore ships opaque - a
+  sheet behind it is never seen. Screen leaves the bright liquid essentially
+  untouched and renders at full strength over ink;
+- FULL probe tier only - a viewport-sized blend costs a backdrop read on a
+  fill-rate-bound renderer, so it sheds with the effects ladder (rule #14).
 
 ## 5. Technical Architecture
 
@@ -768,6 +787,29 @@ style or count them as the same system.
 cyan-white flash, then afterglow. It fires once per traversal and never under
 reduced motion.
 
+**Composition and motion - CURRENT.** The chapter rests on two bands and one
+gesture, and both are structural rather than stylistic:
+
+- **Bands.** The mark occupies viewport y 23-65svh. Copy lives only in
+  `.origin-frame`, a band pinned to the foot of the viewport by a sticky bottom
+  inset; the stage above it holds no type at all. Copy therefore never crosses
+  the liquid in either direction, and the black apertures that used to sit
+  behind S7 copy are gone rather than re-tuned. The band must sit at the FOOT
+  of its beat: a sticky bottom inset only engages while the box would otherwise
+  fall below the scrollport.
+- **One gesture.** All S7 copy arrives and is released by a single rising light
+  band - a mask edge travelling upward, the same horizon moving behind the
+  stage. It replaces thirteen independent `Reveal variant="blur"` fade-ups
+  (§4.4 already rules those out). Windows are DERIVED from both the scene's
+  envelopes and the band's pin geometry: each release must complete while its
+  band is still pinned, or the copy unpins and travels up through the mark.
+- **Fail-safe.** `--origin-scrub` defaults to 0 and is raised only by the live
+  frame loop, so static tiers, reduced motion, the hero QA still, the `?feco`
+  hold, pre-hydration and no-JS all resolve the masks fully OPEN and the dawn
+  fully closed. Content is never hidden behind motion (rule #13).
+- The opening (label, headline, lead) reads ABOVE the runway in normal flow;
+  inside a sticky-stage beat the topbar sliced the headline in half.
+
 **Acceptance:**
 
 - the story reads as the true Origin, not borrowed mythology;
@@ -775,7 +817,9 @@ reduced motion.
 - pillar labels remain understated and distinct from services;
 - wordmark particles resolve legibly in both locales;
 - static/reduced-motion mode presents all beats as a plain reading sequence;
-- flash and blur-reveal gates pass.
+- no chapter copy overlaps the mark, at any p and any viewport;
+- the dawn returns the ground to ink before the manifesto coda;
+- flash and reveal gates pass.
 
 ### 6.8 Chapter 08 — The Studio
 

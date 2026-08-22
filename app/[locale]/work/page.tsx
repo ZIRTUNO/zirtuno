@@ -73,7 +73,7 @@ export default async function WorkPage({
         <h1 className="type-page-title mt-[var(--type-space-label-title)] text-paper">
           {t("indexTitle")}
         </h1>
-        <p className="type-lead-copy mt-[var(--type-space-title-lead)] text-paper-mute">
+        <p className="type-lead-copy mt-[var(--type-space-title-lead)]">
           {t("indexLead")}
         </p>
 

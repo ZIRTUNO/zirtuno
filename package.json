@@ -13,7 +13,9 @@
     "forms:cursor": "node scripts/capture-cursor-merge.mjs",
     "chapters:sheet": "node scripts/capture-chapters.mjs",
     "endpoints": "node scripts/generate-morph-endpoints.mjs",
-    "verify:production": "node scripts/verify-production-env.mjs"
+    "verify:production": "node scripts/verify-production-env.mjs",
+    "intro:trace": "node scripts/generate-intro-trace.mjs",
+    "intro:sheet": "node scripts/capture-intro.mjs"
   },
   "dependencies": {
     "@gsap/react": "^2.1.2",
@@ -32,6 +34,7 @@
     "react-hook-form": "^7.80.0",
     "resend": "^6.17.1",
     "tailwind-merge": "^3.6.0",
+    "thinking-orbs": "^0.3.1",
     "zod": "^4.4.3"
   },
   "devDependencies": {

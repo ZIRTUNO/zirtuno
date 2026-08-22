@@ -4,6 +4,9 @@ export type RestRing = {
   readonly n: number;
   readonly w: number;
   readonly h: number;
+  /** Box origin. Absent on rect rings (they start at 0,0); set by `ringRest`. */
+  readonly x0?: number;
+  readonly y0?: number;
   /** Perimeter length (px). */
   readonly L: number;
   readonly bx: Float32Array;
@@ -19,6 +22,27 @@ export type MembraneOptions = {
   bow?: number;
   /** Target arc length per vertex (px). */
   segPx?: number;
+  /**
+   * Run on an ARBITRARY closed contour instead of on a rectangle — see
+   * `ringRest` for the two requirements the points must satisfy. With this set
+   * the membrane owns fixed geometry: `resize` is a no-op and the caller scales
+   * the result (an SVG viewBox, typically). Everything else behaves identically.
+   */
+  ring?: RingPoints;
+  /** Normal-displacement ceiling (px). Defaults to MEM.MAX_N. */
+  maxN?: number;
+  /** Hand influence radius (px). Defaults to MEM's button-scaled clamp, or to
+   *  0.22 x the ring's short side when `ring` is supplied. */
+  handR?: number;
+};
+
+/** Uniform-arc-length ring with true outward normals. */
+export type RingPoints = {
+  n?: number;
+  x: ArrayLike<number>;
+  y: ArrayLike<number>;
+  nx: ArrayLike<number>;
+  ny: ArrayLike<number>;
 };
 
 export type Membrane = {
@@ -126,6 +150,14 @@ export declare function buildRest(
   h: number,
   opts?: MembraneOptions,
 ): RestRing;
+
+/**
+ * The rest contract built from an arbitrary closed ring, so the kernel can run
+ * on the brand mark and not only on buttons. Requires UNIFORM ARC SPACING (the
+ * tension term is an index-space Laplacian) and TRUE OUTWARD NORMALS (on a
+ * self-intersecting contour these are not recoverable from winding order).
+ */
+export declare function ringRest(pts: RingPoints): RestRing;
 
 /** The 1-D half of the same material — a secondary CTA's rule. */
 export type Thread = {
