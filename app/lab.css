@@ -243,6 +243,11 @@ body:has(.lab-page) .side-index {
   background-image: var(--liquid-glass-fill);
   -webkit-background-clip: text;
   background-clip: text;
+  /* background-clip cannot paint the part of a glyph that hangs below a tight
+     line box. Give the glass fill real descender room without changing the
+     headline's external rhythm. */
+  padding-block-end: 0.16em;
+  margin-block-end: -0.16em;
 }
 
 /* ── the rotating noun ──────────────────────────────────────────────────── */
@@ -325,6 +330,8 @@ body:has(.lab-page) .side-index {
   background-image: var(--liquid-glass-fill);
   -webkit-background-clip: text;
   background-clip: text;
+  padding-block-end: 0.16em;
+  margin-block-end: -0.16em;
 }
 
 /* an unsupported clip means transparent glyphs with nothing behind them */
@@ -955,10 +962,12 @@ body:has(.lab-page) .side-index {
      present, a fill on the face would keep painting through letters whose
      opacity has taken them to zero, and the typing would never clear. */
   .lab-word-face {
-      color: transparent;
+    color: transparent;
     background-image: var(--liquid-glass-fill);
     -webkit-background-clip: text;
     background-clip: text;
+    padding-block-end: 0.16em;
+    margin-block-end: -0.16em;
   }
   .lab-plane {
     transform: none;

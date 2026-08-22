@@ -1436,6 +1436,13 @@ section[id],
   background-image: var(--liquid-glass-fill);
   -webkit-background-clip: text;
   background-clip: text;
+  /* A clipped background only paints inside the element box. The display
+     leading is intentionally tighter than the font's ink bounds, so the last
+     line's descenders otherwise extend past that paint box and end on a hard
+     horizontal cut. Extend the box only at the ink edge, then cancel that
+     extra room in flow so the authored type spacing does not move. */
+  padding-block-end: 0.16em;
+  margin-block-end: -0.16em;
 }
 
 /* drop-shadow, NOT text-shadow. With background-clip:text the fill IS the
@@ -1534,6 +1541,10 @@ section[id],
     background-image: var(--liquid-glass-fill);
     -webkit-background-clip: text;
     background-clip: text;
+    /* Keep the gradient paint alive through Bricolage's y/g/p descenders.
+       The negative margin preserves every chapter's existing vertical rhythm. */
+    padding-block-end: 0.16em;
+    margin-block-end: -0.16em;
     /* keep in step with .liquid-glass-lit — the tight 5px black is what cuts
        a cyan-footed glyph out of a bright cyan mass */
     filter:
