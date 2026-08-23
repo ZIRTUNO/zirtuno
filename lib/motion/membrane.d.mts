@@ -36,6 +36,23 @@ export type MembraneOptions = {
   handR?: number;
 };
 
+/** A ring's displaced points, ready for `splinePath`. */
+export type RingPointList = {
+  px: number[];
+  py: number[];
+  sharp: ArrayLike<number> | null;
+};
+
+/**
+ * Closed uniform Catmull-Rom → cubic Bézier over a point list. `sharp[i]`
+ * zeroes vertex i's tangent, which cusps the contour there.
+ */
+export declare function splinePath(
+  px: ArrayLike<number>,
+  py: ArrayLike<number>,
+  sharp: ArrayLike<number> | null,
+): string;
+
 /** Uniform-arc-length ring with true outward normals. */
 export type RingPoints = {
   n?: number;
@@ -66,8 +83,18 @@ export type Membrane = {
   scroll(pxPerSec: number): void;
   /** Advance to `tMs`. Returns true if the surface moved this call. */
   step(tMs: number): boolean;
-  /** SVG path data. `offset` pushes every vertex out along its normal (px). */
-  path(offset?: number): string;
+  /**
+   * The displaced ring as a point list — for callers that need to SPLICE the
+   * contour rather than emit it. See `coalesce.mjs`.
+   */
+  points(offset?: number, push?: ArrayLike<number> | null): RingPointList;
+  /**
+   * SVG path data. `offset` pushes every vertex out along its normal (px);
+   * `push` adds a per-vertex extra outward displacement that is applied at
+   * emission and never integrated. Omit both and the output is byte-identical
+   * to what it has always emitted.
+   */
+  path(offset?: number, push?: ArrayLike<number> | null): string;
   /** Enclosed area (px²) — the volume contract's measurement. */
   area(): number;
   /** 0..1 — how much strike energy is still in the surface. */

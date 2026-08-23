@@ -4541,3 +4541,83 @@ html[data-zveil="seen"] .entry-veil {
     transition-duration: 0.001ms !important;
   }
 }
+
+/* ===========================================================================
+   THE FORM'S LIQUID (S10) — coalescence on the contact form
+   (lib/motion/coalesce.mjs · components/chapters/FieldLiquid.tsx)
+   ---------------------------------------------------------------------------
+   Same contract as THE MEMBRANE above, for the same reason: everything in
+   "Contact form (S10)" stays exactly as authored and remains the whole form
+   under reduced motion, without JS, and before hydration. `FieldLiquid.tsx`
+   sets `data-fieldliquid` on the <form> only once the layer has mounted AND
+   drawn its first frame, and every rule below is gated on it. If the vector
+   layer never arrives, none of this applies and the bordered form is the form.
+
+   What it replaces, and only this:
+     · the 1 px CSS border on each control → a live Bézier contour that deforms
+       under a hand, ripples where it is clicked, and can be MERGED WITH.
+   What it deliberately does not touch: the labels, the values, the validation,
+   the error summary, the :focus-visible outline, and the submit button — which
+   keeps its own membrane and its own flood.
+   =========================================================================== */
+.fl {
+  position: absolute;
+  inset: 0;
+  display: block;
+  pointer-events: none;
+}
+.fl-svg {
+  /* PAD in FieldLiquid.tsx — room for the bead's full lift to leave the form */
+  position: absolute;
+  inset: -44px;
+  width: calc(100% + 88px);
+  height: calc(100% + 88px);
+  overflow: visible;
+  pointer-events: none;
+}
+.contact-form[data-fieldliquid] {
+  position: relative;
+}
+/* The liquid draws BEHIND the controls: the fields' backgrounds are already
+   transparent, so the interior wash reads through, and no fill can ever sit
+   over the text somebody is typing. */
+.contact-form[data-fieldliquid] > .fl {
+  z-index: 0;
+}
+.contact-form[data-fieldliquid] > *:not(.fl) {
+  position: relative;
+  z-index: 1;
+}
+/* The handover. Only the border goes — padding, colour, font and every state
+   that is not the outline stay in the rules above. */
+.contact-form[data-fieldliquid] .field input,
+.contact-form[data-fieldliquid] .field textarea {
+  border-color: transparent;
+}
+.fl-edge {
+  fill: var(--color-cyan);
+  fill-opacity: 0.012;
+  stroke: var(--color-paper-faint);
+  stroke-width: 1;
+  /* the viewBox is 1:1 with the CSS box, but a sub-pixel resize must never
+     make the brand's hairline thicken */
+  vector-effect: non-scaling-stroke;
+  transition: stroke 200ms var(--ease-arrive);
+}
+.fl-edge[data-fl="focus"] {
+  stroke: var(--color-cyan);
+}
+.fl-edge[data-fl="invalid"] {
+  stroke: var(--color-warn);
+}
+/* The bead carries the SAME fill and stroke as the contour it is about to join.
+   That is not a coincidence to be tidied away later — a merge between two
+   surfaces drawn in different materials reads as one shape passing behind
+   another, not as two becoming one. */
+.fl-bead {
+  fill: var(--color-cyan);
+  fill-opacity: 0.06;
+  stroke: var(--color-cyan);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}

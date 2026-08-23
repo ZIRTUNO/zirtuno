@@ -12,6 +12,7 @@ import {
 } from "@/lib/forms/contact";
 import { trackEvent } from "@/lib/analytics/client";
 import { Membrane } from "@/components/chrome/Membrane";
+import { FieldLiquid } from "./FieldLiquid";
 
 function isConfirmedDelivery(value: unknown): boolean {
   if (!value || typeof value !== "object") return false;
@@ -225,6 +226,11 @@ export function ContactForm({
       className="contact-form"
       aria-busy={isSubmitting}
     >
+      {/* The vector liquid over the controls (S10). Purely additive: it draws
+          outlines, sets `data-fieldliquid` only once it has drawn, and every
+          rule that changes a field is gated on that — so the bordered form
+          below survives reduced motion, no-JS and any mount failure intact. */}
+      <FieldLiquid />
       <input type="hidden" defaultValue={intent} {...register("intent")} />
       <div className="contact-honeypot" aria-hidden="true">
         <label htmlFor="contact-website">{t("fields.websiteTrap")}</label>

@@ -5,7 +5,9 @@
 > owns detailed product and acceptance requirements.
 > `metaball-morph-spec.md` owns liquid-engine mechanics.
 > `cta-membrane-spec.md` owns the CTA membrane — the vector half of the same
-> liquid. `entry-intro-spec.md` owns S1.10, the opening sequence.
+> liquid, and `field-liquid-spec.md` owns the form's half of it, where two
+> vector bodies can finally meet. `entry-intro-spec.md` owns S1.10, the opening
+> sequence.
 > If detail conflicts with a rule here, this file wins.
 
 ## 1. The Project
@@ -147,6 +149,12 @@ The site is in R5, “One Continuous Liquid.”
 10. **The contact submit stays obvious.** The real labeled
     “Solicitar análise inicial / Request initial analysis” button is canonical.
     The metaball exhale is additive feedback, never the only submit control.
+    The FORM's liquid (`field-liquid-spec.md`) is additive on the same terms:
+    it draws outlines and nothing else. `data-fieldliquid` is set only after the
+    layer has mounted AND drawn, every rule that changes a field is gated on it,
+    and labels, values, validation, the error summary and the focus outline stay
+    exactly where they were. Reduced motion, no-JS and any mount failure fall
+    through to the bordered form, complete and usable.
 11. **CTA hierarchy and intent are load-bearing.** Keep the placement map in
     `build-spec.md §7.2`. Every contact CTA carries its entry-intent tag.
     Homepage CTAs use Lenis smooth-scroll plus `history.replaceState`; cross-page
@@ -293,6 +301,16 @@ Ask before adding any dependency or substituting any layer.
   strand the page. Geometry is GENERATED from the mark
   (`scripts/generate-intro-trace.mjs` → `lib/animation/intro-trace.data.mjs`);
   do not hand-author paths for it.
+- `lib/motion/coalesce.mjs` is the merge kernel — the same smooth-minimum
+  `sdf-glass-shader.mjs` runs on the GPU, evaluated on a contour instead of per
+  pixel, so two vector bodies can fuse and pinch apart as crisp geometry rather
+  than as a blurred goo filter. It is what gives S10's form its travelling bead.
+  `R` and `K` are ONE decision, not two (`field-liquid-spec.md §2`): the corners
+  fix `R + K`, and the requirement that the union stay a graph over the edge
+  fixes `K/2 = R`. Change either alone and the merge squares off into a
+  rectangular tab that every other check still passes.
+  When liquid meets structure here the LIQUID gives up its shape — a field's
+  rectangle never rounds and never loses a corner.
 - `lib/motion/membrane.mjs` is the vector liquid's kernel: DOM-free and
   deterministic like the `.mjs` field kernels, so `verify-membrane.mjs` runs it
   in plain node. `lib/motion/membrane-runtime.ts` owns the ONE rAF, the one
@@ -397,6 +415,20 @@ Additional stop-the-line gates:
 - Homepage canvas change: `node scripts/verify-canvas-count.mjs` must report
   exactly one liquid canvas.
 - CTA/navigation/form change: `node scripts/verify-cta.mjs`.
+- Form-liquid change (`coalesce.mjs`, `FieldLiquid.tsx`, the S10 controls):
+  `node scripts/verify-coalesce.mjs` (`npm run liquid:form`) — smin exactness,
+  byte-exact rest, the reach, the handover silhouette, a simple closed curve,
+  the bead's travel and mass, cost, corner clearance, and the squared-off guard.
+  `npm run liquid:form:sheet` renders the merge at 5x straight from the kernel:
+  REVIEW THAT BEFORE the page stills, because a 16 px detail on a 576 px form is
+  not judgeable at 1x — a squared-off tab survived two rounds of full-form
+  screenshots. `BASE=http://localhost:3071 node scripts/capture-field-liquid.mjs`
+  is the page contact sheet (rest · fused · four travel ages · the hold at the
+  submit button · hover · invalid · BROKEN · reduced motion). `ONLY=broken`
+  blocks the kernel's chunk and asserts the form survives it — the merge kernel
+  is imported dynamically inside the effect precisely so a bad module cannot
+  take the contact form down with it. Because the layer takes over the controls' BORDER, a change
+  here is also an a11y and CTA change: run `verify-a11y.mjs` and `verify-cta.mjs`.
 - Disclosure change (S4 instrument band): `node scripts/verify-disclose.mjs` —
   the additive `data-disclose` contract, an open that ramps and lands exactly
   on the slab, a close that starts moving on the first frame and is NOT the
