@@ -37,7 +37,7 @@
     "talk": "Falar com a Zirtuno"
   },
   "hero": {
-    "chapterLabel": "01 — Zirtuno",
+    "chapterLabel": "Zirtuno",
     "eyebrow": "Algumas forças não precisam ser barulhentas para transformar.",
     "headline": "Criamos ecossistemas digitais completos.",
     "subline": "Software, IA, automação, dados, branding e marketing — conectados em uma só estrutura, feita para o seu negócio crescer.",
@@ -46,7 +46,7 @@
     "liquidMarkLabel": "Marca Zirtuno"
   },
   "problem": {
-    "chapterLabel": "02 — O Problema",
+    "chapterLabel": "O Problema",
     "headline": "A maioria das empresas não tem um problema de marketing. Tem um problema de estrutura.",
     "lead": "Cada peça funciona sozinha. Nenhuma funciona junta.",
     "symptoms": [
@@ -81,7 +81,7 @@
     ]
   },
   "ecosystem": {
-    "chapterLabel": "03 — O Ecossistema",
+    "chapterLabel": "O Ecossistema",
     "headline": "Criamos ecossistemas digitais, não peças soltas.",
     "lead": "Cada parte alimenta a seguinte. O sistema inteiro cresce junto.",
     "centerLabel": "Seu negócio",
@@ -134,7 +134,7 @@
     ]
   },
   "services": {
-    "chapterLabel": "04 — Serviços",
+    "chapterLabel": "Serviços",
     "headline": "Sete pilares, conectados.",
     "lead": "Cada um resolve um problema real. Juntos, resolvem o negócio.",
     "labelIs": "O que é",
@@ -261,7 +261,7 @@
     "detailsLabel": "Detalhes"
   },
   "method": {
-    "chapterLabel": "05 — Método",
+    "chapterLabel": "Método",
     "headline": "O Método Zirtuno.",
     "lead": "Não começamos pelo que é bonito. Começamos pelo que está quebrado.",
     "phases": [
@@ -288,7 +288,7 @@
     ]
   },
   "work": {
-    "chapterLabel": "06 — Projetos",
+    "chapterLabel": "Projetos",
     "headline": "Arquiteturas selecionadas.",
     "lead": "Estratégia, tecnologia e operação em um sistema só.",
     "indexTitle": "Arquiteturas selecionadas",
@@ -333,7 +333,7 @@
     "emptyPortfolio": "A seleção está em curadoria."
   },
   "name": {
-    "chapterLabel": "07 — A Origem",
+    "chapterLabel": "A Origem",
     "headline": "Duas ideias, um nome.",
     "open": "A Zirtuno não começou com pessoas. Começou com duas ideias.",
     "ideas": [
@@ -373,7 +373,7 @@
     ]
   },
   "studio": {
-    "chapterLabel": "08 — Studio",
+    "chapterLabel": "Studio",
     "whereLabel": "Onde",
     "city": "Curitiba, Brasil",
     "coordinates": "25.4284° S · 49.2733° W",
@@ -392,7 +392,7 @@
     "closingItalic": "Somos sobre ser sentidos, lembrados e conduzidos adiante."
   },
   "contact": {
-    "chapterLabel": "09 — Contato",
+    "chapterLabel": "Contato",
     "prompt": "Vamos estruturar o seu digital?",
     "subPrompt": "Conte onde você está hoje. Devolvemos uma primeira leitura.",
     "fields": {
@@ -456,8 +456,7 @@
       "Do diagnóstico à evolução",
       "Um parceiro, um sistema"
     ],
-    "cta": "Solicitar análise inicial",
-    "scroll": "Role para continuar"
+    "cta": "Solicitar análise inicial"
   },
   "notFound": {
     "code": "404",

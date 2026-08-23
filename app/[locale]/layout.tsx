@@ -21,11 +21,19 @@ import { TopBar } from "@/components/chrome/TopBar";
 import { EntryVeil } from "@/components/chrome/EntryVeil";
 import { SiteAnalytics } from "@/components/analytics/SiteAnalytics";
 
-// Pre-paint skip for the entry veil (S1.10): return visitors in the same
-// session must never see it flash — the attribute lands BEFORE the veil
-// element parses, so CSS hides it at first paint.
+// Pre-paint skip for the entry intro (S1.10). The attribute lands BEFORE the
+// veil element parses, so CSS hides it at first paint rather than letting it
+// flash and then vanish.
+//
+// This used to also claim the session from `sessionStorage`, which meant the
+// intro played once per session and every reload after that went straight to
+// the page. It now plays on EVERY document load by owner decision, so the only
+// pre-paint skip left is the capture convention: any `?f*` param renders the
+// page deterministically for the QA harnesses. Reduced motion is handled by
+// CSS and by the component itself; a remount inside the SAME document is
+// handled by the attribute the component sets on release.
 const VEIL_SKIP =
-  'try{const q=[...new URLSearchParams(location.search).keys()].some(k=>/^f/.test(k));if(sessionStorage.getItem("zveil")||q)document.documentElement.dataset.zveil="seen"}catch(e){}';
+  'try{if([...new URLSearchParams(location.search).keys()].some(k=>/^f/.test(k)))document.documentElement.dataset.zveil="seen"}catch(e){}';
 const VEIL_SKIP_MARKUP = `<script>${VEIL_SKIP}</script>`;
 const NO_SCRIPT_CSS = `
   .entry-veil,
@@ -36,8 +44,7 @@ const NO_SCRIPT_CSS = `
   .lab-headline,
   .lab-sub,
   .lab-proof,
-  .lab-actions,
-  .lab-scroll {
+  .lab-actions {
     animation: none !important;
     opacity: 1 !important;
     transform: none !important;

@@ -19,6 +19,26 @@ import { IntroRive, INTRO_RIVE_SRC } from "./IntroRive";
 import { cn } from "@/lib/utils";
 
 /**
+ * Has the intro already run in THIS document?
+ *
+ * Not `document.documentElement.dataset` — measured, not assumed: a locale
+ * switch is a SOFT navigation (the JS realm survives) but it crosses the root
+ * layout, so React re-renders `<html>` and an imperatively-set attribute on it
+ * does not survive the reconciliation. The intro replayed on every language
+ * toggle. A module binding dies with the document and survives everything
+ * inside it, which is exactly the line wanted:
+ *
+ *   reload / fresh visit  → module re-evaluated, flag false  → PLAYS
+ *   locale switch, SPA nav→ same module, flag true           → suppressed
+ *   Strict Mode re-invoke → set on RELEASE, so still false   → PLAYS
+ *
+ * The last row is why this is set in `release()` and not at the top of the
+ * effect: React invokes effects twice on the same instance in development, and
+ * a flag claimed up front would cancel the second run.
+ */
+let playedInThisDocument = false;
+
+/**
  * S1.10 — the loading moment. The FIRST brand touch is the mark drawing itself
  * and then coming alive: two lines meet, the silhouette floods, the surface
  * breathes, and the whole thing pours off the bottom of the screen onto a hero
@@ -30,13 +50,18 @@ import { cn } from "@/lib/utils";
  * ticker that steps the liquid, and the guarantees that it can never strand the
  * page.
  *
- * ── never seen twice, never seen late ──────────────────────────────────────
- * Skipped with NO flash for: return visits in the same session (an inline
- * pre-paint script in the layout sets `html[data-zveil="seen"]` from
- * sessionStorage before the veil can paint), reduced motion (CSS media query +
- * JS), and QA/capture contexts (any `?f*` param, the repo-wide convention).
- * A hard cap always releases it. In-app navigations are covered by the cyan
- * page wipe in app/[locale]/template.tsx; there is deliberately no route
+ * ── once per document, never seen late ─────────────────────────────────────
+ * The intro plays on EVERY document load, reloads included — it is the brand's
+ * first frame and the owner wants it to be the brand's first frame every time.
+ * It does NOT replay inside a document that has already shown it — see
+ * `playedInThisDocument` above for why that guard is a module binding and not
+ * an attribute on `<html>`.
+ *
+ * Skipped with NO flash for: QA/capture contexts (any `?f*` param, the
+ * repo-wide convention — an inline pre-paint script in the layout sets the
+ * attribute before the veil can paint) and reduced motion (CSS media query +
+ * JS). A hard cap always releases it. In-app navigations are covered by the
+ * cyan page wipe in app/[locale]/template.tsx; there is deliberately no route
  * `loading.tsx` — its Suspense boundary flushed a 200 before `notFound()` could
  * run, turning every unmatched path into a soft 404.
  *
@@ -107,20 +132,12 @@ export function EntryVeil({ label, skipLabel }: { label: string; skipLabel: stri
       const qa = [...new URLSearchParams(window.location.search).keys()].some(
         (k) => /^f/.test(k),
       );
+      // Set by `release()` earlier in THIS document, or by the pre-paint script
+      // for a capture context. Not persisted anywhere: a reload is meant to
+      // play the intro again.
       const seen = document.documentElement.dataset.zveil === "seen";
-      allowedRef.current = !seen && !qa && !prefersReducedMotion();
-      if (allowedRef.current) {
-        // Claim the session NOW, so a reload mid-sequence does not replay it.
-        // The `data-zveil` ATTRIBUTE is deliberately NOT set here: globals.css
-        // hides `.entry-veil` on it, so setting it up front collapses the very
-        // element this effect is about to measure and the stage reads 0 px
-        // wide. It is set on release instead, where it means what it says.
-        try {
-          sessionStorage.setItem("zveil", "1");
-        } catch {
-          /* storage may be blocked — the veil simply plays again */
-        }
-      }
+      allowedRef.current =
+        !seen && !playedInThisDocument && !qa && !prefersReducedMotion();
     }
     if (!allowedRef.current) {
       setGone(true);
@@ -139,6 +156,7 @@ export function EntryVeil({ label, skipLabel }: { label: string; skipLabel: stri
     const release = () => {
       if (released) return;
       released = true;
+      playedInThisDocument = true;
       document.documentElement.dataset.zveil = "seen";
       setGone(true);
     };

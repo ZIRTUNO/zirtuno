@@ -245,7 +245,8 @@ npm run intro:sheet                     # the contact sheet, for owner review
 ```
 
 `verify-entry-veil.mjs` asserts: the sequence is up at load and releases in
-≤ 5 s; a same-session reload never paints it; reduced motion never paints it;
+≤ 5 s; a RELOAD plays it again while a LOCALE SWITCH does not; any `?f*` capture
+context never paints it; reduced motion never paints it;
 **no layer's opacity ever leaves 1**; the drawn line and the liquid body render
 the same path data; the score fits its 4 s budget; and the skip is a real,
 focusable, labelled button whose exit is driven by the skip and NOT by the hard
@@ -276,6 +277,29 @@ exist.
 - **`data-zveil` is set on RELEASE, not on start.** `globals.css` hides
   `.entry-veil` on that attribute, so setting it up front collapses the element
   the effect is about to measure and the stage reads 0 px wide.
+- **There is no session claim, on purpose.** The intro plays on every document
+  load, reloads included — it is the brand's first frame and it is meant to be
+  the brand's first frame every time. If a `sessionStorage` claim ever comes
+  back, the intro silently becomes once-per-session again and the reload
+  behaviour the owner asked for is gone.
+- **The in-document guard is a MODULE BINDING, not an attribute.**
+  `playedInThisDocument` in `EntryVeil.tsx`. The obvious choice —
+  `html[data-zveil="seen"]`, which `release()` also sets for the CSS — does not
+  survive a locale switch: that is a SOFT navigation (the JS realm persists)
+  that nonetheless crosses the root layout, so React re-renders `<html>` and the
+  imperatively-set attribute is reconciled away. Guarding on it replayed the
+  full intro on every language toggle. A module binding dies with the document
+  and survives everything inside it, which is precisely the distinction wanted:
+
+  | | |
+  |---|---|
+  | reload / fresh visit | module re-evaluated, flag false → **plays** |
+  | locale switch, SPA navigation | same module, flag true → suppressed |
+  | Strict Mode re-invoke | set on RELEASE, so still false → **plays** |
+
+  That last row is why the flag is set in `release()` rather than at the top of
+  the effect. `verify-entry-veil.mjs` exercises the real language toggle rather
+  than reading the flag.
 - **React owns the tree; GSAP and the kernel own the numbers.** No animated
   attribute (`viewBox`, `d`, `r`, `cx`, `width`) appears as a JSX prop. The skip
   control flips a state a second into the sequence, and a render that reconciled

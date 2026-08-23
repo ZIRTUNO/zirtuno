@@ -37,7 +37,7 @@
     "talk": "Talk to Zirtuno"
   },
   "hero": {
-    "chapterLabel": "01 — Zirtuno",
+    "chapterLabel": "Zirtuno",
     "eyebrow": "Some forces don't need to be loud to transform.",
     "headline": "We build complete digital ecosystems.",
     "subline": "Software, AI, automation, data, branding and marketing — connected into one structure, built for your business to grow.",
@@ -46,7 +46,7 @@
     "liquidMarkLabel": "Zirtuno mark"
   },
   "problem": {
-    "chapterLabel": "02 — The Problem",
+    "chapterLabel": "The Problem",
     "headline": "Most companies don't have a marketing problem. They have a structure problem.",
     "lead": "Every piece works alone. None of them work together.",
     "symptoms": [
@@ -81,7 +81,7 @@
     ]
   },
   "ecosystem": {
-    "chapterLabel": "03 — The Ecosystem",
+    "chapterLabel": "The Ecosystem",
     "headline": "We build digital ecosystems, not loose parts.",
     "lead": "Each part feeds the next. The whole system grows together.",
     "centerLabel": "Your business",
@@ -134,7 +134,7 @@
     ]
   },
   "services": {
-    "chapterLabel": "04 — Services",
+    "chapterLabel": "Services",
     "headline": "Seven pillars, connected.",
     "lead": "Each solves a real problem. Together, they solve the business.",
     "labelIs": "What it is",
@@ -261,7 +261,7 @@
     "detailsLabel": "Details"
   },
   "method": {
-    "chapterLabel": "05 — Method",
+    "chapterLabel": "Method",
     "headline": "The Zirtuno Method.",
     "lead": "We don't start with what's beautiful. We start with what's broken.",
     "phases": [
@@ -288,7 +288,7 @@
     ]
   },
   "work": {
-    "chapterLabel": "06 — Work",
+    "chapterLabel": "Work",
     "headline": "Selected architectures.",
     "lead": "Strategy, technology and operations as one system.",
     "indexTitle": "Selected architectures",
@@ -333,7 +333,7 @@
     "emptyPortfolio": "The selection is being curated."
   },
   "name": {
-    "chapterLabel": "07 — The Origin",
+    "chapterLabel": "The Origin",
     "headline": "Two ideas, one name.",
     "open": "Zirtuno did not begin with people. It began with two ideas.",
     "ideas": [
@@ -373,7 +373,7 @@
     ]
   },
   "studio": {
-    "chapterLabel": "08 — Studio",
+    "chapterLabel": "Studio",
     "whereLabel": "Where",
     "city": "Curitiba, Brazil",
     "coordinates": "25.4284° S · 49.2733° W",
@@ -392,7 +392,7 @@
     "closingItalic": "We are about being felt, remembered, and carried forward."
   },
   "contact": {
-    "chapterLabel": "09 — Contact",
+    "chapterLabel": "Contact",
     "prompt": "Shall we structure your digital?",
     "subPrompt": "Tell us where you are today. We'll send back a first read.",
     "fields": {
@@ -456,8 +456,7 @@
       "From diagnosis to evolution",
       "One partner, one system"
     ],
-    "cta": "Request initial analysis",
-    "scroll": "Scroll to continue"
+    "cta": "Request initial analysis"
   },
   "notFound": {
     "code": "404",

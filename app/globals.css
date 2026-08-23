@@ -840,8 +840,27 @@ button.cta {
    correctly by assistive tech, survives with JS disabled and is findable by
    in-page search in modern engines. A div-and-onClick version of this would
    be strictly worse in all four respects.
+
+   THE PANEL IS A SHEET OF LIQUID GLASS, and the sheet is PAINT. Same rule the
+   display type follows: backdrop-filter is the obvious way to build glass and
+   the wrong way to build it here, because its backdrop is a canvas that never
+   stops moving and it would re-filter that canvas every frame. A painted slab
+   rasterises once and rides along as a texture, so it costs the same whether
+   the liquid behind it is still or boiling. The fill is the same read as
+   `--liquid-glass-fill` at surface strength instead of ink strength: a
+   specular top facet, paper through the body, cooling into cyan at the foot
+   where it transmits the field below.
+
+   The glass is unconditional. Only the CHOREOGRAPHY is gated on
+   `[data-disclose="live"]`, which `Disclose.tsx` sets after it mounts and only
+   when motion is allowed — so no-JS, pre-hydration and reduced-motion readers
+   still get the panel, they just get it instantly.
    =========================================================================== */
 .disclose {
+  /* 0 closed → 1 open. The mark rides the TIMELINE's clock rather than the
+     [open] attribute's, because closing now holds the attribute until the exit
+     finishes and an icon that changed 400ms after the press would be the tell. */
+  --mark-turn: 0;
   border-top: 1px solid var(--color-paper-faint);
 }
 .disclose-summary {
@@ -896,22 +915,23 @@ button.cta {
 .disclose[open] .disclose-mark::after {
   transform: rotate(0deg);
 }
-.disclose-body {
-  padding-bottom: 1.4rem;
+/* Live, the same rotation is driven by the timeline instead — `back.out(2.4)`
+   shutting, `power2.inOut` reopening. Source order beats the [open] rule
+   above at equal specificity; the transition is dropped so CSS and GSAP are
+   never both writing this transform. */
+.disclose[data-disclose="live"] .disclose-mark::after {
+  transform: rotate(calc((1 - var(--mark-turn)) * 90deg));
+  transition: none;
 }
 
-/* Smooth open/close where the engine can animate to auto. Engines without
-   ::details-content simply snap — the disclosure still works, it just does
-   not glide, which is the correct thing to lose first.
+/* ── THE PANE ────────────────────────────────────────────────────────────────
+   A window cut in the page that the sheet rises into. GSAP animates its HEIGHT
+   while the slab inside keeps its natural size, so the type never re-wraps
+   mid-animation — only the block below the panel moves.
 
-   `interpolate-size` is an INHERITED property and must be in effect on an
-   ancestor of the box being sized — declaring it on ::details-content itself
-   silently does nothing, which left the panel clamped at block-size:0 in both
-   states: collapsed correctly, and permanently unopenable. It belongs on the
-   root. */
-/* THE HEIGHT IS NOT ANIMATED, AND THAT IS DELIBERATE.
-   Two height-animation techniques were built and measured against these exact
-   seven panels, and both failed in this context:
+   THIS IS THE THIRD HEIGHT TECHNIQUE TRIED HERE, and the first that works. The
+   two that failed both targeted ::details-content, and the reasons are worth
+   keeping so neither gets attempted again:
 
      · block-size 0 → auto with `interpolate-size: allow-keywords`. A closed
        ::details-content carries UA `content-visibility: hidden`, so its
@@ -922,26 +942,110 @@ button.cta {
        resolved to 74px against a 394px body — the fr track will not take its
        size from content it is simultaneously clipping here.
 
-   Native toggling is instant and correct in every engine: 52px → 446px, every
-   panel, every time. So the disclosure opens at native speed and the CONTENT
-   does the arriving — a fade and a short lift on .disclose-body, which is a
-   real element where opacity and transform are entirely safe. A panel that
-   always opens beats a panel that glides. */
+   Both were fights with a PSEUDO-ELEMENT the UA refuses to lay out while
+   closed. `.disclose-pane` is a real element, and the <details> is already
+   `open` before a single frame is measured — the component sets the attribute
+   itself and only removes it once the exit has finished. Nothing here has to
+   resolve `auto` against a hidden subtree, so the measurement is just an
+   offsetHeight read. */
+.disclose-pane {
+  /* 0 closed → 1 open, in lockstep with the height (same tween) */
+  --pane-open: 0;
+  position: relative;
+  overflow: hidden;
+  contain: paint;
+}
+/* THE MENISCUS — a bright forming edge riding the clip line, the way surface
+   tension marks the front of a spreading film. Brightest mid-travel and gone
+   at both ends, so it needs no tween of its own: a hump computed from the
+   pane's own progress reverses for free, and cannot desynchronise from the
+   height it is supposed to be riding. */
+.disclose-pane::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 1px;
+  pointer-events: none;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--color-cyan) 22%,
+    var(--color-cyan-glow) 50%,
+    var(--color-cyan) 78%,
+    transparent
+  );
+  opacity: calc(2.6 * var(--pane-open) * (1 - var(--pane-open)));
+}
+
+/* ── THE SLAB ───────────────────────────────────────────────────────────────
+   Inset shadows only. An outer drop shadow would be the one thing the pane
+   cannot clip — box-shadow is not subject to the parent's overflow — so a
+   collapsed 0-height pane would still paint a dark smear where the panel is
+   not. The rim, the top facet and the cyan foot all live inside the box. */
 .disclose-body {
-  opacity: 0;
-  transform: translateY(-6px);
-  transition:
-    opacity var(--dur-short) var(--ease-arrive),
-    transform var(--dur-short) var(--ease-arrive);
+  position: relative;
+  overflow: hidden;
+  padding: 1.3rem 1.35rem 1.45rem;
+  border-radius: 14px;
+  background-image: linear-gradient(
+    180deg,
+    rgb(242 240 235 / 0.062) 0%,
+    rgb(242 240 235 / 0.03) 38%,
+    rgb(242 240 235 / 0.018) 70%,
+    color-mix(in srgb, var(--color-cyan) 9%, transparent) 100%
+  );
+  box-shadow:
+    /* the top facet catching the key light */
+    inset 0 1px 0 rgb(255 255 255 / 0.15),
+    /* the foot, where the glass transmits the field */
+    inset 0 -1px 0 color-mix(in srgb, var(--color-cyan) 30%, transparent),
+    inset 0 -26px 36px -32px color-mix(in srgb, var(--color-cyan) 40%, transparent),
+    /* the rim, painted last so the two edges above survive it */
+    inset 0 0 0 1px rgb(242 240 235 / 0.075);
 }
-.disclose[open] .disclose-body {
-  opacity: 1;
-  transform: none;
+/* the sheen is absolutely positioned, so everything in flow has to be lifted
+   above it — the light passes UNDER the type, never across it */
+.disclose-body > *:not(.disclose-sheen) {
+  position: relative;
+  z-index: 1;
 }
-@media (prefers-reduced-motion: reduce) {
+/* THE SPECULAR — one pass of light down the sheet as it forms. A TRANSFORM,
+   not animated gradient stops: moving the stops would repaint the whole panel
+   every frame over a canvas that is already asking for the GPU, while a
+   translated band composites. Its opacity is tied to --pane-open so it is
+   invisible at rest — which also means a panel opened by find-in-page, where
+   the timeline never runs and yPercent is 0, does not show a bright bar
+   parked at the top. */
+.disclose-sheen {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  height: 55%;
+  z-index: 0;
+  pointer-events: none;
+  opacity: var(--pane-open);
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    rgb(255 255 255 / 0.055) 46%,
+    rgb(255 255 255 / 0.085) 62%,
+    color-mix(in srgb, var(--color-cyan) 20%, transparent) 78%,
+    transparent 100%
+  );
+}
+
+/* Forced colors drops background images and box shadows, which would leave the
+   slab as an unmarked box. Hand the edge back to the system. */
+@media (forced-colors: active) {
   .disclose-body {
-    transition: none;
-    transform: none;
+    border: 1px solid CanvasText;
+  }
+  .disclose-sheen,
+  .disclose-pane::after {
+    display: none;
   }
 }
 
@@ -2384,6 +2488,40 @@ section[id],
   display: flex;
   flex-direction: column;
   gap: clamp(1.5rem, 4vh, 2.75rem);
+}
+/* ── THE PIN — the headline does not move when a panel opens ────────────────
+   The stage centres its copy column beside the form, and centring plus a
+   growing child are fundamentally incompatible with a fixed headline: a
+   column that grows by Δ and stays centred moves up by Δ/2, whatever the
+   viewport. Measured on the 900px stage, opening a panel levered the pillar
+   name 165.7px upward — invisible as an instant jump, impossible to ignore
+   once the panel glides.
+
+   Every LAYOUT fix was worse than the problem:
+     · `align-content: start` + `align-items: start` zeroes the drift, but
+       parks the closed copy 165.7px higher — hard under the topbar with a
+       hole beneath it. It fixes the interaction by breaking the standing
+       composition, which is the state a visitor is in almost all the time.
+     · growing `min-height` by the panel's own height cancels the drift
+       exactly (the slack above the column stays constant at every height —
+       nice algebra), but it makes the pillar 482px taller instead of 150px.
+       The Services scene reads `.pillar` RECTS to schedule the melt
+       (`lib/webgl/scenes/site.ts` → `centersMid`), so tripling the height
+       change would drag the morph three times as far every time somebody
+       opened a panel.
+
+   So the compensation is a TRANSFORM, not layout. The column shifts down by
+   exactly what the layout took away, the pillar's box is untouched, the melt
+   sees nothing, and the panel reads as growing downward from a headline that
+   never moved. `Disclose.tsx` writes --copy-pin per frame from a real
+   measurement rather than a curve fit, because the layout's response to the
+   height is piecewise linear — it stops moving once the column outgrows the
+   stage — and a straight interpolation was 51px out at the knee.
+
+   Gated on an OPEN live panel so the transform is not standing on seven
+   copy columns creating containing blocks for nothing. */
+.pillar:has(.disclose[data-disclose="live"][open]) .pillar-copy {
+  transform: translate3d(0, var(--copy-pin, 0px), 0);
 }
 .pillar > * {
   position: relative;
@@ -4275,10 +4413,14 @@ section[id],
 .lone-drop-fallback.is-hidden {
   opacity: 0;
 }
-/* S1.10 — the ENTRY veil: the first brand touch is the wordmark assembling
-   (shared particle engine with S8 Beat 5). Return visitors skip it with no
-   flash: the layout's pre-paint script sets html[data-zveil="seen"] before
-   this element parses. Reduced motion never sees it. */
+/* S1.10 — the ENTRY INTRO: the first brand touch is the mark drawing itself,
+   flooding into liquid and draining onto the hero (entry-intro-spec.md).
+   It plays on EVERY document load. `data-zveil="seen"` exists only so CSS can
+   hide the element — on release, and from the layout's pre-paint script for
+   ?f* capture contexts, before this element parses. It is NOT the replay
+   guard: a locale switch re-renders <html> and reconciles the attribute away.
+   That guard is the `playedInThisDocument` module binding in EntryVeil.tsx.
+   Reduced motion never sees any of it. */
 .entry-veil {
   position: fixed;
   inset: 0;

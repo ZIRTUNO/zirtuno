@@ -1,5 +1,6 @@
 import { useTranslations } from "next-intl";
 import { CtaButton } from "@/components/chrome/CtaButton";
+import { Disclose } from "./Disclose";
 import type { PillarKey } from "@/lib/content/services";
 
 /**
@@ -55,51 +56,54 @@ export function PillarEntry({
           <p className="pillar-promise">{t(`${base}.promise`)}</p>
         </header>
 
-        {/* ── layer two: the instrument band, on intent ────────────────────── */}
-        <details className="disclose pillar-detail">
-          {/* The name is repeated into the accessible label because a screen
-              reader hears summaries out of context in a rotor listing, where
-              seven identical "Details" toggles would be unusable. */}
-          <summary
-            className="disclose-summary"
-            aria-label={`${t("detailsLabel")} — ${name}`}
-          >
-            {t("detailsLabel")}
-            <span className="disclose-mark" aria-hidden="true" />
-          </summary>
+        {/* ── layer two: the instrument band, on intent ──────────────────────
+            <Disclose> is a client shell around a native <details>; everything
+            inside it is still this server component's output, so the
+            commercial substance stays in the RSC HTML (rule 12) and the only
+            thing that ships to the browser is the choreography. The accessible
+            name repeats the pillar name because a screen reader hears
+            summaries out of context in a rotor listing, where seven identical
+            "Details" toggles would be unusable.
 
-          <div className="disclose-body">
-            <dl className="pillar-blocks">
-              <div className="pillar-block">
-                <dt className="pillar-label">{t("labelIs")}</dt>
-                <dd>{t(`${base}.is`)}</dd>
-              </div>
-              <div className="pillar-block">
-                <dt className="pillar-label">{t("labelSolves")}</dt>
-                <dd>{t(`${base}.solves`)}</dd>
-              </div>
-              <div className="pillar-block">
-                <dt className="pillar-label">{t("labelCreates")}</dt>
-                <dd>{t(`${base}.creates`)}</dd>
-              </div>
-            </dl>
+            Each [data-disclose-row] is one beat of the stagger — the three
+            spec rows, the capability set, then the brand's own voice last. */}
+        <Disclose
+          className="pillar-detail"
+          label={t("detailsLabel")}
+          summaryLabel={`${t("detailsLabel")} — ${name}`}
+        >
+          <dl className="pillar-blocks">
+            <div className="pillar-block" data-disclose-row>
+              <dt className="pillar-label">{t("labelIs")}</dt>
+              <dd>{t(`${base}.is`)}</dd>
+            </div>
+            <div className="pillar-block" data-disclose-row>
+              <dt className="pillar-label">{t("labelSolves")}</dt>
+              <dd>{t(`${base}.solves`)}</dd>
+            </div>
+            <div className="pillar-block" data-disclose-row>
+              <dt className="pillar-label">{t("labelCreates")}</dt>
+              <dd>{t(`${base}.creates`)}</dd>
+            </div>
+          </dl>
 
-            <p className="pillar-caps">
-              {caps.map((c) => (
-                // inline-block: the capability and its ::after separator wrap as
-                // ONE unit — the trailing dot can no longer hang past the
-                // viewport edge on narrow stages (the 390px 4px-overflow drill)
-                <span key={c} className="pillar-cap inline-block">
-                  {c}
-                </span>
-              ))}
-            </p>
+          <p className="pillar-caps" data-disclose-row>
+            {caps.map((c) => (
+              // inline-block: the capability and its ::after separator wrap as
+              // ONE unit — the trailing dot can no longer hang past the
+              // viewport edge on narrow stages (the 390px 4px-overflow drill)
+              <span key={c} className="pillar-cap inline-block">
+                {c}
+              </span>
+            ))}
+          </p>
 
-            {/* the brand's own voice — kept, but as the closing note of the
-                detail rather than a second grey line competing with the promise */}
-            <p className="font-poetic pillar-accent">{t(`${base}.accent`)}</p>
-          </div>
-        </details>
+          {/* the brand's own voice — kept, but as the closing note of the
+              detail rather than a second grey line competing with the promise */}
+          <p className="font-poetic pillar-accent" data-disclose-row>
+            {t(`${base}.accent`)}
+          </p>
+        </Disclose>
 
         <div className="pillar-action">
           {hasWork ? (

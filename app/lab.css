@@ -836,24 +836,6 @@ body:has(.lab-page) .side-index {
   display: none;
 }
 
-/* ── the scroll cue ─────────────────────────────────────────────────────── */
-.lab-scroll {
-  position: absolute;
-  left: 50%;
-  bottom: clamp(1.25rem, 3vh, 2rem);
-  z-index: 3;
-  transform: translateX(-50%);
-  font-family: var(--font-mono);
-  font-size: var(--text-mono-sm);
-  letter-spacing: var(--tracking-label-open);
-  text-transform: uppercase;
-  /* R6: 42% put the one instruction on the first screen below the floor the
-     rest of the site now holds, and it sits over the bright ribbon. */
-  color: var(--color-paper-soft);
-  text-shadow: 0 1px 10px rgb(0 0 0 / 0.78);
-  animation: lab-fade 1200ms var(--ease-arrive) 1500ms both;
-}
-
 /* ── arrival ────────────────────────────────────────────────────────────── */
 @keyframes lab-rise {
   from {
@@ -925,9 +907,6 @@ body:has(.lab-page) .side-index {
     bottom: min(-22vh, -150px);
     height: min(74vh, 700px);
   }
-  .lab-scroll {
-    display: none;
-  }
 }
 
 /* ── reduced motion: the composition, held still ────────────────────────── */
@@ -938,8 +917,7 @@ body:has(.lab-page) .side-index {
   .lab-proof,
   .lab-actions,
   .lab-chrome,
-  .lab-ribbon,
-  .lab-scroll {
+  .lab-ribbon {
     animation: none;
   }
   .lab-mesh span,

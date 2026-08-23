@@ -81,9 +81,6 @@ export function LabHero() {
         </div>
       </div>
 
-      <p className="lab-scroll" aria-hidden="true">
-        {t("scroll")}
-      </p>
     </section>
   );
 }

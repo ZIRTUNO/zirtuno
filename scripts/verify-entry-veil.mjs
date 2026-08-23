@@ -4,11 +4,15 @@
 //   Dev server must be running:
 //   BASE_URL=http://localhost:3051 node scripts/verify-entry-veil.mjs
 //
-//   1. FIRST visit: the sequence is up at load and releases the page in ≤ 5 s.
-//      The hard cap can never strand it.
-//   2. RETURN visit (same session): it never paints — the pre-paint script hides
-//      it via html[data-zveil="seen"] before first paint.
-//   3. REDUCED MOTION: it never paints.
+//   1. EVERY document load: the sequence is up at load and releases the page in
+//      ≤ 5 s. The hard cap can never strand it.
+//   2. A RELOAD plays it again. It is the brand's first frame, and the owner
+//      wants it to be the brand's first frame every time — there is deliberately
+//      no session claim. What must NOT replay is a remount inside a document
+//      that already showed it (a locale switch, a client-side navigation), and
+//      the `html[data-zveil="seen"]` attribute set on release is what draws that
+//      line: it survives navigation and dies with the document.
+//   3. CAPTURE CONTEXTS (?f*) and REDUCED MOTION: it never paints.
 //   4. NO FADES. Nothing in the sequence animates `opacity`. This is a taste
 //      rule the owner has stated plainly, and it is load-bearing here: every
 //      appearance is a move, a draw, a flood or a thinning. Checked by walking
@@ -81,17 +85,61 @@ console.log("\n1. lifecycle");
       () => check(false, "first visit: releases the page (≤ 5 s)"),
     );
 
-  await page.reload({ waitUntil: "domcontentloaded" });
-  const skipped = await page.evaluate(() => {
+  // A locale switch is the sharpest test of the in-document guard: it is a SOFT
+  // navigation (the JS realm survives) that nonetheless crosses the root layout,
+  // so React re-renders `<html>` and any attribute set on it imperatively is
+  // gone. Guarding on `data-zveil` therefore looked right and replayed the whole
+  // intro on every language toggle. Exercise the real control, not the flag.
+  await page.evaluate(() => {
+    window.__sameDoc = true;
+  });
+  await page.locator(".lang-opt:not(.is-active)").first().click();
+  await page.waitForURL(/\/(pt|en)/, { timeout: 15000 });
+  await page.waitForTimeout(1200);
+  const afterSwitch = await page.evaluate(() => ({
+    sameDocument: !!window.__sameDoc,
+    veil: !!document.querySelector(".entry-veil"),
+  }));
+  check(
+    afterSwitch.sameDocument && !afterSwitch.veil,
+    afterSwitch.sameDocument
+      ? "a locale switch does NOT replay it — the in-document guard holds"
+      : "a locale switch stayed in the same document (test premise)",
+  );
+
+  await page.reload({ waitUntil: "commit" });
+  await page
+    .waitForSelector(".entry-veil", { state: "attached", timeout: 15000 })
+    .then(
+      async () => {
+        const up = await page.evaluate(() => {
+          const v = document.querySelector(".entry-veil");
+          return !!v && getComputedStyle(v).display !== "none";
+        });
+        check(up, "a reload plays it again — there is no session claim");
+      },
+      () => check(false, "a reload plays it again — there is no session claim"),
+    );
+  await ctx.close();
+}
+
+// ── capture contexts: the only pre-paint skip left ───────────────────────────
+console.log("\n2. capture contexts");
+{
+  const { ctx, page } = await newPage();
+  await page.goto(`${BASE}/${LOCALE}?ftier=full`, {
+    waitUntil: "domcontentloaded",
+  });
+  const hidden = await page.evaluate(() => {
     const v = document.querySelector(".entry-veil");
     return !v || getComputedStyle(v).display === "none";
   });
-  check(skipped, "return visit (same session): it never paints");
+  check(hidden, "any ?f* param renders the page deterministically — no intro");
   await ctx.close();
 }
 
 // ── 3: reduced motion never sees it ──────────────────────────────────────────
-console.log("\n2. reduced motion");
+console.log("\n3. reduced motion");
 {
   const { ctx, page } = await newPage({ reducedMotion: "reduce" });
   await page.goto(`${BASE}/${LOCALE}`, { waitUntil: "domcontentloaded" });
@@ -104,7 +152,7 @@ console.log("\n2. reduced motion");
 }
 
 // ── 4 + 5 + 6: the design contracts, walked on the held clock ────────────────
-console.log("\n3. contracts");
+console.log("\n4. contracts");
 {
   const { ctx, page } = await newPage();
   const errors = [];
@@ -170,7 +218,7 @@ console.log("\n3. contracts");
 }
 
 // ── the skip control ─────────────────────────────────────────────────────────
-console.log("\n4. the skip");
+console.log("\n5. the skip");
 {
   const { ctx, page } = await newPage();
   await page.goto(`${BASE}/${LOCALE}`, { waitUntil: "commit" });
@@ -219,4 +267,6 @@ if (failures) {
   console.error(`\n${failures} entry-intro check(s) FAILED`);
   process.exit(1);
 }
-console.log("\nENTRY INTRO OK — plays once, never fades, one geometry, skippable.");
+console.log(
+  "\nENTRY INTRO OK — plays every load, never fades, one geometry, skippable.",
+);

@@ -397,11 +397,36 @@ Additional stop-the-line gates:
 - Homepage canvas change: `node scripts/verify-canvas-count.mjs` must report
   exactly one liquid canvas.
 - CTA/navigation/form change: `node scripts/verify-cta.mjs`.
-- Entry-intro change: `node scripts/verify-entry-veil.mjs` — plays once,
-  releases inside its budget, never paints on a return visit or under reduced
-  motion, NEVER animates opacity on any layer, renders the drawn line and the
-  liquid body from one path, and the skip drives its own exit rather than
-  letting the hard cap do it. `npm run intro:sheet` is the review contact
+- Disclosure change (S4 instrument band): `node scripts/verify-disclose.mjs` —
+  the additive `data-disclose` contract, an open that ramps and lands exactly
+  on the slab, a close that starts moving on the first frame and is NOT the
+  open mirrored (the easeReverse gate: ~25% of slab at the midpoint, where a
+  mirrored entry would be ~97%), content that outlives the exit, an
+  interrupted open that collapses from where it was, find-in-page taking the
+  state without the choreography, and reduced-motion / no-JS falling back to a
+  plain instant `<details>`. It also gates THE PIN: the pillar name must hold
+  its line to under 2px on every frame of both directions, because the stage
+  centres its copy column and an uncompensated open levers the headline
+  165.7px upward. `node scripts/capture-disclose.mjs` is the review contact
+  sheet; it slows GSAP's clock (which reads `Date.now`, not `performance.now`)
+  so a Playwright burst can actually resolve the curves, and it reports the
+  390px excursion because the single-column stage centres differently.
+  Three traps this suite was built around, all of which produced confident
+  wrong numbers first:
+  · once `open` is dropped the pane sits under `content-visibility: hidden`
+    and Chrome keeps serving its LAST rect — measure heights only on frames
+    where `open` is still true, or a closed panel reads as full height;
+  · measure the pin against the PILLAR, not the viewport: an unsettled scroll
+    from earlier cycles shows up as 32px of phantom pin error;
+  · budget the timing checks in FRAMES, not milliseconds. The liquid starves
+    rAF on this page and a single dropped frame blew a 50ms budget to 73ms
+    while the animation itself was fine.
+- Entry-intro change: `node scripts/verify-entry-veil.mjs` — plays on EVERY
+  document load (a reload replays it; a locale switch and any other same-document
+  remount are suppressed), releases inside its budget, never paints under `?f*`
+  or reduced motion, NEVER animates opacity on any layer, renders the drawn line
+  and the liquid body from one path, and the skip drives its own exit rather
+  than letting the hard cap do it. `npm run intro:sheet` is the review contact
   sheet; `npm run intro:trace` regenerates the geometry from the mark and MUST
   be re-run if `public/brand/zirtuno-logo-mark.svg` ever changes.
 - Performance/tier change: chapter sheets plus `verify-perf.mjs` on relevant

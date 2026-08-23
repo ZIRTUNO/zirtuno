@@ -88,9 +88,6 @@ export function Hero() {
         </div>
       </div>
 
-      <p className="lab-scroll" aria-hidden="true">
-        {t("scroll")}
-      </p>
     </section>
   );
 }
