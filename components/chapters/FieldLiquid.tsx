@@ -5,6 +5,7 @@ import {
   registerMembrane,
   pokeMembranes,
   membraneMode,
+  type MembraneHandle,
 } from "@/lib/motion/membrane-runtime";
 
 /**
@@ -44,10 +45,12 @@ import {
  */
 
 /**
- * Room for the liquid to leave the form's box: the bead's full lift plus its
- * radius, plus the membrane's own displacement ceiling.
+ * Room for the liquid to leave the form's box: the drop's full lift, plus its
+ * radius, plus the membrane's own displacement ceiling. It must track
+ * COAL.LIFT_MAX — a neck that stretches further than the drawing surface is a
+ * neck with a straight edge cut across it.
  */
-const PAD = 44;
+const PAD = 96;
 
 export function FieldLiquid() {
   const holder = useRef<HTMLSpanElement>(null);
@@ -109,6 +112,8 @@ export function FieldLiquid() {
         state: string;
         lastD: string;
         lastTf: string;
+        /** Last frame's merge state — the edge that fires the wobble. */
+        wasMerged: boolean;
       };
 
       const slots: Slot[] = controls.map((el) => {
@@ -118,7 +123,7 @@ export function FieldLiquid() {
         fieldsG.appendChild(path);
         return {
           el,
-          mem: makeMembrane(10, 10),
+          mem: makeMembrane(10, 10, { radius: COAL.FIELD_R }),
           path,
           ox: 0,
           oy: 0,
@@ -127,6 +132,7 @@ export function FieldLiquid() {
           state: "",
           lastD: "",
           lastTf: "",
+          wasMerged: false,
         };
       });
 
@@ -142,6 +148,8 @@ export function FieldLiquid() {
       });
       /** Which slot the bead belongs to, or null when it has drained. */
       let host: Slot | null = null;
+      /** Where the drop came from — the other end of the current hop. */
+      let prevHost: Slot | null = null;
 
       /**
        * The bead expressed in ONE slot's local coordinates. One adapter per slot,
@@ -199,6 +207,14 @@ export function FieldLiquid() {
         if (vb !== lastVb) {
           lastVb = vb;
           svg.setAttribute("viewBox", vb);
+          // The element's box is written from the SAME constant that writes the
+          // viewBox. It used to live in globals.css as well, and a hot reload
+          // that updated one copy and not the other slid the whole layer 52 px
+          // off the form it belongs to — the viewBox saying -44 while the CSS
+          // said -96. One fact, one place.
+          svg.style.inset = `${-PAD}px`;
+          svg.style.width = `calc(100% + ${PAD * 2}px)`;
+          svg.style.height = `calc(100% + ${PAD * 2}px)`;
         }
         for (const s of slots) {
           const tf = `translate(${s.ox} ${s.oy})`;
@@ -231,44 +247,158 @@ export function FieldLiquid() {
       };
 
       /**
-       * WHERE THE BEAD BELONGS.
+       * THE TOUR — what the drop does when nobody is using the form.
        *
-       * Focus outranks hover, deliberately and in that order. Focus is where the
-       * reader actually IS — it is the same for a mouse, a keyboard and a screen
-       * reader, and it survives the pointer wandering off to read the label above
-       * the next field. Hover only decides when nothing in the form has focus,
-       * which is the one moment the form has nothing better to say.
+       * It walks the fields in reading order, settles into each, dwells, and
+       * moves on. The form is never a still picture; the liquid is always
+       * somewhere in it. The instant the reader engages — focus, or a pointer
+       * over a control — the tour yields and the drop goes where they are and
+       * STOPS there.
        *
-       * Returns null when the form is not in use at all, and the bead drains: an
-       * untouched form is the plain bordered form, and every path in the layer
-       * emits its authored rectangle character-for-character.
+       * SELF-PACED, not metronomic. It advances when the drop has actually
+       * finished arriving (`bead.settled`) plus a dwell, so a long hop takes
+       * as long as it takes and the pause afterwards is the same wherever it
+       * lands. A fixed period would have to be set for the worst case and
+       * would then leave the short hops sitting around waiting.
+       *
+       * This is NOT the tide `membrane-runtime` offers touch devices, and the
+       * distinction matters: the tide makes every CTA breathe at once,
+       * including ones the reader is working in. A form whose four fields all
+       * shimmer while somebody is typing into one of them is a form that looks
+       * unstable. The tour moves ONE drop, and it gets out of the way.
        */
-      const resolveHost = (): Slot | null => {
+      const TOUR = {
+        /**
+         * Pause after the drop has visibly arrived, before it moves on.
+         *
+         * It is not loitering: this is the room the DISSOLVE plays in. At 150 ms
+         * the drop was merged for only ~720 ms of each stop, which the 880 ms
+         * fade-out could not finish inside — so the dissolve was permanently
+         * clipped and read as a flicker. The dwell has to be at least long
+         * enough for the drop to actually finish giving itself up.
+         */
+        DWELL: 380,
+        /** Ceiling on one stop, in case a hop never quite settles. */
+        CAP: 5200,
+        /**
+         * Grace after the reader lets go, before the tour resumes. Without it
+         * a tab through the form would send the drop wandering between every
+         * keystroke's worth of focus change.
+         */
+        RESUME: 1600,
+      };
+      let tourAt = 0;
+      let stopAt = 0;
+      let arrivedAt = 0;
+      let engagedAt = 0;
+
+      /**
+       * WHERE THE DROP BELONGS.
+       *
+       * Focus outranks hover, deliberately and in that order. Focus is where
+       * the reader actually IS — the same for a mouse, a keyboard and a screen
+       * reader — and it survives the pointer wandering off to read the label
+       * above the next field. Hover only decides when nothing in the form has
+       * focus. Below both of those sits the tour.
+       *
+       * Returns null only when the form is off-screen, and then the drop
+       * drains: an unseen form costs nothing, and every path in the layer
+       * emits its authored contour character-for-character.
+       */
+      const resolveHost = (t: number): Slot | null => {
         const active = document.activeElement;
         const focused = slots.find((s) => s.el === active);
-        if (focused) return focused;
         // Still inside the form but not on a control — the reader has tabbed to
-        // the submit button, or to a link in the error summary. The bead HOLDS
-        // rather than draining: draining here made it vanish on the last step of
-        // the journey, which reads as the form losing interest exactly when the
-        // reader is about to act. The button has its own membrane and its own
-        // flood; it does not need the bead, but it should not delete it either.
-        if (active instanceof Node && form.contains(active)) return host;
-        const hov = slots.find((s) => s.el.matches(":hover"));
-        return hov ?? null;
+        // the submit button, or to a link in the error summary. The drop HOLDS
+        // rather than draining: draining there made it vanish on the last step
+        // of the journey, which reads as the form losing interest exactly when
+        // the reader is about to act.
+        const inForm =
+          !focused && active instanceof Node && form.contains(active);
+        const hovered = focused
+          ? null
+          : slots.find((s) => s.el.matches(":hover"));
+        const chosen = focused ?? (inForm ? host : null) ?? hovered ?? null;
+
+        if (chosen) {
+          // Engaged. Remember where the tour got to so it can pick up from
+          // here rather than snapping back to wherever it left off.
+          engagedAt = t;
+          const i = slots.indexOf(chosen);
+          if (i >= 0) tourAt = i;
+          stopAt = t;
+          arrivedAt = 0;
+          return chosen;
+        }
+
+        if (!handle.visible) return null;
+        if (t - engagedAt < TOUR.RESUME) return host;
+
+        if (!stopAt) stopAt = t;
+        // `arrived`, not `settled` — see COAL.ARRIVE_LIFT. Pacing off the
+        // exact signal made every stop wait a third of a second on motion
+        // under one pixel.
+        if (bead.arrived) {
+          if (!arrivedAt) arrivedAt = t;
+        } else {
+          arrivedAt = 0;
+        }
+        const dwelt = arrivedAt > 0 && t - arrivedAt >= TOUR.DWELL;
+        if (dwelt || t - stopAt >= TOUR.CAP) {
+          tourAt = (tourAt + 1) % slots.length;
+          arrivedAt = 0;
+          stopAt = t;
+        }
+        return slots[tourAt];
       };
 
       // ── the frame ────────────────────────────────────────────────────────────
       let lastBeadD = "";
+      let lastBeadMat = "";
 
       const draw = (_m: unknown, t: number) => {
         place();
-        let anyMerged = false;
+
+        // WHICH FIELD HOLDS THE DROP. Exactly one may, or two would each draw
+        // the bulb and the drop would come out double-struck.
+        //
+        // Only the two ENDS of the current hop are eligible: where it left and
+        // where it is going. Picking the nearest field outright let the drop
+        // grab fields it was merely flying past — on the long return leg it
+        // passes two of them — and a field that becomes owner and merged in the
+        // same frame has not started its stroke transition yet, so for a frame
+        // or two a rest-coloured circle sits under a wet-coloured drop. A
+        // filament trails from where it left and reaches to where it is going;
+        // it does not catch on the scenery.
+        let owner: Slot | null = null;
+        let ownerL = Infinity;
+        if (bead.alive) {
+          for (const s of [host, prevHost]) {
+            if (!s) continue;
+            const ay = Math.min(Math.max(bead.y, s.oy), s.oy + s.h);
+            const d = Math.hypot(bead.x - s.ox, bead.y - ay);
+            if (d < ownerL) {
+              ownerL = d;
+              owner = s;
+            }
+          }
+        }
 
         for (const s of slots) {
           const lb = locals.get(s)!;
-          const u = unionContour(s.mem, lb);
-          if (u.merged) anyMerged = true;
+          const u = unionContour(s.mem, lb, { own: s === owner });
+          // THE WOBBLE. Arriving and letting go are both impacts, and a surface
+          // that takes one without ringing is not a surface. The membrane
+          // already has the tension and the damping; it only ever needed to be
+          // told that something happened. Ambient, so the reader's own clicks
+          // keep their full amplitude (see MEM.SHOCK_SATURATE).
+          if (u.merged !== s.wasMerged) {
+            s.wasMerged = u.merged;
+            const y = Math.min(Math.max(bead.y - s.oy, 0), s.h);
+            s.mem.strike(0, y, t, u.merged ? 0.5 : 0.34, true);
+            if (!u.merged) beadMem.strike(0, 0, t, COAL.PINCH_KICK, true);
+            pokeMembranes();
+          }
           if (u.d !== s.lastD) {
             s.lastD = u.d;
             // Drawn in the control's OWN space — the path's transform carries the
@@ -278,12 +408,26 @@ export function FieldLiquid() {
           }
           // State mirrors the CSS the border used to carry — the colour logic
           // stays in the stylesheet, this only says which state applies.
+          // WET is any field the drop is ON or ON ITS WAY TO. Both, because a
+          // hop has two ends: the field it is leaving still owns the bridge for
+          // a moment, and the field it is heading for needs its 200 ms stroke
+          // transition FINISHED before the drop gets there. Keyed on ownership
+          // alone, the arriving field was still dim when the bridge formed on
+          // it, and the drop — which never leaves the wet state, since it
+          // always has an owner — sat brighter than the circle it shared.
+          //
+          // Without any of it the drop lands on `--color-paper-faint` and the
+          // brightness falls off a cliff. Focus stays the brightest state, so
+          // the hierarchy holds: dim, then lit as the liquid comes, then full
+          // cyan where the reader is.
           const state =
             s.el.getAttribute("aria-invalid") === "true"
               ? "invalid"
               : s.el === document.activeElement
                 ? "focus"
-                : "rest";
+                : s === owner || s === host
+                  ? "wet"
+                  : "rest";
           if (state !== s.state) {
             s.state = state;
             s.path.setAttribute("data-fl", state);
@@ -303,12 +447,49 @@ export function FieldLiquid() {
         // contact plane comes out as a doubled straight line across the middle of
         // what should read as a single drop. The FIELD owns the reach (see
         // `unionContour`'s near mode); the bead stays a clean body.
-        const d = anyMerged || !bead.alive ? "" : beadContour(beadMem, bead);
+        // THE OUTLINE STAYS ON. The drop is drawn for as long as it has mass,
+        // merged or not.
+        //
+        // It used to be hidden the moment a field claimed it, on the reasoning
+        // that the drop and the bridge's bulb are the same circle and drawing
+        // both would double-strike one shape. That is true, and it is also why
+        // hiding it needed a cross-fade, and why the cross-fade needed a
+        // dissolve, and why the dissolve needed a dwell long enough to play
+        // in — three rounds of machinery to make a disappearance acceptable.
+        //
+        // The owner looked at it and preferred the drop simply staying. A bead
+        // resting half-submerged in its own meniscus, its outline visible
+        // through the surface, is a real thing liquid does — and it costs
+        // nothing to draw. `ONLY=tourfade` now guards the opposite invariant:
+        // that the outline never goes out while the drop is alive.
+        const d = bead.alive ? beadContour(beadMem, bead) : "";
         if (d !== lastBeadD) {
           lastBeadD = d;
           beadPath.setAttribute("d", d);
         }
-        void t;
+        // THE DROP WEARS ITS HOST'S MATERIAL — TAKEN, NOT GUESSED.
+        //
+        // While the bridge is formed the field's contour draws the bulb and the
+        // drop draws itself: two coincident circles. Identical, that is
+        // indistinguishable from one. Different, it is a blink — the outline
+        // used to go bolder and brighter on landing (cyan over cyan-deep, two
+        // strokes) and thinner on leaving.
+        //
+        // Mirroring the host's STATE was not enough. A field's stroke eases
+        // over 200 ms and the drop's does not, because the drop never leaves
+        // the wet state — it always has an owner — so every time a field lit
+        // up there was a window where a rest-coloured circle sat under a
+        // wet-coloured one. Reading the host's computed stroke removes the
+        // whole class of problem: whatever the contour is showing this frame,
+        // transitions included, is what the drop is showing.
+        const hostPath = owner?.path ?? null;
+        const mat = hostPath
+          ? getComputedStyle(hostPath).stroke
+          : "var(--color-paper-faint)";
+        if (mat !== lastBeadMat) {
+          lastBeadMat = mat;
+          beadPath.style.stroke = mat;
+        }
       };
 
       // ── the composite handle ─────────────────────────────────────────────────
@@ -328,8 +509,9 @@ export function FieldLiquid() {
           beadMem.hand(x - bead.x, y - bead.y, vx, vy);
         },
         step(t: number) {
-          const want = resolveHost();
+          const want = resolveHost(t);
           if (want !== host) {
+            if (host) prevHost = host;
             host = want;
             if (host) {
               // ON the edge, not beside it: at rest the bead is ABSORBED into
@@ -362,13 +544,18 @@ export function FieldLiquid() {
       };
 
       measure();
-      const unregister = registerMembrane({
+      // Held rather than passed inline: the runtime writes `visible` on this
+      // object from its IntersectionObserver, and the tour reads it. An
+      // autonomous animation that keeps running for a form nobody can see is
+      // the one thing this feature could reasonably be accused of.
+      const handle: MembraneHandle<typeof composite> = {
         el: form,
         mem: composite,
         draw,
         rect: null,
         visible: true,
-      });
+      };
+      const unregister = registerMembrane(handle);
 
       // ── input ────────────────────────────────────────────────────────────────
       const onDown = (e: PointerEvent) => {

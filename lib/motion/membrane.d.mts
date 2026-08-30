@@ -13,8 +13,10 @@ export type RestRing = {
   readonly by: Float32Array;
   readonly nx: Float32Array;
   readonly ny: Float32Array;
-  /** 1 where the ring must cusp (the four corners). */
+  /** 1 where the ring must cusp (the four corners). Empty on a rounded ring. */
   readonly sharp: Uint8Array;
+  /** Corner radius, when built rounded. */
+  readonly radius?: number;
 };
 
 export type MembraneOptions = {
@@ -34,6 +36,14 @@ export type MembraneOptions = {
   /** Hand influence radius (px). Defaults to MEM's button-scaled clamp, or to
    *  0.22 x the ring's short side when `ring` is supplied. */
   handR?: number;
+  /**
+   * Corner radius (px). Above zero the ring is built with arcs instead of
+   * cusps, which changes the SURFACE and not only the silhouette: with no
+   * cusps the tension operator is continuous the whole way round, so a wave
+   * carries between edges instead of dying in a corner. 0 keeps the authored
+   * rectangle, byte for byte.
+   */
+  radius?: number;
 };
 
 /** A ring's displaced points, ready for `splinePath`. */

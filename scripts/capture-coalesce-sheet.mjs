@@ -12,11 +12,11 @@
  * it. No dev server, no clock, no layout — just the geometry, big enough to
  * review. What a reviewer is looking for, in order:
  *
- *   · the resting bead reads as liquid ON the rim, not as a dent in it
- *   · the neck draws OUT as the bead leaves — it does not simply thin
+ *   · the resting drop sits in a wetted foot, not a dent
+ *   · the neck draws OUT as the drop leaves, thinning at the throat
  *   · nothing squares off, kinks, or grows a cone anywhere in the sweep
- *   · the frame the bead becomes its own body is not findable by eye
- *   · the corners are still corners in every single panel
+ *   · the foot and the throat reach nothing together at the break
+ *   · both corner arcs are untouched in every single panel
  *
  *   node scripts/capture-coalesce-sheet.mjs
  */
@@ -39,12 +39,12 @@ const Z = Number(process.env.Z ?? 5); // zoom
 const W = 100;
 const H = 57;
 // A window around the bead's rest position — the whole event fits in this.
-const VIEW_W = 140;
+const VIEW_W = 235;
 const VIEW_H = H + 30;
 
 fs.mkdirSync(OUT, { recursive: true });
 
-const mem = makeMembrane(W, H);
+const mem = makeMembrane(W, H, { radius: COAL.FIELD_R });
 mem.step(0);
 const beadMem = makeMembrane(0, 0, {
   ring: dropRing(COAL.R, COAL.RING_N, 0.61),
@@ -72,9 +72,9 @@ const frozen = (standoff, stretch = 0) => ({
   },
 });
 
-// The sweep. Denser through the handover at K/2, because that is the frame
-// that has to be unfindable.
-const stops = (process.env.STOPS ?? "0,2,4,6,7,8,9,10,12,14,17,20,23,26").split(",").map(Number);
+// The sweep, in axis length L: absorbed, then the bridge stretching and
+// thinning, then the break and free flight.
+const stops = (process.env.STOPS ?? "0,6,12,18,24,30,36,40,43,45,47,54").split(",").map(Number);
 const COLS = Number(process.env.COLS ?? 5);
 const rows = Math.ceil(stops.length / COLS);
 const CELL_W = VIEW_W * Z;
@@ -90,9 +90,9 @@ stops.forEach((p, i) => {
   const b = frozen(p, stretch);
   const u = unionContour(mem, b);
   const bd = u.merged ? "" : beadContour(beadMem, b); // as shipped
-  const label = `${p} px${u.merged ? "  · absorbed" : "  · own body"}`;
+  const label = `L=${p} px${u.merged ? "  · necked" : "  · free"}`;
   // origin: the field's left edge, with room to its left for the bead
-  const ox = col * CELL_W + 34 * Z;
+  const ox = col * CELL_W + 76 * Z;
   const oy = row * CELL_H + 14 * Z + 22;
   body +=
     // Clipped to its own cell, so one panel can never bleed into the next.
@@ -130,5 +130,5 @@ await page.screenshot({ path: `${OUT}/sheet.png` });
 await browser.close();
 
 console.log(
-  `R=${COAL.R} K=${COAL.K} handover at ${COAL.K / 2} px · ${stops.length} panels at ${Z}x → ${OUT}/sheet.png`,
+  `R=${COAL.R} field radius=${COAL.FIELD_R} bridge breaks at ${COAL.NECK.BREAK} px · ${stops.length} panels at ${Z}x → ${OUT}/sheet.png`,
 );

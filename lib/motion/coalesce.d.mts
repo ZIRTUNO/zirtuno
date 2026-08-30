@@ -39,6 +39,10 @@ export type Bead = Body & {
   /** Advance to `tMs`. Returns true if anything moved this call. */
   step(tMs: number): boolean;
   readonly seed: number;
+  /** Arithmetically finished — the sleep signal. */
+  readonly settled: boolean;
+  /** Visually finished — what an autonomous tour should pace off. */
+  readonly arrived: boolean;
   readonly speed: number;
 };
 
@@ -55,6 +59,12 @@ export type SideRun = {
 export type UnionOptions = {
   /** −1 for the left side (the default), +1 for the right. */
   sideX?: number;
+  /**
+   * Whether this field HOLDS the drop (default true) or merely leans toward
+   * one going past. Exactly one field may own it, or two would each draw the
+   * bulb.
+   */
+  own?: boolean;
   /** Blend radius override. Defaults to `COAL.K`. */
   k?: number;
 };
@@ -68,52 +78,52 @@ export type UnionResult = {
 
 export declare const COAL: {
   readonly R: number;
-  readonly K: number;
+  readonly FIELD_R: number;
+  readonly NECK: {
+    readonly BREAK: number;
+    readonly BASE: number;
+    readonly BASE_TAPER: number;
+    readonly WAIST: number;
+    readonly WAIST_TAPER: number;
+    readonly WAIST_MIN: number;
+    readonly HORN_P: number;
+    readonly FILLET: number;
+    readonly SHOULDER: number;
+    readonly N: number;
+    readonly SMOOTH: number;
+  };
+  readonly LEAN_A: number;
+  readonly LEAN_R: number;
+  readonly LEAN_W: number;
   readonly RING_N: number;
   readonly LOBE: number;
   readonly OMEGA: number;
   readonly ZETA: number;
+  readonly TARGET_TAU: number;
   readonly OMEGA_R: number;
   readonly ZETA_R: number;
   readonly LIFT_MAX: number;
   readonly LIFT_V: number;
-  readonly LIFT_TAU: number;
+  readonly LIFT_TAU_OUT: number;
+  readonly LIFT_TAU_IN: number;
   readonly STRETCH_K: number;
   readonly STRETCH_V: number;
-  readonly STRETCH_TAU: number;
-  readonly WIN_N: number;
-  readonly CORNER_KEEP: number;
-  readonly SCAN: number;
-  readonly BISECT: number;
+  readonly STRETCH_TAU_OUT: number;
+  readonly STRETCH_TAU_IN: number;
   readonly EPS_R: number;
+  readonly ARRIVE_LIFT: number;
+  readonly PINCH_KICK: number;
 };
 
-/** Polynomial smooth-minimum. Returns `a` EXACTLY when `b >= k`. */
-export declare function smin(a: number, b: number, k: number): number;
+/** Where sample i sits along the neck's axis. Cosine-spaced: dense at both ends. */
+export declare function neckA(i: number, n: number, aTip: number): number;
 
-/** Signed distance to an axis-aligned box. */
-export declare function sdBox(
-  qx: number,
-  qy: number,
-  cx: number,
-  cy: number,
-  hw: number,
-  hh: number,
-): number;
-
-/**
- * How far the union surface sits beyond a point ON one surface, along that
- * surface's outward normal. Exactly 0 when the other body is `k` or further.
- */
-export declare function unionReach(
-  px: number,
-  py: number,
-  nx: number,
-  ny: number,
-  other: Sdf,
-  k: number,
-  limit: number,
-): number;
+/** Half-width of the filament at each sample. Fills `out`; returns its shape. */
+export declare function neckProfile(
+  L: number,
+  r: number,
+  out: Float64Array,
+): { base: number; waist: number; connected: boolean };
 
 /** A lobed near-circular ring centred on the origin, for `makeMembrane`. */
 export declare function dropRing(

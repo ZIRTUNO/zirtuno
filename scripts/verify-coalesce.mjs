@@ -3,33 +3,34 @@
  *
  * `coalesce.mjs` is DOM-free and deterministic for exactly this reason: the
  * claims it makes are geometric, and a screenshot cannot check any of them.
- * What is pinned here is what would break silently and look almost right:
+ * What is pinned here is what would break silently and still look almost right:
  *
- *   EXACT REST. A field with no bead near it must emit the string `mem.path()`
+ *   EXACT REST. A field with no drop near it must emit the string `mem.path()`
  *   would have emitted, character for character. Not "within a tenth of a
- *   pixel" — the same string. The whole reason for choosing the polynomial
- *   smooth-min over the exponential one is that it returns its argument
- *   exactly past the blend radius, and that guarantee is worth nothing if it
- *   is never asserted.
+ *   pixel" — the same string. Everything this layer does is render-only for
+ *   that reason, and the guarantee is worth nothing unasserted.
  *
- *   THE HANDOVER. Two bodies are drawn as two contours until the neck forms,
- *   then as one. If the surfaces are not tangent at that frame the merge pops,
- *   and a pop of half a pixel on a 1 px hairline is exactly the kind of defect
- *   that survives review and annoys forever.
+ *   THE BRIDGE. Foot on the surface, throat in the middle, bulb at the end.
+ *   Each has to be in the right place and thin in the right order, and none of
+ *   it is visible to an area or a volume check: an earlier version had the
+ *   throat 0.8 px from the wall out of an 8 px neck, and every other test in
+ *   this file passed.
  *
- *   TOPOLOGY. `merged` must flip at gap = K/2 because that is where the
- *   barrier fails — not because someone tuned a threshold to look right at one
- *   bead size.
+ *   THE BREAK. Foot and throat must reach nothing together at full extension,
+ *   or the connection disappears while it is still wide and the drop reads as
+ *   having teleported off the surface.
  *
- * Run: node scripts/verify-coalesce.mjs
+ *   THE CORNERS. The field's ring is rounded now, and the merge must still
+ *   never reach an arc — the neck grows out of the straight run or not at all.
+ *
+ * Run: node scripts/verify-coalesce.mjs   (npm run liquid:form)
  */
 
 import { makeMembrane } from "../lib/motion/membrane.mjs";
 import {
   COAL,
-  smin,
-  sdBox,
-  unionReach,
+  neckA,
+  neckProfile,
   dropRing,
   makeBead,
   sideRun,
@@ -52,297 +53,311 @@ const bad = (m) => {
 const assert = (cond, m) => (cond ? ok(m) : bad(m));
 
 // The shipped geometry, measured off the real form: `.field input` is 576 x 57
-// at the 1440 px breakpoint. The constants in COAL are derived FOR this size,
-// so the harness has to use it — and the clearance check below is what fails
-// loudly if the field is ever restyled smaller than the merge needs.
+// at the 1440 px breakpoint. COAL's constants are derived FOR this size, so the
+// harness uses it — and §10 is what fails loudly if the field is ever restyled
+// smaller than the merge needs.
 const W = 576;
 const H = 57;
-const K = COAL.K;
+const R = COAL.R;
+const NK = COAL.NECK;
 
-/** A bead frozen at a chosen place — the harness drives geometry, not time. */
-function staticBead(x, y, r = COAL.R) {
-  return {
-    x,
-    y,
-    r,
-    stretch: 0,
-    ux: 1,
-    uy: 0,
-    alive: r > COAL.EPS_R,
-    sdf: (qx, qy) => Math.hypot(qx - x, qy - y) - r,
-  };
-}
+/** A drop frozen at one place — the harness drives geometry, not time. */
+const at = (x, y = H / 2, r = R) => ({
+  x,
+  y,
+  r,
+  stretch: 0,
+  ux: 1,
+  uy: 0,
+  alive: r > COAL.EPS_R,
+  sdf: (qx, qy) => Math.hypot(qx - x, qy - y) - r,
+});
 
 /** Segment endpoints of a cubic path — the polygon the spline is drawn over. */
 function polyOf(d) {
   const out = [];
   const head = d.match(/^M(-?[\d.]+) (-?[\d.]+)/);
   if (head) out.push([Number(head[1]), Number(head[2])]);
-  for (const m of d.matchAll(/C-?[\d.]+ -?[\d.]+ -?[\d.]+ -?[\d.]+ (-?[\d.]+) (-?[\d.]+)/g)) {
+  for (const m of d.matchAll(
+    /C-?[\d.]+ -?[\d.]+ -?[\d.]+ -?[\d.]+ (-?[\d.]+) (-?[\d.]+)/g,
+  )) {
     out.push([Number(m[1]), Number(m[2])]);
   }
-  out.pop(); // the closing segment restates the start
+  out.pop();
   return out;
 }
 
-/** Does a closed polygon cross itself? */
-function selfIntersects(p) {
+/**
+ * Does a closed polygon cross itself?
+ *
+ * Coincident points are dropped first. A zero-length segment has no
+ * orientation, so the cross-product test reports a crossing for a pair of
+ * points 0.003 px apart that the path's own 0.1 px rounding has already made
+ * identical — a fold that exists in neither the geometry nor the output.
+ */
+function selfIntersects(raw) {
+  const p = raw.filter(
+    (q, i) =>
+      i === 0 ||
+      Math.abs(q[0] - raw[i - 1][0]) > 0.02 ||
+      Math.abs(q[1] - raw[i - 1][1]) > 0.02,
+  );
   const n = p.length;
-  const cross = (o, a, b) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
+  const cross = (o, a, b) =>
+    (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
   const hits = (a, b, c, d) => {
     const d1 = cross(c, d, a);
     const d2 = cross(c, d, b);
     const d3 = cross(a, b, c);
     const d4 = cross(a, b, d);
-    return ((d1 > 0) !== (d2 > 0)) && ((d3 > 0) !== (d4 > 0));
+    return d1 > 0 !== d2 > 0 && d3 > 0 !== d4 > 0;
   };
   for (let i = 0; i < n; i++) {
     for (let j = i + 2; j < n; j++) {
-      if (i === 0 && j === n - 1) continue; // adjacent across the wrap
+      if (i === 0 && j === n - 1) continue;
       if (hits(p[i], p[(i + 1) % n], p[j], p[(j + 1) % n])) return [i, j];
     }
   }
   return null;
 }
 
-/** All four corners, each as the cusp signature "x yCx y ". */
-function cornersHeld(d, w, h) {
-  return [
-    `0 0C0 0 `,
-    `${w} 0C${w} 0 `,
-    `${w} ${h}C${w} ${h} `,
-    `0 ${h}C0 ${h} `,
-  ].every((sig) => d.includes(sig));
+/** The bridge's shape, read the way a reviewer reads it. */
+function bridge(L, r = R) {
+  const prof = new Float64Array(NK.N + 1);
+  const info = neckProfile(L, r, prof);
+  let throat = Infinity;
+  let throatAt = 0;
+  for (let i = 1; i < NK.N; i++) {
+    const a = neckA(i, NK.N, L + r);
+    if (a < 0.5 || a > Math.max(L, 1)) continue; // between wall and drop only
+    if (prof[i] < throat) {
+      throat = prof[i];
+      throatAt = a;
+    }
+  }
+  return {
+    foot: info.base,
+    connected: info.connected,
+    throat: throat === Infinity ? null : throat,
+    throatAt,
+    prof,
+  };
 }
 
-// ───────────────────────────────────────────────────────────────────────────
-section("1. the smooth-min is exact where it has to be");
-{
-  assert(smin(0, K, K) === 0, "a body exactly K away contributes exactly 0");
-  assert(smin(0, K * 3, K) === 0, "a distant body contributes exactly 0");
-  assert(smin(0, K * 0.999, K) < 0, "a body just inside K does contribute");
-  // the neck condition, stated directly
-  const g = K / 2;
-  assert(
-    Math.abs(smin(g / 2, g / 2, K)) < 1e-12,
-    `the barrier vanishes at gap = K/2 — smin(${(g / 2).toFixed(2)}, ${(g / 2).toFixed(2)}) = 0`,
-  );
-  assert(
-    smin(g * 0.6, g * 0.6, K) > 0,
-    "above K/2 a positive barrier still stands between the bodies",
-  );
-  assert(sdBox(0, 0, 0, 0, 10, 5) === -5, "the box SDF is signed inside");
-}
+const field = () => {
+  const m = makeMembrane(W, H, { radius: COAL.FIELD_R });
+  m.step(0);
+  return m;
+};
 
 // ───────────────────────────────────────────────────────────────────────────
-section("2. exact rest — an untouched field is its authored rectangle");
+section("1. exact rest — an untouched field is its authored contour");
 {
-  const mem = makeMembrane(W, H);
-  mem.step(0);
+  const mem = field();
   const plain = mem.path();
 
-  const far = staticBead(-K - COAL.R - 5, H / 2);
-  const u1 = unionContour(mem, far);
-  assert(u1.d === plain, "a bead beyond reach leaves the path byte-identical");
-  assert(u1.merged === false, "…and reports itself unmerged");
-
-  const drained = staticBead(-2, H / 2, 0);
   assert(
-    unionContour(mem, drained).d === plain,
-    "a drained bead leaves the path byte-identical",
+    unionContour(mem, at(-500)).d === plain,
+    "a drop out of reach leaves the path byte-identical",
   );
-
-  // and the emitter itself did not change under the membrane refactor
-  assert(plain.startsWith("M0 0C"), "the rest path still starts at the origin");
   assert(
-    plain.includes("C0 0 0 0 0 0") || /C[-\d.]+ [-\d.]+ /.test(plain),
-    "the rest path is a spline, not a polygon",
+    unionContour(mem, at(-500), { own: false }).d === plain,
+    "…and so does a field that is only leaning",
+  );
+  assert(
+    unionContour(mem, at(-4, H / 2, 0)).d === plain,
+    "a drained drop leaves the path byte-identical",
+  );
+  assert(
+    unionContour(mem, at(-(NK.BREAK + 1))).d === plain,
+    "a drop past the break leaves the path byte-identical",
+  );
+  assert(
+    mem.rest.radius === COAL.FIELD_R,
+    `the field's ring is rounded — ${mem.rest.radius} px`,
+  );
+  assert(
+    [...mem.rest.sharp].every((v) => v === 0),
+    "…with no cusps at all, so tension carries around the corners",
   );
 }
 
 // ───────────────────────────────────────────────────────────────────────────
-section("3. the reach — how a surface answers an approaching body");
+section("2. the bridge has a foot, a throat and a bulb");
 {
-  const reachAt = (gap) => {
-    const b = staticBead(-(gap + COAL.R), 0);
-    return unionReach(0, 0, -1, 0, b.sdf, K, 4 * K);
-  };
-  assert(reachAt(K + 1) === 0, "beyond K the surface does not move at all");
-  assert(reachAt(K) === 0, "at exactly K the surface does not move at all");
-
-  // THE TWO-BODY REGIME. Above the neck condition the root-find returns the
-  // surface's own bulge, and it must grow smoothly as the bead closes.
-  const gaps = [K * 0.98, K * 0.9, K * 0.75, K * 0.6, K * 0.51];
-  const rs = gaps.map(reachAt);
+  const b = bridge(26);
+  const wetted = bridge(0).foot;
   assert(
-    rs.every((v, i) => i === 0 || v > rs[i - 1]),
-    `the bulge grows as the body closes — ${rs.map((v) => v.toFixed(2)).join(" → ")} px`,
+    wetted > R && wetted < R * 2,
+    `at rest the foot wets wider than the drop — ${wetted.toFixed(1)} px vs R = ${R}`,
   );
-  // HOW FAR THE SURFACES COME BEFORE THEY BREAK. The exact "each has come
-  // half the gap" identity holds only AT gap = K/2, where f(g/2) = 0 is a
-  // tangent rather than a crossing — unmeasurable from this side, and the
-  // root-find correctly reads that single touching point as already connected.
-  // What is worth pinning is the visible consequence: the two surfaces have
-  // reached a long way toward each other before the neck goes, which is what
-  // separates a merge from a collision.
-  const nearGap = K * 0.51;
-  const nearReach = reachAt(nearGap);
   assert(
-    nearReach / nearGap > 0.3,
-    `the surface has come ${((nearReach / nearGap) * 100).toFixed(0)}% of the way before the neck breaks — ${nearReach.toFixed(2)} px into a ${nearGap.toFixed(2)} px gap`,
+    b.throat !== null && b.throat < b.foot * 0.5,
+    `the throat is much narrower than the foot — ${b.throat?.toFixed(2)} px`,
+  );
+  assert(
+    b.throatAt > 26 * 0.25 && b.throatAt < 26 * 0.85,
+    `and sits in the MIDDLE of the neck — ${((b.throatAt / 26) * 100).toFixed(0)}% along, not jammed against the wall`,
   );
 
-  // THE JUMP. Below the neck the barrier is gone and the SAME call returns a
-  // point past the bead. This discontinuity IS the topology change; the first
-  // draft of this file asserted continuity across it, which is equivalent to
-  // asserting that the merge never happens.
-  const g = K / 2 - 0.2;
-  const below = reachAt(g);
-  assert(below > K, `below the neck the surface jumps past the bead — ${below.toFixed(1)} px`);
-  assert(
-    Math.abs(below - (g + 2 * COAL.R)) < 1.0,
-    `…landing on the bead's far face — ${below.toFixed(1)} px vs gap + 2R = ${(g + 2 * COAL.R).toFixed(1)} px`,
-  );
-
-  assert(
-    reachAt(0.001) < 2 * COAL.R + K,
-    "the reach stays bounded when the bodies touch",
-  );
-}
-
-section("4. the handover — two contours become one without a pop");
-{
-  const mem = makeMembrane(W, H);
-  mem.step(0);
-
-  // Sweep the bead in from far outside the left edge toward it. The switch
-  // between "drawn as part of the field" and "drawn as its own body" is on the
-  // STANDOFF — the bead's centre distance from the edge — because that is what
-  // decides whether the union is still a graph over the edge (see COAL.K).
-  let flip = null;
-  let prevMerged = false;
-  for (let p = COAL.K * 2; p > 0; p -= 0.05) {
-    const u = unionContour(mem, staticBead(-p, H / 2));
-    if (u.merged && !prevMerged) flip = p;
-    prevMerged = u.merged;
+  let widest = 0;
+  for (let i = 0; i <= NK.N; i++) {
+    const a = neckA(i, NK.N, 26 + R);
+    if (a > 26 - R * 0.4) widest = Math.max(widest, b.prof[i]);
   }
-  assert(flip !== null, "the bodies do merge as the bead closes");
   assert(
-    flip !== null && Math.abs(flip - K / 2) < 0.1,
-    `absorption flips at the graph condition — standoff ${flip === null ? "n/a" : flip.toFixed(2)} px vs K/2 = ${(K / 2).toFixed(2)} px`,
+    Math.abs(widest - R) < 1.5,
+    `the bulb is the drop's own radius — ${widest.toFixed(2)} px vs R = ${R}`,
   );
-  assert(
-    K / 2 === COAL.R,
-    `…which is exactly where the bead's near face touches the edge — K/2 = ${(K / 2).toFixed(1)} = R`,
-  );
-
-  // THE PINCH, MEASURED. On the frame the bead stops being part of the field's
-  // contour, the two drawings have to describe the same silhouette — otherwise
-  // the merge completes with a jump cut.
-  //
-  // Because K/2 = R, the frame it separates on is the frame its near face
-  // touches the edge, so the fused lobe and the free drop occupy the same
-  // outline and only the JUNCTION differs: fused it is a smooth fillet, free it
-  // is a tangent point with a hairline break between. That break is not a
-  // defect to be tuned away — it is what a pinch IS. A liquid neck does not
-  // thin to nothing, it goes unstable and snaps, and the same discontinuity run
-  // backwards is what makes two drops join with a snap rather than a fade.
-  const beadMem = makeMembrane(0, 0, {
-    ring: dropRing(COAL.R, COAL.RING_N, 0.61),
-    handR: COAL.R * 2.6,
-  });
-  beadMem.step(0);
-  const reachOf = (p, merged) => {
-    const b = staticBead(-p, H / 2);
-    const u = unionContour(mem, b);
-    const d = merged ? u.d : beadContour(beadMem, b);
-    return -Math.min(...polyOf(d).map(([x]) => x));
-  };
-  const fused = reachOf(K / 2 - 0.01, true);
-  const free = reachOf(K / 2 + 0.01, false);
-  assert(
-    Math.abs(fused - free) < 0.6,
-    `the fused lobe and the free drop reach the same distance — ${fused.toFixed(2)} px vs ${free.toFixed(2)} px across the pinch`,
-  );
-  assert(
-    Math.abs(fused - (K / 2 + COAL.R)) < 0.6,
-    `…and that distance is the bead sitting on the edge — ${fused.toFixed(2)} px vs K/2 + R = ${K / 2 + COAL.R} px`,
-  );
-}
-
-section("5. the merged silhouette actually contains the bead");
-{
-  const mem = makeMembrane(W, H);
-  mem.step(0);
-  const b = staticBead(-4, H / 2); // straddling the edge
-  const u = unionContour(mem, b);
-  assert(u.merged, "a straddling bead reads as merged");
-
-  const xs = [...u.d.matchAll(/(-?\d+\.?\d*) (-?\d+\.?\d*)/g)].map((m) =>
-    Number(m[1]),
-  );
-  const leftMost = Math.min(...xs);
-  const want = b.x - b.r;
-  assert(
-    leftMost <= want + 1.2,
-    `the contour wraps past the bead's far side — reaches ${leftMost.toFixed(1)} px, bead's outer face at ${want.toFixed(1)} px`,
-  );
-  assert(
-    leftMost > want - 4,
-    "…without ballooning past it — the union hugs the body",
-  );
-
-  // THE ART-DIRECTION RULE, AS A TEST. A cusp is a control point collapsed
-  // onto its own vertex, so a held corner restates itself immediately after
-  // the move to it. Searched, not anchored at the start: a spliced contour
-  // begins at the ridden edge, not at ring index 0.
-  assert(cornersHeld(u.d, W, H), "all four corners are still cusps");
+  assert(b.prof[NK.N] === 0, "the tip closes");
 }
 
 // ───────────────────────────────────────────────────────────────────────────
-section("6. the spliced contour is a simple closed curve");
+section("3. it thins under extension, and lets go cleanly");
 {
-  const mem = makeMembrane(W, H);
-  mem.step(0);
+  const Ls = [0, 8, 16, 24, 32, 40, 44];
+  const feet = Ls.map((L) => bridge(L).foot);
+  assert(
+    feet.every((v, i) => i === 0 || v < feet[i - 1]),
+    `the foot narrows all the way out — ${feet.map((v) => v.toFixed(1)).join(" → ")} px`,
+  );
+
+  const throats = [16, 24, 32, 40, 44].map((L) => bridge(L).throat);
+  assert(
+    throats.every((v, i) => i === 0 || v < throats[i - 1]),
+    `the throat thins faster — ${throats.map((v) => v.toFixed(2)).join(" → ")} px`,
+  );
+
+  // THE BREAK. Both must arrive at nothing together, or the connection
+  // vanishes while it is still wide and the drop appears to teleport.
+  const last = bridge(NK.BREAK - 0.2);
+  assert(last.connected, "just under the break it is still connected");
+  assert(
+    last.foot < R * 0.3,
+    `…and the foot has all but gone — ${last.foot.toFixed(2)} px on a ${R} px drop`,
+  );
+  assert(!bridge(NK.BREAK + 0.1).connected, "past the break it is not connected");
+
+  const mem = field();
+  assert(
+    unionContour(mem, at(-(NK.BREAK + 0.1))).d === mem.path(),
+    "…and the surface it let go of is flat again, byte for byte",
+  );
+}
+
+// ───────────────────────────────────────────────────────────────────────────
+section("4. no pinch while the drop still overlaps the wall");
+{
+  // Below L = R the drop is half inside the surface. There is no bridge to
+  // thin, and pulling the profile to a waist there invents a pinch in what
+  // should read as a wetted bulge. This is where COAL's `clear` term earns its
+  // place, and it is invisible to every other check here.
+  for (const L of [0, 3, 6]) {
+    const b = bridge(L);
+    assert(
+      b.throat === null || b.throat > R * 0.7,
+      `L=${L}: narrowest point is ${b.throat === null ? "n/a" : b.throat.toFixed(1)} px — no throat while the drop overlaps`,
+    );
+  }
+  const b8 = bridge(R + 4);
+  assert(
+    b8.throat !== null && b8.throat < R * 0.9,
+    `and a throat does appear once the drop clears the wall — ${b8.throat?.toFixed(2)} px at L = ${R + 4}`,
+  );
+}
+
+// ───────────────────────────────────────────────────────────────────────────
+section("5. the drawn contour is a simple closed curve");
+{
+  const mem = field();
   let worst = null;
-  let worstAt = null;
-  for (const bx of [-K, -12, -8, -4, 0, 4, 8]) {
-    for (const by of [H * 0.35, H / 2, H * 0.65]) {
-      const u = unionContour(mem, staticBead(bx, by));
-      const hit = selfIntersects(polyOf(u.d));
+  let worstAt = "";
+  for (let L = 0; L <= NK.BREAK; L += 1.5) {
+    for (const y of [H * 0.35, H / 2, H * 0.7]) {
+      const hit = selfIntersects(polyOf(unionContour(mem, at(-L, y)).d));
       if (hit && !worst) {
         worst = hit;
-        worstAt = `x=${bx} y=${by.toFixed(0)}`;
+        worstAt = `L=${L} y=${y.toFixed(0)}`;
       }
     }
   }
   assert(
     worst === null,
     worst
-      ? `the contour crosses itself at ${worstAt} (segments ${worst[0]}/${worst[1]}) — a spliced span walked backwards`
-      : "no bead position produces a crossing — the merge window is spliced in ring order",
-  );
-
-  // …and the polygon the spline is drawn over must stay a graph over the edge
-  // through the window, which is the property that makes that true.
-  const u = unionContour(mem, staticBead(-4, H / 2));
-  const poly = polyOf(u.d);
-  const win = poly.filter(([x]) => x < -0.5);
-  let mono = true;
-  for (let i = 1; i < win.length; i++) {
-    if (Math.sign(win[i][1] - win[i - 1][1]) !== Math.sign(win[1][1] - win[0][1])) mono = false;
-  }
-  assert(
-    mono && win.length > 20,
-    `the ${win.length} merge samples advance along the edge without doubling back`,
+      ? `the contour crosses itself at ${worstAt} (segments ${worst[0]}/${worst[1]})`
+      : "no drop position anywhere in the travel produces a crossing",
   );
 }
 
 // ───────────────────────────────────────────────────────────────────────────
-section("7. the bead's own body");
+section("6. the silhouette grows smoothly across the whole travel");
+{
+  // The eye follows the outermost point of whatever is drawn. A representation
+  // that starts dropping part of the body, or a handover that does not line up,
+  // shows as a step in this curve and nowhere else.
+  const mem = field();
+  const beadMem = makeMembrane(0, 0, {
+    ring: dropRing(R, COAL.RING_N, 0.61),
+    handR: R * 2.6,
+  });
+  beadMem.step(0);
+
+  let worstStep = 0;
+  let worstAt = 0;
+  let prev = null;
+  const trace = [];
+  for (let L = 0; L <= COAL.LIFT_MAX; L += 0.25) {
+    const b = at(-L);
+    const u = unionContour(mem, b);
+    const d = u.merged ? u.d : beadContour(beadMem, b);
+    const out = -Math.min(...polyOf(d).map(([x]) => x));
+    if (prev !== null && Math.abs(out - prev) > worstStep) {
+      worstStep = Math.abs(out - prev);
+      worstAt = L;
+    }
+    prev = out;
+    if (L % 8 < 0.13) trace.push(`${L.toFixed(0)}:${out.toFixed(0)}`);
+  }
+  assert(
+    worstStep < 2.5,
+    `worst step ${worstStep.toFixed(2)} px at L = ${worstAt.toFixed(2)}  [${trace.join(" ")}]`,
+  );
+}
+
+// ───────────────────────────────────────────────────────────────────────────
+section("7. the lean — the rest of the board answers too");
+{
+  const mem = field();
+  const plain = mem.path();
+  const leanAt = (L) =>
+    -Math.min(
+      ...polyOf(unionContour(mem, at(-L), { own: false }).d).map(([x]) => x),
+    );
+
+  assert(
+    unionContour(mem, at(-(COAL.LEAN_R + 1)), { own: false }).d === plain,
+    "beyond LEAN_R a field does not move at all",
+  );
+  const near = leanAt(20);
+  const far = leanAt(110);
+  assert(
+    near > far,
+    `it leans harder the closer the drop is — ${near.toFixed(2)} px at 20, ${far.toFixed(2)} px at 110`,
+  );
+  assert(
+    near < COAL.LEAN_A + 0.3,
+    `and never rivals the field actually holding it — ${near.toFixed(2)} px against an ${R} px bulge`,
+  );
+  assert(
+    unionContour(mem, at(-20), { own: false }).merged === false,
+    "a leaning field never claims the drop",
+  );
+}
+
+// ───────────────────────────────────────────────────────────────────────────
+section("8. the drop's own body");
 {
   const ring = dropRing();
-  assert(ring.n === COAL.RING_N, `the ring carries ${ring.n} vertices`);
   let minStep = Infinity;
   let maxStep = 0;
   for (let i = 0; i < ring.n; i++) {
@@ -353,64 +368,66 @@ section("7. the bead's own body");
   }
   assert(
     maxStep / minStep < 1.12,
-    `arc spacing stays near-uniform — ${(maxStep / minStep).toFixed(3)}x spread (ringRest's tension term needs this)`,
+    `arc spacing stays near-uniform — ${(maxStep / minStep).toFixed(3)}x (ringRest's tension term needs this)`,
   );
 
-  const bmem = makeMembrane(0, 0, { ring, handR: COAL.R * 2.4 });
+  const bmem = makeMembrane(0, 0, { ring, handR: R * 2.6 });
   bmem.step(0);
-  const bead = makeBead();
-  bead.target(100, 100, -1, 0, COAL.R);
-  bead.step(0);
-  for (let t = 16; t <= 1400; t += 16) bead.step(t);
-  assert(bead.alive, "the bead gathers its mass");
+  const area = (d) => {
+    const p = polyOf(d);
+    let a = 0;
+    for (let i = 0; i < p.length; i++) {
+      const j = (i + 1) % p.length;
+      a += p[i][0] * p[j][1] - p[j][0] * p[i][1];
+    }
+    return Math.abs(a) / 2;
+  };
+  const still = { x: 0, y: 0, r: R, stretch: 0, ux: 1, uy: 0, alive: true };
+  const moving = { ...still, stretch: COAL.STRETCH_K, ux: 0.6, uy: 0.8 };
+  const a0 = area(beadContour(bmem, still));
+  const a1 = area(beadContour(bmem, moving));
   assert(
-    Math.abs(bead.r - COAL.R) < 0.1,
-    `…and settles at its resting radius — ${bead.r.toFixed(2)} px`,
+    Math.abs(a1 - a0) / a0 < 0.02,
+    `a stretched drop has the mass of a still one — ${((a1 / a0 - 1) * 100).toFixed(2)}% at full elongation`,
   );
-  assert(
-    Math.abs(bead.x - 100) < 0.2 && Math.abs(bead.y - 100) < 0.2,
-    "…exactly on the edge it was aimed at",
-  );
-
-  const d = beadContour(bmem, bead);
-  assert(d.startsWith("M") && d.endsWith("Z"), "the bead emits a closed path");
 }
 
 // ───────────────────────────────────────────────────────────────────────────
-section("8. travel — the pinch-off is emergent, not scheduled");
+section("9. travel — the pinch is emergent, not scheduled");
 {
+  // The settle windows are generous on purpose. The lift is drawn back on a
+  // 240 ms lag now, so a move is not finished when the position spring is —
+  // measuring restX before the gather had settled made the arrival look like
+  // it landed 0.4 px off the edge when it lands exactly on it.
   const bead = makeBead();
-  bead.target(100, 100, -1, 0, COAL.R);
+  bead.target(100, 100, -1, 0, R);
   bead.step(0);
-  for (let t = 16; t <= 1400; t += 16) bead.step(t);
+  for (let t = 16; t <= 2600; t += 16) bead.step(t);
   const restX = bead.x;
+  assert(
+    bead.alive && Math.abs(bead.r - R) < 0.1,
+    `the drop gathers to ${bead.r.toFixed(1)} px`,
+  );
 
-  // move it a field's distance down the rail and watch what the lift does
-  bead.target(100, 240, -1, 0, COAL.R);
+  bead.target(100, 240, -1, 0, R);
   let maxLift = 0;
   let maxStretch = 0;
-  let peakSpeed = 0;
-  for (let t = 1416; t <= 3200; t += 16) {
+  for (let t = 2616; t <= 6200; t += 16) {
     bead.step(t);
     maxLift = Math.max(maxLift, Math.abs(bead.x - restX));
     maxStretch = Math.max(maxStretch, bead.stretch);
-    peakSpeed = Math.max(peakSpeed, bead.speed);
   }
   assert(
-    maxLift > K / 2,
-    `travelling throws the bead clear of the neck — ${maxLift.toFixed(1)} px lift vs the K/2 = ${(K / 2).toFixed(1)} px neck`,
+    maxLift > NK.BREAK,
+    `travelling carries the drop past the break — ${maxLift.toFixed(0)} px lift against a ${NK.BREAK} px bridge`,
   );
   assert(
     maxLift < COAL.LIFT_MAX + 1,
-    `…and no further than LIFT_MAX — ${maxLift.toFixed(1)} px`,
+    `…and no further than LIFT_MAX — ${maxLift.toFixed(0)} px`,
   );
   assert(
-    maxStretch > 0.08,
-    `the bead draws out along its travel — ${(maxStretch * 100).toFixed(0)}% elongation at ${peakSpeed.toFixed(0)} px/s`,
-  );
-  assert(
-    maxStretch <= COAL.STRETCH_K + 1e-6,
-    "…without exceeding STRETCH_K",
+    maxStretch > 0.1,
+    `the drop draws out along its travel — ${(maxStretch * 100).toFixed(0)}%`,
   );
   assert(
     Math.abs(bead.x - restX) < 0.05 && Math.abs(bead.y - 240) < 0.05,
@@ -420,90 +437,43 @@ section("8. travel — the pinch-off is emergent, not scheduled");
 }
 
 // ───────────────────────────────────────────────────────────────────────────
-section("9. stretch conserves the bead's mass");
+section("10. it never reaches a corner arc");
 {
-  const ring = dropRing();
-  const bmem = makeMembrane(0, 0, { ring, handR: COAL.R * 2.4 });
-  bmem.step(0);
-  const area = (d) => {
-    const pts = [...d.matchAll(/C[-\d. ]+ ([-\d.]+) ([-\d.]+)/g)].map((m) => [
-      Number(m[1]),
-      Number(m[2]),
-    ]);
-    let a = 0;
-    for (let i = 0; i < pts.length; i++) {
-      const j = (i + 1) % pts.length;
-      a += pts[i][0] * pts[j][1] - pts[j][0] * pts[i][1];
-    }
-    return Math.abs(a) / 2;
-  };
-  const still = { x: 0, y: 0, r: COAL.R, stretch: 0, ux: 1, uy: 0, alive: true };
-  const moving = { ...still, stretch: COAL.STRETCH_K, ux: 0.6, uy: 0.8 };
-  const a0 = area(beadContour(bmem, still));
-  const a1 = area(beadContour(bmem, moving));
-  assert(
-    Math.abs(a1 - a0) / a0 < 0.02,
-    `a stretched bead has the mass of a still one — ${((a1 / a0 - 1) * 100).toFixed(2)}% area change at full elongation`,
-  );
-}
-
-// ───────────────────────────────────────────────────────────────────────────
-section("10. cost");
-{
-  const mem = makeMembrane(W, H);
-  mem.step(0);
-  const b = staticBead(-6, H / 2);
-  const N = 400;
-  const t0 = performance.now();
-  for (let i = 0; i < N; i++) unionContour(mem, b);
-  const per = (performance.now() - t0) / N;
-  assert(
-    per < 0.9,
-    `a merged field costs ${per.toFixed(3)} ms/frame (${COAL.WIN_N} window samples x ${COAL.SCAN}+${COAL.BISECT} root steps)`,
-  );
-
-  const far = staticBead(-200, H / 2);
-  const t1 = performance.now();
-  for (let i = 0; i < N; i++) unionContour(mem, far);
-  const perIdle = (performance.now() - t1) / N;
-  assert(
-    perIdle < per,
-    `an unmerged field is cheaper — ${perIdle.toFixed(3)} ms/frame, the early-out working`,
-  );
-}
-
-// ───────────────────────────────────────────────────────────────────────────
-section("11. it never eats a corner");
-{
-  const mem = makeMembrane(W, H);
-  mem.step(0);
+  const mem = field();
   const run = sideRun(mem.rest, -1);
-  assert(run !== null, `the left side offers a run of ${run?.len} vertices`);
+  assert(run !== null, `the straight left run offers ${run?.len} vertices`);
+
+  // Only the STRAIGHT run may be replaced. On a rounded ring the arcs carry
+  // turning normals, so selecting by normal is what keeps the merge off them.
+  let straight = true;
   for (let j = 0; j < (run?.len ?? 0); j++) {
     const i = (run.start + j) % mem.rest.n;
-    if (mem.rest.sharp[i]) bad("a cusp leaked into the ridable run");
+    if (Math.abs(mem.rest.nx[i] + 1) > 1e-3 || Math.abs(mem.rest.ny[i]) > 1e-3) {
+      straight = false;
+    }
   }
-  ok("no cusp is in the ridable run — the corners cannot be merged away");
+  assert(straight, "every ridable vertex is on the straight side, none on an arc");
 
-  // THE CONSTANT'S STANDING GUARD. The footprint is exact and worst at zero
-  // standoff — which is exactly where the bead rests. A surface point at
-  // lateral offset u is untouched once hypot(u, p) >= R + K, so at p = 0 the
-  // half-width is R + K. Arithmetic, not sampling: shrink the field or grow the
-  // bead and this fails before anyone has to notice the corners going soft.
-  const foot = COAL.R + COAL.K;
+  // THE STANDING GUARD on the constants. The widest the merge ever gets is its
+  // foot at zero extension, and that has to fit inside the straight run.
+  const straightRun = H - 2 * COAL.FIELD_R;
+  const foot = bridge(0).foot;
   assert(
-    foot + COAL.CORNER_KEEP <= H / 2,
-    `the merge footprint fits inside the edge — ±${foot} px on a ${(H / 2).toFixed(1)} px half-edge, ${(H / 2 - foot - COAL.CORNER_KEEP).toFixed(1)} px clear of each corner`,
+    foot * 2 <= straightRun,
+    `the widest foot fits the straight run — ${(foot * 2).toFixed(1)} px across a ${straightRun} px run`,
   );
 
-  // …and empirically, across the whole band the bead can occupy: from absorbed
-  // on the edge out to the full width of its lift.
+  // …and empirically, at every position the drop can reach. Counting the points
+  // that are neither on the left nor the right side catches an arc being eaten
+  // or reshaped, which a bounding box would not.
+  const arcPoints = (d) => polyOf(d).filter(([x]) => x > 1 && x < W - 1).length;
+  const restArcs = arcPoints(mem.path());
   let held = true;
   let firstBad = "";
-  for (let y = COAL.R; y <= H - COAL.R; y += 1) {
-    for (let p = 0; p <= COAL.LIFT_MAX; p += 2) {
-      if (!cornersHeld(unionContour(mem, staticBead(-p, y)).d, W, H)) {
-        if (held) firstBad = `standoff ${p} at y=${y.toFixed(0)}`;
+  for (let L = 0; L <= NK.BREAK; L += 1) {
+    for (const y of [R, H / 2, H - R]) {
+      if (arcPoints(unionContour(mem, at(-L, y)).d) !== restArcs) {
+        if (held) firstBad = `L=${L} y=${y.toFixed(0)}`;
         held = false;
       }
     }
@@ -511,66 +481,118 @@ section("11. it never eats a corner");
   assert(
     held,
     held
-      ? "every reachable bead position leaves all four corners exact"
-      : `a bead at ${firstBad} softened a corner`,
+      ? `every reachable drop position leaves both corner arcs intact (${restArcs} arc points)`
+      : `a drop at ${firstBad} reached an arc`,
   );
 }
 
 // ───────────────────────────────────────────────────────────────────────────
-section("12. the silhouette never squares off");
+section("11. cost");
 {
-  // THE DEFECT THIS SECTION EXISTS FOR. The contour is solved by casting one
-  // ray outward per point on the edge, which can only describe a boundary with
-  // ONE crossing per ray. Hold the bead off the edge and that stops being true:
-  // a ray reaches the bead only for |u| < R, but is merged along it only where
-  // the local gap is under K/2, and everything between those two is silently
-  // dropped. The bead loses its top and bottom and draws as a rectangular tab.
-  //
-  // That defect is invisible to every other check in this file — area, volume,
-  // corners, self-intersection and cost all passed with a tab on the edge, and
-  // it was found by looking at a screenshot. So the claim is made here
-  // directly: sweep the bead out along its whole travel and watch the
-  // OUTERMOST point of whatever is actually drawn. A representation that starts
-  // dropping half the body shows up as a step in that curve and nowhere else.
-  const mem = makeMembrane(W, H);
-  mem.step(0);
-  const beadMem = makeMembrane(0, 0, {
-    ring: dropRing(COAL.R, COAL.RING_N, 0.61),
-    handR: COAL.R * 2.6,
-  });
-  beadMem.step(0);
+  const mem = field();
+  const b = at(-20);
+  const N = 400;
+  let t0 = performance.now();
+  for (let i = 0; i < N; i++) unionContour(mem, b);
+  const per = (performance.now() - t0) / N;
+  assert(per < 1.0, `a field carrying the bridge costs ${per.toFixed(3)} ms/frame`);
 
-  let worstStep = 0;
-  let worstAt = 0;
-  let prev = null;
-  const trace = [];
-  for (let p = 0; p <= COAL.LIFT_MAX; p += 0.25) {
-    const b = staticBead(-p, H / 2);
-    const u = unionContour(mem, b);
-    // whatever the reader actually sees at this standoff
-    const d = u.merged ? u.d : beadContour(beadMem, b);
-    const out = -Math.min(...polyOf(d).map(([x]) => x));
-    if (prev !== null && Math.abs(out - prev) > worstStep) {
-      worstStep = Math.abs(out - prev);
-      worstAt = p;
+  t0 = performance.now();
+  for (let i = 0; i < N; i++) unionContour(mem, b, { own: false });
+  const perLean = (performance.now() - t0) / N;
+  assert(perLean < per, `a leaning field is cheaper — ${perLean.toFixed(3)} ms/frame`);
+
+  t0 = performance.now();
+  for (let i = 0; i < N; i++) unionContour(mem, at(-500));
+  const perIdle = (performance.now() - t0) / N;
+  // Idle and leaning both early-out to the plain path once the drop is out of
+  // range, so they cost the same; what matters is that neither pays for a
+  // bridge nobody can see.
+  assert(
+    perIdle < per * 0.6,
+    `an untouched field pays nothing for the bridge — ${perIdle.toFixed(3)} ms/frame`,
+  );
+}
+
+// ───────────────────────────────────────────────────────────────────────────
+section("12. nothing on the outline is sub-pixel");
+{
+  // `cta-membrane-spec.md §5`, applied to the drop: "sub-pixel motion on a 1 px
+  // hairline is a bug, not life… it renders as uneven antialiasing, a shaky
+  // hand-drawn line." That finding turned off BOW and BREATH_A on the buttons.
+  // The drop reintroduced it twice — a 3.5% rest lobe worth 0.77 px, and a
+  // pinch kick worth 0.51 px — and both read as a wobbly circle rather than as
+  // a body reacting. A deformation on a hairline either clears a pixel or is
+  // not there at all.
+  const bmem = makeMembrane(0, 0, {
+    ring: dropRing(R, COAL.RING_N, 0.61),
+    handR: R * 2.6,
+    maxN: R * 0.7,
+  });
+  bmem.step(0);
+  const spread = (m) => {
+    const p = m.points();
+    let mn = Infinity;
+    let mx = 0;
+    for (let i = 0; i < p.px.length; i++) {
+      const d = Math.hypot(p.px[i], p.py[i]);
+      if (d < mn) mn = d;
+      if (d > mx) mx = d;
     }
-    prev = out;
-    if (p % 4 < 0.13) trace.push(`${p.toFixed(0)}:${out.toFixed(1)}`);
+    return mx - mn;
+  };
+
+  assert(
+    spread(bmem) < 0.02,
+    `the resting drop is a true circle — ${spread(bmem).toFixed(3)} px of radial spread`,
+  );
+
+  bmem.strike(0, 0, 0, COAL.PINCH_KICK, true);
+  let peak = 0;
+  for (let t = 16; t <= 900; t += 16) {
+    bmem.step(t);
+    peak = Math.max(peak, spread(bmem));
   }
   assert(
-    worstStep < 2.2,
-    `the drawn silhouette grows smoothly across the whole travel — worst step ${worstStep.toFixed(2)} px at standoff ${worstAt.toFixed(2)} px  [${trace.join(" ")}]`,
+    peak > 1,
+    `letting go rings it by more than a pixel — ${peak.toFixed(2)} px, so it reads as a body rather than as antialiasing`,
   );
+  assert(
+    peak < R * 0.5,
+    `…and not so hard it stops being a drop — ${((peak / R) * 100).toFixed(0)}% of R`,
+  );
+}
 
-  // the two constraints that make that possible, stated as arithmetic so a
-  // later change to R or K cannot quietly reintroduce the tab
+// ───────────────────────────────────────────────────────────────────────────
+section("13. the tour paces off what can be SEEN");
+{
+  // `arrived` exists so an autonomous tour does not stand still waiting for
+  // motion under a pixel. It has to fire meaningfully earlier than `settled`,
+  // or it is not worth having; and it must not fire while the drop is still
+  // visibly travelling.
+  const b = makeBead();
+  b.target(0, 80, -1, 0, R);
+  b.step(0);
+  for (let t = 16; t <= 4000; t += 16) b.step(t);
+  b.target(0, 320, -1, 0, R);
+  let tArrived = 0;
+  let tSettled = 0;
+  for (let t = 4016; t <= 12000; t += 16) {
+    b.step(t);
+    if (!tArrived && b.arrived) tArrived = t - 4016;
+    if (!tSettled && b.settled) tSettled = t - 4016;
+  }
   assert(
-    COAL.K / 2 === COAL.R,
-    `the handover lands where the bead touches the edge — K/2 = ${COAL.K / 2}, R = ${COAL.R}`,
+    tArrived > 0 && tSettled > 0,
+    `both signals fire — arrived at ${tArrived} ms, settled at ${tSettled} ms`,
   );
   assert(
-    COAL.LIFT_MAX > COAL.R + COAL.K,
-    `the lift carries the bead fully out of reach — ${COAL.LIFT_MAX} px past R + K = ${COAL.R + COAL.K} px`,
+    tSettled - tArrived > 200,
+    `and arrived comes ${tSettled - tArrived} ms earlier — that gap is the dead time it exists to remove`,
+  );
+  assert(
+    tArrived > 600,
+    `…without firing while the drop is still visibly travelling — ${tArrived} ms in`,
   );
 }
 

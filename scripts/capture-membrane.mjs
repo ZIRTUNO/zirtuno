@@ -414,13 +414,15 @@ if (want("cta")) await ctx.close();
 // and it is the CTA that forced `.mem-back` to exist — it is the only one that
 // sits over the LIVE liquid stream, where a rectangular CSS backing behind a
 // deforming outline would show a seam. Shot with the field ON for that reason.
+// The homepage hero no longer carries a CTA, so the subject is now /lab, whose
+// LabHero renders the same button over the same ribbon.
 if (want("hero")) {
   const hCtx = await browser.newContext({
     viewport: { width: W, height: H },
     deviceScaleFactor: 2,
   });
   const hp = await hCtx.newPage();
-  await hp.goto(`${BASE}/en?fcine=0`, { waitUntil: "load" });
+  await hp.goto(`${BASE}/en/lab?fcine=0`, { waitUntil: "load" });
   await hp.waitForTimeout(3200);
 
   const hero = await hp.evaluate(async () => {

@@ -2,262 +2,461 @@
 
 The contact form's controls run the same vector liquid the site's buttons run
 (`cta-membrane-spec.md`), plus the one thing a membrane never had: a **second
-body** that can arrive at a surface, fuse with it, and come apart again. This
-file is the behaviour contract and the working guide. `AGENTS.md` still owns CTA
-hierarchy, conversion copy and the accessibility requirements; none of that
-changed.
+body** that can arrive at a surface, fuse with it, and be pulled off it on a
+filament that stretches, thins and breaks. This file is the behaviour contract
+and the working guide. `AGENTS.md` still owns CTA hierarchy, conversion copy and
+the accessibility requirements; none of that changed.
 
 ---
 
 ## 1. What a visitor sees
 
+### Soft to soft
+
+The controls are rounded (`COAL.FIELD_R`, 10 px) and so is everything that
+touches them. That is a change of surface, not only of silhouette: `buildRest`
+with a radius emits a ring with **no cusps**, and a cusp is a hard stop for the
+tension operator. Rounded, a wave launched on one edge carries the whole way
+round instead of dying in the first corner it reaches. Most of what reads as
+softness is that continuity.
+
 ### The controls answer
 
-Every `input` and the `textarea` carry a membrane. Hovering deforms the outline
-toward the cursor; clicking into one sends a travelling wave across it from the
-point that was struck; approaching one wets its interior. Same kernel, same
-constants, same displacement well and travelling strike as the CTAs.
+Every `input` and the `textarea` carry a membrane: hovering deforms the outline
+toward the cursor, clicking into one sends a travelling wave across it from the
+point that was struck, approaching one wets its interior. Same kernel, same
+constants as the CTAs. Nothing about the form's layout, colour, type or
+validation changed.
 
-Nothing about the form's layout, colour, type or validation changed.
+### The drop travels, and the bridge stretches
 
-### The bead travels
-
-One droplet rides the **left edge** of whichever control the reader is in.
+One drop rides the **left edge** of whichever control the reader is in.
 
 | State | What happens |
 |---|---|
-| **Idle** | Nothing. No bead, every contour is its authored rectangle, the layer sleeps. An untouched form is the plain bordered form. |
-| **Gather** | The first focus draws the bead in from above the form — the direction the contact mark sits in — and fuses it to that control's left edge. |
-| **Fused** | It sits absorbed in the edge: the outline swells into a lobe ~9 px proud. Quiet, and unmistakably *where you are*. |
-| **Travel** | Move focus and the bead's own speed throws it off the rail, past the pinch threshold. It crosses the gap as a free body, drawn out along its direction of travel, and fuses with the next control as it settles. |
-| **Drain** | Leave the form and it loses its mass in place. |
+| **Tour** | Nobody using the form: the drop walks the fields in reading order, settling into each and moving on. The form is never a still picture. |
+| **Gather** | The drop arrives from above the form — the direction the contact mark sits in. |
+| **Fused** | It sits absorbed in the edge, in a wetted foot ~16 px across and ~11 px proud. |
+| **Stretch** | Move focus and the drop's own speed throws it off the rail. The bridge follows: the foot narrows, a throat forms mid-neck and thins, and a filament runs out behind the drop for up to 42 px. |
+| **Break** | Foot and throat reach nothing together and the surface is flat again. The drop flies on as a free body, drawn out along its travel. |
+| **Lean** | Every OTHER field on the board leans toward the drop as it passes — a shallow bulge, no bridge. The whole form answers, not just the two fields involved. |
+| **Wobble** | Fusing and letting go are both impacts. Each fires a strike into the surface, so it rings and settles rather than snapping to its new shape. |
+| **Fuse** | It settles into the wetted foot and STAYS VISIBLE — a bead half-submerged in its own meniscus, not a shape that switches off. |
+| **Yield** | Focus or hover a control and the tour stops. The drop goes where the reader is and stays there. |
+| **Wet** | The field holding the drop lights to `--color-cyan-deep`. Dim → lit → focused stays a hierarchy; focus is still the brightest thing on the form. |
+| **Drain** | Scroll the form off screen and the drop loses its mass in place; the loop sleeps. |
 
-Focus outranks hover, in that order. Focus is where the reader actually *is* —
-the same for a mouse, a keyboard and a screen reader — and it survives the
-pointer wandering off. Hover only decides when nothing in the form has focus.
-
----
-
-## 2. The one number everything follows from
-
-`COAL.K`, the smooth-union blend radius, is not a taste number. Two constraints
-fix it and together they leave exactly one answer on a 57 px field.
-
-**The corners.** The deformation footprint is exact: a surface point at lateral
-offset `u` is untouched once `hypot(u, p) ≥ R + K`, where `p` is the bead's
-standoff from the edge. At `p = 0` that is `±(R + K) = ±24 px`, which fits inside
-the 28.5 px half-edge with 2.5 px to spare. **The rectangle keeps its corners
-because the arithmetic says so, not because anything is clamped.**
-
-**The graph.** The contour is solved by casting one ray outward per point on the
-edge, which can only describe a boundary with ONE crossing per ray. A bead held
-*off* the edge breaks that: a ray reaches the bead only for `|u| < R`, but is
-merged along it only where the local gap is under `K/2`, and everything between
-is silently dropped — the bead loses its top and bottom and draws as a
-rectangular tab. So the bead is only drawn as part of the field's contour while
-
-```
-p ≤ K/2
-```
-
-and past that it is drawn as its own body. For that handover to be seamless it
-has to land exactly where the bead's near face touches the edge:
-
-```
-K/2 = R
-```
-
-`K = 16, R = 8` satisfies both. The silhouette is 16 px on both sides of the
-handover, so the frame it separates on is not findable by eye — only the
-junction changes, from a smooth fillet to a tangent point with a hairline break.
-
-Three constants follow from the same reasoning:
-
-| Constant | Value | Why |
-|---|---|---|
-| `R` | 8 px | pinned to `K/2` |
-| `K` | 16 px | corner clearance + the graph condition |
-| `LIFT_MAX` | 26 px | past `R + K = 24`, where the bodies are out of reach entirely |
+Focus outranks hover, hover outranks the tour. Focus is where the reader
+actually *is* — the same for a mouse, a keyboard and a screen reader — and it
+survives the pointer wandering off. See §5.
 
 ---
 
-## 3. The pinch is emergent
+## 2. The bridge is authored, not derived
+
+This is the load-bearing decision in the whole feature.
+
+**A smooth-minimum cannot make a neck.** The first working version of this
+kernel was one — the vector half of what `sdf-glass-shader.mjs` runs on the GPU
+— and it merged two bodies correctly. But a smooth-min's bridge is always fat,
+and it does not thin as the bodies separate: it stands at full width until the
+barrier between them fails and then vanishes in one frame. That is a property of
+the blend function, not a tuning failure. It is why the first version of this
+feature had a hard pinch and no stretch at all.
+
+Real necks come from surface tension. So the bridge is traced as a graph over
+the **neck axis** — the line from the surface's anchor to the drop's centre —
+and its profile is authored:
+
+```
+foot ──── throat ──────────── bulb ─ tip
+ a=0                          a=L    a=L+R
+```
+
+| Piece | What sets it |
+|---|---|
+| **wetting fillet** | a `sqrt` term over the first `0.22 R`, giving `dh/da → −∞` at the wall so the bank leaves tangentially |
+| **horn** | falls from the shoulder to the throat over the neck's length, convexity from `HORN_P` |
+| **throat** | `WAIST × (1 − t)^1.9`, and it only exists once the drop is CLEAR of the wall |
+| **bulb** | the drop, as a circle about the axis at `a = L` |
+| **smoothing** | three passes of a 3-tap kernel — this IS the gooey fillet, and it costs nothing |
+
+Extension `t = L / BREAK` drives all of it. Both the foot and the throat reach
+zero at `t = 1`, so the connection does not snap out of existence — it thins to
+nothing and the surface is already flat when it lets go. The throat thins faster
+than the foot (1.9 against 0.55), which is what leaves a visible thread hanging
+on well after the bulge has flattened.
+
+In that frame the silhouette is single-valued from foot to tip no matter how far
+the drop has travelled. **There is no topology to switch on and no limit on how
+long the filament can get** — which is exactly what the graph-over-the-edge
+approach it replaced could not do.
+
+---
+
+## 3. The pinch is emergent, and the arrival is not the departure
 
 Nothing schedules a separation. A drop running along a wall cannot wet it while
-it is moving, so **speed** pushes the bead outward (`LIFT`), and when the
-standoff crosses `K/2` the union stops being one body. The same threshold,
-crossed the other way as the bead settles, is what fuses it to the next control.
-Detach and re-fuse are the same rule read in two directions.
+it is moving, so **speed** pushes it outward (`LIFT`), and when the axis grows
+past `BREAK` the bridge is gone. The same rule read backwards is what fuses it
+to the next control. `LIFT_MAX` (54 px) is set past `BREAK` (42 px) so an
+ordinary focus move detaches fully rather than smearing.
 
-Which is why there is a *break* rather than a fade. A liquid neck does not thin
-to nothing, it goes unstable and snaps — and the same discontinuity run
-backwards is what makes two drops join with a snap. `verify-coalesce.mjs §4`
-pins the silhouette either side of it so the break stays a break and never
-becomes a jump cut.
+**The lift is asymmetric**, and that is the whole feel of the arrival. Liquid
+runs when it is let go and is drawn back slowly — `THREAD` in `membrane.mjs`
+splits its own springs for exactly this reason. Departure rides
+`LIFT_TAU_OUT` (70 ms); the return rides `LIFT_TAU_IN` (240 ms). The stretch is
+split the same way.
+
+**The target is smoothed before the spring ever sees it**, and this is what
+makes the motion read as smooth rather than merely slow. A spring chasing a
+STEP target has its maximum acceleration at t = 0: on a 120 px hop that was
+0 → 300 px/s inside one frame, 18 750 px/s² from a standing start, with the
+jerk undefined. The drop was not easing into motion, it was being kicked into
+it — and softening the spring cannot fix that, because however low ω goes the
+acceleration still steps discontinuously from zero to ω²Δ the moment the target
+moves. `TARGET_TAU` (135 ms) puts a first-order lag in front of the spring, so
+acceleration starts at zero, rises and falls:
+
+| | before | after |
+|---|---|---|
+| peak acceleration | 18 750 px/s² | **2 957 px/s²** |
+| peak jerk | 1 171 875 px/s³ | **184 806 px/s³** |
+| velocity, first frame | 300 px/s | **47 px/s** |
+
+Timing of one focus move, measured:
+
+| | |
+|---|---|
+| bridge breaks | ~120 ms |
+| drop at full reach (54 px) | 336 ms |
+| touching down | ~1.2 s |
+| settled into the wetted foot | ~2.1 s |
 
 ---
 
-## 4. Guarantees
+## 4. The tour
 
-1. **Exact rest.** With no bead near it, every contour emits the string
-   `mem.path()` would have emitted, character for character. This is a property
-   of the arithmetic, not an epsilon: the polynomial smooth-min returns its left
-   argument *exactly* when the other body is `K` or further, which is the whole
-   reason for choosing it over the exponential one.
-2. **The corners are sacred.** No reachable bead position deforms any of the
-   four cusps. The liquid gives up its shape to the structure, never the
-   reverse — that is the brand's own sentence written as a physics rule, and it
-   is what keeps this from reading as a merge effect borrowed from somewhere
-   softer.
+When nobody is using the form the drop walks the fields in reading order,
+arrives at each, dwells, and moves on. A full lap of four fields takes about
+**6.0 s** — a stop every 1.5 s. The instant the reader engages, it yields.
+
+**Self-paced, not metronomic.** It advances when the drop has arrived plus
+`DWELL`, so a long hop takes as long as it takes and the pause afterwards is
+the same wherever it lands. A fixed period would have to be set for the worst
+case and would leave every short hop waiting. `CAP` (5.2 s) is the ceiling in
+case a hop never arrives; in practice nothing reaches it.
+
+**It paces off `arrived`, not `settled`,** and the two are deliberately
+different signals. `settled` is arithmetic — everything spent, the next step
+snaps to exact rest, the loop may sleep. `arrived` is geometric: the lift under
+`ARRIVE_LIFT`, which is R, the lift at which the drop's near face is exactly on
+the edge. It is touching.
+
+That matters because **656 ms of a 1392 ms stop is the last 26 px of the return
+drawing itself in** on `LIFT_TAU_IN`. A tour that waits for all of it stands
+still through most of its own cycle. Moving on while the tail finishes
+underneath is what lets the walk quicken without the travel being rushed —
+which is the distinction the whole of §3 exists to protect.
+
+**The tour brushes; focus fuses.** Stop for a field and the drop settles all the
+way into the wetted foot. Pass by on the tour and it does not, and the walk
+flows instead of going hop, stop, hop.
+
+**It is not the tide.** `membrane-runtime` offers touch devices an autonomous
+swell that makes every CTA breathe at once, and this spec used to say the form
+must not have it — a form whose four fields all shimmer while somebody is
+typing into one of them looks unstable. That still holds. The tour is a
+different thing: it moves ONE drop, and it gets out of the way the moment the
+reader arrives.
+
+**RESUME** (1.6 s) is the grace after the reader lets go. Without it, tabbing
+through the form would send the drop wandering between keystrokes.
+
+**It stops costing when nobody can see it.** The tour reads `handle.visible`,
+which the runtime writes from its IntersectionObserver; off-screen the drop
+drains and the loop sleeps. `ONLY=tour` asserts all three behaviours — that
+every field gets a turn, that focus holds it still, and that an unseen form is
+quiet.
+
+---
+
+## 5. The outline stays on
+
+The drop is drawn for as long as it has mass, merged or not. When a field
+claims it, the field's contour grows the bridge *around* it and the drop's own
+circle simply stays — a bead resting half-submerged in its own meniscus, its
+outline visible through the surface.
+
+**This replaced a cross-fade, and the story is worth keeping.** The drop used to
+be hidden the moment a field claimed it, on the reasoning that it and the
+bridge's bulb are the same circle and drawing both would double-strike one
+shape. That is true. It is also why hiding it needed a cross-fade (a hard swap
+read as a light going off, because the drop is full cyan and an unfocused
+contour is `--color-paper-faint`); why the cross-fade needed a *dissolve* on
+smootherstep (an exponential lag ramps correctly and still reads as a cut); and
+why the dissolve needed a `DWELL` long enough to play in (a fade longer than the
+state it belongs to never finishes, and pinned the drop at 0.35 forever).
+
+Three rounds of machinery to make a disappearance acceptable — and not
+disappearing turned out to be better. **When a feature keeps needing more
+apparatus to feel right, the thing it is compensating for is worth questioning
+before the apparatus is.**
+
+What survives from that work is the **wet** state, which is independently good:
+the field holding the drop lights to `--color-cyan-deep`, so the liquid has
+somewhere lit to arrive rather than landing on a dim grey hairline. Dim → lit →
+focused is still a hierarchy, and focus is still the brightest thing on the
+form. `data-fl="wet"` flips the moment the bridge forms — 42 px out — so the
+field brightens as the drop approaches rather than when it lands.
+
+### The drop wears its host's material
+
+Keeping the outline on is not enough on its own. While the bridge is formed the
+field's contour draws the **bulb** and the drop draws **itself** — two
+coincident circles. Identical, that is indistinguishable from one. Different, it
+is a blink with no fade anywhere in it: the outline went bolder and brighter on
+landing (full cyan over cyan-deep, two strokes) and thinner on leaving.
+
+So the drop's stroke is **copied from the host contour's computed value**, once
+per drawn frame. Mirroring its *state* was not enough — a field's stroke eases
+over 200 ms and the drop's does not, because the drop never leaves the wet state
+(it always has an owner), so every time a field lit up there was a window where
+a rest-coloured circle sat under a wet-coloured one. Taking the computed value
+removes the class of problem: whatever the contour shows this frame, transitions
+included, is what the drop shows.
+
+The bridge also only ever attaches to the **two ends of the current hop** —
+where the drop left and where it is going. Picking the nearest field outright
+let it grab fields it was merely flying past on the long return leg, and a field
+that becomes owner and merged in the same frame has not started its transition
+yet. A filament trails from where it left and reaches to where it is going; it
+does not catch on the scenery.
+
+`ONLY=tourfade` guards both: that once the drop has mass its outline is on for
+every frame of the tour, and that the drop and the contour drawing the same
+circle are never distinguishable.
+
+---
+
+## 6. Guarantees
+
+1. **Exact rest.** With no drop in reach, every contour emits the string
+   `mem.path()` would have emitted, character for character. Everything the
+   layer does is render-only for that reason — the merge goes through the
+   membrane's `push` channel and a spliced point list, never through its
+   integrator.
+2. **The corners are sacred.** The rule survived the move to soft; it is now
+   about arcs rather than cusps. The bridge grows out of the **straight run** of
+   an edge or not at all, and no reachable drop position touches a corner arc.
+   The foot is capped to the room actually available rather than the anchor
+   being moved, because moving the anchor tilts the axis along the wall and
+   folds the banks through the field.
 3. **It is additive, and that is enforced rather than asserted.**
-   `data-fieldliquid` is set on the `<form>` only after the layer has mounted
-   AND drawn its first frame, and every CSS rule that changes a field is gated
-   on it. Reduced motion, no-JS, pre-hydration and any mount failure all fall
-   through to the original bordered form, complete and usable.
-
-   The merge kernel is therefore imported **dynamically**, inside the effect,
-   behind a `try`. A static import would put it on the form's critical path: if
-   the module fails to evaluate, the whole client component fails with it and
-   the reader gets an empty space where the contact form should be, while the
-   server-rendered heading above it sits there looking fine. That is not
-   hypothetical — a stale dev chunk produced exactly that, `coalesce.mjs`
-   importing a `splinePath` that the cached copy of `membrane.mjs` did not
-   export yet. A static import makes that failure unrecoverable; a dynamic one
-   makes it catchable, which is the only way this guarantee can be true rather
-   than merely intended. `capture-field-liquid.mjs ONLY=broken` blocks the
-   kernel's chunk at the network layer and asserts what is left.
-4. **It never intercepts.** The layer is `pointer-events: none` and every
-   listener is passive. It draws *behind* the controls, so no fill can sit over
-   text somebody is typing.
+   `data-fieldliquid` goes on the `<form>` only after the layer has mounted AND
+   drawn, and every CSS rule that changes a field is gated on it. The merge
+   kernel is imported **dynamically, inside the effect, behind a `try`** — a
+   static import puts it on the form's critical path, where a module that fails
+   to evaluate takes the whole contact form down with it under a
+   perfectly healthy server-rendered heading. That is not hypothetical; a stale
+   dev chunk did exactly that. `ONLY=broken` blocks the kernel's chunk and
+   asserts what is left.
+4. **It never intercepts.** `pointer-events: none`, every listener passive, and
+   it draws *behind* the controls so no fill can sit over text being typed.
 5. **It carries nothing.** Labels, values, validation, the error summary, the
    `:focus-visible` outline and the submit button are exactly where they were.
-   The contour mirrors the border's rest / focus / invalid states through a
-   `data-fl` attribute; the colours stay in `globals.css`.
+   The contour mirrors rest / focus / invalid through a `data-fl` attribute;
+   the colours stay in `globals.css`. The CSS `border-radius` matches
+   `FIELD_R` so the no-JS form is the same shape as the enhanced one.
 6. **One loop.** The whole form registers as ONE handle on the shared membrane
-   runtime — the fields and the bead are coupled (moving the bead changes a
-   field's path even though that field never stepped), so they cannot be
-   separate handles the scheduler sleeps independently.
+   runtime — the fields and the drop are coupled, so they cannot be separate
+   handles the scheduler sleeps independently.
+7. **One owner.** Exactly one field may hold the drop, or two would each draw
+   the bulb. It is the one whose edge the drop is nearest, recomputed each
+   frame, so ownership changes on the same frame the bridge does.
 
 ---
 
-## 5. Working on it
+## 7. Working on it
 
 ### Files
 
 ```
 lib/motion/coalesce.mjs          the merge kernel — DOM-free, deterministic
 lib/motion/coalesce.d.mts        its types (keep in sync by hand)
-lib/motion/membrane.mjs          `splinePath` + `points` are shared with it
-components/chapters/FieldLiquid.tsx   the overlay, the slots, the bead's wiring
+lib/motion/membrane.mjs          `buildRest({radius})`, `splinePath`, `points`
+components/chapters/FieldLiquid.tsx   the overlay, the slots, the drop's wiring
 app/globals.css                  everything under "THE FORM'S LIQUID"
 ```
 
 ### Gates
 
 ```bash
-node scripts/verify-coalesce.mjs
+npm run liquid:form          # node scripts/verify-coalesce.mjs
+npm run liquid:form:sheet    # the bridge at 5x, straight from the kernel
+Z=9 COLS=4 STOPS=0,8,16,26 npm run liquid:form:sheet   # one band, close up
 ```
 
-The geometry, in plain node: smin exactness, exact rest, the reach, the
-handover, the merged silhouette, self-intersection, the bead's travel, mass
-conservation under stretch, cost, corner clearance, and the squared-off guard.
+`verify-coalesce.mjs` proves the geometry in plain node: exact rest, the
+bridge's foot/throat/bulb, the thinning order, the break, no pinch while the
+drop overlaps the wall, a simple closed curve at every position, a smooth
+silhouette across the whole travel, the lean, mass under stretch, emergent
+pinch, the corner arcs, and cost.
+
+**Review the kernel sheet before the page stills.** A 16 px detail on a 576 px
+form is not judgeable at 1x, and this feature has twice shipped a defect that
+survived rounds of full-form screenshots.
 
 ```bash
-node scripts/capture-coalesce-sheet.mjs
-Z=11 COLS=4 STOPS=7,8,9,11 node scripts/capture-coalesce-sheet.mjs
-```
-
-The merge at 5x, straight from the kernel — no dev server, no clock, no layout.
-**Use this before the page stills.** The squared tab in §2 survived two rounds
-of full-form screenshots because a 16 px detail on a 576 px form is not
-reviewable at 1x.
-
-```bash
-NEXT_DIST_DIR=.next-forms PORT=3071 npm run dev      # its own cache, see below
+NEXT_DIST_DIR=.next-forms PORT=3071 npm run dev
 BASE=http://localhost:3071 node scripts/capture-field-liquid.mjs
-ONLY=travel BASE=http://localhost:3071 node scripts/capture-field-liquid.mjs
-ONLY=broken BASE=http://localhost:3071 node scripts/capture-field-liquid.mjs
+ONLY=travel  BASE=http://localhost:3071 node scripts/capture-field-liquid.mjs
+ONLY=broken  BASE=http://localhost:3071 node scripts/capture-field-liquid.mjs
 ```
 
-Run it on its **own** `NEXT_DIST_DIR`, never the shared `.next`. Turbopack's cache
-does not reliably invalidate across the dev/build boundary, and the failure mode
-here is not a stale style — adding `splinePath` to `membrane.mjs` and importing
-it from the new `coalesce.mjs` gave a cached chunk that had the importer but not
-the export, so the whole contact form rendered as empty space under a
-perfectly healthy server-rendered heading. If a component VANISHES rather than
-merely looks wrong, suspect the cache before the code.
+Every page state: rest, fused, the five travel ages, the hold at the submit
+button, **the tour** (a full lap, then yielding to focus, then going quiet
+off-screen), hover, invalid, **broken** and reduced motion. Virtual-clock
+driven.
 
-State stills of the real form: rest, fused, the four travel ages, the hold at
-the submit button, hover, invalid, **broken** (the kernel's chunk blocked — the
-additive contract under a real module failure) and reduced motion. Virtual-clock
-driven, for the same reason `capture-membrane.mjs` is.
+Run it on its **own** `NEXT_DIST_DIR`, never the shared `.next`. Turbopack's
+cache does not reliably invalidate across the dev/build boundary, and the
+failure mode is not a stale style: adding an export to a shared module and
+importing it from a new one gave a cached chunk with the importer but not the
+export, and the whole contact form rendered as empty space. **If a component
+VANISHES rather than merely looks wrong, suspect the cache before the code.**
+
+Because the layer takes over the controls' border, a change here is also an
+accessibility and CTA change: run `verify-a11y.mjs` and `verify-cta.mjs`.
 
 ---
 
-## 6. Findings worth not relearning
+## 8. Findings worth not relearning
 
-- **Not the goo filter.** The usual web answer is `feGaussianBlur` plus a steep
-  `feColorMatrix` alpha ramp. It only reads on FILLED shapes — Zirtuno's fields
-  are 1 px hairlines, and a blurred hairline is a glow, not an edge — and it is
-  a raster pass on a live surface, which on a page already running a WebGL fluid
-  is exactly the second unsynchronised visual engine AGENTS §4.15 forbids.
-  Solving the iso-surface gives the same merge as GEOMETRY: one path, one
-  stroke, no filter.
+- **A smooth-min cannot make a thin neck.** §2. Two rounds went into tuning one
+  before it became clear the shape was not reachable from that function at all.
 
-- **A merge needs something still outside it.** The first working version parked
-  the bead centred on the edge, where it merged so completely that there was no
-  bead left to see — the contour just swelled. The fix is not a bigger bead; it
-  is that the *travel* has to carry it far enough out to be a body, which is
-  what `LIFT` is for.
+- **Sample where the curvature is.** The profile is a graph over the axis and is
+  at its steepest exactly where the surface turns to face along it — at the foot
+  (a wetting meniscus leaves the wall almost parallel to it) and at the tip (a
+  circle's pole has infinite slope in this parameterisation). Uniform spacing
+  put a notch at the foot; squaring the parameter fixed the foot and starved the
+  tip, and the drop drew as a pointed leaf. One cosine gives both, which is what
+  Chebyshev spacing is for.
 
-- **A standing-off bead cannot be drawn as a graph.** See §2. This is the whole
-  reason `R` and `K` are one decision rather than two, and it is invisible to
-  every other check in the harness: area, volume, corners, self-intersection and
-  cost all passed with a rectangular tab on the edge. `verify-coalesce.mjs §12`
-  exists so it can never come back quietly.
+- **The profile and the banks must read the same spacing.** For a while they did
+  not — `neckA` in one loop and `i/N` in the other — so the two halves of the
+  same curve were describing different shapes. Both go through `neckA` now.
 
-- **Two surfaces cannot both own the meniscus.** While the bodies are separate,
-  the contact between them is ONE surface. Let both contours reach for it and
-  both draw it, and it comes out as a doubled straight line across the middle of
-  the drop; let only the field reach and it draws a cup around the drop instead.
-  Neither is worth having, so neither reaches. The merge is carried by the
-  fusion event, which is a real threshold with a real silhouette on both sides.
+- **A throat needs somewhere to be.** With the drop still overlapping the wall
+  there is no bridge to thin, and pulling the profile down to a waist invents a
+  pinch in what should be a wetted bulge. Worse, an early version put the throat
+  0.8 px from the wall out of an 8 px neck — and every other check in the
+  harness passed.
 
-- **The order of the near-mode test is not subtle.** Tested before the crossing,
-  the "stop at the other body" rule fires on every ray that will *eventually*
-  reach the other body, so the surface traces the other body's near face instead
-  of its own bulge — and the field's edge drew as a hard triangular cone
-  pointing at the bead.
+- **Cap the foot, do not move the anchor.** The foot has to fit inside the
+  straight run. Clamping the ANCHOR to make room tilts the axis along the wall,
+  and a bridge whose axis runs parallel to the surface has its banks pointing
+  into the field, which folds the contour through itself.
 
-- **Position and shape are different state.** The first version wrote each
-  path's `transform` inside the `d !== lastD` guard. At rest the path data never
-  changes, so the position froze at first paint — then the mono label font
-  swapped, every label grew 25 px, and all four contours stayed behind, drawn a
-  label's height above the controls they belonged to. The measurement was
-  correct the whole time; nothing was writing it. `place()` is write-only and
-  separate for that reason.
+- **The foot cannot be narrower than the drop's cross-section at the wall.**
+  Capped below that, the profile steps outward between sample 0 and sample 1 and
+  the contour folds. The cap yields to the geometry, not the other way round.
 
-- **`clip-path` is evaluated after the element's own `transform`.** In the
-  contact sheet, a clip rect written in page coordinates landed somewhere else
-  entirely: twelve of fourteen panels were clipped out of existence and the
-  thirteenth had its bulge cropped off. The clip group has to be OUTSIDE the
-  transform.
+- **Zero-length segments have no orientation.** Cosine spacing crowds samples
+  inside the 0.1 px the path is rounded to, so a self-intersection check
+  reported a fold that existed in neither the geometry nor the output.
+  Coincident points are dropped at emission — fewer path bytes, and no
+  degenerate edges for anything downstream to reason about.
 
-- **The browser pane does not run the rendering steps when it is not visible.**
-  A ResizeObserver there never fires — not even its initial callback — so
-  measurements taken through it can report a live observer as dead. Diagnose
-  layout through Playwright, which actually renders.
+- **One fact, one place.** `PAD` lived in both the component (driving the
+  viewBox) and the stylesheet (driving the element's box), and nothing forced
+  them to agree — so a hot reload that updated one and not the other slid the
+  whole liquid layer 52 px off its own form. The component writes both now.
+  The same bug in a different costume: writing each path's `transform` inside
+  the `d !== lastD` guard froze the layer's POSITION at first paint, and when
+  the mono label font swapped, every contour stayed 25 px above the control it
+  belonged to.
+
+- **Lenis will not be argued with from inside the page.** It caches a scroll
+  limit computed before the page finishes growing — 15000 on a 15971 px range —
+  so `window.scrollTo` and `scrollIntoView` are both swallowed and the form
+  parks 1000 px below the fold while the diagnostics report correct geometry.
+  Playwright's `scrollIntoViewIfNeeded` goes through CDP and lands, but Lenis
+  restores its own position on the next frame — so it has to come AFTER the
+  virtual clock is installed, when there is no next frame to restore on.
+
+- **A decorative layer must not be able to delete the form.** The additive
+  contract was written before it was true: every rule was correctly gated and
+  the attribute correctly set last, and none of it mattered, because a static
+  `import` of the kernel meant a module that failed to evaluate took the whole
+  client component with it. A contract that lives in a comment is a wish;
+  `ONLY=broken` is the contract.
+
+- **A fade must spend its brightness evenly.** An exponential is not a fade. It
+  passes every "did the opacity ramp" test — attribute, computed style, no
+  frame losing more than half — and still reads as a snap, because a third of
+  the brightness goes in the first tenth of a second and the rest of the curve
+  is invisible. `ONLY=fade` therefore checks the SHAPE: the biggest step
+  between 80 ms samples must stay under 0.42, which an exponential's opening
+  step (~0.37 plus a dead tail) cannot satisfy in a way that reads.
+
+- **Measure what renders, not what you set.** Three probes in a row reported a
+  perfect fade while measuring the wrong thing: a window the drop leaves faster
+  than it fades, the submit button's own cyan membrane sitting in frame, and
+  the programmatic `:focus-visible` ring pinning every sample at 227. Hide what
+  you are not asking about, and check the crop actually contains the subject.
+
+- **A merge between two surfaces drawn in different VALUES is a light switch.**
+  The material matched — same stroke, same fill, same width — and the code said
+  so in a comment. What did not match was the value: cyan against paper-faint,
+  swapped in one frame. Geometry being continuous is not enough; everything the
+  eye uses to tell one shape from another has to be continuous too. The **wet**
+  state is what fixed that; the cross-fade was treating the symptom.
+
+- **A fade cannot be longer than the state it lives in.** The dissolve ran
+  inside a tour hop, and at 760 ms each way neither direction finished before
+  the state flipped back — the opacity oscillated in a band and sat pinned at
+  0.35 across 5.4 s of touring. A permanent half-transparent ghost, with every
+  other check in the harness passing, and lengthening the fade would only have
+  narrowed the band. Kept here because the same trap waits for any autonomous
+  animation whose transitions are timed independently of its cycle.
+
+- **Two coincident strokes are one stroke only if they are identical.** The
+  blink that survived removing the fade was not opacity at all — it was the
+  drop and the bridge's bulb drawing the same circle in different colours and
+  therefore different weights. Anything drawn twice in the same place has to
+  match in every channel, or the duplication IS the artefact.
+
+- **Do not widen a tolerance until a check passes.** The material comparison
+  kept failing on alpha mid-transition, and the honest reading was that the
+  virtual clock inflates it — rAF frozen while CSS transitions run on the real
+  clock. The fix was to switch the transition off for that measurement, not to
+  loosen the threshold until the noise fitted under it.
+
+- **When a feature keeps needing more apparatus to feel right, question the
+  thing it is compensating for.** Hiding the drop on merge needed a cross-fade,
+  which needed a dissolve, which needed a dwell to play in. Not hiding it
+  needed nothing, and the owner preferred it. Three rounds of machinery came
+  out in one edit.
+
+- **Nothing on the outline may be sub-pixel.** `cta-membrane-spec.md §5`
+  settled this for the buttons — "sub-pixel motion on a 1 px hairline is a bug,
+  not life… it renders as uneven antialiasing, a shaky hand-drawn line", which
+  is why `BOW` and `BREATH_A` are off. The drop reintroduced it twice: a 3.5%
+  rest lobe worth 0.77 px peak-to-peak, and a pinch kick worth 0.51 px. Both
+  read as a wobbly circle rather than as a body. The lobe is now zero — making
+  it legible on an 11 px drop would need ≥ 9%, which is a blob — and the kick
+  was raised until it clears a pixel (1.37 px). §12 is the guard.
+
+- **`still` has to test what is DRAWN.** The drop renders at `x + ox * lift`,
+  so a settled `x` with a lift still out is a drop still visibly off the edge.
+  Testing only the spring's own position meant the rest-snap fired mid-return
+  and zeroed the remaining lift in a single frame — the arrival ended early and
+  read as a cut. Whatever the reader can still see counts as movement.
 
 - **The tide is deliberately not forwarded.** The autonomous swell exists so a
   CTA on a touch device is not the only inert thing on a liquid page. Four form
   fields breathing on their own would be a form that looks unstable while
-  somebody is trying to type into it. On touch the bead still follows focus,
+  somebody is trying to type into it. On touch the drop still follows focus,
   which is the behaviour that carries meaning.
-
-- **A decorative layer must not be able to delete the form.** The additive
-  contract was written before it was true. Every CSS rule was correctly gated on
-  `data-fieldliquid`, the attribute was correctly set last — and none of it
-  mattered, because a static `import` of the kernel meant a module that failed
-  to evaluate took the entire client component down with it, gates and all. The
-  guarantee only became real when the import became dynamic and catchable.
-  A contract that lives in a comment is a wish; `ONLY=broken` is the contract.
