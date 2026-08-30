@@ -1,6 +1,6 @@
 /**
- * WORK scene (R5-D) — the CURRENT. Método's evolution satellites (the same
- * i % 3 === 0 identities) become a quiet gyre that swims BEHIND the honest
+ * WORK scene (R5-D) — the CURRENT. The cells Método's circuit puts out at
+ * Evolution (the same i % 3 === 0 identities) become a quiet gyre that swims BEHIND the honest
  * work grid: slow, varied elliptical drift at sub-surface depth, fully alive
  * under the fluid core (low bind — curl and repulsion do the swimming). The
  * liquid is a presenter here, never a replacement for the cards (§4.9).
@@ -75,17 +75,34 @@ export function makeWorkScene(): SceneModule {
       const vh = g.vh;
       const wr = g.rect("wrap");
       if (wr) {
-        // grip: rises before the section enters, releases after it leaves
-        // (the house window — same shape as método/origin)
+        // GRIP — and, like método's, it is not free. The house window (1.9vh)
+        // assumes a section whose predecessor has already gone; Método's does
+        // not go. Its runway still hangs 0.9vh below the fold when Evolution
+        // is centred, so a grip that was full by then put the two scenes at
+        // half weight each over Método's closing phase — and the conductor
+        // averages droplet POSITIONS by weight, so Evolution's ring was being
+        // pulled half-way onto the work lanes before it had been seen.
+        //
+        // So this rises where Método's material actually leaves. #work's top
+        // trails the runway's bottom by a fixed ~0.2vh, which makes this the
+        // same clock as método's drain, one constant apart: the two describe
+        // ONE handoff and their weights only ever sum to about one.
         out.on =
-          clamp01((vh * 1.9 - wr.top) / (vh * 0.5)) *
+          clamp01((vh * 0.95 - wr.top) / (vh * 0.5)) *
           clamp01((wr.bottom + vh * 0.3) / (vh * 0.5));
-        // entry: the current materialises as the grid approaches the fold
-        out.rIn = clamp01((vh * 1.15 - wr.top) / (vh * 0.35));
+        // entry: the current materialises with the grip that carries it
+        out.rIn = clamp01((vh * 0.85 - wr.top) / (vh * 0.35));
         // act boundary III (Método → Work): sin(π·bp) peaks while the seam
-        // gap is centred — método's stage has already drained, the grid
-        // headline is only entering — and fully releases as the grid settles
-        out.bp = clamp01((vh * 1.35 - wr.top) / (vh * 1.1));
+        // gap is centred — método's stage has drained, the grid headline is
+        // only entering — and fully releases as the grid settles. It used to
+        // peak at wr.top ~ 0.8vh, which is INSIDE Método's last phase: a ~26%
+        // black wash sat over "Evolução" while it was the subject, on top of
+        // the drained stage. The band now opens after Evolution is read.
+        // The span is the gap itself, not a viewport-and-a-bit: a 1.2vh window
+        // from 0.9 still had 16% of veil standing at the "mid-work grid"
+        // reading rest, because an EMPTY portfolio makes #work short and that
+        // rest lands only 0.14vh above the section's own top.
+        out.bp = clamp01((vh * 0.9 - wr.top) / (vh * 0.9));
       }
       // the meniscus: hovered card geometry in field uv (bottom edge). `hov`
       // is written by the shell's delegated pointer handlers; -1 keeps the

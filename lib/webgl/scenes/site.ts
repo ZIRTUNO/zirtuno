@@ -56,7 +56,6 @@ import {
 import {
   SDF_WARP_REST,
   SDF_WARP_MORPH,
-  SDF_MELT_ERODE,
   CURSOR_R,
   CURSOR_TRAIL_N,
   CURSOR_SMOOTH,
@@ -72,7 +71,7 @@ import type {
   FormState,
   LightScore,
 } from "./types";
-import { centersMid, coordAt } from "./geom";
+import { HANDOFF, centersMid, coordAt, handoffMix } from "./geom";
 
 // The eco runway progress pr ∈ [0,1] IS the gather clock. One clock, not two:
 // the old pair (converge, then grow the circuit on top of it) described a mark
@@ -98,6 +97,152 @@ const HERO_DROPS = 1 + CURSOR_TRAIL_N; // gooey cursor chain length
 // on top of rest, so the material never stops moving while the form holds its
 // column — the silhouette stays the exact vector form, only its skin travels.
 const SVC_CHURN = (SDF_WARP_MORPH - SDF_WARP_REST) * 0.85;
+
+// ── THE CROSSING (S3 → S4) ───────────────────────────────────────────────────
+// Between the fuse closing and the first pillar there is a real gap — measured
+// at 1849px to pillar 1's centre at 1440x900 — and the liquid used to spend all
+// of it doing NOTHING. `fused` latches at 1, which absorbs every droplet
+// (`densJ = 1 - fused`); SVC_CHURN, the one device that keeps a held silhouette
+// alive, rides SP, which is 0 for the first 598px; and the traverse is a lerp
+// between two constants 0.064 uv apart. One static mark translating 52px.
+//
+// The transition this wants is NOT invented ornament — a first attempt hung a
+// bead chain off the mark and it read as a growth on the logo, because that is
+// what an added decoration on a locked silhouette is. It is the melt that was
+// already meant to be here: `virtual` below has always existed to give the
+// organism → pillar-1 melt a runway, it was just handed 0.85vh and gated behind
+// svcPos, so it fired at the END of the gap instead of filling it.
+//
+// So the crossing IS that melt, given the runway it was always asking for. The
+// body settles from the fuse, moves into the Services column, and then spends
+// the rest of the gap BECOMING the first service — which is also the argument
+// S4 makes in words. Three beats, no new material.
+const CROSS_SETTLE = 0.18; // the fuse's recoil owns the opening
+// The first excursion is INWARD: ten lobes that have just merged are an
+// irregular composite, and surface tension pulls a composite taut before it
+// rebounds. Outward-first would read as a pop, which is an effect, not a cause.
+const SETTLE_AMP = 0.1; // peak excursion as a fraction of the mark's scale
+const SETTLE_DECAY = 3.4; // e-folding of the ring
+const SETTLE_CYCLES = 1; // a whole cycle ends on an exact zero — no taper needed
+// The traverse is done before the melt starts. A form that holds its place is
+// what makes a melt read as a change of SHAPE rather than a thing flying about
+// (see THE LOCKED COLUMN below), so the body takes its column first and
+// transforms there — the two are never in flight at the same time.
+const TRAVERSE_LO = 0.05;
+const TRAVERSE_HI = 0.4;
+// WHERE THE TRANSFORMATION BEGINS, as a fraction of the crossing: just after
+// the traverse has parked the body in its column, so the two never overlap.
+const MELT_OPENS_AT = 0.46;
+// …and the runway that buys, as a fraction of the crossing rather than in
+// viewports. A fixed 1.25vh gave the melt a different SHARE of the gap at every
+// viewport, because the gap is not a fixed number of viewports: on a 390x844
+// stage the crossing is 3.3vh rather than 2.05vh, so the same 1.25vh opened the
+// melt at 0.65 and left a 700px hold in front of it — the exact defect this
+// change exists to remove, reintroduced one breakpoint down. Expressed as a
+// fraction it opens at MELT_OPENS_AT everywhere by construction.
+//
+// From cross_open = 1 - (1 - MELT_LO) * K / span, solved for K.
+const SVC_RUNWAY = (1 - MELT_OPENS_AT) / (1 - MELT_LO);
+
+// ── THE DEPARTURE (S5 → S6) ──────────────────────────────────────────────────
+// The seventh form used to LEAVE THE FRAME: exitDrop translated it 0.79 uv
+// downward across ~400px of scroll, so the mark travelled about 710px of screen
+// while the page moved 400 — a solid silhouette dragged across MÉTODO'S OWN
+// HEADLINE at nearly three times scroll speed, and then gone. Everything about
+// that is the opposite of what this material is: it is a translation, the one
+// move liquid never makes on its own.
+//
+// It was there to cover an absence. A Services pillar is carried ENTIRELY by
+// the form — the bridge absorbs its droplets (`densJ = serviceDrop[3]`, which
+// is 0 on a rest plateau) — and invariant C1 forbids forms from crossfading
+// between scenes. So at this one seam the handoff had no material at all: a
+// form switching off and, a screen away, an unrelated cloud fading up. The fall
+// was motion borrowed to hide that there was nothing to hand over.
+//
+// The material was always there; it was absorbed. THE RELEASE gives it back:
+// the form's presence is handed to the 48 droplets that are already sitting
+// inside its silhouette, so the mark BOILS INTO LIQUID where it stands. That
+// liquid is then what crosses to Método — and Método's first phase (Diagnosis)
+// IS a fragmented cloud, so the arrival needs nothing invented either. The
+// finished method dissolves back into the raw material that diagnosis examines.
+//
+// ── THE BEATS ────────────────────────────────────────────────────────────────
+// The departure used to be TWO fractions of one clock laid end to end (release
+// 0 → 0.45, crossing 0.45 → 1) and, measured, it did not read as two of
+// anything: the seventh form went from solid to gone across 193px of scroll at
+// vh = 700, out of the 321px the release was nominally given. Three causes,
+// none of them the budget:
+//
+//   1. THE EASES COMPOUNDED. exit was smoothstepped, divided by EX_RELEASE,
+//      smoothstepped again, divided by EX_SURF and smoothstepped a third time.
+//      Each pass steepens the middle by 1.5x, so the release moved at 4.34x its
+//      own clock where the clock was steepest and barely moved at either end.
+//      A budget spent that way is not a passage, it is a cut with a ramp glued
+//      to each side of it. Every beat below is ONE smoothstep of the RAW clock
+//      over its OWN window — the windows overlap, the eases never nest.
+//   2. THE CROSSING STARTED INSIDE THE RELEASE. See the grip in read().
+//   3. THERE WAS NO PLATEAU. Silhouette, boil, scattered dots, with nothing
+//      between the second and the third: the released liquid never once existed
+//      as a body of its own before it was being carried somewhere else.
+//
+// So the clock is longer (1.32vh against 1.02vh — see HANDOFF) and it carries
+// five beats instead of two. Windows are fractions of that raw clock; where two
+// overlap, that overlap IS the event named in the third column.
+//
+//   still     0.00 → 0.05   the seventh form, held, after 0.28vh of rest
+//   sweat     0.05 → 0.44   droplets bead out of a silhouette that is still solid
+//   swell     0.05 → 0.56   mass gathers, peaks at the give, relaxes as it goes
+//   give      0.21 → 0.56   the silhouette erodes — the overlap with sweat is the bulge
+//   hold      0.56 → 0.58   free liquid, whole, in its own column, going nowhere
+//   crossing  0.58 → 1.00   the weights carry it to Método's column
+//
+const EX_SWEAT_LO = 0.05;
+const EX_SWEAT_HI = 0.44;
+// The two halves of the release do NOT share one curve. Locking them as exact
+// complements is right about mass and wrong about reading order: the erosion is
+// the half that does the visible work, so on a single curve the silhouette was
+// already unrecognisable at a third of the way in, while the liquid meant to
+// replace it had barely surfaced. A body that is about to come apart BULGES
+// first — it sweats, swells and only then gives way. So the droplets lead over
+// the sweat and the silhouette yields over the give, the two overlapping
+// through the middle. The brief surplus of mass in that overlap is the bulge,
+// and it is the whole tell that the liquid coming out is the same body rather
+// than a second thing arriving.
+const EX_GIVE_LO = 0.21;
+const EX_GIVE_HI = 0.56;
+// …and where the crossing opens, which is also where the hold ends. Read from
+// the shared window so the arrival side cannot drift from it.
+const EX_CROSS_LO = HANDOFF.cross;
+// The release as ONE envelope, for the things that answer to the whole of it
+// rather than to a beat: the atmosphere clearing, the grip loosening, the
+// surface boiling and the cadence governor.
+const EX_RELEASE = EX_GIVE_HI;
+// Per-droplet spread of the sweat, so the body surfaces as a boil rather than
+// switching on as one sheet — the same device the melts use for their windows.
+// Wider than the 0.42 it inherited because the sweat is now a beat rather than
+// a third of one: at 0.55 the first and last droplet break the surface 0.28vh
+// of scroll apart, which is a body coming to the boil rather than a texture.
+const EX_STAGGER = 0.55;
+// THE SWELL's peak excursion, as a signed fraction of the body's own scale —
+// the same device THE CROSSING's settle uses one chapter earlier, so the
+// departure borrows nothing the page has not already shown. Small on purpose:
+// this is a body gathering itself, not a pulse.
+const EX_SWELL = 0.055;
+// …and the grip has a FLOOR. Free liquid whose target strains more than
+// FLUID.SAT_STRAIN (0.085 uv) ahead of its body sheds a satellite — but only
+// while bind ≤ FLUID.SAT_BIND_MAX (0.4). Releasing the body to bind 0 and then
+// asking it to travel 0.67 uv between the two columns satisfies both clauses on
+// every frame of the crossing, so it shed spray continuously up to the whole
+// 14-satellite pool: hard beads, radius-clamped too small to neck with
+// anything, drifting BALLISTICALLY away from the liquid and across Método's
+// headline. They read as glitches because they are causeless — spray is this
+// material's answer to a STRIKE (a click crown, a flick), and a scroll-scrubbed
+// chapter handoff has nothing striking it. Staying above SAT_BIND_MAX makes
+// that impossible by construction rather than by tuning, and 0.55 still leaves
+// 45% of the motion to the physics body and 45% of full strength to curl,
+// cohesion and repulsion — enough for the boil to be liquid, not enough to
+// throw anything off it.
+const EX_BIND_FLOOR = 0.55;
 
 export function makeSiteScene(cbs: SiteCallbacks = {}): SceneModule {
   const base = CLOUDS[0];
@@ -204,8 +349,11 @@ export function makeSiteScene(cbs: SiteCallbacks = {}): SceneModule {
   let F = 0; // fracture
   let TR = 0; // travel
   let SP = 0; // services position
-  let EXW = 1; // exit drain (radii)
-  let exitDrop = 0; // uv the seventh form has fallen out of frame
+  let EXW = 1; // exit: the atmosphere clears (the BODY no longer drains)
+  let exRel = 0; // THE RELEASE — form presence handed back to its own liquid
+  let exSurf = 0; // …its leading half: the droplets coming out of the body
+  let exGive = 0; // …its trailing half: the silhouette letting go
+  let exSwell = 0; // THE SWELL — mass gathered before the give (signed scale)
   let jScale = ORGANISM_SCALE;
   let jOx = 0;
   let jOy = 0;
@@ -221,6 +369,7 @@ export function makeSiteScene(cbs: SiteCallbacks = {}): SceneModule {
   let hp = 0; // damped heroPhase
   let gather = 0; // the S3 clock (0 = dispersed and far, 1 = one near body)
   let fused = 0; // the closing collapse of the three lobes into the mark
+  let settle = 0; // THE CROSSING's recoil ring (signed scale fraction)
   let ambW = 1;
   let hOx = 0;
   let hOy = 0;
@@ -255,6 +404,7 @@ export function makeSiteScene(cbs: SiteCallbacks = {}): SceneModule {
       travel: 0,
       gather: 0,
       svcPos: 0,
+      cross: 0,
       exit: 0,
       pairA: 0,
       pairB: 0,
@@ -358,13 +508,87 @@ export function makeSiteScene(cbs: SiteCallbacks = {}): SceneModule {
       // INSIDE that window, so the two overlap instead of meeting at a point.
       // Timing it off #method's box instead left a screen of intro copy
       // between the two — the ~420px of empty stage the boundary gate found.
+      //
+      // The span is HANDOFF.span rather than 0.55vh because the departure has
+      // five beats to fit (see THE BEATS), not the two it started with: a
+      // release long enough to read as a body coming apart rather than a form
+      // being switched off, a plateau where that liquid simply exists, and a
+      // crossing that is a real 0.59 uv journey between the two columns.
+      // 0.55vh gave the whole thing 495px, which is why it could only ever be a
+      // cut with a fall drawn over it — and why a first pass at this fix, on
+      // 0.78vh, still moved the liquid across the stage at 1.7x scroll speed. A
+      // passage the reader outruns is a drag whichever way it points. At 1.32vh
+      // the crossing gets 0.554vh for 0.59uv, so it never exceeds 1.25x scroll.
+      //
+      // Opening at 1.52vh still leaves the seventh form its rest: it is solid
+      // from 1.80vh, and the first beat is 0.05 of the clock of nothing at all,
+      // so 0.33vh — 230px at vh = 700 — passes with the silhouette dead still
+      // before a single droplet beads out of it.
       const mr = g.rect("method") ?? g.rect("methodBox");
-      if (mr) out.exit = clamp01((vh * 1.45 - mr.top) / (vh * 0.55));
+      if (mr) {
+        out.exit = clamp01((vh * HANDOFF.open - mr.top) / (vh * HANDOFF.span));
+        // …and this scene's GRIP is THE CROSSING's, and nothing else's.
+        // Presence is what weights this scene's droplet targets against
+        // Método's, and that blend is a pure POSITION average — a scene at
+        // weight 0.5 pulls the shared droplets halfway to its own targets even
+        // when its own density is 0.
+        //
+        // This used to be a `min` against the #services tail above, and the
+        // tail is what actually won: measured, `on` fell LINEARLY from
+        // exit = 0.245 — the services box leaving the viewport — reaching 0.61
+        // by exit = 0.558, while the authored curve above it was still at 1.0
+        // until exit = 0.45. So the crossing began in the middle of the
+        // release: the droplets were already being pulled toward Método's wide
+        // scatter while the seventh form was still boiling out of its own
+        // silhouette, which is why the body never once read as a body. The
+        // released liquid had no beat of its own because the handoff had
+        // started before it finished arriving.
+        //
+        // The tail stays as the fallback for a stage with no Método rect to
+        // read; where there is one, the exit clock owns the grip outright and
+        // the arrival side is its exact complement (see handoffMix).
+        out.on = 1 - handoffMix((out.exit - EX_CROSS_LO) / (1 - EX_CROSS_LO));
+      }
       const pillars = g.list("pillars");
-      if (pillars.length >= 2 && out.svcPos > 0.02) {
+
+      // THE CROSSING CLOCK, read before the melt schedule because the melt's
+      // own gate now depends on it. 0 where the runway's bottom reaches the
+      // fold — which IS where the gather clock reaches 1, so the fuse closes
+      // exactly at 0 — and 1 where pillar 1's centre reaches the viewport
+      // middle. Both anchors come from the SAME frame's rects, so the span is a
+      // layout constant and the progress is a pure function of scroll:
+      // scrub-safe and reversible like every other clock here.
+      const centers = pillars.length >= 2 ? centersMid(pillars) : null;
+      // the crossing's own length, in px of scroll — one measurement, shared by
+      // the clock and by the melt runway it has to stay in step with
+      let crossSpan = 0;
+      if (rw && centers) {
+        crossSpan = Math.max(centers[0] - cy - (rw.bottom - vh), 1);
+        out.cross = clamp01((vh - rw.bottom) / crossSpan);
+      }
+
+      // The melt schedule opens on the CROSSING, not on the services box.
+      // svcPos does not reach 0.02 until 598px after the fuse has closed, which
+      // is most of the gap spent with the mark switched off — that gate is what
+      // deferred the transition to the end of the passage it was meant to be.
+      if (centers && (out.svcPos > 0.02 || out.cross > 0.001)) {
         // virtual pre-pillar centre gives the organism → pillar-1 melt a runway
-        const centers = centersMid(pillars);
-        const virtual = centers[0] - vh * 0.85;
+        // …floored at the runway's bottom so the melt can never begin before
+        // the gathering it follows has actually finished, at any viewport.
+        const virtual = Math.max(
+          centers[0] - (crossSpan > 0 ? crossSpan * SVC_RUNWAY : vh * 0.85),
+          rw ? rw.bottom : -Infinity,
+          // …and, on narrow stages, no earlier than Services itself. Below
+          // FIELD_MIN_W the eco-stack is RENDERED (globals.css hides it on that
+          // same breakpoint, which is why this reads the same constant rather
+          // than inventing a second one), and it is full-width body copy — ten
+          // capabilities with their descriptions. A melt running through that
+          // puts 48 droplets on type that has to be read, which is the one
+          // thing the S3 field/column split exists to prevent. Wide stages give
+          // the copy the left column and the form the right, so there the two
+          // never meet and the melt is free to run through the outro.
+          g.vw < FIELD_MIN_W && sr ? sr.top : -Infinity,
+        );
         const uu = coordAt(cy, [virtual, ...centers]) - 1; // ∈ [-1, n-1]
         const idx = Math.floor(uu);
         const frac = uu - idx;
@@ -382,7 +606,6 @@ export function makeSiteScene(cbs: SiteCallbacks = {}): SceneModule {
         out.pairB = 0;
         out.pairM = 0;
       }
-
     },
 
     presence(ctx: SceneCtx) {
@@ -399,7 +622,8 @@ export function makeSiteScene(cbs: SiteCallbacks = {}): SceneModule {
         cachedAspect = aspect;
         cachedWide = colWide;
         // S3's liquid lives right of the copy column on wide stages
-        const sCx = 0.5 + Math.min(0.14 * aspect, Math.max(aspect / 2 - 0.34, 0));
+        const sCx =
+          0.5 + Math.min(0.14 * aspect, Math.max(aspect / 2 - 0.34, 0));
         // SERVICES: the form is the subject, so it holds the CENTRE of the
         // THE LOCKED COLUMN. The form owns the right half of the stage and
         // holds the viewport's vertical centre for the entire pillar; the copy
@@ -460,21 +684,92 @@ export function makeSiteScene(cbs: SiteCallbacks = {}): SceneModule {
       gather = clamp01(ch.gather);
       fused = gatherFuse(gather);
       SP = smooth01(clamp01(ch.svcPos));
-      // BOUNDARY: Services → Método. The seventh form POURS OUT of the frame
-      // rather than evaporating where it stands. Draining radius in place left
-      // a liquid-dead band before Método and read as the material being
-      // switched off; falling out of frame is a departure, and the momentum
-      // carries into the next chapter instead of stopping at its edge.
-      const EXD = smooth01(clamp01(ch.exit));
-      // squared: a fall accelerates. Linear travel reads as a slide.
-      exitDrop = EXD * EXD * 0.9;
-      // The body stays a BODY while it leaves — the drain only finishes it off
-      // once it is already mostly past the bottom edge.
-      // Held later still. At 0.55 the body had already thinned to near
-      // invisibility while Método was only beginning to arrive; the overlap is
-      // what removes the seam, so the mass survives most of the fall.
-      EXW = 1 - smooth01(clamp01((EXD - 0.72) / 0.28));
-      jScale = ORGANISM_SCALE + (svcScale - ORGANISM_SCALE) * SP;
+      // BOUNDARY: Services → Método. The seventh form RELEASES ITS MASS where
+      // it stands (see THE DEPARTURE). No translation: the body stays in its
+      // column and stops being a form, which is the only way a liquid leaves.
+      //
+      // The earlier note here argued that "draining radius in place left a
+      // liquid-dead band" and that falling out of frame fixed it. The premise
+      // was right and the remedy was not: the band was dead because the drain
+      // took the droplets away too, so nothing was left to hand over. Handing
+      // the form's presence TO the droplets fills the same band with the same
+      // mass, and the departure then needs no borrowed momentum.
+      //
+      // ONE EASE PER BEAT, all of them over the RAW clock. `ch.exit` is linear
+      // in scroll; every window below smoothsteps it exactly once, so each beat
+      // moves at most 1.5x its own clock. The chain this replaces —
+      // smooth01(exit) → /EX_RELEASE → smooth01 → /EX_SURF → smooth01 — hit
+      // 4.34x, which is the entire reason the transformation arrived in one
+      // glance. Same budget, spent evenly.
+      const EXC = clamp01(ch.exit);
+      exRel = smooth01(EXC / EX_RELEASE);
+      exSurf = smooth01((EXC - EX_SWEAT_LO) / (EX_SWEAT_HI - EX_SWEAT_LO));
+      exGive = smooth01((EXC - EX_GIVE_LO) / (EX_GIVE_HI - EX_GIVE_LO));
+      // THE SWELL — beat two, and the one piece of new choreography here. The
+      // note above has always claimed the body "sweats, swells and only then
+      // gives way", but the only mechanism for the swell was the surplus mass
+      // in the sweat/give overlap, which is a change of DENSITY and reads as
+      // texture rather than as a body gathering itself. This is the excursion
+      // the sentence describes, on the scale channel the settle already uses:
+      // it rises while the droplets bead out, peaks exactly where the erosion
+      // opens, and relaxes as the silhouette goes — so it is monotone in each
+      // half and never pops back.
+      exSwell =
+        EX_SWELL *
+        smooth01((EXC - EX_SWEAT_LO) / (EX_GIVE_LO - EX_SWEAT_LO)) *
+        (1 - exGive);
+      // The atmosphere still clears on the way out — a dozen unattached
+      // lava-lamp beads drifting through a chapter boundary are the same loose
+      // micro-balls the Services composition exists to keep out. (Services
+      // already holds ambW at 0 through TRV; this keeps the narrow-stage and
+      // early-exit cases honest.)
+      EXW = 1 - exRel;
+      // ── THE CROSSING ──────────────────────────────────────────────────────
+      // Two beats before the melt takes over. Both are 0 at CX = 0 and 0 by the
+      // time the melt opens, so the fuse still lands on the exact mark and the
+      // §3.3 bridge still starts from the exact pose it always did.
+      const CX = clamp01(ch.cross);
+      // THE SETTLE — the fuse's recoil. A whole cycle of sine is 0 at u = 0 and
+      // exactly 0 at u = 1, so the ring closes without a taper to hide a
+      // remainder; the exponential only decides how much survives to the end.
+      // Negative: taut first, rebound second.
+      const su = clamp01(CX / CROSS_SETTLE);
+      settle =
+        su >= 1
+          ? 0
+          : -SETTLE_AMP *
+            Math.exp(-SETTLE_DECAY * su) *
+            Math.sin(SETTLE_CYCLES * 2 * Math.PI * su);
+      // THE TRAVERSE — the body takes its column, and is finished doing so
+      // before the melt starts. It used to ride SP, which is only at 0.75 when
+      // the melt opens: the mark was still growing while pillar 1 was already
+      // melting, two transformations fighting for the same frames. `max` keeps
+      // the endpoint identity on any layout where the two clocks order
+      // differently (narrow stacks, very tall viewports) or where `cross`
+      // cannot be read at all.
+      //
+      // …on WIDE stages only. Narrow ones are a vertical STACK, not a column
+      // beside copy — svcOx is 0 there, so the traverse's whole effect is to
+      // lift and shrink the mark early, over an eco-stack that is still being
+      // read. The melt already waits for Services on narrow (see `virtual`),
+      // and SP tracks Services, so riding SP keeps the body where the chapter's
+      // own copy expects it and gives up nothing: there is no column to take.
+      const TRV =
+        colWide === 1
+          ? Math.max(
+              SP,
+              smooth01(
+                clamp01((CX - TRAVERSE_LO) / (TRAVERSE_HI - TRAVERSE_LO)),
+              ),
+            )
+          : SP;
+      // …and both scale excursions this scene owns ride the same channel: THE
+      // CROSSING's recoil ring on the way in, THE SWELL on the way out. They
+      // are one chapter apart and can never overlap, so a single signed sum is
+      // exact rather than a convenience.
+      jScale =
+        (ORGANISM_SCALE + (svcScale - ORGANISM_SCALE) * TRV) *
+        (1 + settle + exSwell);
       // The body fuses inside THE GATHERING's field and then travels to the
       // Services column. Both are right of centre, so the handoff is a short
       // move rather than the old jump from dead centre — and at SP = 1 this is
@@ -490,11 +785,12 @@ export function makeSiteScene(cbs: SiteCallbacks = {}): SceneModule {
       // threshold at every scroll speed, and it lands long before the fuse
       // makes the mark's position matter.
       const ecoIn = smooth01(clamp01(gather / 0.34));
-      jOx = ecoOx * ecoIn * (1 - SP) + svcOx * SP;
-      // One write carries the whole departure: the form's own offset, the
-      // droplets' home footprint and the §3.3 bridge all read jOy, so the body
-      // and its liquid leave together instead of separating on the way out.
-      jOy = svcOy * SP - exitDrop;
+      jOx = ecoOx * ecoIn * (1 - TRV) + svcOx * TRV;
+      // The form's own offset, the droplets' home footprint and the §3.3 bridge
+      // all read jOy, so the body and its liquid share one position — which is
+      // what lets the release surface the droplets exactly inside the
+      // silhouette they came out of, with no offset of their own to explain.
+      jOy = svcOy * TRV;
       const inServices = pa !== pb || pa > 0;
       // The bridge owns the Services droplets for the WHOLE pillar range, not
       // only while a melt is strictly in flight. Gating it to the open interval
@@ -531,7 +827,12 @@ export function makeSiteScene(cbs: SiteCallbacks = {}): SceneModule {
           const q = hQueued;
           hQueued = -1;
           startMelt(q);
-        } else if (man == null && ch.heroPlay > 0.5 && !(ch.heroHover > 0.5) && atHero) {
+        } else if (
+          man == null &&
+          ch.heroPlay > 0.5 &&
+          !(ch.heroHover > 0.5) &&
+          atHero
+        ) {
           hDwell += dt;
           const next = (hState + 1) % STATE_COUNT;
           if (hDwell >= ch.heroDwellMs && texReady[next]) startMelt(next);
@@ -546,7 +847,8 @@ export function makeSiteScene(cbs: SiteCallbacks = {}): SceneModule {
         const goalMul =
           hPhase === "rest" && hState === 0 ? CURSOR_INFLUENCE_MARK : 1;
         markMul += (goalMul - markMul) * (1 - Math.exp(-dt / 160));
-        cursorOn += (cGoal - cursorOn) * (1 - Math.exp(-dt / (cGoal ? 110 : 60)));
+        cursorOn +=
+          (cGoal - cursorOn) * (1 - Math.exp(-dt / (cGoal ? 110 : 60)));
         if (cursorOn < 0.01 && cGoal > 0) {
           for (const d of drops) {
             d.x = ch.heroPx;
@@ -574,8 +876,7 @@ export function makeSiteScene(cbs: SiteCallbacks = {}): SceneModule {
       const meltEnv = hPhase === "melt" ? Math.sin(Math.PI * meltP) : 0;
 
       let warp =
-        SDF_WARP_REST +
-        Math.min(Math.abs(ctx.scrollVel) * 0.003, 0.004); // scroll agitates
+        SDF_WARP_REST + Math.min(Math.abs(ctx.scrollVel) * 0.003, 0.004); // scroll agitates
 
       if (heroW > 0.002) {
         // hero owns the form slots (journey form weight is 0 out here)
@@ -621,12 +922,6 @@ export function makeSiteScene(cbs: SiteCallbacks = {}): SceneModule {
             warp +=
               (SDF_WARP_MORPH - SDF_WARP_REST) * Math.sin(Math.PI * mState);
           }
-          // CHURN. A form that holds its position for a whole pillar has to
-          // stay visibly ALIVE or it reads as a placed image being scrolled
-          // past. This is surface motion only — the silhouette is still the
-          // exact vector form, it is just never still — and it rides SP so the
-          // gathering and the exit are unaffected.
-          warp += SVC_CHURN * SP * (0.72 + 0.28 * Math.sin(ctx.t * 0.53));
         } else {
           // The mark is the RESULT of the fuse, never a thing the droplets
           // assemble around. Its field weight rides `fused`, which is 0 until
@@ -641,15 +936,39 @@ export function makeSiteScene(cbs: SiteCallbacks = {}): SceneModule {
           formOut.ea = e;
           formOut.eb = 0;
         }
-        // exit: the form erodes away before the sticky layer unsticks
-        // The form holds its weight while it falls and only erodes once it is
-        // leaving the frame — dissolving it on the spot was the "obvious cut"
-        // this boundary is meant to remove.
-        const exE = smooth01(clamp01((smooth01(clamp01(ch.exit)) - 0.55) / 0.45));
-        formOut.fa *= 1 - exE;
-        formOut.fb *= 1 - exE;
-        formOut.ea += exE * SDF_MELT_ERODE;
-        formOut.eb += exE * SDF_MELT_ERODE;
+        // THE BREATH. A form that holds its position has to stay visibly ALIVE
+        // or it reads as a placed image being scrolled past. Surface motion
+        // only — the silhouette is still the exact vector form, it is just
+        // never still.
+        //
+        // This used to ride SP alone, which meant it covered the seven pillars
+        // and nothing else. The one passage where the mark holds LONGEST is the
+        // crossing, and SP is 0 for the first half of it: the gathered mark sat
+        // at exactly SDF_WARP_REST for 598px, which is the frozen-logo half of
+        // the reported fault. `fused` opens it at the moment the mark exists,
+        // and it is still 0 for the whole gathering (where the liquid, not the
+        // form, is the subject) and through the exit.
+        const alive = Math.max(SP, fused * smooth01(clamp01(ch.cross / 0.08)));
+        warp += SVC_CHURN * alive * (0.72 + 0.28 * Math.sin(ctx.t * 0.53));
+        // THE RELEASE, form side — the exact complement of what the droplets
+        // gain in target(). Routed through formPresence rather than a linear
+        // fade because that is the site's one law for a form leaving: EROSION
+        // does the visible work, so the boundary retreats continuously and the
+        // thin features (the flare, the tendrils) go first while the trunk is
+        // still solid. The weight only clears the residual field tail at the
+        // very end, where the silhouette has already eaten itself away. A
+        // linear fade on weight is a form going transparent, which is the one
+        // thing this material is not allowed to do.
+        const [exW, exEro] = formPresence(1 - exGive);
+        formOut.fa *= exW;
+        formOut.fb *= exW;
+        formOut.ea += exEro;
+        formOut.eb += exEro;
+        // …and it boils while it goes. The surface churn that keeps a held
+        // pillar alive is pushed to a full melt's worth of warp exactly where
+        // the silhouette is coming apart, so the erosion reads as the body
+        // giving way rather than as a mask closing over a still shape.
+        warp += (SDF_WARP_MORPH - SDF_WARP_REST) * Math.sin(Math.PI * exRel);
       }
       formOut.warp = warp;
 
@@ -687,9 +1006,15 @@ export function makeSiteScene(cbs: SiteCallbacks = {}): SceneModule {
       // melts get blamed for — they cross the headline and the instrument band
       // with no relationship to the form at all. The gathering keeps its
       // atmosphere, because there the scattered liquid IS the subject.
+      // …and it clears on the TRAVERSE, not on SP. The crossing melt now runs
+      // where SP is only ~0.26, so on the old gate a dozen unattached
+      // lava-lamp beads drifted through the first and longest melt on the page
+      // — the exact loose micro-balls the rule above exists to keep out of a
+      // Services composition. The traverse is finished before the melt opens,
+      // so the stage is clear of atmosphere by the time it does.
       ambW =
-        (1 - 0.5 * smooth01(gather) * (1 - SP)) *
-        (1 - SP) *
+        (1 - 0.5 * smooth01(gather) * (1 - TRV)) *
+        (1 - TRV) *
         EXW *
         smooth01((hp - 0.66) / 0.3);
 
@@ -697,7 +1022,29 @@ export function makeSiteScene(cbs: SiteCallbacks = {}): SceneModule {
       // services melt are the scene's FAST clocks — everything else is
       // scroll-scrubbed (the conductor's velocity term covers it) or slow
       // enough (wander, tendril march, warp) for the 30 Hz idle floor.
-      actW = Math.max(hPhase === "melt" ? 1 : 0, cursorOn, inSvcMelt ? 1 : 0);
+      //
+      // THE RELEASE joins them, and it has to. The old exit qualified for the
+      // idle floor honestly: its droplets were absorbed and its form rode a
+      // scroll-derived offset, so a stopped reader saw a still frame. The
+      // release hands 48 droplets from bind 1 to bind 0 — repulsion, cohesion
+      // and curl take the body over and physically rearrange it — and that is
+      // live motion on the wall clock, not on the scrollbar. At 30 Hz it
+      // stutters exactly where the material is meant to look most alive.
+      // Only the release: once it is done the liquid is loose and drifting,
+      // which is the same slow ambient Método's own cloud already runs at.
+      // …and it runs from the first bead through THE HOLD, not just through the
+      // release. The hold is free liquid rearranging on the WALL clock with the
+      // scroll stopped — the one beat where a stopped reader is meant to see
+      // the body still moving — so gating it on exRel alone (which saturates at
+      // the give's close) dropped exactly that beat to the 30 Hz idle floor.
+      // The crossing beyond it is scroll-scrubbed like every other travel.
+      const exBoil = EXC > 0.004 && EXC < EX_CROSS_LO + 0.1 ? 1 : 0;
+      actW = Math.max(
+        hPhase === "melt" ? 1 : 0,
+        cursorOn,
+        inSvcMelt ? 1 : 0,
+        exBoil,
+      );
 
       // ── act II light (R5-D): the argument told in exposure ────────────────
       // The fracture pulls the light DOWN (the problem darkens the room) and
@@ -930,7 +1277,37 @@ export function makeSiteScene(cbs: SiteCallbacks = {}): SceneModule {
         // at 0 where the gathered droplets arrive absorbed at 0, so the seam
         // needs no blend of its own.
         densJ = serviceDrop[3];
-        bindJ = 1; // the §3.3 bridge is analytic-exact — physics hands off
+        // …and THE RELEASE is that same complement, run one last time with no
+        // form on the other side of it. On the seventh pillar svcM is 0, so the
+        // bridge holds these droplets at the form's exact rest footprint with
+        // density 0 — the body's own liquid, present and invisible. Lifting
+        // density is therefore not a reveal of something new; it is the same
+        // mass changing which of its two representations carries it.
+        //
+        // Staggered per droplet so the silhouette comes apart as a boil rather
+        // than a sheet switching on: each one surfaces on its own window, the
+        // device every melt in this file already uses for its schedules.
+        if (exSurf > 0)
+          densJ = Math.max(
+            densJ,
+            smooth01(
+              clamp01((exSurf - EX_STAGGER * hash(i, 23)) / (1 - EX_STAGGER)),
+            ),
+          );
+        // The grip goes with it, ALL of it. The bridge is analytic-exact while
+        // the form owns the body, but a released body is FREE liquid, and the
+        // difference is the whole difference between flowing and sliding: at
+        // bind 1 the droplets track the blended target exactly, so a crossing
+        // between two columns is 48 dots being carried across in formation —
+        // the same translation the fall was, turned on its side. At bind 0 the
+        // core still goal-seeks, but through a damped spring with curl,
+        // cohesion and repulsion on top, and PINCH-OFF live: a free droplet
+        // whose target strains ahead of its body sheds a satellite, which is
+        // this material's own way of stretching. Método's state 0 is free
+        // liquid too, so the two scenes agree about the physics as well as the
+        // position and nothing has to be reconciled at the seam — both of them
+        // now hold the same floor while the handoff is in flight.
+        bindJ = 1 - (1 - EX_BIND_FLOOR) * exRel;
         clusJ = -1;
         depth = 0; // the services body is the near plane, always
       } else if (node >= 0) {
@@ -959,12 +1336,12 @@ export function makeSiteScene(cbs: SiteCallbacks = {}): SceneModule {
       out.x = hx + (jx - hx) * li;
       out.y = hy + (jy - hy) * li;
       out.r = hr + (jr - hr) * li;
-      // THE EXIT dissolves, it does not shrink. EXW used to scale every radius
-      // toward zero on the way into Método, which is the same fragmentation as
-      // the melt ramps: the departing body broke into a scatter of small solid
-      // dots that then blinked out one at a time. Taking presence away instead
-      // lets the mass thin and go, still whole.
-      out.d = (hd + (densJ - hd) * li) * EXW;
+      // THE EXIT dissolves, it does not shrink — and it no longer drains at
+      // all. EXW used to scale this toward zero on the way into Método, which
+      // took the departing body off the stage before Método had one; the seam
+      // that remained was covered by the fall. The release carries it now
+      // (densJ above), so the mass simply stays, changes hands and travels.
+      out.d = hd + (densJ - hd) * li;
       // physics attributes (R5-B): the hero side is analytic-exact (rest
       // footprint / §3.3 bridge); looseness grows through the pour and lands
       // at the journey regime's own exactness

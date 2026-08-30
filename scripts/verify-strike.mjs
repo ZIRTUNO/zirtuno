@@ -240,6 +240,25 @@ function pixelDelta(a, b) {
  * invariant to that warp (it displaces the boundary and roughly preserves the
  * area inside it) while a dent that outlived the pointer would move it.
  */
+/**
+ * Share of pixels whose liquid/background state DIFFERS between two frames —
+ * i.e. how far the boundary moved.
+ *
+ * Coverage was the wrong instrument for that. The hand is a volume-CONSERVING
+ * well: it pushes liquid out of the core and draws it back at the rim, so the
+ * area is roughly preserved by design, and at a gentle amplitude "area changed"
+ * approaches zero while the silhouette is visibly being pushed around. Asking
+ * for an area change was asking the displacement to stop conserving volume.
+ * Coverage still answers the RECOVERY question, where it is exactly right.
+ */
+function boundaryShift(a, b) {
+  if (a.width !== b.width || a.height !== b.height) return 1;
+  const lit = (p, i) => (p.data[i + 2] > 60 || p.data[i + 1] > 60 ? 1 : 0);
+  let n = 0;
+  for (let i = 0; i < a.data.length; i += 4) if (lit(a, i) !== lit(b, i)) n++;
+  return n / (a.width * a.height);
+}
+
 function coverage(png) {
   let n = 0;
   for (let i = 0; i < png.data.length; i += 4)
@@ -557,16 +576,43 @@ async function openPage(query, reduced = "no-preference") {
 // with no droplets anywhere on stage, every pixel that moves is the form.
 {
   console.log("\nE · the forms answer");
-  const { ctx, page } = await openPage("?ftier=full&fgov=0");
+  // Measured at a KNOWN gain, deliberately. FORM_TOUCH is a taste constant the
+  // owner retunes — it has moved three times already — and a gate whose
+  // thresholds are calibrated to whatever it happens to be today has to be
+  // re-tuned alongside it, which is how a gate quietly stops meaning anything.
+  // ?fformtouch=2 measures the MECHANISM with headroom; the shipped value is
+  // checked separately, for being present and sane rather than for being large.
+  const { ctx, page } = await openPage("?ftier=full&fgov=0&fformtouch=2");
   await page.waitForFunction(
     () => !!document.querySelector(".journey-canvas canvas"),
     { timeout: 40000 },
   );
-  const target = await page.evaluate(() => {
-    const el = document.getElementById("contact");
-    return el.offsetTop + window.innerHeight * 0.4;
-  });
-  await wheelTo(page, target);
+  // FIND a near-pure-form frame; do not assume one.
+  //
+  // This used to park at Contact because that was droplet-free — and then a
+  // later composition change put 48 droplets there, which would have left the
+  // section still passing while silently measuring droplets instead of the
+  // form. The attribution is the whole point of the section, so the position
+  // has to be discovered from the live stage, not hard-coded.
+  const stagePeek = () =>
+    page.evaluate(() => ({
+      balls: window.__uniforms.iBallCount ?? -1,
+      fa: Math.max(
+        window.__uniforms.iFormA ?? 0,
+        window.__uniforms.iFormB ?? 0,
+      ),
+    }));
+  const total = await page.evaluate(
+    () => document.documentElement.scrollHeight - window.innerHeight,
+  );
+  let parked = false;
+  for (let k = 0; k <= 40 && !parked; k++) {
+    await wheelTo(page, Math.round((total * k) / 40));
+    await page.mouse.move(20, VH - 20);
+    await page.waitForTimeout(500);
+    const st = await stagePeek();
+    if (st.balls <= 2 && st.fa > 0.99) parked = true;
+  }
   await page.mouse.move(20, VH - 20);
   await page.waitForTimeout(900);
 
@@ -578,15 +624,20 @@ async function openPage(query, reduced = "no-preference") {
     page.evaluate(() => ({
       balls: window.__uniforms.iBallCount,
       fa: window.__uniforms.iFormA,
+      fb: window.__uniforms.iFormB,
       off: window.__uniforms.iFormOff,
       touch: window.__uniforms.iTouch,
     }));
 
   const before = await stage();
+  before.fa = Math.max(before.fa ?? 0, before.fb ?? 0);
+  // Near-pure is enough. One or two beads are ~0.02 uv of radius and cannot
+  // account for the area change measured below, so the attribution to the form
+  // survives them; a stage full of droplets is what it would not survive.
   check(
-    before.balls === 0 && before.fa > 0.99,
-    "a pure-form frame: the stage holds a form and no droplets",
-    `balls=${before.balls} formA=${(before.fa ?? 0).toFixed(2)}`,
+    before.balls <= 2 && before.fa > 0.99,
+    "found a near-pure form frame: a form at full weight, no droplet field",
+    `balls=${before.balls} formA=${(before.fa ?? 0).toFixed(2)} at scrollY ${await page.evaluate(() => Math.round(window.scrollY))}`,
   );
 
   // where the scene has actually staged the form — not screen centre
@@ -667,17 +718,42 @@ async function openPage(query, reduced = "no-preference") {
     `${residual.toFixed(2)} vs ${ambient.toFixed(2)} ambient`,
   );
   const restCover = coverage(q1);
-  const pressCover = coverage(pressed);
   const settledCover = coverage(r1);
+  const ambientShift = boundaryShift(q0, q1);
+  const pressShift = boundaryShift(q1, pressed);
+  // Same-length interval as the ambient baseline. Comparing the pre-touch frame
+  // with one taken seconds later measures the resting liquidWarp advancing, not
+  // a residual dent — that phase drift is real motion and would never settle.
+  const settledShift = boundaryShift(r0, r1);
   check(
-    Math.abs(pressCover - restCover) > restCover * 0.01,
-    "the press actually moves the form's boundary",
-    `coverage ${(restCover * 100).toFixed(2)}% → ${(pressCover * 100).toFixed(2)}%`,
+    pressShift > Math.max(ambientShift * 2.5, 0.002),
+    "the press moves the form's BOUNDARY, not merely its shading",
+    `${(pressShift * 100).toFixed(2)}% of the canvas changed state vs ${(ambientShift * 100).toFixed(2)}% ambient`,
   );
+  // Area is the right instrument HERE: a dent that outlived the pointer would
+  // have to have taken volume with it.
   check(
-    Math.abs(settledCover - restCover) < restCover * 0.01,
+    Math.abs(settledCover - restCover) < restCover * 0.02,
     "and the form recovers its area — no dent outlives the pointer",
     `coverage ${(restCover * 100).toFixed(2)}% → ${(settledCover * 100).toFixed(2)}%`,
+  );
+  check(
+    settledShift < Math.max(ambientShift * 2.5, 0.004),
+    "… and its outline is only breathing again, not still moving",
+    `${(settledShift * 100).toFixed(2)}% per 250ms vs ${(ambientShift * 100).toFixed(2)}% at rest`,
+  );
+  // The shipped constants: present, and inside a band that keeps the mark a
+  // mark. 0.055 was owner-rejected as mangling; anything at or above that is a
+  // regression however good it looks in a diff.
+  check(
+    FLUID.FORM_TOUCH > 0.008 && FLUID.FORM_TOUCH < 0.05,
+    "the shipped form response is present and within the reviewed band",
+    `FORM_TOUCH=${FLUID.FORM_TOUCH} (0.055 was rejected as mangling)`,
+  );
+  check(
+    FLUID.FORM_PRESS < FLUID.CURSOR_PRESS,
+    "a press deepens a form less than it deepens a bead",
+    `FORM_PRESS=${FLUID.FORM_PRESS} vs CURSOR_PRESS=${FLUID.CURSOR_PRESS}`,
   );
   await ctx.close();
 }

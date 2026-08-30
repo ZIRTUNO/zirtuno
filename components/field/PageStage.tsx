@@ -47,9 +47,6 @@ const FieldStage = dynamic(() => import("@/components/field/FieldStage"), {
   ssr: false,
 });
 
-/** The three systems are beats, not items — numerals read as order, not count. */
-const ROMAN = ["I", "II", "III"];
-
 export type EcoNode = { name: string; tooltip: string };
 
 // The v3 review path lets free liquid acknowledge a deliberately small set of
@@ -101,6 +98,15 @@ function makeJourneyRuntime(
   const physicsV3 = physics && search?.get("fphysv3") !== "0";
   const obstacleFlow = physicsV3 && search?.get("fobstacles") !== "0";
   const strike = physics && search?.get("fstrike") !== "0";
+  // ?fformtouch=<n> is a live multiplier on the FORMS' response, not just an
+  // on/off. Three owner rounds went into that one number, and each cost a
+  // rebuild; a URL is the right granularity for a taste dial.
+  const formTouchRaw = search?.get("fformtouch");
+  const formGainParsed = formTouchRaw === null || formTouchRaw === undefined
+    ? 1
+    : Number(formTouchRaw);
+  const formGain =
+    Number.isFinite(formGainParsed) && formGainParsed >= 0 ? formGainParsed : 1;
   const cine = search?.get("fcine") !== "0";
 
   return [
@@ -109,6 +115,7 @@ function makeJourneyRuntime(
       physicsV3,
       obstacleFlow,
       strike,
+      formGain,
       cine,
     }),
     scenes,
@@ -168,10 +175,8 @@ export function PageStage({
   const [ecoKeyboardEnabled, setEcoKeyboardEnabled] = useState(false);
   const [openEcoNode, setOpenEcoNode] = useState<number | null>(null);
   const [hovSlot, setHovSlot] = useState(-1);
-  // The most recently ARRIVED capability. The readout is never blank once the
-  // gathering has started: with nothing touched it reports what just landed,
-  // which turns the column's footer into a live log of the convergence rather
-  // than an empty slot waiting for a hover that may never come.
+  // The most recently arrived capability keeps the explanatory note useful
+  // before a visitor chooses to hover or focus a name.
   const [landedSlot, setLandedSlot] = useState(-1);
   const [ecoHost, setEcoHost] = useState<HTMLElement | null>(null);
   const nodeEls = useRef<(HTMLLIElement | null)[]>([]);
@@ -193,7 +198,6 @@ export function PageStage({
     h: number;
   } | null>(null);
   const ecoObstacleOn = useRef(false);
-  const hudMeterEl = useRef<HTMLSpanElement | null>(null);
   const stageEl = useRef<HTMLElement | null>(null);
   const ecoLayerEl = useRef<HTMLDivElement | null>(null);
   const ecoInteractiveRef = useRef(false);
@@ -501,24 +505,15 @@ export function PageStage({
         if (!el) return;
         el.style.setProperty("--pulse", arrivalPulse(s, grow).toFixed(3));
       });
-      // The meter and the readout share one pass over the clock: how many have
-      // landed, and which one landed LAST. The second is what keeps the column
-      // footer alive while nobody is touching anything.
-      let lit = 0;
+      // Keep the note aligned with the most recent arrival. This changes only
+      // ten times across the runway, not on every rendered frame.
       let last = -1;
       for (let s = 0; s < GATHER_N; s++) {
         const t = gatherTiming(s);
         if (grow >= t.d + t.w * 0.6) {
-          lit++;
           if (last < 0 || gatherTiming(last).d < t.d) last = s;
         }
       }
-      if (hudMeterEl.current) {
-        const meter = `${String(lit).padStart(2, "0")} / ${GATHER_N}`;
-        if (hudMeterEl.current.textContent !== meter)
-          hudMeterEl.current.textContent = meter;
-      }
-      // guarded: this changes ten times across the whole runway, not per frame
       if (last !== landedRef.current) {
         landedRef.current = last;
         setLandedSlot(last);
@@ -1116,35 +1111,13 @@ export function PageStage({
                   setOpenEcoNode(null);
               }}
             >
-              {/* ── THE COLUMN ─────────────────────────────────────────────
-                  ONE type zone, in the page's own gutter, for a chapter that
-                  used to have five: three blocks solved onto the stage at
-                  their lobes' heights, a centre label above the mark, a
-                  bottom-right readout, ten leader lines and a corner-tick
-                  frame. Each of those was individually defensible and the sum
-                  was scattered — five things arranged against the liquid is
-                  not a composition, it is an overlay.
-
-                  The column does not move, does not resize, and does not
-                  dodge: the liquid has its own field beside it. Everything in
-                  here is measured against the SPINE, which is also the
-                  chapter's progress — so the one element that has to say "how
-                  far along is this" is structural instead of a number parked
-                  in a corner. */}
+              {/* One quiet editorial column beside the liquid field. The
+                  systems arrive as human-readable groups: no counter, index,
+                  progress meter, spine, or simulated interface chrome. */}
               <div className="gather-col">
-                <div className="gather-col-spine" aria-hidden="true">
-                  <i />
-                </div>
-                <p className="gather-col-head">
-                  <span className="eco-hud-meter" ref={hudMeterEl} />
-                </p>
-                {/* THREE BLOCKS that ACCUMULATE. Each system is one composed
-                    unit — numeral, name, rule, and its capabilities as an
-                    aligned stack — and it stays once it has arrived, so the
-                    column is visibly longer at every beat. That growth is what
-                    the runway is for: the old layout had all three blocks
-                    present from the first screen with their rows dimmed, so
-                    two viewports of scroll changed nothing you could see. */}
+                {/* Each group takes up room only as its liquid family arrives,
+                    so the reading accumulates instead of starting as a dimmed
+                    checklist. */}
                 <ul className="gather-plate" aria-label={ecosystemLabel}>
                 {GATHER_SYSTEMS.map((sys, si) => (
                   <li
@@ -1155,21 +1128,6 @@ export function PageStage({
                       systemEls.current[si] = el;
                     }}
                   >
-                    {/* the meta line — numeral, rule, count. Small and quiet;
-                        it is the measure the name below hangs from. Setting the
-                        system and its capabilities at the SAME mono size, which
-                        is what the head did before, left nothing leading the
-                        reading. */}
-                    <p className="gather-block-head">
-                      <span className="gather-block-numeral">
-                        {ROMAN[si] ?? si + 1}
-                      </span>
-                      <span className="gather-block-rule" />
-                      <span className="gather-block-count">
-                        {String(sys.nodes.length).padStart(2, "0")}
-                      </span>
-                    </p>
-                    {/* masked so the name RISES as its system lands */}
                     <p className="gather-block-title">
                       <span className="gather-block-name">
                         {systems[si] ?? sys.id}
@@ -1193,6 +1151,7 @@ export function PageStage({
                             <button
                               type="button"
                               className="gather-row-trigger"
+                              data-slot={slot}
                               tabIndex={ecoKeyboardEnabled ? 0 : -1}
                               aria-expanded={open}
                               aria-controls={descriptionId}
@@ -1203,13 +1162,11 @@ export function PageStage({
                               onFocus={() => setHovSlot(slot)}
                               onBlur={() => setHovSlot(-1)}
                             >
-                              <span className="gather-row-index">
-                                {String(slot + 1).padStart(2, "0")}
-                              </span>
+                              <span className="gather-row-dot" aria-hidden="true" />
                               <span className="gather-row-name">{n.name}</span>
                             </button>
-                            {/* read by AT via aria-describedby; sighted users
-                                read the same line in the HUD readout */}
+                            {/* Read by AT via aria-describedby; sighted users
+                                receive the same copy in the note below. */}
                             <span id={descriptionId} className="gather-row-cap">
                               {n.tooltip}
                             </span>
@@ -1220,33 +1177,19 @@ export function PageStage({
                     </li>
                   ))}
                 </ul>
-                {/* THE RESOLUTION. The centre label used to float above the
-                    mark, which put the chapter's payoff in the one place it
-                    could collide with the lowest lobe. It belongs at the foot
-                    of the column, where the accumulation it concludes can
-                    actually be read above it: ten capabilities, three systems,
-                    and then the thing they add up to. */}
+                {/* The business label arrives only when the bodies have fused. */}
                 <p className="gather-col-sum" aria-hidden="true">
                   <span className="organism-center" ref={centerEl}>
                     {centerLabel}
                   </span>
                 </p>
-                {/* the readout — one live line, in the column, not parked in a
-                    corner of the stage. With nothing touched it reports the
-                    capability that just landed, so it is never an empty slot. */}
-                <div className="eco-hud" aria-hidden="true">
+                <div className="gather-note" aria-hidden="true">
                   {readoutSlot >= 0 && nodes[readoutSlot] ? (
                     <>
-                      <span className="eco-hud-line">
-                        <b>{String(readoutSlot + 1).padStart(2, "0")}</b>
-                        {" · "}
+                      <span className="gather-note-name">
                         {nodes[readoutSlot].name}
-                        <i>
-                          {" — "}
-                          {systems[SYS_OF_NODE[readoutSlot]?.si ?? 0]}
-                        </i>
                       </span>
-                      <span className="eco-hud-cap">
+                      <span className="gather-note-copy">
                         {nodes[readoutSlot].tooltip}
                       </span>
                     </>

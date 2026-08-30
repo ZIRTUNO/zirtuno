@@ -14,7 +14,8 @@
 //       landed; at the end all ten have. This is what stops the convergence
 //       from collapsing back into a single undifferentiated event.
 //   C · the response: touching a capability pulses its SYSTEM first and the
-//       rest of the body after, drives the hov channel, and fills the HUD.
+//       rest of the body after, drives the hov channel, and updates the quiet
+//       explanatory note.
 //   D · keyboard raises the same response.
 //   E · reduced motion keeps the semantic story (the eco-stack).
 //
@@ -126,11 +127,12 @@ const readLabels = () =>
       rail: rail
         ? { left: rail.left, right: rail.right, top: rail.top, bottom: rail.bottom }
         : null,
-      meter: document.querySelector(".eco-hud-meter")?.textContent ?? "",
-      hudLine: document.querySelector(".eco-hud-line")?.textContent ?? "",
-      // the chrome this redesign removed stays removed
-      chrome:
-        document.querySelectorAll(".gather-leader, .gather-frame").length,
+      noteName: document.querySelector(".gather-note-name")?.textContent ?? "",
+      noteCopy: document.querySelector(".gather-note-copy")?.textContent ?? "",
+      // The diagram chrome and the rejected pseudo-interface stay removed.
+      chrome: document.querySelectorAll(
+        ".gather-leader, .gather-frame, .gather-col-spine, .gather-col-head, .gather-row-index, .eco-hud",
+      ).length,
       grow: document.querySelector(".journey-interactions")?.style.getPropertyValue("--eco-grow"),
     };
   });
@@ -166,9 +168,9 @@ check(
 );
 check(a.axes === 1, "all type sits on ONE vertical axis", `${a.axes} axes`);
 check(a.colFits, "the column fits the stage at full extension", `bottom=${a.colBottom}`);
-check(a.chrome === 0, "no leaders or plate frame remain", `${a.chrome} elements`);
-check(a.meter.includes("10"), "HUD meter reads complete", a.meter);
-check(a.hudLine.length > 0, "HUD idle line present", a.hudLine);
+check(a.chrome === 0, "no leaders, frame, counters, or HUD remain", `${a.chrome} elements`);
+check(a.noteName.length > 0, "idle explanation names the latest arrival", a.noteName);
+check(a.noteCopy.length > 8, "idle explanation carries authored copy", a.noteCopy);
 
 console.log("B · the three beats");
 await settle(0.3);
@@ -214,7 +216,7 @@ const before = await page.evaluate(() => window.__liquid?.hov ?? -99);
 const TOUCH = 4;
 const touched = await page.evaluate((i) => {
   const t = document.querySelectorAll(".gather-row-trigger")[i];
-  return Number(t.querySelector(".gather-row-index").textContent.trim()) - 1;
+  return Number(t.getAttribute("data-slot"));
 }, TOUCH);
 await page.locator(".gather-row-trigger").nth(TOUCH).hover();
 await page.waitForTimeout(450);
@@ -227,8 +229,8 @@ const c = await page.evaluate(() => {
     pulse: root?.getAttribute("data-pulse"),
     hov: window.__liquid?.hov ?? -99,
     distinct: new Set(delays).size,
-    hudLine: document.querySelector(".eco-hud-line")?.textContent ?? "",
-    hudCap: document.querySelector(".eco-hud-cap")?.textContent ?? "",
+    noteName: document.querySelector(".gather-note-name")?.textContent ?? "",
+    noteCopy: document.querySelector(".gather-note-copy")?.textContent ?? "",
   };
 });
 check(before === -1, "hov channel idle before touch", `hov=${before}`);
@@ -243,12 +245,17 @@ check(
   "the pulse reaches its own system before the rest of the body",
   `${c.distinct} distinct delays`,
 );
+const touchedName = await page
+  .locator(".gather-row-trigger")
+  .nth(TOUCH)
+  .locator(".gather-row-name")
+  .textContent();
 check(
-  c.hudLine.includes(String(touched + 1).padStart(2, "0")),
-  "readout shows the capability index",
-  c.hudLine,
+  c.noteName.trim() === touchedName?.trim(),
+  "explanation follows the touched capability",
+  c.noteName,
 );
-check(c.hudCap.length > 8, "HUD shows the capability line", c.hudCap.slice(0, 40));
+check(c.noteCopy.length > 8, "explanation shows the capability copy", c.noteCopy.slice(0, 40));
 await page.mouse.move(20, 20);
 await page.waitForTimeout(350);
 const cleared = await page.evaluate(() => ({
@@ -277,7 +284,7 @@ const k2 = await page.evaluate(() => ({
     .querySelector(".journey-interactions")
     ?.getAttribute("data-pulse"),
   hov: window.__liquid?.hov ?? -99,
-  hudLine: document.querySelector(".eco-hud-line")?.textContent ?? "",
+  noteName: document.querySelector(".gather-note-name")?.textContent ?? "",
 }));
 check(k.focused, "trigger takes keyboard focus");
 check(
@@ -285,7 +292,7 @@ check(
   "focus raises the same response",
   JSON.stringify(k2),
 );
-check(k2.hudLine.includes("01"), "HUD follows keyboard focus", k2.hudLine);
+check(k2.noteName.trim() === "Brand", "explanation follows keyboard focus", k2.noteName);
 
 console.log("E · reduced motion keeps the semantic story");
 const rmCtx = await browser.newContext({

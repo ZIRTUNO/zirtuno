@@ -289,13 +289,16 @@ autocycle use the same bridge path and accessibility announcement.
 - scatter and cluster target vocabulary;
 - a 12-droplet ambient family.
 
-`lib/webgl/gathering.mjs` owns THE GATHERING (the S3 remake): the three
-system lobes, the ten capability anchors, the per-capability `{d, w}` timings
-and depth curve on the single `gather` clock, the closing fuse,
-the loop-closure pulse, the bead allocation for droplets `i < 40` (10 docks ·
-12 artery supply · 18 ring circulation), and the BFS response graph. The
-canvas beads, the SVG veins, and the DOM labels all evaluate these same
-functions — the liquid and the drawing cannot drift apart.
+`lib/webgl/gathering.mjs` owns THE GATHERING (the S3 remake): the desktop
+field/narrow-stage split, the three system lobes, the ten capability anchors,
+the per-capability `{d, w}` timings and depth curve on the single `gather`
+clock, the recede, the closing fuse, and the three-droplet capability families.
+The scene’s liquid families and PageStage’s one-axis editorial column evaluate
+the same timings, so arrival, system accumulation, interaction and type cannot
+drift apart. There are deliberately no SVG veins, leaders, plate frame, or
+second diagram layer. There is also no progress meter, count, or pseudo-HUD:
+the bodies becoming one carry the connection claim, while a quiet text note
+provides the authored explanation.
 
 Droplet `i` is the same conceptual droplet in Hero, Problem, Ecosystem,
 Services, Método, Work, Origin, Studio, Contact, and Footer. Scene handoffs
@@ -737,8 +740,26 @@ exact-identity case.
 
 Two naturality notes. The hand is the same displacement well the droplets feel,
 so a form dents under the pointer and piles up at the rim rather than merely
-retreating; `FORM_TOUCH` / `FORM_SHOCK` are smaller than the droplet response
-because a form is a large body of liquid and a droplet is a bead. And a
+retreating. `FORM_TOUCH` / `FORM_SHOCK` are sized against the FORM, which is
+the opposite of the intuition that first set them: a droplet is ~0.03 uv across,
+so 0.018 uv moves it most of its own width and reads instantly, while a form has
+~0.25 uv of half-extent and its resting `liquidWarp` already breathes the
+outline by a pixel or two. The same number therefore produced a nine-pixel dent
+on a 250-pixel body — measurable in a diff and invisible to a person, which is
+the worst of both.
+
+They landed at 0.020 and 0.034 after three owner rounds — 0.055 mangled the
+mark, 0.032 was still too strong — with `FORM_PRESS = 0.4`. Read them as a
+share of the FORM's own width rather than in uv: a form spans `iFormScale` uv
+(~0.5), so 0.020 is a dent about 4% of the silhouette deep. `FORM_PRESS` is
+the form's own press gain and is deliberately weaker than the droplets'
+`CURSOR_PRESS` — pressing into a bead can nearly double its displacement and
+still look right because the bead is small; doing that to a body a quarter of
+the field wide is how a silhouette gets destroyed.
+
+`?fformtouch=<n>` multiplies both at runtime (0 unlinks the variant entirely),
+so the next taste round is a URL rather than a rebuild. Three rounds each cost
+one, which is the wrong granularity for a number nobody can predict. And a
 continuous surface has no equivalent of the per-droplet arrival jitter that
 keeps a strike from reading as a ring, so the form breaks its own circle with
 angular harmonics seeded from the strike's position.
@@ -761,14 +782,22 @@ language, and both take their constants from `FLUID`. (GLSL `fract()` is
 has to match or the form and the droplets beside it would finger in different
 directions.) Its consumer is the bound liquid of §8.3.
 
-The effect is gated per frame on the live watchdog rung (the same
-`DEFORM_RUNGS` set deformation uses) and on reduced motion, and the stage
-uploads zeroed arrays rather than skipping the upload — a stale `iTouch` would
-leave a dent parked in the form after the pointer had gone.
+The effect is gated per frame on `TOUCH_RUNGS` and on reduced motion, and the
+stage uploads zeroed arrays rather than skipping the upload — a stale `iTouch`
+would leave a dent parked in the form after the pointer had gone.
+
+`TOUCH_RUNGS` is deliberately not `DEFORM_RUNGS`, which it borrowed at first.
+Deformation costs ~1.49× the glass pass; this measured at no detectable cost,
+because every fragment outside the influence disc leaves on a distance test. And
+`DEFORM_RUNGS` stops at `glass1x` while the lite tier STARTS at `rigid` — so on
+a lite machine the forms silently never answered at all. Only the emergency
+half-res floor sheds it now.
 
 `?fformtouch=0` is the rollback: the droplets keep answering the hand and the
-forms stop. It is not `?fstrike=0`, which removes the click everywhere and
-reaches the forms for free, since no shocks are ever registered.
+forms stop. Any other number is a live GAIN on the form response, applied in
+`formUniforms` so the shader and the bound droplets scale together. It is not
+`?fstrike=0`, which removes the click everywhere and reaches the forms for
+free, since no shocks are ever registered.
 
 ## 11. Journey State Map
 
@@ -946,9 +975,10 @@ collides in ways a static layout never does, so overlap is a machine check),
 the three beats (only the first system has landed a third of the way in; the
 body keeps accumulating through the middle), the system response (hover AND
 keyboard raise `data-pulse`, the pulse reaches the touched capability's own
-system before the rest of the body, the `hov` channel swells its mass, the HUD
-reads index · name · system · capability), release on leave, and the reduced-
-motion story (no live gathering; the eco-stack carries all ten capabilities).
+system before the rest of the body, the `hov` channel swells its mass, and the
+authored explanatory note follows the selected capability), release on leave,
+and the reduced-motion story (no live gathering; the eco-stack carries all ten
+capabilities in the same three authored groups).
 
 `verify-strike.mjs` is the click gate's browser half. The conductor harness
 proves the FORCE against the pure core (it travels, it is not a ring, the crown
@@ -966,6 +996,14 @@ pixels, the same order as the effect. Against the buffer the live page reports a
 peak displacement of 0.045 uv where the node sim predicts 0.045, run to run,
 which is what makes tight thresholds possible at all. Scroll is driven with
 `page.mouse.wheel` because Lenis owns it and `scrollTo` injects its own jitter.
+Section E measures the form at `?fformtouch=2` rather than at the shipped
+value, and checks the shipped constants separately as VALUES. A gate calibrated
+to a taste constant has to be re-tuned every time that constant moves, which is
+how one quietly stops meaning anything — and this one moved three times in a
+single review. Boundary movement is measured as the share of pixels that change
+liquid/background state, not as an area change: the hand is a volume-conserving
+well, so demanding an area change would be demanding it stop conserving volume.
+
 It also walks the whole Services morph asserting NO DEAD BAND — no scroll
 position where liquid is on stage and a click does nothing, which is the
 regression bound droplets were introduced to close (§8.3). That walk measures on

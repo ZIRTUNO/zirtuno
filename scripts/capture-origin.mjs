@@ -31,7 +31,7 @@ const browser = await chromium.launch({
   args: ["--enable-unsafe-swiftshader", "--use-gl=angle", "--use-angle=swiftshader", "--ignore-gpu-blocklist"],
 });
 const page = await (await browser.newContext({ viewport: { width: W, height: H } })).newPage();
-await page.goto(`${BASE}/en?ftier=full${process.env.Q ?? ""}`, { waitUntil: "load" });
+await page.goto(`${BASE}/${process.env.LOC ?? "en"}?ftier=full${process.env.Q ?? ""}`, { waitUntil: "load" });
 await page.waitForFunction(() => !!window.__scenes, { timeout: 30000 });
 await page.waitForTimeout(1500);
 

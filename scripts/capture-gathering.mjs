@@ -1,7 +1,7 @@
 /**
- * S3 · THE GATHERING — viewport stills through the runway, plus the one number
- * the old label placement could never guarantee: how many capability rows
- * OVERLAP each other.
+ * S3 · THE GATHERING — the editorial opening, viewport stills through the
+ * runway, and the closing statement, plus the one number the old label
+ * placement could never guarantee: how many capability rows overlap.
  *
  * The previous layout parked each name at its own mass and nudged it sideways
  * to dodge a neighbour, which is a hope, not a guarantee — at some viewports and
@@ -31,6 +31,27 @@ const page = await (await browser.newContext({ viewport: { width: W, height: H }
 await page.goto(`${BASE}/en?ftier=full${process.env.Q ?? ""}`, { waitUntil: "load" });
 await page.waitForFunction(() => !!window.__scenes, { timeout: 30000 });
 await page.waitForTimeout(1800);
+
+const scrollTo = async (selector, offset = 0) => {
+  const y = await page.evaluate(
+    ({ selector, offset }) => {
+      const el = document.querySelector(selector);
+      return el ? Math.round(el.getBoundingClientRect().top + scrollY + offset) : 0;
+    },
+    { selector, offset },
+  );
+  await page.evaluate(async (target) => {
+    for (let i = 0; i < 30; i++) {
+      window.scrollTo(0, target);
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      if (Math.abs(window.scrollY - target) < 3) break;
+    }
+  }, y);
+  await page.waitForTimeout(900);
+};
+
+await scrollTo(".gather-intro");
+await page.screenshot({ path: `${OUT}/gather-${TAG}-intro.png` });
 
 for (const f of STOPS) {
   const y = await page.evaluate((frac) => {
@@ -94,5 +115,8 @@ for (const f of STOPS) {
       `\n      ${info.blocks.join("  |  ")}`,
   );
 }
+
+await scrollTo(".gather-outro");
+await page.screenshot({ path: `${OUT}/gather-${TAG}-outro.png` });
 console.log(`\n-> ${OUT}/gather-${TAG}-*.png`);
 await browser.close();

@@ -2,6 +2,7 @@ import { useTranslations } from "next-intl";
 import { Reveal } from "@/components/ui/Reveal";
 import { LogoMark } from "@/components/hero/LogoMark";
 import { CtaStructure, CtaPortfolio } from "@/components/chrome/CtaButton";
+import { GATHER_SYSTEMS } from "@/lib/webgl/gathering.mjs";
 
 type Node = { name: string; tooltip: string };
 
@@ -26,20 +27,27 @@ type Node = { name: string; tooltip: string };
 export function ChapterEcosystem({ hasWork }: { hasWork: boolean }) {
   const t = useTranslations("ecosystem");
   const nodes = t.raw("nodes") as Node[];
+  const systems = t.raw("systems") as Record<string, string>;
 
   return (
     <section id="ecosystem" data-chapter className="relative">
-      {/* The claim sits ABOVE the runway and stays short. The long form of
-          this argument is the gathering itself; repeating it in a paragraph
-          beside the liquid would make the liquid decoration. */}
+      {/* A plain-language opening. The business relationship comes first; the
+          runway then lets the liquid demonstrate it without a diagram or an
+          invented layer of system notation. */}
       <div className="page-x gather-intro">
-        <Reveal inView as="p" className="chapter-label">
-          {t("chapterLabel")}
-        </Reveal>
+        <div className="gather-intro-composition">
+          <Reveal inView as="p" className="chapter-label gather-eyebrow">
+            {t("chapterLabel")}
+          </Reveal>
 
-        <Reveal inView delay={0.05}>
-          <h2 className="type-section-title gather-claim">{t("headline")}</h2>
-        </Reveal>
+          <Reveal inView delay={0.05} className="gather-intro-copy">
+            <h2 className="type-section-title gather-claim">{t("headline")}</h2>
+          </Reveal>
+
+          <Reveal inView delay={0.12} className="gather-intro-lead-wrap">
+            <p className="type-lead-copy gather-intro-lead">{t("lead")}</p>
+          </Reveal>
+        </div>
       </div>
 
       {/* The runway — the scroll distance the gathering plays across. The
@@ -58,28 +66,40 @@ export function ChapterEcosystem({ hasWork }: { hasWork: boolean }) {
         </div>
       </div>
 
-      {/* The resolution. This line is the payoff of the fuse and is placed to
-          be read at the moment the body is whole. */}
+      {/* The liquid has done the joining. Close with the operational result,
+          then the two existing conversion routes. */}
       <div className="page-x gather-outro">
-        <Reveal inView>
-          <p className="type-lead-copy gather-lead">{t("lead")}</p>
+        <Reveal inView className="gather-resolution">
+          <p className="gather-resolution-line">{t("resolution")}</p>
         </Reveal>
 
-        {/* the capabilities as a connected stack — narrow viewports, static
-            tiers and assistive tech (the live names are lg+ and visual) */}
-        <ul className="eco-stack" aria-label={t("headline")}>
-          <li className="eco-stack-center">{t("centerLabel")}</li>
-          {nodes.map((n, i) => (
-            <li key={i} className="eco-stack-item">
-              <span className="eco-stack-name">{n.name}</span>
-              <span className="eco-stack-cap">{n.tooltip}</span>
-            </li>
+        {/* Narrow and static tiers keep the same authored groupings as the
+            live gathering, in a readable document rather than a faux circuit. */}
+        <div className="eco-stack" aria-label={t("headline")}>
+          {GATHER_SYSTEMS.map((system) => (
+            <section className="eco-stack-group" key={system.id}>
+              <h3 className="eco-stack-system">
+                {systems[system.id] ?? system.id}
+              </h3>
+              <ul className="eco-stack-items">
+                {system.nodes.map((slot) => {
+                  const node = nodes[slot];
+                  return node ? (
+                    <li key={node.name} className="eco-stack-item">
+                      <span className="eco-stack-name">{node.name}</span>
+                      <span className="eco-stack-cap">{node.tooltip}</span>
+                    </li>
+                  ) : null;
+                })}
+              </ul>
+            </section>
           ))}
-        </ul>
+          <p className="eco-stack-center">{t("centerLabel")}</p>
+        </div>
 
         <Reveal
           inView
-          className="mt-12 flex flex-wrap items-center gap-x-8 gap-y-4"
+          className="gather-actions"
         >
           <CtaStructure placement="ecosystem" />
           {/* the portfolio link only exists while there is a portfolio */}

@@ -75,3 +75,78 @@ The text crop confirms comparable headline scale, line count, weight contrast, s
 - P3: owner taste review on a real high-refresh display can still tune the final 40-80 ms of letter stagger and the band amplitude without changing the motion model.
 
 final result: passed
+
+---
+
+# S7 Origin design QA
+
+## Comparison target
+
+- Source opening: `C:/Users/pedro/.codex/generated_images/01a034d8-7713-7733-b511-81c51d209a22/exec-c5ac92f9-d70a-4b8c-bfda-f29288822125.png`
+- Source two-idea state: `C:/Users/pedro/.codex/generated_images/01a034d8-7713-7733-b511-81c51d209a22/exec-876d5f7d-5ab8-4536-8385-b0b0d5466909.png`
+- Source purpose state: `C:/Users/pedro/.codex/generated_images/01a034d8-7713-7733-b511-81c51d209a22/exec-4313b7cb-fa72-4f52-bdc7-8eb1c4457aa6.png`
+- Implementation opening: `C:/Users/pedro/AppData/Local/Temp/zirtuno-origin-design-qa/implementation-opening-1487x1058-pass3.png`
+- Implementation two-idea state: `C:/Users/pedro/AppData/Local/Temp/zirtuno-origin-design-qa/implementation-ideas-1487x1058.png`
+- Implementation purpose state: `C:/Users/pedro/AppData/Local/Temp/zirtuno-origin-design-qa/implementation-purpose-1487x1058-pass5.png`
+- Supplemental mobile purpose state: `C:/Users/pedro/AppData/Local/Temp/zirtuno-origin-design-qa/implementation-purpose-mobile-390x844.png`
+- Route: `http://127.0.0.1:3000/en?ftier=full#name`
+- Desktop CSS viewport and image pixels: 1487 x 1058 at density 1. Source and implementation states were compared without resampling.
+- Mobile CSS viewport and image pixels: 390 x 844 at density 1.
+
+## Final findings
+
+No actionable P0, P1, or P2 mismatch remains in S7.
+
+- Composition: the rejected dossier, giant chapter number, HUD labels, gauges, ruled panels, ladder, and card-like frames no longer render. The chapter is an unframed editorial sequence.
+- Story: the protected five-beat Origin sequence remains exact: two ideas, tension and fusion, exact mark with the three pillars, purpose, then the wordmark resolution.
+- Brand fidelity: the liquid remains the canonical cyan-on-black 48-droplet field, the traced mark endpoint remains exact, and the chapter uses the locked Zirtuno type roles. No purple, rainbow material, marketplace pattern, or full-page fusion flash was introduced.
+- Typography: large Bricolage display text is plain paper rather than a generic glow-gradient treatment; Instrument Serif appears only in the poetic echo; mono is limited to structural labels and the three-pillar line.
+- Motion: the same liquid shifts left during the purpose beat while the copy resolves on the right. Echo droplets are fewer and tighter, and the dawn exposure is restrained so the effect supports the argument instead of becoming a decorative spectacle.
+- Responsiveness: the ideas and tension beats stack cleanly on 390 px, the purpose beat becomes mark-above-copy, and the S7 copy remains within the viewport. A separate inherited Contact `fl-svg` extends the document scroll width outside S7; it was not changed in this bounded Origin revamp.
+- Accessibility and semantics: the complete story remains server-rendered, headings and landmark order remain valid in PT/EN, keyboard and reduced-motion paths pass, and the one-canvas contract remains intact.
+
+## Full-view and focused comparison evidence
+
+The opening comparison now matches the reference's reduced density: one small chapter cue, one headline, one short lead, and a quiet field with no supporting interface chrome. The two-idea comparison preserves the reference's balanced tension but uses Zirtuno's authored left-aligned editorial reading instead of centered generated-mockup copy. The purpose comparison matches the asymmetric mark-left / statement-right composition while retaining the protected three-pillar beat immediately before it.
+
+The 1487 x 1058 full states were sufficient to judge the headline measure, idea balance, mark scale, liquid/copy separation, and purpose baseline. The 390 x 844 supplemental capture verifies the authored mobile reflow rather than attempting to crop the desktop reference into a false mobile target.
+
+## Comparison history
+
+### Initial audit
+
+- P1: mobile idea content inherited a desktop three-column source order and rendered off-screen.
+- P1: the mobile tension clauses collapsed into a narrow column.
+- P2: the opening sat too low and retained generic cyan horizon/glass-gradient cues.
+- P2: the purpose copy sat below the liquid instead of forming the required asymmetric cut.
+- P2: the original S7 dossier/HUD vocabulary overwhelmed the Origin argument and read as a generated interface theme rather than Zirtuno.
+
+### Fixes and re-checks
+
+- Rebuilt S7 as five semantic beats with no rejected interface scaffolding.
+- Added explicit mobile grid order and full-width clause rules.
+- Moved the opening upward, removed the S7 display gradient, and reduced the dawn wash.
+- Tightened the echo orbit and shifted the exact mark field left during Beat 4 while keeping the mobile stage centered.
+- Re-captured and compared the final purpose state after the last scene shift.
+
+## Verification evidence
+
+- TypeScript: passed.
+- Targeted ESLint: passed.
+- Full lint: passed with one pre-existing warning in `scripts/verify-cinematics.mjs` and no errors.
+- Production build: passed.
+- Conductor: 48 droplets, 0 failures.
+- Cinematics: passed; exactly two act fades, flash-free Origin, contrast floor preserved.
+- Canvas count: exactly one liquid canvas.
+- Accessibility: PT/EN parity, semantics, keyboard, contrast, reduced motion, and no-JavaScript paths passed.
+- Origin band probes: desktop 1440 x 900 and mobile 390 x 844 passed.
+- Local preview: HTTP 200 at `/en?ftier=full`.
+
+## Intentional differences from the generated references
+
+- Plain paper display type replaces the reference's cyan text gradient to keep the chapter discreet and recognizably Zirtuno.
+- The three business pillars stay in their protected Beat 3 instead of being repeated beneath the purpose statement.
+- The idea descriptions are left-aligned for a calmer editorial read.
+- Existing site chrome and the chapter rail remain because they are shared navigation, not part of the retired S7 HUD.
+
+final result: passed

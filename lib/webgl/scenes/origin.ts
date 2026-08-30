@@ -3,10 +3,11 @@
  * scrubbed beats. TWO IDEA-MASSES — Zéfiro, the force, and Ventura, the
  * direction — enter from opposite sides and drift
  * together → fuse onto the mark's droplet footprint while the EXACT mark
- * grows from its skeleton → the hold (breathing) → half the droplets reborn
- * as the ecosystem echo → everything sinks and drains under the assembling
- * particle wordmark. Entry visibility is positional by construction (the
- * masses park off-stage at p = 0), so no entry envelope is needed.
+ * grows from its skeleton → the hold (breathing) → a restrained set of
+ * droplets reborn as the ecosystem echo → everything sinks and drains under
+ * the assembling particle wordmark. Entry visibility is positional by
+ * construction (the masses park off-stage at p = 0), so no entry envelope is
+ * needed.
  */
 
 import { CLOUDS, clamp01, smooth01, hash, PHYS, VARY } from "../phys.mjs";
@@ -62,6 +63,7 @@ export function makeOriginScene(): SceneModule {
   let q2 = 0;
   let q4 = 0;
   let q5 = 0;
+  let purposeShift = 0;
   const scoreOut: Partial<LightScore> = {
     key: 0,
     vignette: 0,
@@ -108,6 +110,16 @@ export function makeOriginScene(): SceneModule {
         cachedAspect = aspect;
         const halfW = Math.max(aspect, 0.6) / 2;
         const sx = Math.min(Math.max(aspect * 0.8, 1), 1.45);
+        // PORTRAIT STAGES carry the same copy in a much taller band: at
+        // 390x844 beat 1's two idea plates stack, and their band top sits at
+        // ~54svh against a landscape stage's ~66 (scripts/probe-origin-bands
+        // .mjs). The entry band has to move with it, or the masses spend the
+        // back half of beat 1 travelling across the two names they belong to.
+        // The MEETING and the mark's footprint are unchanged — only where the
+        // two bodies come in from.
+        const tall = aspect < 0.85;
+        const eyLo = tall ? 0.24 : 0.36;
+        const eySpan = tall ? 0.28 : 0.38;
         T = base.map((_, i) => {
           // idea A (Zéfiro, left) / idea B (Ventura, right), interleaved so
           // both masses carry the same mix of droplet sizes
@@ -115,10 +127,10 @@ export function makeOriginScene(): SceneModule {
           const ma = hash(i, 54) * Math.PI * 2;
           const md = 0.03 + 0.09 * hash(i, 55);
           const oa = hash(i, 56) * Math.PI * 2;
-          const orr = 0.26 + 0.16 * hash(i, 57);
+          const orr = 0.22 + 0.11 * hash(i, 57);
           return {
             ex: 0.5 + side * (halfW + 0.12 + 0.1 * hash(i, 52)),
-            ey: 0.36 + 0.38 * hash(i, 53),
+            ey: eyLo + eySpan * hash(i, 53),
             mx: 0.5 + side * 0.105 + Math.cos(ma) * md * 0.9,
             my: 0.5 + ORIGIN_OY + side * 0.02 + Math.sin(ma) * md,
             ox: 0.5 + Math.cos(oa) * orr * sx,
@@ -134,12 +146,23 @@ export function makeOriginScene(): SceneModule {
       q4 = smooth01((p - 0.62) / 0.19); // multiply outward
       q5 = smooth01((p - 0.84) / 0.12); // resolve under the wordmark
 
+      // Once the exact mark has held long enough to be read, it yields the
+      // right half of a wide stage to the purpose line. This is staging, not a
+      // second visual treatment: the form and every bound droplet receive the
+      // same offset, return to centre before the drain, and never move on a
+      // portrait stage where the copy stacks below them.
+      const purposeIn = smooth01((p - 0.56) / 0.1);
+      const purposeOut = smooth01((p - 0.78) / 0.07);
+      const wideStage = smooth01((aspect - 1.03) / 0.32);
+      purposeShift = -0.29 * wideStage * purposeIn * (1 - purposeOut);
+
       // the mark: grows from its skeleton under the fused mass (late beat 2),
       // holds through beats 3–4, erodes away at the resolution
       const [wIn, eIn] = formPresence(smooth01((q2 - 0.5) / 0.45));
       const out = smooth01((p - 0.86) / 0.11);
       formOut.fa = wIn * (1 - out);
       formOut.ea = eIn + out * SDF_MELT_ERODE;
+      formOut.ox = purposeShift;
       formOut.warp =
         SDF_WARP_REST +
         (SDF_WARP_MORPH - SDF_WARP_REST) * 0.6 * Math.sin(Math.PI * q2);
@@ -149,9 +172,9 @@ export function makeOriginScene(): SceneModule {
       // the mark holds; the vignette closes over the approach (intimacy) and
       // OPENS at the fusion. Exposure supplies the restrained material
       // afterglow without a full-page white flash.
-      scoreOut.key = 0.55 * q2 * (1 - 0.8 * q5);
-      scoreOut.vignette = 0.2 * q1 * (1 - q2);
-      scoreOut.exposure = 1 + 0.06 * q2 * (1 - q5);
+      scoreOut.key = 0.46 * q2 * (1 - 0.8 * q5);
+      scoreOut.vignette = 0.16 * q1 * (1 - q2);
+      scoreOut.exposure = 1 + 0.04 * q2 * (1 - q5);
     },
 
     target(i: number, ctx: SceneCtx, out: DropletOut) {
@@ -163,22 +186,23 @@ export function makeOriginScene(): SceneModule {
       let y = s.ey + (s.my - s.ey) * q1;
       // the meeting → the mark's footprint (staggered — the fusion flows)
       const lt2 = smooth01((q2 - 0.45 * hash(i, 58)) / 0.55);
-      const fx = 0.5 + (b[0] - 0.5) * ORIGIN_SCALE;
+      const fx = 0.5 + purposeShift + (b[0] - 0.5) * ORIGIN_SCALE;
       const fy = 0.5 + ORIGIN_OY + (b[1] - 0.5) * ORIGIN_SCALE;
       x += (fx - x) * lt2;
       y += (fy - y) * lt2;
       // radius: travelling mass → footprint swell → drained as the form lands
       const drain = 1 - smooth01((q2 - 0.68) / 0.28);
       let r = b[2] * ORIGIN_SCALE * (0.6 + 0.4 * VARY[i]) * drain;
-      // beat 4 — half the droplets are REBORN off the mark as the echo
+      // beat 4 — a restrained third of the droplets are reborn off the mark
+      // as its echo; the rest keep the exact form quiet and readable
       let loose = 1 - lt2;
       let echo = 0;
-      if (i % 2 === 0 && q4 > 0.001) {
+      if (i % 3 === 0 && q4 > 0.001) {
         const q4i = smooth01((q4 - 0.5 * hash(i, 59)) / 0.5);
         if (q4i > 0.001) {
-          x += (s.ox - x) * q4i;
+          x += (s.ox + purposeShift - x) * q4i;
           y += (s.oy - y) * q4i;
-          r = Math.max(r, 0.016 * VARY[i] * q4i);
+          r = Math.max(r, 0.014 * VARY[i] * q4i);
           loose = Math.max(loose, q4i);
           echo = q4i;
         }

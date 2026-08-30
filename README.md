@@ -269,8 +269,10 @@ images; a green process exit does not replace visual judgment.
 - `?fobstacles=0` — roll back cached typography/form avoidance (default ON).
 - `?fstrike=0` — roll back click physics: no strike wave, no crown, no press
   gain (default ON). Hover physics stays.
-- `?fformtouch=0` — roll back the FORMS answering the pointer (default ON):
-  the eight SVG forms stop denting and rippling, the droplets carry on.
+- `?fformtouch=<n>` — gain on the FORMS' response to the pointer (default 1).
+  `0` rolls it back entirely (the droplets carry on answering); any other
+  number scales the dent and the ripple live, for taste rounds without a
+  rebuild — e.g. `?fformtouch=0.5` halves it, `?fformtouch=2` doubles it.
 - `?fglass=0` — drop the liquid-glass MATERIAL to the flat brand-cyan branch
   (default ON). The core lighting — dome, wrapped diffuse, specular, sheen,
   fresnel — is what gives the liquid its depth; flat reads as a sticker.

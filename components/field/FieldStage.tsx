@@ -82,6 +82,26 @@ const GLASS_RUNGS = new Set<LiveTier>([
 
 /** Rungs that can still afford velocity-aligned deformation (~1.49× the pass). */
 const DEFORM_RUNGS = new Set<LiveTier>(["full", "fullnofx", "glass1x"]);
+/**
+ * Rungs that still let the FORMS answer the pointer.
+ *
+ * Deliberately not DEFORM_RUNGS, which this borrowed at first and which was
+ * wrong twice over. Deformation costs ~1.49× the glass pass; the form's domain
+ * displacement measured at no detectable cost, because every fragment outside
+ * the influence disc leaves on a distance test. And DEFORM_RUNGS stops at
+ * glass1x, while the lite tier STARTS at rigid — so on a lite machine the forms
+ * silently never answered at all, which is most of the page's interaction gone
+ * on exactly the hardware least likely to have anything else going on. Only the
+ * emergency half-res floor sheds it.
+ */
+const TOUCH_RUNGS = new Set<LiveTier>([
+  "full",
+  "fullnofx",
+  "glass1x",
+  "rigid",
+  "glasshalf",
+  "lite",
+]);
 // Uploaded in place of the live interaction whenever the forms must not answer
 // (a demoted rung, reduced motion, nothing touching). Zero is the shader's
 // exact-identity case, so this is the resting silhouette by construction.
@@ -183,6 +203,8 @@ export default function FieldStage({
     // narrower rollback: the droplets keep answering the hand and the forms
     // stop, which is also the only control that isolates the form's own share
     // of a response for measurement.
+    // Only an exact 0 unlinks the variant; any other number is a gain the
+  // conductor applies, so the shader still has to be there to receive it.
     const touchWanted =
       !/[?&]fformtouch=0(?:&|$)/.test(window.location.search) &&
       !motionQuery.matches;
@@ -532,7 +554,7 @@ export default function FieldStage({
       if (touchShaderActive) {
         const touchTierActive =
           !motionReduced &&
-          DEFORM_RUNGS.has(liveTier) &&
+          TOUCH_RUNGS.has(liveTier) &&
           !!f.touchLive &&
           !!f.touch &&
           !!f.shock;

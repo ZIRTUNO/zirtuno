@@ -697,7 +697,7 @@ const mkJumpScene = (bind) => ({
     //    the form's displacement, which is bounded by construction. A droplet
     //    escaping that envelope would mean a force had leaked into the body.
     const MAX_FORM_DISP =
-      FLUID.FORM_TOUCH * (1 + FLUID.CURSOR_PRESS) * 1.2 +
+      FLUID.FORM_TOUCH * (1 + FLUID.FORM_PRESS) * 1.2 +
       FLUID.FORM_SHOCK * 2 * 1.2 * (1 + FLUID.SHOCK_IRREG);
     {
       const struck = makeConductor([mkPool(1)], { physicsV3: true });

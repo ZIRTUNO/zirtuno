@@ -17,6 +17,8 @@ export declare function makeConductor(
     obstacleFlow?: boolean;
     /** false = no click strike and no press gain (?fstrike=0); default true. */
     strike?: boolean;
+    /** Multiplier on what the FORMS feel (?fformtouch=<n>); default 1. */
+    formGain?: number;
     /** false = neutral score and no veils (?fcine=0); default true. */
     cine?: boolean;
   },
