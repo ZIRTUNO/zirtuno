@@ -611,28 +611,38 @@ turn “disconnected” into random confetti.
 
 **Business job:** prove “ecosystems, not loose pieces.”
 
-**Content:** commercial headline and lead explaining how brand, site, traffic,
-CRM, AI, automation, dashboards, internal systems, service, and content
-strengthen one another.
+**Content:** a plain-language editorial opening names the real handoff: brand
+does not stop at the website, and the website does not stop at the lead. The
+lead connects presence, acquisition and operation without turning the chapter
+into a diagram or a piece of system notation. The closing line describes the
+operational result only after the body is whole.
 
-**Liquid:** Problem fragments seek one another, converge into the exact unified
-mark, regain vivid cyan, and become the organism’s core. Lines and node labels
-grow after—not before—the convergence.
+**Liquid:** the Problem fragments first recede into depth, then return as ten
+capability families across three overlapping system beats. They move forward
+and inward together before fusing into the exact unified mark and regaining
+vivid cyan. Nothing is drawn between them: connection is proved by the bodies
+becoming one, not by a diagram placed on top.
 
-**Diagram:**
+**Composition:**
 
-- exact mark/unified core with small “Seu negócio / Your business” label;
-- ten semantic DOM nodes;
-- sequential connection draw with traveling pulses;
-- hover/focus highlights node, connection, and explanation;
-- very slow whole-organism drift/rotation only if it remains calm;
-- mobile becomes a connected vertical stack while keeping the convergence.
+- spacious editorial opening with one concrete business relationship;
+- one liquid field beside one fixed type column at desktop widths;
+- ten semantic controls grouped naturally under three system names on one
+  vertical axis, accumulating on the same clock as their liquid families;
+- hover and focus pulse the selected capability’s system first, raise the
+  liquid rack-focus channel, and update a quiet authored explanation;
+- exact mark/unified core with small “Seu negócio / Your business” resolution;
+- mobile, reduced-motion, and static tiers use the same three authored groups
+  as a readable document while preserving the convergence story;
+- a resolved commercial statement and the two mapped CTAs close the chapter.
 
 **Acceptance:**
 
 - the Problem → Ecosystem continuity is unmistakable;
 - all nodes and explanations are accessible without hover;
-- it reads as a connected organism, not a list around a logo;
+- it reads as an assembled organism, not a list around a logo or a circuit
+  drawn after the fact;
+- no counters, equation, progress register, pseudo-HUD, or dashboard chrome;
 - no literal separate canvas/core swap;
 - end CTAs: `cta.structure` and `cta.portfolio`.
 
@@ -690,22 +700,47 @@ Phases:
 liquid left and copy right; on mobile, a vertical readable sequence. A vertical
 thread fills with progress. The old icon row/horizontal timeline is discarded.
 
-**Liquid rehearsal:**
+**Liquid rehearsal** — one material, five arguments; each state is made of the
+previous one's, and nothing enters that the chapter has not already put on the
+stage. **The mark is not in this chapter**: it was the one element here that
+the stage before it had not earned, which is why Integration read as a collapse
+into a logo and Evolution had nothing to inherit. Método is droplet-only.
 
-1. fragmented cloud inspected by a probe droplet;
-2. jittered liquid lattice;
-3. three masses accrete;
-4. exact mark resolves as one organism;
-5. mark grows and sheds evolution satellites.
+1. fragmented cloud, free and restless — no order at all;
+2. the same droplets take a grid, eight columns by six rows, held. Discrete
+   cells: a PLAN, drawn, not yet built;
+3. the grid's cells accrete into three SEPARATE masses — three systems, each
+   built on its own;
+4. the three masses meet, fuse into one body, and that body OPENS into a closed
+   circuit. Three masses collapsing into one puddle is three things gone; three
+   that join into a continuous loop are three things connected, and the hole is
+   the proof. The loop's locus is a rounded triangle whose lobes point where
+   the three masses stood, and the three populations are interleaved evenly
+   around it, so no arc of the organism belongs to one former system;
+5. the circuit holds, turns and grows, and a third of its liquid steps radially
+   outward — same bearing, next scale — to lay the same circuit out again as
+   discrete cells: the next plan, measured out around the working system.
 
-Exit satellites become the Work current.
+Those cells become the Work current.
 
 **Acceptance:**
 
 - phase order and descriptions are complete in both locales;
 - the visual state explains each phase rather than decorating it;
-- exact Integration mark uses bind;
-- exit drains before unstick without a flash or snap;
+- the chapter claims no form slot — no mark appears in Método;
+- each of the five states is RENDERED while its own copy is centred. Schedule
+  on the phase coordinate, never on the melt clock: it saturates at the end of
+  a melt and cannot address the plateau after it;
+- Integration's circuit encloses a real hole (`scripts/_hole.mjs`), and the
+  aperture opens across at least ~150px of scroll — a hole is a topological
+  event and appears abruptly if its window is short;
+- the outer cells never come within necking distance of the circuit — a
+  metaball ADDS to its neighbour's field rather than passing beside it;
+- one uv unit is the SMALLER viewport dimension, so the narrow stage's room
+  must be measured (`scripts/_bbox.mjs`), not derived from the landscape
+  mapping;
+- the exit dissolves by density and drains AFTER the last phase is read, not
+  before it, and hands over to the Work current without a flash or snap;
 - end CTAs: `cta.analysis` and `cta.talk`.
 
 ### 6.6 Chapter 06 — Selected Work
@@ -782,28 +817,41 @@ style or count them as the same system.
 material afterglow through the scene’s exposure and key score. There is no
 full-page white/cyan-white flash surface or flash score channel.
 
-**Composition and motion - CURRENT.** The chapter rests on two bands and one
-gesture, and both are structural rather than stylistic:
+**Composition and motion - CURRENT.** The chapter is an unframed editorial cut.
+The liquid is the only progress instrument; no dossier, beat ladder, fusion
+gauge, seam diagram, registration crop, plate, or status readout remains.
 
-- **Bands.** The mark occupies viewport y 23-65svh. Copy lives only in
-  `.origin-frame`, a band pinned to the foot of the viewport by a sticky bottom
-  inset; the stage above it holds no type at all. Copy therefore never crosses
-  the liquid in either direction, and the black apertures that used to sit
-  behind S7 copy are gone rather than re-tuned. The band must sit at the FOOT
-  of its beat: a sticky bottom inset only engages while the box would otherwise
-  fall below the scrollport.
+- **Reading bands.** `.origin-frame` keeps each beat pinned long enough to read
+  and keeps the five scene envelopes aligned to their copy. Beats 1-3 and 5
+  reserve the upper field for liquid and the lower band for type. Beat 4 is the
+  deliberate exception on a wide stage: the exact mark moves left as one body
+  and the purpose statement occupies the right column. On a narrow stage the
+  mark remains centred and the copy stacks below it. No black panel or aperture
+  is introduced on either path.
 - **One gesture.** All S7 copy arrives and is released by a single rising light
   band - a mask edge travelling upward, the same horizon moving behind the
-  stage. It replaces thirteen independent `Reveal variant="blur"` fade-ups
-  (§4.4 already rules those out). Windows are DERIVED from both the scene's
-  envelopes and the band's pin geometry: each release must complete while its
-  band is still pinned, or the copy unpins and travels up through the mark.
+  stage. It replaces independent `Reveal variant="blur"` fade-ups. Windows are
+  derived from both the scene envelopes and the band's pin geometry; each
+  release completes while its frame is still pinned. `scripts/probe-origin-
+  bands.mjs` gates the pin windows, the vertical mark clearance of the stacked
+  beats, and the right-column split of the wide purpose beat.
+- **The setting performs the argument.** Beat 1 is a diptych on wide stages and
+  a calm authored stack on narrow ones. Beat 2 is the antithesis: one clause per
+  half on desktop, one centred clause after the other on mobile. Beat 3 resolves
+  the exact mark over one understated pillar baseline. Beat 4 is the asymmetric
+  peak — mark left, purpose right — and Beat 5 removes the field until only the
+  wordmark and closing line remain.
 - **Fail-safe.** `--origin-scrub` defaults to 0 and is raised only by the live
   frame loop, so static tiers, reduced motion, the hero QA still, the `?feco`
-  hold, pre-hydration and no-JS all resolve the masks fully OPEN and the dawn
-  fully closed. Content is never hidden behind motion (rule #13).
-- The opening (label, headline, lead) reads ABOVE the runway in normal flow;
-  inside a sticky-stage beat the topbar sliced the headline in half.
+  hold, pre-hydration and no-JS all resolve the masks fully OPEN, the dawn
+  fully closed and the decorative chrome absent. Content is never hidden behind motion
+  (rule #13). The static path must also neutralise the beats' negative
+  margins: those overlaps are a SCROLL device, and with the runway collapsed
+  they stack five blocks of copy on top of each other.
+- The opening reads above the runway in normal flow as label, headline, and
+  lead only. The ghost numeral and dossier are retired.
+- The manifesto coda is four authored italic lines with alternating indentation,
+  not a numbered table or interface metaphor.
 
 **Acceptance:**
 
@@ -811,8 +859,13 @@ gesture, and both are structural rather than stylistic:
 - two → three → exact mark is visually legible;
 - pillar labels remain understated and distinct from services;
 - wordmark particles resolve legibly in both locales;
-- static/reduced-motion mode presents all beats as a plain reading sequence;
-- no chapter copy overlaps the mark, at any p and any viewport;
+- static/reduced-motion mode presents all beats as a plain reading sequence,
+  with no two beats overlapping;
+- the stacked beats clear the mark vertically, and the wide purpose beat keeps
+  a clean horizontal split between mark and copy;
+- every band's wipe completes its release while the band is still pinned
+  (`probe-origin-bands.mjs` PASS at 1440x900 AND 390x844);
+- no S7 dossier, HUD, plate, ladder, gauge, seam, or registration chrome renders;
 - the dawn returns the ground to ink before the manifesto coda;
 - flash-absence and reveal gates pass.
 
@@ -872,12 +925,79 @@ provider webhooks, announce every state accessibly, include intent.
 
 ### 6.10 Footer Coda
 
-Footer content remains minimal: Zirtuno/copyright, language, approved social
-paths, and Talk CTA.
+The footer is the page's COLOPHON: one raised glass panel, inset from the page
+edges, so the document ends on an object rather than trailing off into black.
+It carries, in this order:
+
+- the mark, the wordmark at colophon scale in the `.liquid-glass` fill, and the
+  positioning line over the mantra;
+- the Talk CTA;
+- two link columns — Company (Home · Services · Work · Work with us · Contact)
+  and Legal (Terms · Privacy · Cookies, the routes in §6.11);
+- a fading rule;
+- the base row: copyright and the approved social icons. The language toggle
+  is deliberately NOT here — it lives in the top bar and the mobile menu, and a
+  second copy in the colophon gave the page two switches for one setting.
+
+Social icons are environment-gated exactly as the contact chapter's channels
+are: an unset channel renders nothing, never a dead icon. Their geometry and
+hover are matched to the reference the owner supplied, measured rather than
+eyeballed: 27px glyph, 10.64px between glyph edges, and a 200ms `translateY(-1px)`
+lift to full strength. The 44px box is kept for the touch target the responsive
+gate enforces, with a negative inter-item margin restoring the reference's
+tighter visual spacing.
 
 On homepage routes the Footer is inside `PageStage`. It does not use a repeated
 chapter border as its primary entrance. The release transition carries the last
 droplet past the footer and completes the page fade to black.
+
+THE PANEL'S BOTTOM GUTTER IS LOAD-BEARING. `scenes/footer.ts` anchors on
+`.footer` and reads its BOTTOM edge; the released droplet sinks past that edge,
+and the gutter between the panel and the page bottom is where it lands. The
+scene never reads the footer's height, so the panel may grow freely — but
+collapsing `.footer`'s bottom padding would swallow the journey's last beat.
+
+### 6.11 Legal documents
+
+`/[locale]/legal/{terms,privacy,cookies}` back the footer's Legal column. They
+are deliberately the plainest pages on the site — no liquid, no PageStage, no
+chapter choreography — because a reader there is reading terms.
+
+Copy lives in `lib/i18n/messages` like every other surface, so both locales
+stay in lockstep. The shipped text is an HONEST SCAFFOLD describing only what
+this codebase demonstrably does (Plausible's cookieless analytics, Resend
+contact delivery, Sanity as the portfolio source, session-storage-only client
+state) and asserts no reviewed legal position. Until `LEGAL_COPY_APPROVED` is
+true, each page carries a visible review notice AND is served `noindex` — the
+same fail-closed grammar as `CONTACT_DELIVERY_READY`, and for the same reason:
+a placeholder policy that search engines treat as the policy of record is worse
+than no page at all.
+
+### 6.12 Work with us
+
+`/[locale]/careers` — "Trabalhe Conosco" / "Work with us", reached from the
+footer's Company column. The slug is `careers` and not `work-with-us` on
+purpose: `/work` is already the portfolio, and two routes both beginning
+"work" are a coin flip for anyone scanning the column. The label carries the
+meaning; the slug stays unambiguous.
+
+NO JOB BOARD, by decision. The studio keeps no public list of openings, and a
+stale vacancy costs a real applicant real effort. The page states what the
+studio is, which functions it is organised by, and how to apply.
+
+The six functions are READ FROM the `studio` namespace rather than copied into
+`careers`: the Studio chapter already publishes that list, and two lists that
+must agree are one list that will eventually disagree.
+
+Applications ride the existing contact pipeline under a new `careers` entry
+intent (`lib/forms/contact.ts`), so they inherit validation, the rate limit,
+Resend delivery and the webhook without a second mailbox to keep alive. The
+tag reaches the email subject and body, so careers mail can be filtered out of
+the commercial inbox.
+
+Copy is a first draft in `lib/i18n/messages/{pt,en}.json` under `careers` and
+is owner-editable; unlike §6.11 it carries no readiness gate, because a
+plainly-worded open-door page misleads nobody if it is never revised.
 
 ## 7. Conversion, Content, and Data
 
@@ -1134,11 +1254,15 @@ node scripts/verify-canvas-count.mjs
 node scripts/verify-cta.mjs
 node scripts/verify-entry-veil.mjs
 node scripts/verify-perf.mjs
+node scripts/probe-origin-bands.mjs
 node scripts/capture-transition-diagnostics.mjs
 ```
 
 R5-C is protected by `verify-postfx.mjs` and `verify-rest-exact.mjs`. R5-D is
 protected by `verify-cinematics.mjs` and the full-page transition diagnostics.
+S7's band geometry is protected by `probe-origin-bands.mjs`; run it at 1440x900
+AND at 390x844 (`W=390 H=844 node ...`), because the portrait stage stacks the
+diptych and its band is a different height.
 
 ### 10.3 Current query API
 
@@ -1175,6 +1299,8 @@ harness drills full-nofx demotion deterministically through its diagnostics.
 app/[locale]/
   page.tsx                 semantic chapter composition + PageStage + Footer
   work/                    portfolio index and cases
+  legal/[slug]/            terms · privacy · cookies (footer Legal column)
+  careers/                 Trabalhe Conosco / Work with us
 
 components/
   chapters/                RSC/DOM chapter surfaces and contact/project UI

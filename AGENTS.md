@@ -92,7 +92,7 @@ The site is in R5, “One Continuous Liquid.”
   `verify-rest-exact.mjs` byte gate protect it.
 - **R5-D is complete:** the cinematic cut. Seven scene modules
   (site · método · work · origin · studio · contact · footer) leave no
-  liquid-dead band: the work CURRENT (Método's satellites as a slow gyre
+  liquid-dead band: the work CURRENT (Método's next-scale cells as a slow gyre
   behind the grid + the hovered-card meniscus), the studio ECHO orbits, the
   contact GATHER, and the footer RELEASE (the mark's lowest droplet exits
   past the page bottom). Scenes author the light score; it drives the R5-C
@@ -301,16 +301,41 @@ Ask before adding any dependency or substituting any layer.
   strand the page. Geometry is GENERATED from the mark
   (`scripts/generate-intro-trace.mjs` → `lib/animation/intro-trace.data.mjs`);
   do not hand-author paths for it.
-- `lib/motion/coalesce.mjs` is the merge kernel — the same smooth-minimum
-  `sdf-glass-shader.mjs` runs on the GPU, evaluated on a contour instead of per
-  pixel, so two vector bodies can fuse and pinch apart as crisp geometry rather
-  than as a blurred goo filter. It is what gives S10's form its travelling bead.
-  `R` and `K` are ONE decision, not two (`field-liquid-spec.md §2`): the corners
-  fix `R + K`, and the requirement that the union stay a graph over the edge
-  fixes `K/2 = R`. Change either alone and the merge squares off into a
-  rectangular tab that every other check still passes.
-  When liquid meets structure here the LIQUID gives up its shape — a field's
-  rectangle never rounds and never loses a corner.
+- `lib/motion/coalesce.mjs` is the merge kernel: the drop that rides S10's form,
+  the wetted foot it sits in, and the filament it is pulled off on. Crisp
+  geometry, never a `feGaussianBlur` goo filter — a blurred hairline is a glow,
+  and a raster pass on a live surface is the second visual engine §4.15 forbids.
+  THE BRIDGE IS AUTHORED, not derived (`field-liquid-spec.md §2`). A
+  smooth-minimum — the vector half of what `sdf-glass-shader.mjs` runs on the
+  GPU — merges two bodies correctly but CANNOT make a neck: its bridge is always
+  fat and vanishes in one frame rather than thinning. So the profile is traced
+  as a graph over the NECK AXIS with an authored foot, throat and bulb, which is
+  what lets the filament stretch 42 px and break by thinning to nothing.
+  SOFT TO SOFT: the fields are rounded (`FIELD_R`), which removes every cusp
+  from the ring and lets tension carry around the corners instead of dying in
+  them. The corner rule survives in that form — the bridge grows out of the
+  STRAIGHT run of an edge or not at all, and never reaches an arc.
+  Motion smoothness comes from smoothing the TARGET, not the response: a spring
+  chasing a step target has its peak acceleration at t=0, so every hop began
+  with an 18 750 px/s² kick that no amount of softening ω could remove.
+  `TARGET_TAU` cut peak jerk 6.3x. An idle form runs the TOUR: the drop walks
+  the fields on its own, ~6.0 s a lap, self-paced off `bead.arrived` (geometric
+  — the drop is touching) rather than `bead.settled` (arithmetic, and 656 ms of
+  every stop is its sub-pixel tail). The tour BRUSHES, focus FUSES. The drop
+  The drop's OUTLINE STAYS ON, merged or not — it sits half-submerged in its
+  own meniscus rather than being hidden and cross-faded. Its stroke is COPIED
+  from the host contour's computed value each frame: while the bridge is formed
+  the two draw the same circle, and two coincident strokes are one stroke only
+  if they are identical. Different colours there read as a blink with no fade
+  in it. Hiding it needed a
+  cross-fade, which needed a dissolve, which needed a dwell long enough to play
+  in; not hiding it needed nothing. The `wet` state survives from that work and
+  is independently right: the field holding the drop lights to cyan-deep, so the
+  liquid lands on something lit instead of a dim grey hairline.
+  It YIELDS the moment focus or hover arrives. It is not the
+  runtime's tide — that makes every CTA breathe at once, which on a form
+  somebody is typing into reads as instability. One drop, and it gets out of
+  the way. It reads `handle.visible` so an unseen form costs nothing.
 - `lib/motion/membrane.mjs` is the vector liquid's kernel: DOM-free and
   deterministic like the `.mjs` field kernels, so `verify-membrane.mjs` runs it
   in plain node. `lib/motion/membrane-runtime.ts` owns the ONE rAF, the one
@@ -327,10 +352,63 @@ Ask before adding any dependency or substituting any layer.
   head comes from the sibling layouts at `[locale]/[...rest]` and
   `[locale]/work/[slug]`: a `not-found` boundary cannot export
   `generateMetadata`, but a layout that never throws can.
-- The chapter rail rests at its numbers-only width and reserves `--rail-safe`;
-  only the two homepage blocks that reach the page's right edge (the Studio role
-  grid and the Work strip) claim it. `PageStage` measures the rail rather than
-  hardcoding its column.
+- `lib/motion/rail.mjs` is THE WATERLINE — the chapter rail, and the third
+  member of the vector-liquid family beside the membrane and the coalescing
+  drop. The rail is no longer nine numbers in a column; it is the page's own
+  edge seen from the side: a dotted line the height of the viewport in which
+  the LIT RUN is the part of the document on screen (a real proportional thumb,
+  floored at `MIN_RUN` because 29 000 px of homepage against a 900 px viewport
+  makes an honest thumb two dots), the MARKS are the nine chapters at their
+  TRUE document positions rather than at nine equal steps, and the SWELL is the
+  hand. A dot and a dash are one primitive at two extensions.
+  Its contract is the membrane's, in one dimension: DISPLACEMENT, NOT
+  INFLATION. Each lobe is mean-removed against its own involvement window, so
+  the extensions sum to zero and the swell is paid for by the tautening beside
+  it — a rail that only bulges is a dock magnifier in the site's palette.
+  Two rules keep it legible rather than merely correct. The epsilon snap is
+  taken on the WHOLE rail, never dot by dot, because zeroing individual dots
+  puts material back into a sum that is supposed to be exact. And a READING
+  (a mark, the lit run, the live chapter) rides the swell but never renders the
+  withdrawal — the surface deforms both ways, the things painted on it do not.
+  Extension is feedback, cyan is information, and the two channels stay
+  separate: that is what lets one object be the scrollbar and the chapter index
+  without either half reading as decoration.
+  **NO NAME TAG.** The rail is a map, not a menu — a map does not label the
+  ground under your finger. An earlier cut opened a chapter's name beside the
+  cursor and it was the one loud thing left on a surface whose whole argument
+  is quiet. The name survives in `sr-only` (always) and on `:focus-visible`
+  only, where a sighted keyboard reader lands on a deliberately invisible dot
+  and a ring alone cannot say which of nine it is. A pointer never sees it, and
+  `capture-rail.mjs` fails if one ever appears under a hand.
+  It is STRICTLY ADDITIVE. `data-rail` is set only after the kernel has mounted
+  AND drawn, every rule that changes the rail is gated on it, and reduced
+  motion, no-JS, no fine pointer and any mount failure keep the numbered column
+  it replaced — complete and keyboard-navigable. The rail still rests inside
+  `--rail-safe`; only the two homepage blocks that reach the page's right edge
+  (the Studio role grid and the Work strip) claim that column, and `PageStage`
+  measures the rail rather than hardcoding it. `MAX_EXT` is chosen so the swell
+  cannot reach past it into the copy.
+  Scroll geometry arrives through `travel` on the shared membrane runtime, not
+  through a listener of the rail's own: `scrollHeight` inside the write phase
+  is a forced synchronous layout once a frame, with Lenis moving the page
+  underneath it.
+  **FIXED CHROME MUST NOT TRUST ITS OWN HEIGHT DURING A ROUTE CHANGE.**
+  `position: fixed` resolves against the nearest ancestor carrying a transform,
+  and `template.tsx` animates `y` on a wrapper around the whole page for half a
+  second of every client-side navigation. Measured in that window the rail's
+  box is the DOCUMENT's height — it came back ~29 000 px, and because the dots
+  keep their pitch the visible top of the rail still looked correct while every
+  mark, the lit run and the live chapter were laid out below the fold. It read
+  as a decorative dotted line that had stopped working, after a round trip to a
+  legal page. The span is therefore clamped to the viewport, and the rail
+  observes its OWN box as well as the document's — the document has stopped
+  resizing by the time the transform is removed, so only the second observation
+  ends the stale layout. Anything else that CACHES a measurement of fixed
+  chrome has the same exposure.
+  Gates: `verify-rail.mjs` (physics, in plain node), `capture-rail.mjs` (state
+  stills — and it must scroll with the WHEEL, because Lenis eases a native
+  `scrollTo` straight back out and the stills then lie about where the page
+  was).
 
 ## 8. Working Conventions
 
@@ -386,7 +464,9 @@ rounds:
 - page-wide physics feel, including cursor and pinch-off;
 - R5-C bloom, depth, banding, exposure, and grain;
 - Origin fusion, flash-free afterglow, and pacing;
-- Contact gather/exhale and Footer release.
+- Contact gather/exhale and Footer release;
+- the chapter rail's swell, tautening and lit run — the one piece of chrome
+  that answers a hand, and the only surface a reader touches while reading.
 
 For each:
 
@@ -419,10 +499,10 @@ Additional stop-the-line gates:
   `node scripts/verify-coalesce.mjs` (`npm run liquid:form`) — smin exactness,
   byte-exact rest, the reach, the handover silhouette, a simple closed curve,
   the bead's travel and mass, cost, corner clearance, and the squared-off guard.
-  `npm run liquid:form:sheet` renders the merge at 5x straight from the kernel:
+  `npm run liquid:form:sheet` renders the bridge at 5x straight from the kernel:
   REVIEW THAT BEFORE the page stills, because a 16 px detail on a 576 px form is
-  not judgeable at 1x — a squared-off tab survived two rounds of full-form
-  screenshots. `BASE=http://localhost:3071 node scripts/capture-field-liquid.mjs`
+  not judgeable at 1x — this surface has twice shipped a defect that survived
+  rounds of full-form screenshots. `BASE=http://localhost:3071 node scripts/capture-field-liquid.mjs`
   is the page contact sheet (rest · fused · four travel ages · the hold at the
   submit button · hover · invalid · BROKEN · reduced motion). `ONLY=broken`
   blocks the kernel's chunk and asserts the form survives it — the merge kernel
