@@ -12,6 +12,8 @@
     "forms:melts": "node scripts/capture-morph-frames.mjs",
     "forms:cursor": "node scripts/capture-cursor-merge.mjs",
     "liquid:form": "node scripts/verify-coalesce.mjs",
+    "rail": "node scripts/verify-rail.mjs",
+    "rail:sheet": "node scripts/capture-rail.mjs",
     "liquid:form:sheet": "node scripts/capture-coalesce-sheet.mjs",
     "chapters:sheet": "node scripts/capture-chapters.mjs",
     "endpoints": "node scripts/generate-morph-endpoints.mjs",

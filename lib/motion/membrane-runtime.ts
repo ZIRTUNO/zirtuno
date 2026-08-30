@@ -39,6 +39,17 @@ export type Driven = {
   scroll?(pxPerSec: number): void;
   /** Fired once as the surface enters view, if it wants an arrival. */
   arrive?(fromBelow: boolean, tMs: number): void;
+  /**
+   * Where the page is, for surfaces that draw the scroll itself rather than
+   * react to it: position, viewport, document height, speed in px/s.
+   *
+   * The chapter rail needs scroll GEOMETRY and not only scroll speed. It comes
+   * through here, from the listener this runtime already owns, because the
+   * alternative is a second scroll listener and a `scrollHeight` read inside
+   * the write phase — a forced synchronous layout, once a frame, with Lenis
+   * moving the page underneath it.
+   */
+  travel?(y: number, vh: number, docH: number, pxPerSec: number): void;
 };
 
 export type MembraneHandle<T extends Driven = Driven> = {
@@ -78,9 +89,28 @@ let scrollY = 0;
 let scrollT = 0;
 let scrollV = 0; // px/s, smoothed
 
+// The page's geometry, for `travel`. `scrollHeight` is a layout read, so it is
+// taken here — in a scroll handler, after layout — and cached: the document
+// grows while chapters stream in and the liquid stage measures itself, so it
+// cannot be read once at mount, but it does not need re-reading every frame.
+let pageY = 0;
+let pageVH = 0;
+let pageDoc = 0;
+let pageAt = -1e9;
+const PAGE_MS = 250;
+
+function measurePage(now: number) {
+  pageY = window.scrollY;
+  if (now - pageAt < PAGE_MS) return;
+  pageAt = now;
+  pageVH = window.innerHeight;
+  pageDoc = document.documentElement.scrollHeight;
+}
+
 function onScroll() {
   const now = performance.now();
   const y = window.scrollY;
+  measurePage(now);
   const dt = scrollT ? Math.min(now - scrollT, 120) : 0;
   if (dt > 8) {
     const v = ((y - scrollY) / dt) * 1000;
@@ -180,6 +210,9 @@ function tick(t: number) {
       h.mem.setTide?.(h.visible ? 1 : 0);
       if (h.visible) h.mem.scroll?.(scrollV);
     }
+    // Unlike the tide, `travel` is not an autonomous-mode affordance: a rail
+    // that draws the scroll has to draw it on every device.
+    if (h.visible) h.mem.travel?.(pageY, pageVH, pageDoc, scrollV);
     if (h.mem.step(t)) h.draw(h.mem, t);
     if (!h.mem.asleep) alive = true;
   }
@@ -223,8 +256,18 @@ function ensureGlobals() {
     // moment it scrolls into view, not wake up a frame late looking dead.
     { rootMargin: "220px" },
   );
+  measurePage(performance.now());
   window.addEventListener("pointermove", onPointerMove, { passive: true });
   window.addEventListener("scroll", onScroll, { passive: true });
+  window.addEventListener(
+    "resize",
+    () => {
+      pageAt = -1e9; // a resize invalidates the cache immediately
+      measurePage(performance.now());
+      wake();
+    },
+    { passive: true },
+  );
   window.addEventListener("pointerup", onPointerUp, { passive: true });
   window.addEventListener("pointercancel", onPointerLeave, { passive: true });
   document.addEventListener("pointerleave", onPointerLeave, { passive: true });
@@ -250,6 +293,21 @@ export function registerMembrane<T extends Driven>(
       raf = 0;
     }
   };
+}
+
+/**
+ * Invalidate the cached page geometry.
+ *
+ * The homepage keeps GROWING for a second or so after mount as chapters stream
+ * in and the liquid stage measures itself — and a reader who has not scrolled
+ * yet has fired no event that would notice. Surfaces that already watch the
+ * document for their own reasons (the chapter rail remeasures its chapter
+ * offsets) call this so the shared snapshot is refreshed with them.
+ */
+export function remeasurePage(): void {
+  pageAt = -1e9;
+  if (typeof window !== "undefined") measurePage(performance.now());
+  wake();
 }
 
 /**
