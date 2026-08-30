@@ -6,7 +6,7 @@ import { FORM_STILLS } from "@/lib/content/form-stills";
 
 /**
  * Project card (S7.2). Full anatomy: preview · category · name · challenge ·
- * what was built · services · outcome · ghost CTA. The outcome respects the
+ * what was built · services · outcome. The outcome respects the
  * no-invented-metrics rule: "architecture" → the Selected-architecture label,
  * otherwise the honest narrative/metric text.
  *
@@ -83,14 +83,6 @@ export function ProjectCard({ project }: { project: Project }) {
           <p>{localize(project.outcome, locale)}</p>
         </div>
 
-        <span className="project-cta cta cta-ghost">
-          <span className="cta-label">
-            {t(isSelectedArchitecture ? "ctaArchitecture" : "ctaCard")}
-          </span>
-          <span className="cta-arrow" aria-hidden="true">
-            →
-          </span>
-        </span>
       </div>
     </Link>
   );

@@ -1,13 +1,13 @@
 {
   "meta": {
-    "title": "Zirtuno — Ecossistemas digitais completos",
-    "description": "Software, IA, automação, dados, branding e marketing — conectados em uma só estrutura, feita para o seu negócio crescer."
+    "title": "Zirtuno | Ecossistemas digitais completos",
+    "description": "Conectamos software, IA, automação, dados, branding e marketing em uma só estrutura, feita para o seu negócio crescer."
   },
   "common": {
     "skipToContent": "Pular para o conteúdo",
     "scrollHint": "Role",
     "loading": "Zirtuno",
-    "introLabel": "Zirtuno — sequência de abertura",
+    "introLabel": "Zirtuno: sequência de abertura",
     "skipIntro": "Pular"
   },
   "nav": {
@@ -15,6 +15,12 @@
     "menuOpen": "Abrir menu",
     "menuClose": "Fechar menu",
     "chapterNavigation": "Navegação por capítulos",
+    "primaryNavigation": "Principal",
+    "links": {
+      "home": "Início",
+      "services": "Serviços",
+      "work": "Projetos"
+    },
     "languageLabel": "Idioma",
     "langPt": "Português",
     "langEn": "English",
@@ -34,13 +40,14 @@
     "analysis": "Solicitar análise inicial",
     "portfolio": "Ver portfólio",
     "structure": "Estruturar meu digital",
-    "talk": "Falar com a Zirtuno"
+    "talk": "Falar com a Zirtuno",
+    "talkShort": "Contato"
   },
   "hero": {
     "chapterLabel": "Zirtuno",
     "eyebrow": "Algumas forças não precisam ser barulhentas para transformar.",
     "headline": "Criamos ecossistemas digitais completos.",
-    "subline": "Software, IA, automação, dados, branding e marketing — conectados em uma só estrutura, feita para o seu negócio crescer.",
+    "subline": "Conectamos software, IA, automação, dados, branding e marketing em uma só estrutura, feita para o seu negócio crescer.",
     "liquidControlLabel": "Formas do ecossistema Zirtuno",
     "liquidControlInstructions": "Use as setas para explorar a marca e os sete pilares. Use Início e Fim para ir ao primeiro ou ao último estado.",
     "liquidMarkLabel": "Marca Zirtuno"
@@ -82,8 +89,9 @@
   },
   "ecosystem": {
     "chapterLabel": "O Ecossistema",
-    "headline": "Criamos ecossistemas digitais, não peças soltas.",
-    "lead": "Cada parte alimenta a seguinte. O sistema inteiro cresce junto.",
+    "headline": "A marca não termina no site. O site não termina no lead.",
+    "lead": "Marca, presença, aquisição e operação precisam trocar contexto. Projetamos essa continuidade do primeiro contato ao trabalho que acontece depois.",
+    "resolution": "O que o cliente vê e o que a equipe opera passam a fazer parte da mesma estrutura.",
     "centerLabel": "Seu negócio",
     "systems": {
       "identity": "Identidade",
@@ -93,7 +101,7 @@
     "nodes": [
       {
         "name": "Marca",
-        "tooltip": "A base de tudo — como o negócio é percebido."
+        "tooltip": "A base de tudo: como o negócio é percebido."
       },
       {
         "name": "Site",
@@ -319,7 +327,7 @@
       "conceptChallenge": "O Cenário",
       "conceptArchitecture": "A Arquitetura Proposta",
       "conceptOutcome": "A Direção Pretendida",
-      "conceptMetaTitle": "{status} — {title}",
+      "conceptMetaTitle": "{status} | {title}",
       "conceptMetaDescription": "{status}. {description}",
       "credits": "Créditos",
       "next": "Próximo projeto",
@@ -429,12 +437,152 @@
       "analysis": "Análise inicial",
       "structure": "Estruturar o digital",
       "talk": "Conversar com a Zirtuno",
+      "careers": "Trabalhe conosco",
       "general": "Contato"
     }
   },
   "footer": {
-    "copyright": "Zirtuno © 2026",
-    "tagline": "Discreto. Preciso. Transformador."
+    "copyright": "© 2026 Zirtuno. Todos os direitos reservados.",
+    "taglineLead": "Criamos ecossistemas digitais completos.",
+    "tagline": "Discreto. Preciso. Transformador.",
+    "navLabel": "Rodapé",
+    "company": "Empresa",
+    "legal": "Jurídico",
+    "links": {
+      "home": "Início",
+      "services": "Serviços",
+      "work": "Projetos",
+      "contact": "Contato",
+      "terms": "Termos de Uso",
+      "privacy": "Política de Privacidade",
+      "cookies": "Política de Cookies",
+      "careers": "Trabalhe conosco"
+    }
+  },
+  "legal": {
+    "chapterLabel": "Jurídico",
+    "updated": "Última atualização: {date}",
+    "draftNotice": "Este texto é uma minuta preparada a partir do funcionamento real do site. Ainda não passou por revisão jurídica e fica fora dos resultados de busca até que passe.",
+    "contactLine": "Dúvidas sobre este documento chegam até nós pelo formulário de contato na página inicial.",
+    "docs": {
+      "terms": {
+        "title": "Termos de Uso",
+        "summary": "As condições sob as quais a Zirtuno oferece este site e as solicitações feitas por ele.",
+        "updated": "28 de agosto de 2026",
+        "sections": [
+          {
+            "heading": "O que é este site",
+            "body": "zirtuno.com apresenta o trabalho, os serviços e o método da Zirtuno. É um site informativo: nada nele constitui oferta vinculante, orçamento ou compromisso de entrega. Escopo, preço e prazo de qualquer projeto são acordados em contrato escrito à parte."
+          },
+          {
+            "heading": "Solicitações",
+            "body": "O formulário de contato envia sua mensagem para uma caixa de entrada da Zirtuno para que possamos responder. Enviá-lo inicia uma conversa e nada além disso: não cria relação de cliente nem obrigação para nenhuma das partes até que exista um contrato assinado."
+          },
+          {
+            "heading": "Portfólio e conceitos",
+            "body": "Algumas peças aqui exibidas são conceitos ou arquiteturas, e não projetos entregues a clientes; elas são identificadas como tal onde aparecem. Nomes de clientes e resultados são publicados apenas com a autorização do cliente."
+          },
+          {
+            "heading": "Propriedade intelectual",
+            "body": "O nome Zirtuno, a marca, os textos, o design e o código deste site pertencem à Zirtuno. Marcas e trabalhos de clientes exibidos no portfólio permanecem de seus respectivos titulares. Você pode linkar e citar este site com atribuição; não pode reproduzi-lo integralmente nem apresentá-lo como seu."
+          },
+          {
+            "heading": "Disponibilidade",
+            "body": "Mantemos o site no ar, mas não garantimos acesso ininterrupto. Recursos que dependem do seu dispositivo, em especial o campo animado, que exige WebGL, degradam para uma alternativa estática em vez de falhar, e todo o conteúdo de cada página continua legível sem eles."
+          },
+          {
+            "heading": "Lei aplicável",
+            "body": "Estes termos são regidos pelas leis do Brasil, elegendo-se o foro da comarca de Curitiba, Paraná, para dirimir qualquer controvérsia."
+          }
+        ]
+      },
+      "privacy": {
+        "title": "Política de Privacidade",
+        "summary": "O que este site coleta, por quê, e o quão pouco isso é.",
+        "updated": "28 de agosto de 2026",
+        "sections": [
+          {
+            "heading": "A versão curta",
+            "body": "Este site não tem contas, nem login, nem publicidade. O único dado pessoal que ele recebe é o que você digita no formulário de contato. Todo o resto que medimos é anônimo e agregado."
+          },
+          {
+            "heading": "O que o formulário coleta",
+            "body": "Nome, e-mail e mensagem enviados, mais o botão pelo qual você chegou, para respondermos com contexto. A mensagem é entregue a uma caixa da Zirtuno pela Resend, nosso provedor de e-mail, e serve para responder você e manter registro da conversa. Nunca é vendida nem usada para marketing que você não pediu."
+          },
+          {
+            "heading": "Análise de tráfego",
+            "body": "Usamos o Plausible Analytics, que não usa cookies, não monta um perfil seu e não segue você por outros sites. Ele reporta visitas, origem e localização aproximada por país, de forma agregada. Também registramos medições anônimas de desempenho das páginas (Core Web Vitals) para encontrar páginas lentas. Nada disso identifica você."
+          },
+          {
+            "heading": "Armazenamento no seu dispositivo",
+            "body": "O site guarda dois pequenos valores no armazenamento de sessão do navegador: o capítulo que você estava lendo, para que a troca de idioma devolva você ao mesmo ponto, e uma medição única do desempenho gráfico do aparelho, para que o campo animado não precise se testar a cada página. Ambos somem ao fechar a aba e nenhum sai do seu dispositivo."
+          },
+          {
+            "heading": "Seus direitos",
+            "body": "Pela LGPD você pode perguntar quais dados pessoais mantemos sobre você, pedir correção e pedir exclusão. Escreva pelo formulário de contato e atenderemos o pedido."
+          },
+          {
+            "heading": "Retenção",
+            "body": "Mensagens do formulário são mantidas enquanto a solicitação está ativa e pelo tempo em que precisarmos delas para nossos registros. Peça a exclusão da sua e nós a faremos."
+          }
+        ]
+      },
+      "cookies": {
+        "title": "Política de Cookies",
+        "summary": "Este site não usa cookies. Veja o que ele faz no lugar disso.",
+        "updated": "28 de agosto de 2026",
+        "sections": [
+          {
+            "heading": "Sem cookies",
+            "body": "A Zirtuno não define cookies neste site: nem para análise, nem para publicidade, nem para preferências. Por isso você nunca viu um banner de consentimento. Não há nada a consentir."
+          },
+          {
+            "heading": "Por que a análise dispensa cookies",
+            "body": "O Plausible Analytics, a ferramenta que usamos, foi feito para medir tráfego sem cookies e sem identificar visitantes. Ele conta visitas; não segue pessoas."
+          },
+          {
+            "heading": "Idioma",
+            "body": "Seu idioma vai no próprio endereço, /pt/ ou /en/, em vez de ficar guardado em um cookie. Salve a página nos favoritos e ela permanece no idioma escolhido."
+          },
+          {
+            "heading": "Armazenamento de sessão",
+            "body": "Dois valores ficam no armazenamento de sessão do navegador, e não em cookies: seu lugar na página ao trocar de idioma e uma medição única de desempenho gráfico. Não são cookies, nunca são enviados a um servidor e desaparecem ao fechar a aba."
+          },
+          {
+            "heading": "Se isso mudar",
+            "body": "Caso um dia introduzamos algum cookie, esta página dirá antes que ele seja definido, e você será consultado primeiro."
+          }
+        ]
+      }
+    }
+  },
+  "careers": {
+    "metaTitle": "Trabalhe conosco | Zirtuno",
+    "metaDescription": "A Zirtuno é um studio pequeno e multidisciplinar em Curitiba. Não mantemos lista pública de vagas. Lemos o que chega.",
+    "chapterLabel": "Trabalhe conosco",
+    "title": "Trabalhe conosco",
+    "lead": "Somos um time pequeno e multidisciplinar, organizado por função e não por cargo. Se você constrói coisas que precisam se sustentar depois do lançamento, queremos saber que você existe.",
+    "functionsHeading": "Como o studio se organiza",
+    "functionsBody": "Seis funções, cada uma dona de uma parte real do trabalho. Quase todo mundo aqui é forte em uma e útil em uma segunda. É essa sobreposição que permite a um time pequeno carregar um ecossistema inteiro.",
+    "traitsHeading": "O que procuramos",
+    "traits": [
+      {
+        "heading": "Amplitude antes de especialidade",
+        "body": "Um ecossistema completo é um só argumento contado entre estratégia, design, engenharia e growth. Preferimos quem consegue acompanhar esse argumento de ponta a ponta a um especialista que o entrega na fronteira."
+      },
+      {
+        "heading": "Acabado, não apenas entregue",
+        "body": "Os detalhes que sobrevivem ao contato com o usuário real são os que ninguém pediu para corrigir. Se você repara na descendente cortada e no estado que ninguém desenhou, vai reconhecer como este studio trabalha."
+      },
+      {
+        "heading": "Discrição",
+        "body": "Boa parte do trabalho é feita no nome de outra pessoa. A frase da página inicial não é enfeite: somos sobre ser sentidos, lembrados e conduzidos adiante, não sobre aparecer."
+      }
+    ],
+    "applyHeading": "Como se candidatar",
+    "applyBody": "Aqui não há lista de vagas, nem formulário com um menu de cargos que ainda não existem. Escreva para nós. Diga qual função você assumiria, o que já construiu e onde podemos ver: um repositório, um portfólio, um produto no ar.",
+    "applyCta": "Enviar candidatura",
+    "applyNote": "Sua mensagem chega à mesma caixa de entrada de qualquer outro contato, marcada para não ser arquivada como oportunidade comercial."
   },
   "lab": {
     "badge": "Espaço de teste",
@@ -462,7 +610,7 @@
     "code": "404",
     "metaTitle": "Página não encontrada",
     "title": "Esta página se dispersou.",
-    "body": "O caminho que você procurava não existe — ou ainda não tomou forma.",
+    "body": "O caminho que você procurava não existe ou ainda não tomou forma.",
     "cta": "Voltar ao início"
   }
 }

@@ -53,7 +53,9 @@
     ".next-forms/types/**/*.ts",
     ".next-forms/dev/types/**/*.ts",
     ".next-forms-build/types/**/*.ts",
-    ".next-forms-build/dev/types/**/*.ts"
+    ".next-forms-build/dev/types/**/*.ts",
+    ".next-header/types/**/*.ts",
+    ".next-header/dev/types/**/*.ts"
   ],
   "exclude": [
     "node_modules",

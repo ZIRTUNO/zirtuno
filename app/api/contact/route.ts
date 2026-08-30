@@ -308,7 +308,7 @@ export async function POST(req: Request) {
       `Intent: ${intent}`,
       `Nome: ${name}`,
       `Email: ${email}`,
-      `Empresa: ${company || "—"}`,
+      `Empresa: ${company || "Não informado"}`,
       "",
       message,
     ].join("\n");

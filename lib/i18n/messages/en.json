@@ -1,13 +1,13 @@
 {
   "meta": {
-    "title": "Zirtuno — Complete digital ecosystems",
-    "description": "Software, AI, automation, data, branding and marketing — connected into one structure, built for your business to grow."
+    "title": "Zirtuno | Complete digital ecosystems",
+    "description": "We connect software, AI, automation, data, branding and marketing in one structure, built for your business to grow."
   },
   "common": {
     "skipToContent": "Skip to content",
     "scrollHint": "Scroll",
     "loading": "Zirtuno",
-    "introLabel": "Zirtuno — opening sequence",
+    "introLabel": "Zirtuno: opening sequence",
     "skipIntro": "Skip"
   },
   "nav": {
@@ -15,6 +15,12 @@
     "menuOpen": "Open menu",
     "menuClose": "Close menu",
     "chapterNavigation": "Chapter navigation",
+    "primaryNavigation": "Primary",
+    "links": {
+      "home": "Home",
+      "services": "Services",
+      "work": "Work"
+    },
     "languageLabel": "Language",
     "langPt": "Português",
     "langEn": "English",
@@ -34,13 +40,14 @@
     "analysis": "Request initial analysis",
     "portfolio": "See portfolio",
     "structure": "Structure my digital",
-    "talk": "Talk to Zirtuno"
+    "talk": "Talk to Zirtuno",
+    "talkShort": "Contact"
   },
   "hero": {
     "chapterLabel": "Zirtuno",
     "eyebrow": "Some forces don't need to be loud to transform.",
     "headline": "We build complete digital ecosystems.",
-    "subline": "Software, AI, automation, data, branding and marketing — connected into one structure, built for your business to grow.",
+    "subline": "We connect software, AI, automation, data, branding and marketing in one structure, built for your business to grow.",
     "liquidControlLabel": "Zirtuno ecosystem forms",
     "liquidControlInstructions": "Use the arrow keys to explore the mark and its seven pillars. Use Home and End to move to the first or last state.",
     "liquidMarkLabel": "Zirtuno mark"
@@ -82,8 +89,9 @@
   },
   "ecosystem": {
     "chapterLabel": "The Ecosystem",
-    "headline": "We build digital ecosystems, not loose parts.",
-    "lead": "Each part feeds the next. The whole system grows together.",
+    "headline": "The brand does not end at the website. The website does not end at the lead.",
+    "lead": "Brand, presence, acquisition, and operations need to share context. We design that continuity from the first contact to the work that follows.",
+    "resolution": "What the client sees and what the team operates become part of the same structure.",
     "centerLabel": "Your business",
     "systems": {
       "identity": "Identity",
@@ -93,7 +101,7 @@
     "nodes": [
       {
         "name": "Brand",
-        "tooltip": "The base of everything — how the business is perceived."
+        "tooltip": "The base of everything: how the business is perceived."
       },
       {
         "name": "Website",
@@ -319,7 +327,7 @@
       "conceptChallenge": "The Scenario",
       "conceptArchitecture": "The Proposed Architecture",
       "conceptOutcome": "The Intended Direction",
-      "conceptMetaTitle": "{status} — {title}",
+      "conceptMetaTitle": "{status} | {title}",
       "conceptMetaDescription": "{status}. {description}",
       "credits": "Credits",
       "next": "Next project",
@@ -429,12 +437,152 @@
       "analysis": "Initial analysis",
       "structure": "Structure the digital",
       "talk": "Talk to Zirtuno",
+      "careers": "Work with us",
       "general": "Contact"
     }
   },
   "footer": {
-    "copyright": "Zirtuno © 2026",
-    "tagline": "Discreet. Precise. Transformative."
+    "copyright": "© 2026 Zirtuno. All rights reserved.",
+    "taglineLead": "We build complete digital ecosystems.",
+    "tagline": "Discreet. Precise. Transformative.",
+    "navLabel": "Footer",
+    "company": "Company",
+    "legal": "Legal",
+    "links": {
+      "home": "Home",
+      "services": "Services",
+      "work": "Work",
+      "contact": "Contact",
+      "terms": "Terms of Service",
+      "privacy": "Privacy Policy",
+      "cookies": "Cookie Policy",
+      "careers": "Work with us"
+    }
+  },
+  "legal": {
+    "chapterLabel": "Legal",
+    "updated": "Last updated: {date}",
+    "draftNotice": "This text is a working draft prepared from how the site actually operates. It has not yet been reviewed by counsel, and is kept out of search results until it is.",
+    "contactLine": "Questions about this document reach us through the contact form on the homepage.",
+    "docs": {
+      "terms": {
+        "title": "Terms of Service",
+        "summary": "The terms under which Zirtuno offers this website and the enquiries made through it.",
+        "updated": "28 August 2026",
+        "sections": [
+          {
+            "heading": "What this site is",
+            "body": "zirtuno.com presents Zirtuno's work, services and method. It is an informational site: nothing on it constitutes a binding offer, a quote, or a commitment to deliver. Scope, price and schedule for any engagement are agreed in a separate written contract."
+          },
+          {
+            "heading": "Enquiries",
+            "body": "The contact form sends your message to a Zirtuno inbox so we can reply. Sending it starts a conversation and nothing more: it creates no client relationship and no obligation on either side until a signed agreement exists."
+          },
+          {
+            "heading": "Portfolio and concept work",
+            "body": "Some pieces shown here are concepts or architectures rather than delivered client projects, and are labelled as such where they appear. Client names and results are published only with that client's permission."
+          },
+          {
+            "heading": "Intellectual property",
+            "body": "The Zirtuno name, mark, written copy, visual design and the code behind this site belong to Zirtuno. Client marks and work shown in the portfolio remain the property of their owners. You may link to and quote from this site with attribution; you may not reproduce it wholesale or present it as your own."
+          },
+          {
+            "heading": "Availability",
+            "body": "We keep the site working but do not guarantee uninterrupted access. Features that depend on your device, in particular the animated field, which requires WebGL, degrade to a static alternative rather than failing, and the full content of every page stays readable without them."
+          },
+          {
+            "heading": "Governing law",
+            "body": "These terms are governed by the laws of Brazil, with the courts of Curitiba, Paraná as the venue for any dispute."
+          }
+        ]
+      },
+      "privacy": {
+        "title": "Privacy Policy",
+        "summary": "What this site collects, why, and how little of it there is.",
+        "updated": "28 August 2026",
+        "sections": [
+          {
+            "heading": "The short version",
+            "body": "This site has no accounts, no logins and no advertising. The only personal data it receives is what you type into the contact form. Everything else we measure is anonymous and aggregated."
+          },
+          {
+            "heading": "What the contact form collects",
+            "body": "The name, email address and message you submit, plus which call to action you arrived from, so we can answer in context. It is delivered to a Zirtuno inbox by Resend, our email provider, and is used to reply to you and to keep a record of the conversation. It is never sold, and never used for marketing you did not ask for."
+          },
+          {
+            "heading": "Analytics",
+            "body": "We use Plausible Analytics, which is cookieless and does not build a profile of you or follow you across sites. It reports page views, referrers and coarse country-level location in aggregate. We also record anonymous page-performance measurements (Core Web Vitals) to find slow pages. None of this identifies you."
+          },
+          {
+            "heading": "Storage on your device",
+            "body": "The site stores two small values in your browser's session storage: the chapter you were reading, so switching language returns you to the same place, and a one-time measurement of your device's graphics performance, so the animated field does not have to re-test itself on every page. Both are cleared when you close the tab and neither leaves your device."
+          },
+          {
+            "heading": "Your rights",
+            "body": "Under the LGPD you may ask what personal data we hold about you, ask us to correct it, and ask us to delete it. Write to us through the contact form and we will act on the request."
+          },
+          {
+            "heading": "Retention",
+            "body": "Contact-form messages are kept while the enquiry is live and for as long afterwards as we need them for our records. Ask us to delete yours and we will."
+          }
+        ]
+      },
+      "cookies": {
+        "title": "Cookie Policy",
+        "summary": "This site sets no cookies. Here is what it does instead.",
+        "updated": "28 August 2026",
+        "sections": [
+          {
+            "heading": "No cookies",
+            "body": "Zirtuno sets no cookies on this site: not for analytics, not for advertising, not for preferences. That is why you were never shown a consent banner. There is nothing to consent to."
+          },
+          {
+            "heading": "Why analytics needs none",
+            "body": "Plausible Analytics, the tool we use, was built to measure traffic without cookies and without identifying visitors. It counts visits; it does not follow people."
+          },
+          {
+            "heading": "Language",
+            "body": "Your language is carried in the address itself, /pt/ or /en/, rather than remembered in a cookie. Bookmark a page and it stays in the language you chose."
+          },
+          {
+            "heading": "Session storage",
+            "body": "Two values live in your browser's session storage rather than in cookies: your place in the page across a language switch, and a one-time graphics-performance measurement. They are not cookies, are never sent to a server, and disappear when you close the tab."
+          },
+          {
+            "heading": "If this changes",
+            "body": "Should we ever introduce a cookie, this page will say so before it is set, and you will be asked first."
+          }
+        ]
+      }
+    }
+  },
+  "careers": {
+    "metaTitle": "Work with us | Zirtuno",
+    "metaDescription": "Zirtuno is a small, multidisciplinary studio in Curitiba. We keep no public list of openings. We read what arrives.",
+    "chapterLabel": "Work with us",
+    "title": "Work with us",
+    "lead": "We are a small, multidisciplinary team, organised by function rather than by title. If you build things that have to hold up after the launch, we would like to know you exist.",
+    "functionsHeading": "How the studio is organised",
+    "functionsBody": "Six functions, each owning a real part of the work. Most people here are strong in one and useful in a second. That overlap is what lets a small team carry a whole ecosystem.",
+    "traitsHeading": "What we look for",
+    "traits": [
+      {
+        "heading": "Range over specialism",
+        "body": "A complete ecosystem is one argument told across strategy, design, engineering and growth. We would rather work with someone who can follow that argument end to end than with a specialist who hands it off at the border."
+      },
+      {
+        "heading": "Finished, not just shipped",
+        "body": "The details that survive contact with a real user are the ones nobody was asked to fix. If you notice the descender that gets clipped and the state nobody designed, you will recognise how this studio works."
+      },
+      {
+        "heading": "Discretion",
+        "body": "Much of the work is done in someone else's name. The mantra on the homepage is not decoration: we are about being felt, remembered and carried forward, not about appearing."
+      }
+    ],
+    "applyHeading": "How to apply",
+    "applyBody": "There is no vacancy list here, and no form with a dropdown of roles that do not exist yet. Write to us. Tell us which function you would own, what you have built, and where we can see it: a repository, a portfolio, a product that is live.",
+    "applyCta": "Send your application",
+    "applyNote": "Your message reaches the same inbox as every other enquiry, tagged so it is not filed as a commercial lead."
   },
   "lab": {
     "badge": "Test space",
@@ -462,7 +610,7 @@
     "code": "404",
     "metaTitle": "Page not found",
     "title": "This page has dispersed.",
-    "body": "The path you were looking for doesn't exist — or hasn't taken shape yet.",
+    "body": "The path you were looking for doesn't exist or hasn't taken shape yet.",
     "cta": "Back home"
   }
 }

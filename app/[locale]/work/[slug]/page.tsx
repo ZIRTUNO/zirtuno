@@ -123,13 +123,6 @@ export default async function CaseStudyPage({
         id="content"
         className="page-x min-h-svh pb-28 pt-[calc(var(--topbar-h)+3rem)]"
       >
-        <Link href="/work" data-cursor="hover" className="cta cta-ghost">
-          <span className="cta-arrow" aria-hidden="true">
-            ←
-          </span>
-          <span className="cta-label">{t("case.back")}</span>
-        </Link>
-
         <header className="mt-10 max-w-5xl">
           <p className="project-cats">{categories.join(" · ")}</p>
           {isSelectedArchitecture && (

@@ -22,9 +22,8 @@ import {
  * profile (fattest at the source, drawn to nothing at both ends) and takes the
  * same crest-then-trough pulse on a press that the membrane's strike does.
  *
- * Deliberately NOT applied to `.cta-ghost`. Ghost is 12 px muted mono in the
- * top bar and the footer, and the brand word is "Discreto" — chrome that
- * ripples is chrome that asks for attention it was designed not to want.
+ * Deliberately limited to secondary CTAs. Primary actions use the full
+ * membrane treatment instead.
  */
 
 const PAD = 6;

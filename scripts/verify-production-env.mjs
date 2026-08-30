@@ -192,6 +192,12 @@ for (const key of [
   "CONTACT_WEBHOOK_READY",
   "CONTACT_RATE_LIMIT_READY",
   "PUBLIC_IDENTITY_READY",
+  // The footer links to /legal/{terms,privacy,cookies} from every page. The
+  // shipped copy is an honest scaffold, not reviewed legal text, and the pages
+  // fail closed on their own (visible notice + noindex) — but a public site
+  // whose Terms of Service is a placeholder is the same class of unapproved
+  // public fact this gate exists to stop.
+  "LEGAL_COPY_APPROVED",
 ]) {
   if (process.env[key] !== "true") errors.push(`${key} must be true`);
 }

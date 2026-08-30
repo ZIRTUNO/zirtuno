@@ -4,12 +4,6 @@ import { Reveal } from "@/components/ui/Reveal";
 import { ContactForm } from "./ContactForm";
 import { ContactMetaball } from "./ContactMetaball";
 
-// TODO(decision): only owner-approved public channels render. The public
-// mailbox remains separate from the private delivery recipient by design.
-const WHATSAPP_URL = process.env.NEXT_PUBLIC_WHATSAPP_URL?.trim();
-const INSTAGRAM_URL = process.env.NEXT_PUBLIC_INSTAGRAM_URL?.trim();
-const CONTACT_EMAIL = process.env.NEXT_PUBLIC_CONTACT_EMAIL?.trim();
-
 /**
  * S10 · Contact — the conversion endpoint. Artistic but unmistakably usable:
  * the metaball (placeholder; Phase 2 "exhale") is decoration above a clear,
@@ -23,9 +17,6 @@ export function ChapterContact({
   initialStatus?: string;
 }) {
   const t = useTranslations("contact");
-  const hasDirectChannel = Boolean(
-    WHATSAPP_URL || CONTACT_EMAIL || INSTAGRAM_URL,
-  );
 
   return (
     <section
@@ -60,46 +51,6 @@ export function ChapterContact({
           initialIntent={initialIntent}
           initialStatus={initialStatus}
         />
-
-        {hasDirectChannel && (
-          <div className="contact-secondary">
-            <span>{t("secondaryLead")}</span>
-            {WHATSAPP_URL && (
-              <a
-                href={WHATSAPP_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                data-cursor="hover"
-                data-analytics-event="direct_contact"
-                data-analytics-channel="whatsapp"
-              >
-                {t("whatsapp")}
-              </a>
-            )}
-            {CONTACT_EMAIL && (
-              <a
-                href={`mailto:${CONTACT_EMAIL}`}
-                data-cursor="hover"
-                data-analytics-event="direct_contact"
-                data-analytics-channel="email"
-              >
-                {t("email")}
-              </a>
-            )}
-            {INSTAGRAM_URL && (
-              <a
-                href={INSTAGRAM_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                data-cursor="hover"
-                data-analytics-event="direct_contact"
-                data-analytics-channel="instagram"
-              >
-                {t("instagram")}
-              </a>
-            )}
-          </div>
-        )}
       </div>
     </section>
   );

@@ -5,6 +5,11 @@ export const CONTACT_INTENTS = [
   "analysis",
   "structure",
   "talk",
+  // Applications from /careers land in the SAME delivery pipeline as every
+  // other enquiry — validation, rate limit, Resend, webhook — tagged so the
+  // owner can filter them out of the commercial inbox. A separate mailbox
+  // would be a second thing to keep working for no gain.
+  "careers",
   "general",
 ] as const;
 

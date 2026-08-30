@@ -1,6 +1,6 @@
 import { useTranslations } from "next-intl";
 import { Reveal } from "@/components/ui/Reveal";
-import { CtaAnalysis, CtaTalk } from "@/components/chrome/CtaButton";
+import { CtaAnalysis } from "@/components/chrome/CtaButton";
 
 type Phase = { name: string; desc: string };
 
@@ -61,7 +61,6 @@ export function ChapterMethod() {
       <div className="page-x pb-24 md:pb-32">
         <Reveal inView className="flex flex-wrap items-center gap-x-8 gap-y-4">
           <CtaAnalysis placement="method" />
-          <CtaTalk variant="secondary" placement="method" />
         </Reveal>
       </div>
     </section>

@@ -1,5 +1,4 @@
 import { useTranslations } from "next-intl";
-import { CtaButton } from "@/components/chrome/CtaButton";
 import { Disclose } from "./Disclose";
 import type { PillarKey } from "@/lib/content/services";
 
@@ -28,8 +27,6 @@ import type { PillarKey } from "@/lib/content/services";
 export function PillarEntry({
   index,
   pillarKey,
-  category,
-  hasWork,
 }: {
   index: number;
   pillarKey: PillarKey;
@@ -42,7 +39,6 @@ export function PillarEntry({
   const base = `pillars.${pillarKey}`;
   const num = String(index + 1).padStart(2, "0");
   const caps = t.raw(`${base}.caps`) as string[];
-  const categoryLabel = t(`${base}.categoryLabel`);
   const name = t(`${base}.name`);
 
   return (
@@ -70,7 +66,7 @@ export function PillarEntry({
         <Disclose
           className="pillar-detail"
           label={t("detailsLabel")}
-          summaryLabel={`${t("detailsLabel")} — ${name}`}
+          summaryLabel={`${t("detailsLabel")}: ${name}`}
         >
           <dl className="pillar-blocks">
             <div className="pillar-block" data-disclose-row>
@@ -105,23 +101,6 @@ export function PillarEntry({
           </p>
         </Disclose>
 
-        <div className="pillar-action">
-          {hasWork ? (
-            <CtaButton
-              variant="ghost"
-              href={`/work?category=${category}`}
-              label={t("pillarCta", { category: categoryLabel })}
-              placement={`service_${pillarKey}`}
-            />
-          ) : (
-            <CtaButton
-              variant="ghost"
-              intent="structure"
-              label={t("pillarCtaTalk", { category: categoryLabel })}
-              placement={`service_${pillarKey}`}
-            />
-          )}
-        </div>
       </div>
 
       {/* The form's own column. Empty by design and never collapsed: it is what

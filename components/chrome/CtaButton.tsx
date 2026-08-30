@@ -9,13 +9,12 @@ import { Thread } from "@/components/chrome/Thread";
 import { cn } from "@/lib/utils";
 
 // build-spec S1.15 — the load-bearing CTA system.
-export type CtaVariant = "primary" | "secondary" | "ghost";
-export type CtaIntent = "analysis" | "structure" | "talk";
+export type CtaVariant = "primary" | "secondary";
+export type CtaIntent = "analysis" | "structure" | "talk" | "careers";
 
 const VARIANT_CLASS: Record<CtaVariant, string> = {
   primary: "cta cta-primary",
   secondary: "cta cta-secondary",
-  ghost: "cta cta-ghost",
 };
 
 type CtaButtonProps = {
@@ -24,8 +23,16 @@ type CtaButtonProps = {
   intent?: CtaIntent;
   /** Explicit destination (locale-relative), e.g. "/work" or "/work?category=ai". */
   href?: string;
-  /** i18n key under the `cta` namespace. */
-  labelKey?: "analysis" | "portfolio" | "structure" | "talk";
+  /**
+   * i18n key under the `cta` namespace.
+   *
+   * `talkShort` is the same INTENT as `talk` with a compact label, for chrome
+   * that cannot spend the width — the top bar's chip is sized off the bar and a
+   * fifteen-character uppercase mono label made it 1.64x the reference button
+   * it is drawn from. Callers pass `intent="talk"` alongside it, so the
+   * placement map in build-spec §7.2 and the conversion tagging are unchanged.
+   */
+  labelKey?: "analysis" | "portfolio" | "structure" | "talk" | "talkShort";
   /** Literal label override (skips i18n). */
   label?: string;
   /** Privacy-safe source label for conversion attribution. */
@@ -57,7 +64,7 @@ export function CtaButton({
   const pathname = usePathname(); // locale-stripped ("/" on the homepage)
   const text = label ?? (labelKey ? t(labelKey) : "");
   const destination = href ?? (intent ? `/?intent=${intent}#contact` : "/");
-  const showArrow = variant !== "primary";
+  const showArrow = variant === "secondary";
 
   const onClick = (e: MouseEvent<HTMLAnchorElement>) => {
     if (!intent || href || pathname !== "/") return; // routed path

@@ -1,6 +1,5 @@
 import { useTranslations } from "next-intl";
 import { Reveal } from "@/components/ui/Reveal";
-import { CtaTalk } from "@/components/chrome/CtaButton";
 
 /**
  * S9 · The Studio. Where (Curitiba + coordinates) · Who (anonymous role grid,
@@ -61,9 +60,6 @@ export function ChapterStudio() {
         </p>
       </Reveal>
 
-      <Reveal inView className="mt-14 flex">
-        <CtaTalk variant="secondary" placement="studio" />
-      </Reveal>
     </section>
   );
 }
