@@ -17,6 +17,8 @@
 //      degrading into a vibe.
 //   6. the content outlives the exit — `open` flips only once height hits 0
 //   7. reduced motion and no-JS both fall back to a plain, instant <details>
+//   8. the managed pin does not trigger a second, document-level scroll-anchor
+//      correction — the headline holds in the viewport as well as the pillar
 //
 //   BASE_URL=http://localhost:PORT node scripts/verify-disclose.mjs
 
@@ -333,10 +335,10 @@ const trackHeadline = (page, ms) =>
   // without compensation opening it levers the name 165.7px upward.
   await page.evaluate((sel) => document.querySelector(sel).querySelector("summary").click(), SEL);
   await page.waitForTimeout(900);
-  // re-settle the scroll: the cycles above changed the document height, and a
-  // browser scroll-anchoring correction landing mid-measurement would be read
-  // as pin error. The pillar-relative number below is immune to it either way,
-  // but the viewport number is only meaningful from a settled scroll.
+  // Re-settle the scroll after the earlier cycles. From this point the viewport
+  // number is load-bearing: the managed open/close must suppress native
+  // document anchoring for its exact lifetime, or the browser compensates the
+  // same layout rise as the pin and moves the whole stage under the reader.
   await page.evaluate(
     (sel) =>
       document
@@ -364,6 +366,11 @@ const trackHeadline = (page, ms) =>
       `the headline holds its line through the ${tag} — every frame, not just the ends`,
       `${worstInPillar.toFixed(2)}px within the pillar over ${tops.length} frames ` +
         `(viewport ${worstViewport.toFixed(2)}px, of which scroll ${scrollDrift.toFixed(2)}px)`,
+    );
+    check(
+      scrollDrift < 2 && worstViewport < 2,
+      `the ${tag} does not move the document or the headline in the viewport`,
+      `viewport ${worstViewport.toFixed(2)}px · scroll ${scrollDrift.toFixed(2)}px`,
     );
     await page.waitForTimeout(600);
   }
@@ -416,7 +423,12 @@ await browser.close();
 // commercial substance has to be in them.
 {
   console.log("\nserver HTML (no JS)");
-  const html = await (await fetch(URL)).text();
+  // Keep this probe single-use. A pooled fetch socket plus an immediate
+  // `process.exit()` trips Node/libuv's Windows handle-closing assertion after
+  // every check has already passed.
+  const html = await (
+    await fetch(URL, { headers: { connection: "close" } })
+  ).text();
 
   check(!html.includes("data-disclose="), "no data-disclose in the served markup");
   check(html.includes("<details class=\"disclose pillar-detail\""), "the panel ships as a native <details>");
@@ -431,8 +443,7 @@ await browser.close();
 console.log(`\ncaptures → ${OUT}/`);
 if (failures) {
   console.error(`\n${failures} disclosure check(s) FAILED`);
-  process.exit(1);
+  process.exitCode = 1;
+} else {
+  console.log("\nall disclosure checks passed");
 }
-console.log("\nall disclosure checks passed");
-// fetch keeps a live handle open; exit rather than let libuv assert on teardown
-process.exit(0);

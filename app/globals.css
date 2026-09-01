@@ -2447,6 +2447,15 @@ section[id],
 
    Gated on an OPEN live panel so the transform is not standing on seven
    copy columns creating containing blocks for nothing. */
+/* The pin already compensates the copy column's layout rise. Native document
+   anchoring reads that untransformed rise and otherwise compensates it a
+   second time by moving the viewport. The anchor can be outside the copy (the
+   next stage is sometimes the chosen node), so the document scroller itself
+   has to opt out for the exact lifetime of the managed open/close. Native and
+   reduced-motion details never match this gate. */
+html:has(.disclose[data-disclose="live"][open]) {
+  overflow-anchor: none;
+}
 .pillar:has(.disclose[data-disclose="live"][open]) .pillar-copy {
   transform: translate3d(0, var(--copy-pin, 0px), 0);
 }
