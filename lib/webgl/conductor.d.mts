@@ -21,5 +21,16 @@ export declare function makeConductor(
     formGain?: number;
     /** false = neutral score and no veils (?fcine=0); default true. */
     cine?: boolean;
+    /** R6 — the SIMULATED droplet count. N (48) is the authored population and
+     *  the floor; anything above it is motes (lib/webgl/motes.mjs), which are
+     *  ordinary droplets whose targets are derived from a host's. Default N. */
+    pop?: number;
+    /** R6 — per-droplet temperament master, 0…1. 0 is a neutral bypass
+     *  (?ftemper=0): pre-R6 motion, without a second code path. Default 1. */
+    temper?: number;
+    /** R6-B — multiplier on THE LEASH, the neighbourhood a free droplet may
+     *  wander inside instead of being sprung to a point. 0 restores the
+     *  pre-R6-B stiff spring exactly (?fleash=0). Default 1. */
+    leash?: number;
   },
 ): Conductor;

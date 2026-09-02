@@ -151,3 +151,4 @@ export async function buildSdfAsync(
     return maskToSdf(again, RES, RES, blur, 1 / RES) as Float32Array;
   }
 }
+

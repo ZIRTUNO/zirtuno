@@ -15,7 +15,7 @@
  *   - phys.mjs   — CLOUDS, PHYS, TAUP, the scatter/orbital vocabulary;
  *   - melt.mjs   — the §3.3 melt (packBridge + matchClouds/permFor +
  *                  bridgePresence/formPhase + the measured bridge solidity).
- * The hero QA stills (FieldMorphHero) and the scenes both import the melt from
+ * The isolated form QA renderer and the scenes both import the melt from
  * here, so it has exactly ONE implementation — and scripts/_melt-sim.mjs, the
  * offline field simulator, runs that same implementation rather than a copy.
  */
@@ -43,6 +43,7 @@ export {
   arrive,
   bridgeRadiusEnvelope,
   bridgePresence,
+  bridgeDensity,
   bridgeSwell,
   matchClouds,
   permFor,
@@ -50,6 +51,9 @@ export {
   packBridge,
   formPresence,
   formPhase,
+  morphPhase,
+  meltSat,
+  SAT_OFF,
 } from "./melt.mjs";
 
 // ── the driver contract (consumed by components/field/FieldStage) ─────────────
@@ -60,6 +64,13 @@ export type FieldFrame = {
   fb: number; // form B field weight
   ea: number; // form A erosion offset (0 = exact)
   eb: number; // form B erosion offset
+  /** The field's saturation ceiling (melt.mjs meltSat), uploaded as iFieldSat.
+   *  Absent or 0 = the exact historical plain sum. */
+  sat?: number;
+  /** DIAGNOSTIC ONLY — melt progress, surfaced on window.__optics so the shape
+   *  gate and the capture harnesses can target an exact frame. -1 = not in a
+   *  melt. No render path reads it. */
+  meltP?: number;
   warp: number;
   mute: number; // 0 = brand cyan … 1 = desaturated (S3)
   count: number; // balls the driver packed into the buffer
@@ -78,6 +89,10 @@ export type FieldFrame = {
   /** True while anything above is non-zero — lets the stage upload the
    *  identity arrays instead, so a stale dent cannot outlive the pointer. */
   touchLive?: boolean;
+  /** R6 — packed motes, and the mean bind over the authored droplets. Absent
+   *  on drivers with no mote population. */
+  motes?: number;
+  bindAvg?: number;
 };
 export type FieldDriver = {
   /** SDF state indices to prefetch; forms[0] gates the first paint. */
@@ -102,6 +117,22 @@ export type FieldDriver = {
      *  writes the slots it actually thins. */
     dBuf?: Float32Array,
   ) => FieldFrame;
+  /** R6 — what the driver is simulating, and how much of it is being drawn.
+   *  Absent on the single-purpose drivers (the 404's lone droplet), which have
+   *  no population to speak of. */
+  population?: {
+    /** The authored droplet count — what the forms are packed to (N = 48). */
+    authored: number;
+    /** The simulated count, motes included. */
+    simulated: number;
+    /** How many of them the last frame packed. */
+    readonly active: number;
+  };
+  /** Draw this many droplets, clamped to [authored, simulated]. A PACKING
+   *  budget, not an allocation: the driver keeps simulating everything, so the
+   *  renderer's tier ladder can trade population for frame time and give it
+   *  back without stranding physics state. Returns what was actually set. */
+  setPopulation?: (n: number) => number;
 };
 
 /** Callbacks the site scene surfaces to the shell. */

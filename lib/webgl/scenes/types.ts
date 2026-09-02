@@ -79,6 +79,14 @@ export type FormState = {
   oy: number;
   scale: number;
   warp: number;
+  /** The field's saturation ceiling for this frame (melt.mjs meltSat).
+   *  0 = the exact historical plain sum, which is what everything outside a
+   *  morph uploads. Only a morph in flight raises it. */
+  sat?: number;
+  /** DIAGNOSTIC ONLY — the melt's progress, so a harness can target an exact
+   *  frame by scrolling to it instead of guessing at viewport offsets. Nothing
+   *  in the render reads this; -1 means "not in a melt". */
+  meltP?: number;
 };
 
 /** The cinematic/material score channels (R5-D; merged by the conductor:

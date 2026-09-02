@@ -7,7 +7,8 @@
  * exit drain. What moved OUT (now conductor-owned): channel damping (same
  * PHYS taus), per-droplet inertia integration (same TAUP identity), the
  * ambient family packing (the scene contributes its calm multiplier), and
- * scroll-velocity smoothing (ctx.scrollVel).
+ * scroll-velocity smoothing (ctx.scrollVel). The current Hero owns its ribbon
+ * separately; this scene begins its visible work with the pour into Problem.
  *
  * Phase D splits this into finer scenes when the act transitions are
  * redesigned; splitting during the structural port would risk the
@@ -17,7 +18,6 @@
 import {
   CLOUDS,
   N,
-  STATE_COUNT,
   STAG,
   clamp01,
   smooth01,
@@ -46,22 +46,25 @@ import {
 import type { ScatterTarget } from "../phys.mjs";
 import {
   permFor,
+  matchClouds,
   meltDroplet,
-  packBridge,
+  bridgePresence,
+  bridgeDensity,
   FORM_SOLIDITY,
   formPresence,
   formPhase,
-  type SiteCallbacks,
+  morphPhase,
+  meltSat,
 } from "../field-drivers";
+import {
+  CONFLUENCE,
+  CONFLUENCE_STAG,
+  circulate,
+} from "../confluence.mjs";
 import {
   SDF_WARP_REST,
   SDF_WARP_MORPH,
-  CURSOR_R,
-  CURSOR_TRAIL_N,
-  CURSOR_SMOOTH,
-  CURSOR_INFLUENCE_MARK,
 } from "../sdf-glass-shader.mjs";
-import { DURATIONS } from "../../animation/durations";
 import type {
   SceneModule,
   SceneCtx,
@@ -91,7 +94,39 @@ import { HANDOFF, centersMid, coordAt, handoffMix } from "./geom";
 const MELT_LO = 0.12;
 const MELT_HI = 0.88;
 
-const HERO_DROPS = 1 + CURSOR_TRAIL_N; // gooey cursor chain length
+// THE CROSSING's correspondence. S3 no longer ends on a form, so the melt into
+// the first pillar runs from THE CONFLUENCE's own cloud rather than from
+// CLOUDS[0] — the same matcher, the same schedule, the same droplet kernel,
+// just a source that is a symbol instead of a logo. Memoised at module scope
+// because it is a pure function of two fixed clouds and every mount wants it.
+let crossPerm: number[] | null = null;
+const confluencePerm = () => (crossPerm ??= matchClouds(CONFLUENCE, CLOUDS[1]));
+
+// ── THE SPIN ────────────────────────────────────────────────────────────────
+// The resolved body turns, slowly, from the moment it exists until the melt
+// takes it into the first service. Counter-clockwise, which is the sense that
+// makes its three arms TRAIL: they curl clockwise from core to tip
+// (confluence.mjs ARM_SWEEP), so turning the other way reads as a body being
+// drawn round rather than as an object being rotated.
+//
+// One revolution every ~22 s. Slow enough that it never competes with the
+// scroll — a reader crossing this passage sees a fraction of a turn — and slow
+// enough to stay smooth on the governor's 30 Hz idle floor (0.6 deg/frame).
+const SPIN_RATE = 0.046; // revolutions per second
+// …and it comes to rest as the morph opens. "Until it morphs" is literal: the
+// spin is the resolved body's own life, and the melt is where the body stops
+// being itself.
+const SPIN_STOP = 0.08; // melt progress over which the turn stops advancing
+// …and the turn is fully UNWOUND by here, which is before form B opens at
+// 1 - BRIDGE = 0.62. It has to be: the rotation is a transform on the DROPLETS,
+// and the pillar's silhouette arrives on its own upright vector with no
+// rotation of its own. Unwinding across the whole melt instead leaves the
+// droplets up to half a turn out of register with the form the moment it
+// emerges — two bodies in the same place disagreeing about which way up they
+// are. Finishing first means the form only ever lands on liquid that already
+// shares its orientation.
+const SPIN_UNWIND = 0.55;
+const TAU = Math.PI * 2;
 
 // Surface churn held over each Services pillar. Roughly a melt's worth of warp
 // on top of rest, so the material never stops moving while the form holds its
@@ -244,7 +279,7 @@ const EX_SWELL = 0.055;
 // throw anything off it.
 const EX_BIND_FLOOR = 0.55;
 
-export function makeSiteScene(cbs: SiteCallbacks = {}): SceneModule {
+export function makeSiteScene(): SceneModule {
   const base = CLOUDS[0];
 
   // ── aspect-cached targets + services placement ──────────────────────────────
@@ -259,35 +294,21 @@ export function makeSiteScene(cbs: SiteCallbacks = {}): SceneModule {
   let stageW = 0; // viewport width — decides whether the column exists at all
   let cachedWide = -1;
 
-  // ── hero machine (autocycle / melt / queue) ─────────────────────────────────
-  const texReady = new Array(STATE_COUNT).fill(false) as boolean[];
-  let hState = 0;
-  let hTarget = 0;
-  let hPhase: "rest" | "melt" = "rest";
-  let hMorphT = 0;
-  let hDwell = 0;
-  let hQueued = -1;
-  let perm: number[] = [];
-  let stag: number[] = [];
-  const scratch = new Float32Array(N * 3); // hero bridge cloud (form-local)
-  const scratchD = new Float32Array(N).fill(1); // …and its presence channel
   // One Services droplet, written in place by the shared melt kernel. Keeping
   // this fixed scratch is both allocation-free and what makes the browser run
   // the exact geometry measured by scripts/melt-mass.mjs.
   const serviceDrop = new Float32Array(4);
-  const startMelt = (s: number) => {
-    perm = permFor(hState, s);
-    stag = STAG[hState];
-    hTarget = s;
-    hMorphT = 0;
-    hPhase = "melt";
-    cbs.onHeroActive?.(s - 1);
-  };
-
-  // ── gooey cursor chain (same spring family as the old hero) ─────────────────
-  const drops = Array.from({ length: HERO_DROPS }, () => ({ x: 0.5, y: 0.5 }));
-  let cursorOn = 0;
-  let markMul = 1;
+  // THE CIRCULATION's scratch: [dx, dy, radius multiplier], written in place by
+  // confluence.mjs so target() stays allocation-free like every other scene.
+  const circ = new Float32Array(3);
+  let circW = 0; // its amplitude this frame — a scene clock, not a droplet one
+  // THE SPIN's accumulated angle, and this frame's applied rotation. Kept in
+  // (-pi, pi] while it is still turning: rotation is 2*pi-periodic, so wrapping
+  // is exact and invisible, and it stops the unwind below from having to spend
+  // however many whole turns a reader happened to bank while dwelling here.
+  let spinAng = 0;
+  let spinCos = 1;
+  let spinSin = 0;
 
   // ── pair melt: snap on pair switch, damp otherwise (self-managed) ───────────
   let lastPair = "0-0";
@@ -363,7 +384,6 @@ export function makeSiteScene(cbs: SiteCallbacks = {}): SceneModule {
   let svcM = 0; // …and its progress (0 there, so it is that form's rest cloud)
   let pa = 0;
   let pb = 0;
-  let heroBridge = false;
   let pourR = 0;
   let stirY = 0;
   let hp = 0; // damped heroPhase
@@ -371,9 +391,6 @@ export function makeSiteScene(cbs: SiteCallbacks = {}): SceneModule {
   let fused = 0; // the closing collapse of the three lobes into the mark
   let settle = 0; // THE CROSSING's recoil ring (signed scale fraction)
   let ambW = 1;
-  let hOx = 0;
-  let hOy = 0;
-  let hScale = 0.5;
   let actW = 1; // governor activity — fast internal motion demands 60 Hz
   const scoreOut: Partial<LightScore> = {
     exposure: 1,
@@ -409,35 +426,14 @@ export function makeSiteScene(cbs: SiteCallbacks = {}): SceneModule {
       pairA: 0,
       pairB: 0,
       pairM: 0,
-      heroPlay: 1,
-      heroHover: 0,
-      heroManual: -1,
-      heroDwellMs: DURATIONS.autocycle,
-      heroPx: 0.5,
-      heroPy: 0.5,
-      heroCursorOn: 0,
-      heroOx: 0,
-      heroOy: 0,
-      heroScale: 0.5,
       hov: -1, // hovered/focused circuit organ (slot index; -1 = none)
     },
-    // raw passthroughs: the pair triple self-manages its snap-or-damp; the
-    // hero machine inputs are events/geometry applied 1:1 (as today)
+    // raw passthroughs: the pair triple self-manages its snap-or-damp.
     damp: {
       on: false,
       pairA: false,
       pairB: false,
       pairM: false,
-      heroPlay: false,
-      heroHover: false,
-      heroManual: false,
-      heroDwellMs: false,
-      heroPx: false,
-      heroPy: false,
-      heroCursorOn: false,
-      heroOx: false,
-      heroOy: false,
-      heroScale: false,
       hov: false, // discrete organ index — never damp across slots
     },
     anchors: {
@@ -454,9 +450,6 @@ export function makeSiteScene(cbs: SiteCallbacks = {}): SceneModule {
     lists: {
       symptoms: "#problem .symptom",
       pillars: "#services .pillar",
-    },
-    formReady: (s) => {
-      texReady[s] = true;
     },
 
     read(g: SceneGeom, out: SceneChannels) {
@@ -684,6 +677,30 @@ export function makeSiteScene(cbs: SiteCallbacks = {}): SceneModule {
       gather = clamp01(ch.gather);
       fused = gatherFuse(gather);
       SP = smooth01(clamp01(ch.svcPos));
+      // THE CIRCULATION's amplitude. Alive exactly while the resolved body is
+      // the subject: it opens with the fuse and is gone before the crossing
+      // melt starts, so the melt's source cloud is the exact station table and
+      // both of its endpoints stay exact.
+      circW = fused * (1 - smooth01(clamp01(ch.cross / 0.5))) * (1 - SP);
+      // THE SPIN advances while the body is the subject, and is brought to rest
+      // across the opening of the melt.
+      const turning = 1 - smooth01(clamp01(mState / SPIN_STOP));
+      spinAng += (dt / 1000) * SPIN_RATE * TAU * fused * turning;
+      if (mState < 0.001) spinAng = (((spinAng + Math.PI) % TAU) + TAU) % TAU - Math.PI;
+      // THE UNWIND. The melt ends on the pillar's own upright vector, so the
+      // residual angle has to go — and it goes by riding the morph's own eased
+      // progress, which makes it part of the transformation rather than a
+      // second animation played over it. Exact at both ends: the full turn at
+      // m = 0 (where the melt's source IS the spinning body) and none at m = 1.
+      // …and it is gone for good once the crossing is behind us: every pillar
+      // from the first on renders its own upright vector, so the rotation has
+      // to be the identity there rather than a frozen residual.
+      const spinNow =
+        pa === 0
+          ? spinAng * (1 - morphPhase(clamp01(mState / SPIN_UNWIND)))
+          : 0;
+      spinCos = Math.cos(spinNow);
+      spinSin = Math.sin(spinNow);
       // BOUNDARY: Services → Método. The seventh form RELEASES ITS MASS where
       // it stands (see THE DEPARTURE). No translation: the body stays in its
       // column and stops being a form, which is the only way a liquid leaves.
@@ -804,116 +821,80 @@ export function makeSiteScene(cbs: SiteCallbacks = {}): SceneModule {
       // …while this still means "a melt is MOVING", which is the only thing the
       // cadence governor and the key-light lift should answer to.
       inSvcMelt = pa !== pb && mState > 0.0005 && mState < 0.9995;
-      hOx = ch.heroOx;
-      hOy = ch.heroOy;
-      hScale = ch.heroScale;
-
-      // ── hero machine tick ──────────────────────────────────────────────────
-      const atHero = hp < 0.04;
-      if (hPhase === "melt") {
-        hMorphT += dt;
-        if (hMorphT >= DURATIONS.morph) {
-          hState = hTarget;
-          hPhase = "rest";
-          hDwell = 0;
-          cbs.onHeroActive?.(hState - 1);
-        }
-      }
-      const man = ch.heroManual < 0 ? null : ch.heroManual | 0;
-      if (hPhase === "rest") {
-        if (man != null && man !== hState && texReady[man]) {
-          startMelt(man);
-        } else if (hQueued >= 0 && hQueued !== hState && texReady[hQueued]) {
-          const q = hQueued;
-          hQueued = -1;
-          startMelt(q);
-        } else if (
-          man == null &&
-          ch.heroPlay > 0.5 &&
-          !(ch.heroHover > 0.5) &&
-          atHero
-        ) {
-          hDwell += dt;
-          const next = (hState + 1) % STATE_COUNT;
-          if (hDwell >= ch.heroDwellMs && texReady[next]) startMelt(next);
-        }
-      } else if (man != null && man !== hTarget) {
-        hQueued = man; // retarget applies on arrival (no snap)
-      }
-
-      // ── gooey cursor (hero only; presence drains as the hero pours out) ────
-      const cGoal = ch.heroCursorOn > 0.5 && atHero ? 1 : 0;
-      if (cursorOn > 0.003 || cGoal > 0) {
-        const goalMul =
-          hPhase === "rest" && hState === 0 ? CURSOR_INFLUENCE_MARK : 1;
-        markMul += (goalMul - markMul) * (1 - Math.exp(-dt / 160));
-        cursorOn +=
-          (cGoal - cursorOn) * (1 - Math.exp(-dt / (cGoal ? 110 : 60)));
-        if (cursorOn < 0.01 && cGoal > 0) {
-          for (const d of drops) {
-            d.x = ch.heroPx;
-            d.y = ch.heroPy;
-          } // materialise AT the pointer (no fly-in)
-        }
-        const ck = 1 - Math.pow(1 - CURSOR_SMOOTH, dt / 16.7);
-        const ckt = 1 - Math.pow(1 - CURSOR_SMOOTH * 0.7, dt / 16.7);
-        drops[0].x += (ch.heroPx - drops[0].x) * ck;
-        drops[0].y += (ch.heroPy - drops[0].y) * ck;
-        for (let i = 1; i < HERO_DROPS; i++) {
-          drops[i].x += (drops[i - 1].x - drops[i].x) * ckt;
-          drops[i].y += (drops[i - 1].y - drops[i].y) * ckt;
-        }
-      } else cursorOn = 0;
-
-      // ── hero presence (the pour) + form-slot ownership ─────────────────────
-      // The resting form erodes thin-edges-first across heroPhase 0.04 → 0.62;
-      // its droplets emerge on the footprint and stream to the journey.
-      // The Hero's liquid is the lab ribbon on its own surface, so the page
-      // field holds no mark behind it. The mark first appears at convergence.
-      const heroQ = 0;
-      const [heroW, heroE] = formPresence(heroQ);
-      const meltP = clamp01(hMorphT / DURATIONS.morph);
-      const meltEnv = hPhase === "melt" ? Math.sin(Math.PI * meltP) : 0;
 
       let warp =
         SDF_WARP_REST + Math.min(Math.abs(ctx.scrollVel) * 0.003, 0.004); // scroll agitates
 
-      if (heroW > 0.002) {
-        // hero owns the form slots (journey form weight is 0 out here)
-        formOut.ox = hOx;
-        formOut.oy = hOy;
-        formOut.scale = hScale;
-        if (hPhase === "melt") {
-          const ph = formPhase(meltP);
-          formOut.a = hState;
-          formOut.b = hTarget;
-          formOut.fa = ph.wA * heroW;
-          formOut.fb = ph.wB * heroW;
-          formOut.ea = ph.eA + heroE;
-          formOut.eb = ph.eB + heroE;
-          warp += (SDF_WARP_MORPH - SDF_WARP_REST) * meltEnv;
-        } else {
-          formOut.a = hState;
-          formOut.b = hState;
-          formOut.fa = heroW;
-          formOut.fb = 0;
-          formOut.ea = heroE;
-          formOut.eb = 0;
-        }
-      } else {
-        formOut.ox = jOx;
-        formOut.oy = jOy;
-        formOut.scale = jScale;
-        if (inServices) {
+      formOut.ox = jOx;
+      formOut.oy = jOy;
+      formOut.scale = jScale;
+      formOut.meltP = inServices && pa !== pb ? mState : -1;
+      // THE INFLATION FIX, and the only place it applies. A morph's 48
+      // droplets are a crowd whose pile-up rounds the body; every other liquid
+      // on this page is held together BY that same overlap and must not be
+      // touched. They never share a frame, and a lone droplet is exact at any
+      // ceiling, so this rides the morph's envelope and is identically the
+      // historical plain sum everywhere else — including at both endpoints of
+      // every morph, so it arrives and leaves with nothing to see.
+      formOut.sat = inServices && pa !== pb ? meltSat(mState) : 0;
+      if (inServices) {
           formOut.a = pa;
           formOut.b = pb;
-          if (pa === pb) {
+          if (pa === 0) {
+            // THE CROSSING — S3 hands over to the first pillar.
+            //
+            // There is no form A. The old crossing was a MORPH: the mark's SDF
+            // deformed into the web form's through their correspondence field,
+            // with `fa` carrying the whole body. THE CONFLUENCE has no vector
+            // behind it, so form A's weight is 0 — which also means `morph`
+            // must be off, since the morph branch multiplies its single term by
+            // iFormA and would render nothing at all.
+            //
+            // What lands the pillar instead is the site's OTHER law for a form
+            // arriving, the one the fuse and the exit drain already speak:
+            // EROSION does the visible work, so the web silhouette grows out of
+            // its own skeleton to the exact vector while the droplets that
+            // carried it across drain away underneath (formPhase / densJ, one
+            // clock, exact complements).
+            // THE PAIR IS THE LEGACY ONE, UNCHANGED. formPhase lands form B
+            // and bridgePresence drains the cloud, both on the same `m` — the
+            // two were measured against each other (melt.mjs: "the cloud takes
+            // over as the form gives up… measured against the render") and they
+            // only hold as a pair. The crossing's one difference is that its
+            // first half has ALREADY HAPPENED: S3's fuse spent three viewports
+            // dissolving a dispersed field into this body, so the droplet
+            // presence is HELD at full through the front half instead of rising
+            // from zero, and the back half runs the measured drain verbatim.
+            //
+            // Every other pairing was built and measured (scripts/
+            // verify-confluence.mjs, THE MASS BUDGET). Draining on the mapped
+            // half against a form on `m` empties the stage to 23% at m = 0.67;
+            // draining on the form's WEIGHT empties it to 11% at 0.79, because
+            // formPresence saturates weight at q = 0.4 while EROSION goes on
+            // eating the silhouette to q = 1 — the area is not the weight, which
+            // is the whole reason bridgePresence is a measured table and not a
+            // curve. This pair holds 91% / 119%.
+            const { wB, eB } = formPhase(mState);
+            formOut.a = 0;
+            formOut.b = pb;
+            formOut.fa = 0;
+            formOut.fb = wB;
+            formOut.ea = 0;
+            formOut.eb = eB;
+            warp +=
+              (SDF_WARP_MORPH - SDF_WARP_REST) * Math.sin(Math.PI * mState);
+          } else if (pa === pb) {
             // degenerate pair (last pillar) — a solid rest, never a weight dip
             formOut.fa = 1;
             formOut.fb = 0;
             formOut.ea = 0;
             formOut.eb = 0;
           } else {
+            // THE §3.3 HANDOFF, which is the same law the crossing above runs:
+            // form A erodes away while the 48-droplet cloud condenses on its
+            // footprint, travels, and fuses into form B as its weight rises.
+            // formPhase and bridgePresence are exact complements measured
+            // against each other, so the total on screen never steps.
             const ph = formPhase(mState);
             formOut.fa = ph.wA;
             formOut.fb = ph.wB;
@@ -923,17 +904,25 @@ export function makeSiteScene(cbs: SiteCallbacks = {}): SceneModule {
               (SDF_WARP_MORPH - SDF_WARP_REST) * Math.sin(Math.PI * mState);
           }
         } else {
-          // The mark is the RESULT of the fuse, never a thing the droplets
-          // assemble around. Its field weight rides `fused`, which is 0 until
-          // the last capability has arrived — so through the whole gathering
-          // there is no form at all, only liquid, and the mark exists for the
-          // first time at the moment the three lobes become one body.
-          const [w, e] = formPresence(fused);
+          // NO FORM AT ALL, for the whole of the Problem and the Ecosystem.
+          //
+          // This used to open form 0 on `fused` — the Zirtuno mark rasterised
+          // to an SDF, faded up over the liquid that had just spent three
+          // viewports converging, with that liquid deleted underneath it. The
+          // chapter's claim is that the fragments stop being separate; the
+          // resolution is now the fragments themselves, standing on THE
+          // CONFLUENCE's stations (see target()), so there is no vector on this
+          // stage until the first service pillar erodes in at the crossing.
+          //
+          // `a` stays 0 because the stage gates its whole frame on form A's
+          // texture being built (components/field/FieldStage) — an index that
+          // is always loaded, at weight zero, costs nothing and keeps that gate
+          // honest.
           formOut.a = 0;
           formOut.b = 0;
-          formOut.fa = w;
+          formOut.fa = 0;
           formOut.fb = 0;
-          formOut.ea = e;
+          formOut.ea = 0;
           formOut.eb = 0;
         }
         // THE BREATH. A form that holds its position has to stay visibly ALIVE
@@ -969,26 +958,16 @@ export function makeSiteScene(cbs: SiteCallbacks = {}): SceneModule {
         // the silhouette is coming apart, so the erosion reads as the body
         // giving way rather than as a mask closing over a still shape.
         warp += (SDF_WARP_MORPH - SDF_WARP_REST) * Math.sin(Math.PI * exRel);
-      }
       formOut.warp = warp;
 
       // ── per-droplet shared factors ──────────────────────────────────────────
-      heroBridge = false;
-      if (hPhase === "melt" && heroW > 0.002) {
-        packBridge(
-          scratch,
-          0,
-          CLOUDS[hState],
-          CLOUDS[hTarget],
-          perm,
-          stag,
-          meltP,
-          scratchD,
-          FORM_SOLIDITY[hState],
-          FORM_SOLIDITY[hTarget],
-        );
-        heroBridge = true;
-      }
+      // NO BRIDGE CLOUD. The form now carries the whole transformation, so the
+      // 48 droplets would be a second full body summed on top of the first —
+      // measured at 171% area and circ 0.278 even at a quarter density, worse
+      // than the bridge they replaced (scripts/melt-shape.mjs, flow+g). The
+      // liquid vocabulary through a melt is carried instead by the surface
+      // warp above, the gooey cursor and the ambient family, none of which the
+      // old melt could show because there was no form for them to act on.
       // The page field remains invisible through the Hero and grows into the
       // Problem choreography only as the Hero is leaving.
       pourR = smooth01((hp - 0.72) / 0.26);
@@ -1018,8 +997,8 @@ export function makeSiteScene(cbs: SiteCallbacks = {}): SceneModule {
         EXW *
         smooth01((hp - 0.66) / 0.3);
 
-      // governor activity (R5-C): the hero melt, the gooey cursor and the
-      // services melt are the scene's FAST clocks — everything else is
+      // governor activity (R5-C): the services melt is the scene's FAST clock;
+      // everything else is
       // scroll-scrubbed (the conductor's velocity term covers it) or slow
       // enough (wander, tendril march, warp) for the 30 Hz idle floor.
       //
@@ -1039,11 +1018,15 @@ export function makeSiteScene(cbs: SiteCallbacks = {}): SceneModule {
       // the give's close) dropped exactly that beat to the 30 Hz idle floor.
       // The crossing beyond it is scroll-scrubbed like every other travel.
       const exBoil = EXC > 0.004 && EXC < EX_CROSS_LO + 0.1 ? 1 : 0;
+      // …and THE SPIN joins them, for the same reason the release did: the
+      // governor's rule is that a TRULY IDLE liquid may draw every other frame,
+      // and a body turning on the wall clock with the scroll stopped is not
+      // idle. Left off this list the resolved confluence is the one thing on
+      // the page that moves while the governor believes nothing does.
       actW = Math.max(
-        hPhase === "melt" ? 1 : 0,
-        cursorOn,
         inSvcMelt ? 1 : 0,
         exBoil,
+        fused * (1 - SP),
       );
 
       // ── act II light (R5-D): the argument told in exposure ────────────────
@@ -1077,21 +1060,19 @@ export function makeSiteScene(cbs: SiteCallbacks = {}): SceneModule {
       let hy: number;
       let hr: number;
       // presence (field density) rather than size — see BRIDGE_PRESENCE_FLOOR
-      let hd = 1;
-      if (heroBridge) {
-        hx = scratch[i * 3];
-        hy = scratch[i * 3 + 1];
-        hr = scratch[i * 3 + 2];
-        hd = scratchD[i];
-      } else {
-        hx = bb[0];
-        hy = bb[1];
-        hr = bb[2] * pourR * (0.55 + 0.45 * VARY[i]);
-      }
-      // stage into field space
-      hx = 0.5 + hOx + (hx - 0.5) * hScale;
-      hy = 0.5 + hOy + (hy - 0.5) * hScale;
-      hr *= hScale;
+      const hd = 1;
+      // The hero's droplets are the POUR and nothing else now. They used to be
+      // retargeted onto the melt bridge for the length of every autocycle
+      // morph; the morph is the form's own deformation, so they stay on their
+      // base footprint and the melt has no droplet body at all.
+      hx = bb[0];
+      hy = bb[1];
+      hr = bb[2] * pourR * (0.55 + 0.45 * VARY[i]);
+      // stage into field space at the fixed scale used since the Hero stopped
+      // owning a form stage.
+      hx = 0.5 + (hx - 0.5) * 0.5;
+      hy = 0.5 + (hy - 0.5) * 0.5;
+      hr *= 0.5;
 
       // ── journey-side target: fracture → dispersed → THE GATHERING ───────────
       //
@@ -1125,16 +1106,51 @@ export function makeSiteScene(cbs: SiteCallbacks = {}): SceneModule {
       tx += (eco.tx - tx) * ecoPull;
       ty += (eco.ty - ty) * ecoPull;
 
-      // the mark's own footprint — where everything ends up once fused
-      const mx = 0.5 + jOx + (bb[0] - 0.5) * jScale;
-      const my = 0.5 + jOy + (bb[1] - 0.5) * jScale;
+      // THE CONFLUENCE's own station — where this droplet ends up once fused.
+      //
+      // This used to be the mark's footprint, `bb`, which is CLOUDS[0]: the
+      // gathering's ten families converged onto the Zirtuno logo's own metaball
+      // decomposition, were then absorbed (`densJ = 1 - fused`), and the SDF of
+      // the logo was drawn in their place. The chapter's argument is that these
+      // fragments STOP BEING SEPARATE, and a vector mark faded up over the
+      // liquid that had just done the work is the one thing on the page that
+      // contradicts it.
+      //
+      // So the destination is a symbol the droplets ARE: three arms running in
+      // from the three systems' own bearings, merged into one core
+      // (confluence.mjs). Droplet i's seat is fixed and addressable, which is
+      // what lets a capability arrive at ITS OWN place on ITS OWN system's arm
+      // rather than anywhere in a cloud — the fuse is legible for the first
+      // time, because you can see which mass went where.
+      const st = CONFLUENCE[i];
+      // …and the resolved body BREATHES, on its own clock. A form that holds
+      // still reads as an image being scrolled past; SVC_CHURN answers that for
+      // the pillars by warping the FORM sample, and this symbol has no form, so
+      // it takes the droplet-side equivalent: a slow wave running down each arm
+      // into the core. Faded in by the fuse and out again by the crossing melt,
+      // so both endpoints are the exact station table.
+      if (circW > 0.002) circulate(circ, i, t, circW);
+      else {
+        circ[0] = 0;
+        circ[1] = 0;
+        circ[2] = 1;
+      }
+      // …and THE SPIN turns the whole station table about the body's own centre
+      // before it is staged. A rotation of the cloud, not of the canvas: every
+      // droplet keeps its identity, its radius and its capability, so the rack
+      // focus, the melt correspondence and the fuse all go on addressing the
+      // same seats.
+      const sx = st[0] + circ[0] - 0.5;
+      const sy = st[1] + circ[1] - 0.5;
+      const mx = 0.5 + jOx + (sx * spinCos - sy * spinSin) * jScale;
+      const my = 0.5 + jOy + (sx * spinSin + sy * spinCos) * jScale;
 
       const node = NODE_OF(i);
       let e = 0; // this droplet's arrival (0 = still out in the dark)
       let depth = 1; // 1 = far, 0 = near
       let gx = mx;
       let gy = my;
-      let gr = bb[2] * jScale;
+      let gr = st[2] * circ[2] * jScale;
 
       if (node >= 0) {
         // one of the ten capabilities: it has a lobe to arrive at, a depth to
@@ -1162,7 +1178,7 @@ export function makeSiteScene(cbs: SiteCallbacks = {}): SceneModule {
         // and becomes the body the capabilities arrive into
         e = gatherEnv(gather, { d: 0.5 + 0.22 * hash(i, 71), w: 0.3 });
         depth = 1 - e;
-        gr = bb[2] * jScale * (0.5 + 0.5 * e);
+        gr = st[2] * circ[2] * jScale * (0.5 + 0.5 * e);
       }
 
       // Where the droplet actually is: out in the dispersed dark, or gathered.
@@ -1178,33 +1194,26 @@ export function makeSiteScene(cbs: SiteCallbacks = {}): SceneModule {
       // bounds does not read as change. Falling back into the dark first gives
       // the arrival something to arrive FROM.
       const rec = gatherRecede(TR);
-      let jr = bb[2] * jScale * VARY[i] * rec * (1 - e) + gr * e;
+      let jr = st[2] * jScale * VARY[i] * rec * (1 - e) + gr * e;
       // …and the same for light: depth is the chapter's argument, so unarrived
       // liquid has to actually be far, not merely elsewhere.
       depth = Math.min(1, depth + (1 - rec) * (1 - e));
-      // THE HANDOFF. The droplets are how the mark arrives, not what it is:
-      // as the fuse closes, they drain and the form's exact silhouette takes
-      // over. Without this the thirty gathered masses simply pile onto the
-      // mark's footprint and inflate it into an amorphous blob — the form is
-      // underneath the whole time, drowned by the liquid that carried it.
-      // Same principle as the §3.3 bridge: liquid leaves before the form is
-      // solid. But it leaves by THINNING, not by shrinking — scaling thirty
-      // radii toward zero pulled every gathered mass out of contact with its
-      // neighbours and left a rash of small, fully-solid beads sitting on the
-      // mark's silhouette (a metaball's peak field does not fall with its
-      // size). Density takes the presence away instead, so the masses stay
-      // merged the whole way in and are simply no longer there at full fuse;
-      // radius now only relieves the pile-up that would inflate the mark.
-      // `fused` LATCHES at 1 once the mark has formed, and that is deliberate:
-      // from here on the exact SILHOUETTE is the subject, so the carrying
-      // droplets stay absorbed through the Services pillars too and only the
-      // form is drawn. The §3.3 branch below hands them their presence back for
-      // the duration of each melt, which is the only time they are the subject
-      // again. Scoping this to the gathering alone re-exposed 48 droplets at
-      // every pillar rest and inflated the visible liquid by ~70%, embossing
-      // exactly the lumpy silhouettes this is meant to remove.
-      jr *= 1 - 0.35 * fused;
-      densJ = 1 - fused;
+      // NO HANDOFF. This is the passage that used to delete the liquid:
+      //
+      //     jr *= 1 - 0.35 * fused;
+      //     densJ = 1 - fused;
+      //
+      // …because the droplets that carried the gathering would otherwise pile
+      // onto the mark's footprint and inflate its silhouette into a blob. That
+      // was the correct fix for a resolution made of vector geometry, and it is
+      // exactly what has to go now that the resolution is made of the droplets
+      // themselves. There is nothing underneath them to protect: THE CONFLUENCE
+      // is 48 stations and this is the liquid standing on them, so it keeps
+      // full density and its authored radius all the way through the fuse.
+      //
+      // The Services pillars are unaffected — the §3.3 branch below still takes
+      // these droplets over for the whole pillar range and still absorbs them
+      // under each form, which is where a silhouette IS the subject.
 
       // loose liquid drags with the scroll; gathered liquid has been claimed
       jy += stirY * (1 - e);
@@ -1239,23 +1248,43 @@ export function makeSiteScene(cbs: SiteCallbacks = {}): SceneModule {
         clusJ = Math.min((hash(i, 11) * 4) | 0, 3);
       if (svcBridge) {
         // the §3.3 services bridge is the journey target across the pillar
-        const A = CLOUDS[pa],
+        //
+        // …and on the FIRST pillar the source is THE CONFLUENCE, not CLOUDS[0].
+        // The crossing out of S3 used to be a form morph — the mark's SDF
+        // deformed into the web form's through their correspondence field — and
+        // there is no mark any more. What there is instead is a body already
+        // made of these 48 droplets, so the crossing is the melt this file
+        // already speaks: the same matcher, the same per-droplet schedule, the
+        // same kernel, run from a symbol instead of from a logo. Form A's
+        // solidity is 0 because there is no form A to stand in for; the body
+        // becomes the first service by TRAVELLING, and the service's silhouette
+        // erodes in underneath it (see the form staging above).
+        const crossing = pa === 0;
+        const A = crossing ? CONFLUENCE : CLOUDS[pa],
           B = CLOUDS[svcB];
-        const pm = permFor(pa, svcB),
-          st = STAG[pa];
+        const pm = crossing ? confluencePerm() : permFor(pa, svcB),
+          stg = crossing ? CONFLUENCE_STAG : STAG[pa];
         meltDroplet(
           serviceDrop,
           svcIdx[i], // the parcel this slot carries — see svcIdx
           A,
           B,
           pm,
-          st,
+          stg,
           svcM,
-          FORM_SOLIDITY[pa],
+          crossing ? 0 : FORM_SOLIDITY[pa],
           FORM_SOLIDITY[svcB],
         );
-        jx = 0.5 + jOx + (serviceDrop[0] - 0.5) * jScale;
-        jy = 0.5 + jOy + (serviceDrop[1] - 0.5) * jScale;
+        // The crossing carries THE SPIN with it, unwinding (see spinNow). The
+        // rotation is applied to the melt's OUTPUT rather than to its source,
+        // which is what keeps both endpoints exact — at m = 0 this is the
+        // spinning body's own pose, at m = 1 it is the pillar's upright rest —
+        // and leaves the correspondence, the schedule and the swirl untouched.
+        // Every other pillar has spinCos = 1 by construction.
+        const bx = serviceDrop[0] - 0.5;
+        const by = serviceDrop[1] - 0.5;
+        jx = 0.5 + jOx + (bx * spinCos - by * spinSin) * jScale;
+        jy = 0.5 + jOy + (bx * spinSin + by * spinCos) * jScale;
         // RADIUS IS NEVER SCALED HERE. The whole handoff is carried by presence
         // (which is the form's exact complement), so the cloud keeps the size
         // that makes it the same body as the form — and keeps its droplets in
@@ -1277,6 +1306,21 @@ export function makeSiteScene(cbs: SiteCallbacks = {}): SceneModule {
         // at 0 where the gathered droplets arrive absorbed at 0, so the seam
         // needs no blend of its own.
         densJ = serviceDrop[3];
+        // …EXCEPT ACROSS THE CROSSING, where the droplets ARE the body. On
+        // every other pillar boundary a form holds full presence for the whole
+        // transformation and any density here is a second body summed onto it.
+        // On the first there is no form until the web silhouette erodes in, so
+        // zero density would blank the stage for two thirds of the passage.
+        //
+        // The law is not invented for this: it is bridgePresence — the schedule
+        // melt-mass.mjs MEASURED for a cloud handing over to a landing form —
+        // read on its second half, so it starts at 1 (the confluence, standing
+        // alone) and reaches 0 exactly as pillar 1 becomes solid. formPhase
+        // drives the form side from the same clock, so the two are complements
+        // by construction rather than by tuning.
+        if (crossing)
+          densJ =
+            svcM <= 0.5 ? 1 : bridgeDensity(bridgePresence(svcM));
         // …and THE RELEASE is that same complement, run one last time with no
         // form on the other side of it. On the seventh pillar svcM is 0, so the
         // bridge holds these droplets at the form's exact rest footprint with
@@ -1371,16 +1415,5 @@ export function makeSiteScene(cbs: SiteCallbacks = {}): SceneModule {
       return scoreOut;
     },
 
-    extras(ctx: SceneCtx, push) {
-      // cursor chain (hero only)
-      if (cursorOn > 0.003) {
-        const cw = cursorOn * markMul * (1 - smooth01(hp * 3));
-        for (let j = 0; j < HERO_DROPS; j++) {
-          const r = CURSOR_R * Math.pow(0.58, j) * cw;
-          if (r < 0.002) continue;
-          push(drops[j].x, drops[j].y, r);
-        }
-      }
-    },
   };
 }

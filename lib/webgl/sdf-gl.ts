@@ -2,7 +2,7 @@
 
 /**
  * Shared WebGL2 plumbing for the unified liquid-field renderers — the hero
- * (FieldMorphHero) and the chapter driver stages (FieldStage) build on the same
+ * (FormStillRenderer) and the chapter driver stages (FieldStage) build on the same
  * layer/texture/loader trio, extracted in R1 so they cannot drift apart:
  *
  *   - makeLayer:      one fullscreen-triangle WebGL2 layer (straight alpha,
@@ -148,3 +148,4 @@ export async function loadSdf(url: string): Promise<Float32Array> {
   sdfDataCache.set(url, data);
   return data;
 }
+

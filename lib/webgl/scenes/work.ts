@@ -69,7 +69,7 @@ export function makeWorkScene(): SceneModule {
     // geometry + gate ride the default tau so dock/undock/card-glide flow
     damp: { on: false, rIn: false, bp: false, hov: false },
     anchors: { wrap: "#work" },
-    lists: { cards: "#work .project-card" },
+    lists: { cards: "#work .zw-card" },
 
     read(g: SceneGeom, out: SceneChannels) {
       const vh = g.vh;

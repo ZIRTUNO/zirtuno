@@ -13,7 +13,7 @@
  * The probe renders the ACTUAL field shader (48 balls, glass) at the hero's real
  * buffer size for a few frames with a forced GPU sync, and takes the median —
  * so the measurement is the workload. Runs once per session (sessionStorage);
- * the FPS watchdog (FieldMorphHero) can downshift the cached tier at runtime —
+ * the FPS watchdog (FieldStage) can downshift the cached tier at runtime —
  * downshift, never freeze.
  *
  * QA override: ?ftier=full|lite|none (wins every call; never cached).

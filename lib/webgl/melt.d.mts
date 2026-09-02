@@ -23,6 +23,7 @@ export declare const arrive: (x: number) => number;
 export declare const flow: (x: number) => number;
 export declare const bridgeRadiusEnvelope: (p: number) => number;
 export declare const bridgePresence: (p: number) => number;
+export declare const bridgeDensity: (presence: number) => number;
 export declare const bridgeSwell: (
   swA: number,
   swB: number,
@@ -56,6 +57,9 @@ export declare const meltDroplet: (
   p: number,
   swA?: number,
   swB?: number,
+  /** Harness-only: evaluate a candidate handoff schedule without mutating the
+   *  module. Undefined is the shipped path. */
+  presOverride?: number,
 ) => number[] | Float32Array;
 
 export declare const formPresence: (q: number) => [number, number];
@@ -65,3 +69,11 @@ export declare const formPhase: (p: number) => {
   wB: number;
   eB: number;
 };
+
+/** The melt's EASED progress, for anything that must stay in step with the
+ *  transformation visually rather than by mass. Exact at 0 and 1. */
+export declare const morphPhase: (p: number) => number;
+
+/** The morph's saturation ceiling at progress p; 0 = the exact plain sum. */
+export declare const SAT_OFF: number;
+export declare function meltSat(p: number): number;

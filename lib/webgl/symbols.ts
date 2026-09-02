@@ -1,6 +1,6 @@
 // Metaball state REGISTRY (S2.3) — the ONE ordered list every surface agrees on:
-// the hero autocycle, the Services scrub, keyboard nav, the PillarIndicator and
-// the chapter drivers all index states through here. Index 0 = the mark; 1–7 =
+// the exact-form lab, the Services scrub, and the registered SVG endpoint order.
+// The chapter drivers all index states through here. Index 0 = the mark; 1–7 =
 // the service pillars, in the same order as the Services chapter
 // (lib/content/services). Folded from the old states.ts in R1; the legacy
 // GLSL-generator content this file used to hold retired with MetaballScene.
