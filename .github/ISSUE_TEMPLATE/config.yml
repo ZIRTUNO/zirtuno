@@ -1,11 +1,11 @@
 blank_issues_enabled: true
 contact_links:
   - name: Working rules and verification protocol
-    url: https://github.com/Pedrowtst/zirtuno/blob/main/AGENTS.md
+    url: https://github.com/ZIRTUNO/zirtuno/blob/main/AGENTS.md
     about: Read this before proposing a change — it defines the taste constraints and the gates.
   - name: Specifications
-    url: https://github.com/Pedrowtst/zirtuno/tree/main/docs/specs
+    url: https://github.com/ZIRTUNO/zirtuno/tree/main/docs/specs
     about: The build, liquid, morph, membrane, and intro contracts.
   - name: Architecture decisions
-    url: https://github.com/Pedrowtst/zirtuno/tree/main/docs/decisions
+    url: https://github.com/ZIRTUNO/zirtuno/tree/main/docs/decisions
     about: Why the repository is laid out the way it is, and what was retired.
