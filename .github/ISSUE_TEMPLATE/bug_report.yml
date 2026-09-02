@@ -1,0 +1,56 @@
+name: Bug report
+description: Something behaves incorrectly.
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happens
+      description: The observed behaviour, and what you expected instead.
+    validations:
+      required: true
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Go to /pt
+        2. Scroll to the Method chapter
+        3. ...
+    validations:
+      required: true
+
+  - type: dropdown
+    id: locale
+    attributes:
+      label: Locale
+      options: [pt, en, both]
+    validations:
+      required: true
+
+  - type: input
+    id: env
+    attributes:
+      label: Browser, OS, and device
+      placeholder: Chrome 141, Windows 11, desktop 2560x1440
+    validations:
+      required: true
+
+  - type: dropdown
+    id: gpu
+    attributes:
+      label: Does it reproduce with the liquid disabled?
+      description: Append ?fphys=0 to the URL to take the fluid physics out of the picture.
+      options:
+        - "Yes — reproduces without the liquid"
+        - "No — only with the liquid running"
+        - Not applicable
+    validations:
+      required: true
+
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence
+      description: Screenshots, a capture sheet, or console output. Drag files in directly.

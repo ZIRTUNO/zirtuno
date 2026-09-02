@@ -1,0 +1,61 @@
+name: Visual or motion regression
+description: The site renders or animates differently than intended.
+labels: [regression, visual]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Measured evidence beats description here. Screenshots carry roughly a 1%
+        churn noise floor, so a small pixel delta is not necessarily a regression.
+
+  - type: input
+    id: surface
+    attributes:
+      label: Surface
+      placeholder: Hero ribbon, Confluence (S3), work gallery FLIP, topbar waterline
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Intended behaviour
+      description: Cite the spec section under docs/specs/ that defines it, if there is one.
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Observed behaviour
+    validations:
+      required: true
+
+  - type: textarea
+    id: gate
+    attributes:
+      label: Which gate catches it?
+      description: >
+        The scripts/verify/ gate that fails, or a note that no gate covers this
+        yet. If a gate should have caught it and did not, say so — that is its
+        own finding.
+      placeholder: node scripts/verify/cinematics.mjs
+
+  - type: dropdown
+    id: tier
+    attributes:
+      label: Rendering tier
+      options:
+        - Full liquid (discrete GPU)
+        - Reduced tier (integrated GPU)
+        - Static tier (no WebGL)
+        - prefers-reduced-motion
+        - Unknown
+    validations:
+      required: true
+
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Capture or measurement
+      description: A capture sheet from scripts/capture/, a filmstrip, or frame timings.

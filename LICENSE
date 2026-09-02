@@ -1,0 +1,42 @@
+Copyright (c) 2026 Pedro Paiva Mautone Campos (Zirtuno).
+All rights reserved.
+
+This repository is published for reference and portfolio purposes. Its
+availability does not place it in the public domain and does not grant an
+open-source licence.
+
+WHAT YOU MAY DO
+
+  - View, read, and clone this repository.
+  - Reference it privately for study or evaluation.
+  - Quote short excerpts for commentary, review, or teaching, with attribution.
+
+WHAT YOU MAY NOT DO WITHOUT PRIOR WRITTEN PERMISSION
+
+  - Use, copy, modify, merge, publish, distribute, sublicense, or sell any part
+    of this software or its assets, in whole or in part.
+  - Deploy this site, or a derivative of it, in any public or commercial
+    setting.
+  - Reuse the brand assets, including the Zirtuno name, wordmark, symbol, brand
+    marks under public/brand, the morph reference set, the colour and
+    typographic system, or the written studio copy. These identify the studio
+    and are additionally protected as trade marks and trade dress.
+  - Reuse the custom visual systems, including the metaball and signed-distance
+    field engine, the liquid conductor, and the accompanying shaders.
+
+THIRD-PARTY COMPONENTS
+
+Dependencies listed in package.json remain under their own licences, which are
+unaffected by this notice and govern those components.
+
+NO WARRANTY
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE, AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHOR OR COPYRIGHT HOLDER BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT, OR OTHERWISE, ARISING FROM,
+OUT OF, OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+For permissions beyond this notice, contact the copyright holder.
