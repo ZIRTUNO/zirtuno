@@ -300,6 +300,31 @@ second diagram layer. There is also no progress meter, count, or pseudo-HUD:
 the bodies becoming one carry the connection claim, while a quiet text note
 provides the authored explanation.
 
+`lib/webgl/confluence.mjs` owns what THE GATHERING resolves INTO. S3 used to
+end on form 0 — the Zirtuno mark, rasterised to an SDF, faded up on `fused`
+with the 48 droplets deleted underneath it (`densJ = 1 - fused`). It no longer
+does: the resolution is a symbol with no vector behind it, three arms running
+in from the three systems' own bearings and merging into one core, made of the
+same droplets that carried them. The ten capabilities seat on the arms (three
+each, in the order the column lists them) and the connective liquid is the
+core. `lobeBearing` is shared with gathering.mjs, so the symbol cannot drift
+from the constellation the runway spends three viewports assembling.
+
+The resolved body TURNS — one revolution every ~22 s, counter to the sense its
+arms curl, so they trail — and the turn unwinds across the first half of the
+crossing melt, before pillar 1's silhouette opens. The crossing itself is the
+site's own melt vocabulary with the confluence as its source cloud: the same
+matcher, schedule and kernel, `formPhase` landing form B while `bridgePresence`
+drains the liquid, with the droplet presence HELD at full through the front
+half because S3's fuse already played a melt's first act. There is no form on
+this stage between the Hero and the first pillar.
+
+`lib/webgl/confluence-outline.mjs` marches that same field into an SVG path for
+the static / reduced-motion tier, so the fallback is the identical silhouette
+rather than a differently-drawn symbol. `scripts/verify-confluence.mjs` gates
+all of it off-GPU: one body, no loose beads, solid, three arms with real
+concavities, the crossing exact at both ends and inside the mass budget.
+
 Droplet `i` is the same conceptual droplet in Hero, Problem, Ecosystem,
 Services, Método, Work, Origin, Studio, Contact, and Footer. Scene handoffs
 blend the target of that identity; they do not replace the array.
@@ -560,19 +585,18 @@ exact identity at `iStrain = 0`, and the field-weighted velocity average is
 diluted to zero by forms (which carry none), so solid liquid keeps the locked
 material without a second guard. The plain shader source is byte-identical to
 its pre-deformation form, which is what keeps `verify-rest-exact` sound:
-`FieldMorphHero` — the only renderer that gate uses — compiles that source, at
-`warp = 0`, and touches neither `fluid-core` nor the conductor.
+`FormStillRenderer` — mounted only on the no-index `/[locale]/lab/forms` route
+and used by that gate — compiles that source at `warp = 0` and touches neither
+`fluid-core` nor the conductor.
 
 ## 9. Interaction
 
-### 9.1 Hero machine
+### 9.1 Exact-form lab
 
-- order: mark → seven services → mark;
-- dwell: about 9s; bridge: 1.4s;
-- pause while off-screen and during pointer/focus interaction;
-- Arrow Left/Right steps; Home returns to mark; End reaches Marketing;
-- active service drives the indicator and restrained live announcement;
-- touch keeps the form machine but disables fine-pointer goo.
+- the retired interactive hero form machine is not a production alternate;
+- the live Hero owns its ribbon while the page field begins at the pour;
+- exact rest, morph, and cursor frames render only on the no-index
+  `/[locale]/lab/forms` route used by the capture gates.
 
 ### 9.2 Gooey cursor
 
@@ -880,7 +904,7 @@ The renderer:
 | `lib/webgl/scenes/*.ts`               | geometry-to-target choreography                               |
 | `components/field/PageStage.tsx`      | measurements, inputs, scene assembly, one canvas              |
 | `components/field/FieldStage.tsx`     | WebGL resource lifecycle and draw loop                        |
-| `components/hero/FieldMorphHero.tsx`  | deterministic standalone hero QA path                         |
+| `components/lab/FormStillRenderer.tsx` | isolated deterministic exact-form QA path                     |
 | `lib/webgl/post-chain.ts`             | R5-C framebuffer pipeline (scene target, bloom, composite)    |
 | `lib/webgl/post-shaders.mjs`          | R5-C bright/blur/composite shaders + POST dial-in             |
 | `components/field/CinematicVeils.tsx` | R5-D page-light layer (veil/vignette via CSS vars)            |
@@ -900,11 +924,9 @@ Retired architecture is not an alternate path. Do not create:
 
 | Control                   | Contract                                                       |
 | ------------------------- | -------------------------------------------------------------- |
-| `?fstate=N`               | freeze exact form state                                        |
-| `?fpair=a-b-m`            | freeze bridge A → B at progress m                              |
-| `?fcursor=x,y`            | freeze cursor merge at coordinates                             |
-| `?fcycle=1`               | shorten hero dwell                                             |
-| `?fflat=1`                | flat/debug output                                              |
+| `/[locale]/lab/forms?fstate=N` | freeze exact form state                                  |
+| `/[locale]/lab/forms?fpair=a-b-m` | freeze morph A → B at progress m                       |
+| `/[locale]/lab/forms?fstate=N&fcursor=x,y` | freeze cursor merge at coordinates              |
 | `?ftier=full\|lite\|none` | tier override                                                  |
 | `?feco=c`                 | ecosystem choreography progress                                |
 | `?fphys=0`                | legacy integrator bypass                                       |
@@ -943,7 +965,7 @@ node scripts/capture-transition-diagnostics.mjs
 ```
 
 `verify-rest-exact.mjs` is the byte gate behind the exact-rest stop-the-line
-rule: it hides animated overlays, polls each `?fstate` still until two
+rule: it uses the isolated form lab, polls each `?fstate` still until two
 consecutive element screenshots are byte-equal (the settled frame), and
 compares SHA-256 against `scripts/rest-exact.json`. `forms:rest` remains the
 human fidelity sheet; it is not run-reproducible (the breath overlay pulses

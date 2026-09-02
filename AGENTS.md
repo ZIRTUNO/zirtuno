@@ -104,11 +104,105 @@ The site is in R5, “One Continuous Liquid.”
   the cinematic escape hatch; `verify-cinematics.mjs` is the machine gate.
 - **R5-E closes:** device, battery, context-loss, accessibility, locale,
   content-truth, conversion, and final regression hardening.
+- **R6 is complete:** the liquid stops being 48 choreographed droplets and
+  becomes a population. Three changes, each independently reversible.
+
+  **The renderer is TILE-BINNED.** The shipped shader evaluated every droplet
+  at every fragment with no spatial culling, so ~95% of the frame was the ball
+  loop and the population could not grow: measured at 1.13 Mpx, 0 balls cost
+  0.80 ms and 80 balls cost 19.1 ms. Droplet data now lives in an RGBA32F
+  texture (row 0 = x, y, r, density · row 1 = depth, velocity) and a CPU
+  prepass bins droplet indices into 20 px screen tiles, so a fragment walks
+  only the droplets that can reach it. Per-fragment work tracks LOCAL density
+  instead of the global count. Measured on the production build at 1.9 Mpx,
+  p90 frame time — which is what reads as stutter — went from 30.1 ms to
+  10.1 ms *while* the population rose 6.6×. `?ftile=0` rolls back to the
+  uniform-array path, which stays the automatic fallback for any driver that
+  refuses the integer samplers. `SDF_BALL_MAX = 80` still bounds that path;
+  the tiled path is bounded by `SDF_BALL_CAP_TILED = 512`.
+
+  **48 is the AUTHORED population, not the system's.** It is what
+  generate-morph-endpoints packs every form SVG to, so morphs stay pure lerps —
+  that contract is untouched. Above it sit MOTES (lib/webgl/motes.mjs):
+  ordinary simulated droplets whose targets are DERIVED from a host's
+  (i % 48) rather than authored, so every composition, morph, handoff and
+  cluster carries the whole crowd without a scene knowing it exists. They are
+  in the physics arrays — they repel, cohere, feel the curl, the scroll, the
+  hand and the strike. Their field density scales by (1 − hostBind), so during
+  the §3.3 melt sequence they are absent and the morph is exactly what it was.
+  `?fmotes=<ranks>` sets the population (1 = none).
+
+  **Droplets have TEMPERAMENT** (lib/webgl/temperament.mjs). Before, every
+  droplet sampled the same three gyres at the same gain and differed only in
+  TAUP — they differed in response, never in intent, which is why a free body
+  read as one mass being carried. Each now has a leash share, a curl gain, a
+  signed orbital tendency about its own target, its own drift clock, and a
+  sociability multiplier on cohesion — all multipliers on forces that already
+  scale by (1 − bind), so the bind contract is untouched. The distribution is
+  SKEWED (owner decision): most droplets calmer, a short lively tail.
+  `?ftemper=0` restores pre-R6 character.
+
+  **A FREE DROPLET IS NOT SPRUNG TO A POINT — it is contained in a
+  NEIGHBOURHOOD of one.** This is R6-B, and without it none of the above could
+  be seen. The goal-seek was om² · (T − x) with om = OMEGA_K / TAUP, so ω² sat
+  between 77 and 343; equilibrium displacement under a steady force is F/ω², and
+  the entire ambient current is 0.29 uv/s². Measured, that was 0.4 to 4.2 PIXELS
+  of wander on a droplet 20 px across — every environmental force in the core
+  was a whisper against that spring, and per-droplet character only varied which
+  whisper a droplet got. Inside the leash (FLUID.LEASH_R × its radius × roam ×
+  (1 − bind)) there is now no restoring force and a tenth of the damping, so the
+  flow genuinely ADVECTS the droplet; outside, a full spring returns it to the
+  nearest point on the leash — never to the centre, which would be a bouncing
+  ball rather than contained liquid. The curl field's octaves were also
+  re-clocked: they drifted at 57-140 SECOND periods, which is a frozen vector
+  field over any watch a visitor gives it, and free droplets simply settled into
+  it. They now turn over in 3-16 s, fine structure faster than coarse.
+
+  **THE FLOW IS CURL NOISE, AND THE LEASH BREATHES.** Freeing the droplets was
+  not enough on its own, because the field carrying them was four sinusoid
+  octaves whose finest wavelength was 0.36 uv while neighbouring droplets sit
+  ~0.07 uv apart. Every droplet in a body was inside one eddy and got the same
+  push, so bodies translated as rigid pieces — measured, the velocity directions
+  of droplets within three radii correlated at 0.51, and a body that moves as
+  one piece reads as choreography whatever its parts may do. The potential is
+  now value-noise fBm and the flow is its curl (lib/webgl/noise.mjs) —
+  divergence-free by identity, rough at every scale, aperiodic, with an octave
+  ladder reaching down to 0.085 uv so neighbours can finally disagree. Each
+  droplet's own drift is fBm in time rather than a sine, which retraced its path
+  exactly. And `roam` breathes on its own aperiodic clock (FLUID.EXCURSION), so
+  at any moment most of the body is on a short tether and a few droplets are on
+  a long one — they break away, cross the composition and are drawn back. That
+  is intermittency, which is what liquid actually does.
+
+  Measured on a still composition at bind 0, across the three changes:
+
+  | | offset (radii) | travel /10 s | neighbour coherence | revisits |
+  |---|---|---|---|---|
+  | pre-R6-B | 0.19 | 1.6 | — | — |
+  | + leash | 2.80 | 11.5 | 0.51 | 17% |
+  | + curl noise | 3.03 | 9.8 | 0.18 | 28% |
+  | + excursions | 2.43 (p90 5.25) | 10.5 | 0.16 | 16% |
+
+  …while the body's own radius of gyration moves 1.3%. The macro composition is
+  preserved; its parts are not. `?fleash=0` restores the point-spring exactly.
+  Pinch-off measures strain PAST the leash — distance from target is no longer
+  strain, and left uncorrected the field sheds spray continuously and never
+  reports idle. `verify-conductor.mjs` gates both halves (free liquid must
+  travel, the body must not) and `probe-wander.mjs` is the harness; its
+  coherence and revival columns are the numbers for "does this look
+  choreographed", which nothing else here can see.
+
+  The pair force gains a uniform grid above 96 droplets (below it every pair is
+  tested in the original order, bit-identical). `verify-conductor.mjs` gates
+  the population, the bind gate, grid/all-pairs agreement, the binner against
+  brute force, and the freedom/containment pair; `probe-ball-budget.mjs` is the
+  cost harness and `probe-wander.mjs` is the freedom harness.
 
 ## 4. Non-Negotiable Rules
 
 1. **One liquid means one persistent homepage canvas.** The same canonical 48
-   droplets travel from Hero to Footer. Do not add per-chapter canvases,
+   AUTHORED droplets travel from Hero to Footer, now carrying a mote population
+   derived from them (R6). Do not add per-chapter canvases,
    remount the liquid between sections, or simulate continuity with a swap.
    Deterministic hero QA renderers and separate non-homepage surfaces are the
    only narrow exceptions.
@@ -413,6 +507,13 @@ Ask before adding any dependency or substituting any layer.
 ## 8. Working Conventions
 
 - Inspect the worktree before editing. Preserve user changes and unrelated work.
+- When dead, obsolete, or unused code is confirmed, move the file or module to
+  the repository-root `Dead Code/` folder instead of leaving it in an active
+  source directory or permanently deleting it. Preserve the original relative
+  path where practical, record the move and evidence in `Dead Code/README.md`,
+  remove every active import/script/config reference, and keep `Dead Code/`
+  excluded from builds, type checks, lint, and deployment. Restore code only by
+  moving it back into the active tree and re-running the relevant gates.
 - Work one R5 phase or one bounded chapter concern at a time.
 - Use clear commits that identify the phase/spec, for example
   `feat(R5-C): add identity-safe bright pass`.

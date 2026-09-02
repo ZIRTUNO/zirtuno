@@ -1268,11 +1268,9 @@ diptych and its band is a different height.
 
 | Parameter                 | Purpose                                                     |
 | ------------------------- | ----------------------------------------------------------- |
-| `?fstate=N`               | deterministic rest form                                     |
-| `?fpair=a-b-m`            | deterministic §3.3 bridge frame                             |
-| `?fcursor=x,y`            | deterministic cursor merge                                  |
-| `?fcycle=1`               | short hero dwell                                            |
-| `?fflat=1`                | flat/debug field                                            |
+| `/[locale]/lab/forms?fstate=N` | isolated deterministic rest form                       |
+| `/[locale]/lab/forms?fpair=a-b-m` | isolated deterministic morph frame                  |
+| `/[locale]/lab/forms?fstate=N&fcursor=x,y` | isolated cursor merge                      |
 | `?ftier=full\|lite\|none` | tier override                                               |
 | `?feco=c`                 | freeze ecosystem progress `c ∈ [0,1]`                       |
 | `?fphys=0`                | legacy integrator bypass                                    |

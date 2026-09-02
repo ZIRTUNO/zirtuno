@@ -150,3 +150,44 @@ The 1487 x 1058 full states were sufficient to judge the headline measure, idea 
 - Existing site chrome and the chapter rail remain because they are shared navigation, not part of the retired S7 HUD.
 
 final result: passed
+
+---
+
+# Footer Design QA
+
+## Evidence
+
+- Visual truth: `C:/Users/pedro/AppData/Local/Temp/codex-clipboard-4540765a-ada3-435a-aece-6782666cadbd.png`
+- Initial implementation: `C:/Users/pedro/AppData/Local/Temp/codex-clipboard-596225f7-be95-41ed-b0a3-451f0d645fbe.png`
+- Rejected first pass: `artifacts/footer-design-qa/implementation-en-1513x527.png`
+- Final implementation: `artifacts/footer-design-qa/implementation-en-1513x527-round2-final.png`
+- Full-view comparison: `artifacts/footer-design-qa/reference-vs-implementation-round2-final.png`
+- Focused footer comparison: `artifacts/footer-design-qa/reference-vs-implementation-round2-final-focused.png`
+- Supplemental desktop: `artifacts/footer-design-qa/implementation-en-1790x760-round2-final.png`
+- Supplemental mobile: `artifacts/footer-design-qa/implementation-pt-390x844-round2-final.png`
+- Source viewport: 1513 x 527 px after excluding the 30 px Windows taskbar from the supplied screenshot.
+- Implementation viewport: 1514 x 527 CSS px at density 1. The in-app browser's content screenshot was 1503 x 524 px after its scrollbar/chrome exclusion and was normalized to 1513 x 527 for the comparison board.
+- State: English homepage footer coda, panel top aligned to 50 px, floating top bar parked above the viewport, persistent liquid release present, and environment-approved Instagram and WhatsApp links rendered.
+
+## Comparison history
+
+1. Baseline: the panel was too wide, too tall, too rounded, and too close to the viewport edges; its internal padding, wordmark, headings, rows, divider, copyright, and social marks all used materially different dimensions from the reference.
+2. Rejected first pass: raw offsets matched at 1513 px, but the footer became too short and sat too low at the owner's 1790 x 760 review size; the fixed top bar also remained visibly layered over the coda.
+3. Responsive-frame fix: restored the reference's proportions with a viewport-aware panel height, width-scaled inner padding, a local text size bounded by the existing body tiers, and a wordmark/mark relationship that holds at both desktop widths.
+4. Coda-chrome fix: the floating top bar now parks above the viewport when at least 24% of the footer is visible and returns through `:focus-within`, removing the visible overlay without making keyboard navigation an invisible stop.
+5. Final pixel pass: panel x/y is 85.1/50.2 versus 85/50; brand x/y is 160.1/140 versus 159/139; wordmark y is 208.3 versus 208; tagline y is 286.8 versus 285; rule y is 380.5 versus 380; copyright y is 438.7 versus 439; social-row y is 432.5 versus 432.
+
+## Findings
+
+- P0: none.
+- P1: none.
+- P2: none.
+- P3: none actionable. Remaining visible differences are required product constraints: Zirtuno branding/copy and cyan-on-black palette, the authored Work with us route, environment-gated social links, and the persistent release droplet/chapter rail/cursor.
+- Typography: the final wordmark, headings, links, tagline, and copyright now match the target's optical scale while staying inside the locked Bricolage/Geist role system.
+- Layout: panel inset, radius, top padding, columns, 32 px row cadence at the source width, rule, base row, and social edge align within 0.2-3 px of the measured target.
+- Colors/assets: the cream palette and UpSunday assets remain intentionally replaced by Zirtuno's locked cyan-on-black tokens and supplied brand mark; no substitute artwork was fabricated.
+- Copy/content: the English comparison preserves the target hierarchy; the additional Work with us link remains because it is a required Zirtuno route.
+- Responsive/accessibility: no footer element overflows at 390 x 844, social targets remain 44 px, PT legal copy wraps cleanly, and the a11y/CTA suites pass keyboard, locale, reduced-motion, no-JS, and contact semantics.
+- Verification: TypeScript passed; lint passed with five pre-existing warnings and zero errors; the isolated production build passed; HTTP returned 200. The cinematic gate confirms the footer release remains alive (`delta=48622`); its full run still reports the pre-existing transient `cta-label-ink` contrast failure outside the footer.
+
+final result: passed

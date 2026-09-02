@@ -257,11 +257,9 @@ images; a green process exit does not replace visual judgment.
 
 ### Current QA parameters
 
-- `?fstate=N` — deterministic rest form.
-- `?fpair=a-b-m` — deterministic melt frame.
-- `?fcursor=x,y` — deterministic cursor merge.
-- `?fcycle=1` — shortened hero dwell.
-- `?fflat=1` — flat field/debug path.
+- `/[locale]/lab/forms?fstate=N` — deterministic exact rest form.
+- `/[locale]/lab/forms?fpair=a-b-m` — deterministic melt frame.
+- `/[locale]/lab/forms?fstate=N&fcursor=x,y` — deterministic cursor merge.
 - `?ftier=full|lite|none` — tier override.
 - `?feco=c` — freeze ecosystem choreography at `c ∈ [0,1]`.
 - `?fphys=0` — bypass fluid physics through the legacy low-pass.
