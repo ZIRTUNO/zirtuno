@@ -366,8 +366,12 @@ body:has(.lab-page) .side-index {
   /* shrink to the callouts, so the track the light runs is exactly as wide as
      the row — not the 62rem column the row is centred in */
   width: fit-content;
-  max-width: min(100%, 62rem);
-  margin: clamp(1.75rem, 4.5vh, 3rem) auto 0;
+  /* R7: the cap is THE SHELL, not a 62rem number of its own. At 1440 the four
+     callouts plus their gaps measure ~988px against a 1083px column and sit on
+     one line; the old 992px cap fell a few pixels short of the row and orphaned
+     the fourth onto a second line, centred, which read as a layout bug. */
+  max-width: min(100%, var(--shell-w));
+  margin: var(--space-block) auto 0;
   /* where the track sits under the labels */
   padding-bottom: 0.85rem;
   animation: lab-rise 1000ms var(--ease-arrive) 900ms both;
@@ -377,7 +381,7 @@ body:has(.lab-page) .side-index {
   flex-wrap: wrap;
   align-items: center;
   justify-content: center;
-  gap: clamp(1.25rem, 3vw, 2.75rem);
+  gap: var(--space-block);
   margin: 0;
   padding: 0;
   list-style: none;

@@ -50,66 +50,106 @@
   --font-display: var(--font-instrument), Georgia, "Times New Roman", serif;
   --font-mono: var(--font-jetbrains), ui-monospace, "SFMono-Regular", monospace;
 
-  /* --- Type scale (S1.2 · R4) — one disciplined modular system, fluid
-     mobile→desktop via clamp. DISPLAY tiers ride Bricolage (tight tracking +
-     leading, the expressive voice); TEXT tiers ride Geist (calm leading,
-     near-zero tracking, engineered for reading); the LABEL tier rides the mono
-     (open tracking, uppercase). Contrast between tiers is deliberate. --- */
+  /* --- Type scale (R7 · THE CONSTANT-RATIO LADDER) ------------------------
+     Ported from upsunday.co, whose composition reads as "perfectly placed" for
+     one measurable reason: EVERY size on it is a fixed fraction of the viewport
+     width, and that fraction does not drift. Measured at 1024/1280/1440/1512/
+     1920 (`scripts/_probe-refs.mjs`), its display is 3.30vw at every one of
+     them and its body is 1.10vw at every one of them — so the relationship
+     between any two elements is the same picture at every width, just scaled.
+
+     The R6 ladder could not do that. `clamp(1.42rem + 5.7vw, …, 6.5rem)` put
+     its CEILING at 104px, which a section title reaches at ~1300 — right in the
+     middle of the band people actually browse at. Past that the title froze
+     while the viewport kept growing, so the title fell from 7.9vw at 1024 to
+     5.4vw at 1920 while body copy went 1.75vw → 0.94vw on a different curve.
+     Nothing held its proportion to anything else, and that — not any single
+     value — is what read as "the sizing is off".
+
+     R7 keeps clamp() but MOVES THE GUARD RAILS OUT of the desktop band. Every
+     tier below is a pure `Xvw` between roughly 1230 and 2130; the floor only
+     engages on tablets and the ceiling only on ultrawide. Between those the
+     ladder is exactly proportional, exactly like the reference.
+
+     THE RATIOS are upsunday's, with the display tiers taken one step louder
+     (×1.33) so Zirtuno keeps a recognisably bolder editorial headline than the
+     reference's rather quiet one. Title:body lands at 4.40/1.22 = 3.6:1
+     (upsunday is 3.0:1; R6 was 5.8:1 — a giant headline over small grey copy,
+     which is the other half of what felt wrong).
+
+       tier          vw      1280     1440     1920
+       display-xl    7.20    92.2     103.7    138.2
+       hero          5.00    64.0     72.0     96.0
+       display-l     4.40    56.3     63.4     84.5     ← section titles
+       display-m     2.60    33.3     37.4     49.9
+       poetic        1.62    20.7     23.3     31.1
+       title         1.55    19.8     22.3     29.8
+       lead          1.42    18.2     20.4     27.3
+       body-l        1.32    16.9     19.0     25.3
+       body          1.22    15.6     17.6     23.4
+       mono          1.06    13.6     15.3     20.4
+       body-s        1.02    13.1     14.7     19.6
+       mono-sm       0.94    12.0     13.5     18.1
+     --- */
 
   /* DISPLAY — Bricolage grotesk (headlines opt in via .font-grotesk).
-     The steep scale contrast and compressed leading create the editorial
-     authority; the mobile floors keep that character without viewport hacks. */
-  --text-hero: clamp(3.25rem, 2.05rem + 4.3vw, 5.75rem);
-  --text-hero--line-height: 0.93;
-  --text-hero--letter-spacing: -0.042em;
+     Leading is a shade looser than R6's: at 63px a section title does not need
+     the 0.94 that a 104px one did to hold together, and the extra air is what
+     keeps the smaller display from reading as a subhead. */
+  --text-hero: clamp(2.75rem, 5vw, 6.75rem);
+  --text-hero--line-height: 0.95;
+  --text-hero--letter-spacing: -0.036em;
 
-  --text-display-xl: clamp(4rem, 2.1rem + 7.4vw, 8.75rem);
-  --text-display-xl--line-height: 0.9;
-  --text-display-xl--letter-spacing: -0.045em;
+  --text-display-xl: clamp(3.5rem, 7.2vw, 9.5rem);
+  --text-display-xl--line-height: 0.92;
+  --text-display-xl--letter-spacing: -0.042em;
 
-  --text-display-l: clamp(2.75rem, 1.42rem + 5.7vw, 6.5rem);
-  --text-display-l--line-height: 0.94;
-  --text-display-l--letter-spacing: -0.035em;
+  --text-display-l: clamp(2.375rem, 4.4vw, 6rem);
+  --text-display-l--line-height: 0.96;
+  --text-display-l--letter-spacing: -0.03em;
 
-  --text-display-m: clamp(1.875rem, 1.42rem + 1.85vw, 3rem);
-  --text-display-m--line-height: 1.03;
-  --text-display-m--letter-spacing: -0.022em;
+  --text-display-m: clamp(1.625rem, 2.6vw, 3.5rem);
+  --text-display-m--line-height: 1.05;
+  --text-display-m--letter-spacing: -0.02em;
 
   /* TITLE — mid headings (card/service/phase names, studio roles). Geist. */
-  --text-title: clamp(1.25rem, 1.05rem + 0.8vw, 1.75rem);
-  --text-title--line-height: 1.16;
-  --text-title--letter-spacing: -0.016em;
+  --text-title: clamp(1.125rem, 1.55vw, 2rem);
+  --text-title--line-height: 1.2;
+  --text-title--letter-spacing: -0.014em;
 
-  /* TEXT — Geist (serif only for --text-poetic). Reading tiers deliberately
-     grow much less than display tiers, preserving a calm 20–22px rhythm. */
-  --text-poetic: clamp(1.35rem, 1.1rem + 1vw, 2rem);
-  --text-poetic--line-height: 1.32;
+  /* TEXT — Geist (serif only for --text-poetic). These now RIDE the same
+     viewport ratio as the display tiers rather than a flatter curve of their
+     own, which is what keeps the lead↔title and body↔column relationships
+     fixed. Leading tightens a touch as the sizes came up. */
+  --text-poetic: clamp(1.1875rem, 1.62vw, 2.125rem);
+  --text-poetic--line-height: 1.34;
   --text-poetic--letter-spacing: -0.006em;
 
-  --text-lead: clamp(1.25rem, 1.04rem + 0.9vw, 1.75rem);
-  --text-lead--line-height: 1.42;
-  --text-lead--letter-spacing: -0.012em;
+  --text-lead: clamp(1.0625rem, 1.42vw, 1.875rem);
+  --text-lead--line-height: 1.4;
+  --text-lead--letter-spacing: -0.011em;
 
-  --text-body-l: clamp(1.125rem, 1.03rem + 0.45vw, 1.375rem);
-  --text-body-l--line-height: 1.5;
-  --text-body-l--letter-spacing: -0.008em;
+  --text-body-l: clamp(1rem, 1.32vw, 1.75rem);
+  --text-body-l--line-height: 1.48;
+  --text-body-l--letter-spacing: -0.007em;
 
-  --text-body: clamp(1rem, 0.95rem + 0.27vw, 1.125rem);
-  --text-body--line-height: 1.58;
+  --text-body: clamp(0.9375rem, 1.22vw, 1.625rem);
+  --text-body--line-height: 1.52;
   --text-body--letter-spacing: -0.004em;
 
-  --text-body-s: clamp(0.875rem, 0.84rem + 0.14vw, 0.9375rem);
-  --text-body-s--line-height: 1.5;
+  --text-body-s: clamp(0.75rem, 1.02vw, 1.375rem);
+  --text-body-s--line-height: 1.48;
   --text-body-s--letter-spacing: 0em;
 
-  /* LABEL — JetBrains mono (uppercase, open tracking). R5-E lifted both tiers:
-     open tracking plus a 11–12px cap made counters, capability lists, filters
-     and chrome CTAs the hardest reads on the site once composited. */
-  --text-mono: clamp(0.8125rem, 0.78rem + 0.15vw, 0.9375rem);
+  /* LABEL — JetBrains mono (uppercase, open tracking). Both floors are the
+     site's 12px minimum-type rule rather than a proportional one: mono-sm at
+     0.94vw reaches 12.0px at 1280 exactly, so the floor is inactive across the
+     whole desktop band and only holds the line on tablets. */
+  --text-mono: clamp(0.8125rem, 1.06vw, 1.375rem);
   --text-mono--line-height: 1.35;
   --text-mono--letter-spacing: 0.1em;
 
-  --text-mono-sm: clamp(0.75rem, 0.72rem + 0.13vw, 0.8125rem);
+  --text-mono-sm: clamp(0.75rem, 0.94vw, 1.125rem);
   --text-mono-sm--line-height: 1.45;
   --text-mono-sm--letter-spacing: 0.11em;
 }
@@ -121,6 +161,13 @@
   --ease-arrive: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-depart: cubic-bezier(0.64, 0, 0.78, 0);
   --ease-breath: cubic-bezier(0.45, 0.05, 0.55, 0.95);
+  /* The reference chrome's own curve, kept distinct from `--ease-arrive`
+     (0.22, 1, 0.36, 1) rather than folded into it. It is a shade steeper —
+     ~46% of the travel is spent in the first 100ms of a 700ms move against
+     `arrive`'s ~40% — which is exactly what makes the nav sheet's cards feel
+     thrown into place and caught. Reserved for the chrome that was drawn from
+     that reference; anything the reader watches TRAVEL still wants `calm`. */
+  --ease-sheet: cubic-bezier(0.16, 1, 0.3, 1);
 
   /* Durations (S1.4) */
   --dur-micro: 200ms;
@@ -131,11 +178,47 @@
   --dur-autocycle: 9000ms;
   --dur-breath: 8000ms;
 
-  /* Spacing & layout (S1.3) */
-  --page-padding-mobile: 1.5rem;
-  --page-padding-desktop: 3rem;
-  --page-padding: var(--page-padding-mobile);
-  --section-gap: 8rem;
+  /* ── Spacing & layout (S1.3 · R7) — THE SHELL ────────────────────────────
+     ONE COLUMN FOR THE WHOLE SITE, and it is the bar's column.
+
+     `--topbar-w: 75.24vw` was already ported from upsunday.co exactly. What was
+     missed is that on the reference THE NAV WIDTH IS THE CONTENT WIDTH: its
+     `.hero-art`, `.reel-full__card`, `.awards-show`, `.articles__grid`,
+     `.services__cards`, `.works__grid` and `.foot` all measure 75.24vw at 1280,
+     1440 AND 1920 (`scripts/_probe-ups.mjs`) — the same number as `.nav`. One
+     edge runs down the entire page and the chrome sits on it.
+
+     R6 padded the page a flat 3rem instead, so at 1440 the content spanned
+     1344px against a 1083px bar: the copy overhung the chrome by 130px a side,
+     at every width, and the overhang GREW with the viewport. Two competing
+     left edges is most of what read as "nothing is placed on purpose".
+
+     So `--page-padding` is redefined as THE SHELL GUTTER rather than a flat
+     value. Every existing consumer — the 26 `.page-x` blocks and the rail /
+     absolute-anchor rules that already read `var(--page-padding)` — snaps onto
+     the bar's edge without being touched. `--shell-w` is the same column
+     expressed as a width, for the blocks that centre themselves instead. */
+  --shell-w: 75.24vw;
+  --shell-head-w: 72.9vw; /* section heads sit one step inside — reference's */
+  --page-padding: calc((100vw - var(--shell-w)) / 2); /* = 12.38vw */
+
+  /* ── Vertical rhythm ──────────────────────────────────────────────────────
+     The reference pads every section 5.435vw top and bottom — 69.6px at 1280,
+     78.3 at 1440, 104.4 at 1920, constant to three figures. R6 used a flat
+     8rem/128px, which is 1.6x the reference at 1440 and, being flat, drifts
+     against everything else. Same guard-rail discipline as the type ladder:
+     the floor engages below ~880 and the ceiling above ~2200, so the band
+     people actually browse at is purely proportional. */
+  --space-section: clamp(3rem, 5.435vw, 7.5rem); /* 69.6 / 78.3 / 104.4 */
+  --space-span: clamp(2.25rem, 4.08vw, 5.625rem); /* 52.2 / 58.8 /  78.3 */
+  --space-block: clamp(1.75rem, 2.72vw, 3.75rem); /* 34.8 / 39.2 /  52.2 */
+  --space-group: clamp(1rem, 1.36vw, 1.875rem); /* 17.4 / 19.6 /  26.1 */
+  --space-tight: clamp(0.5rem, 0.68vw, 0.9375rem); /*  8.7 /  9.8 /  13.1 */
+  /* The card gutter is the one thing the reference does NOT scale: 20px flat
+     at 1440 and at 1920 alike. A tight constant gutter is what makes a row of
+     cards read as one object rather than three; let it grow with the viewport
+     and the row falls apart. Deliberately not a vw. */
+  --grid-gap: 1.25rem;
   --chapter-min-h: 100svh;
 
   /* The top bar FLOATS, so its footprint is the plate plus the gap above it.
@@ -164,7 +247,9 @@
      the label stops at 12px (the reference reaches 9.2px at 1024 — below this
      site's own minimum-type rule). Between roughly 1330 and 1880 both are
      inactive and the geometry is the reference's exactly. */
-  --topbar-w: 75.24vw;
+  /* R7: the bar no longer restates the number — it reads THE SHELL, so the
+     two can never drift apart again. */
+  --topbar-w: var(--shell-w);
   --topbar-gap: max(12px, 1.25vw);
   --topbar-pad-x: max(9px, 0.9375vw);
   --topbar-chip-h: max(2.375rem, 2.776vw);
@@ -181,12 +266,29 @@
 
   /* Editorial measures and relationships. These are deliberately expressed
      in characters so PT-BR and EN retain the same visual cadence. */
-  --measure-hero: 11.5ch;
-  --measure-display: 18ch;
-  --measure-display-wide: 20ch;
-  --measure-editorial: 28ch;
-  --measure-lead: 43ch;
-  --measure-reading: 62ch;
+  /* R7 — RETUNED, for two reasons.
+
+     One: CSS `ch` is the advance of the "0" glyph, and Geist's is 0.663em, not
+     the ~0.5em these counts were evidently picked against. `62ch` was therefore
+     rendering about EIGHTY-TWO characters to the line, not sixty-two — well
+     past the 45–75 band, and the single biggest reason body copy felt like it
+     ran on. The counts below are chosen against the measured 0.663 (probe:
+     `scripts/_probe-measure.mjs`), so they now mean roughly what they say.
+
+     Two: they are re-proportioned to THE SHELL rather than to a full-bleed
+     page. On the references a copy block is about half its column — melrose
+     caps every paragraph at 620px inside a 1240px column (50%), catalin runs
+     37%, upsunday 24–28%. R6's landed at 54–78% of the new column, which is
+     wider than all three. These sit at 46–62%, nearer the text-heavy end of
+     the reference set since Zirtuno actually has prose to read.
+
+     Still expressed in characters so PT-BR and EN keep the same cadence. */
+  --measure-hero: 11ch; /* ~520px · 48% of column */
+  --measure-display: 16ch; /* ~672px · 62% */
+  --measure-display-wide: 18ch; /* ~756px · 70% */
+  --measure-editorial: 24ch; /* ~596px · 55% */
+  --measure-lead: 37ch; /* ~501px · 46% */
+  --measure-reading: 48ch; /* ~559px · 52% · ~64 characters */
   --text-wordmark: min(var(--text-display-xl), 17vw);
   --type-space-label-title: clamp(1.25rem, 1rem + 1vw, 2rem);
   --type-space-title-lead: clamp(1.25rem, 1rem + 0.8vw, 1.75rem);
@@ -232,7 +334,11 @@
    reference's exactly. */
 @media (max-width: 768px) {
   :root {
-    --topbar-w: calc(100% - 2 * 2.995vw);
+    /* The shell re-breaks with the bar: on a phone 75.24vw is a column with
+       nothing in it. 94.01vw is the reference's own mobile width, so the page
+       and the bar keep sharing an edge here too. */
+    --shell-w: 94.01vw;
+    --shell-head-w: 94.01vw;
     --topbar-gap: 2.995vw;
     --topbar-pad-x: 2vw;
     --topbar-bar-h: max(3rem, 11.8vw);
@@ -279,12 +385,6 @@
     --measure-hero: 20ch;
     --hero-label-space: 1.5rem;
     --hero-action-space: 2rem;
-  }
-}
-
-@media (min-width: 768px) {
-  :root {
-    --page-padding: var(--page-padding-desktop);
   }
 }
 
@@ -505,10 +605,43 @@
     text-wrap: balance;
   }
 
-  /* Page horizontal padding helper */
+  /* ── THE SHELL (R7) ──────────────────────────────────────────────────────
+     `.page-x` is unchanged in spelling and now means something different: its
+     padding IS the shell gutter, so all 26 blocks wearing it line up on the top
+     bar's edge instead of overhanging it. Nothing had to be renamed. */
   .page-x {
     padding-left: var(--page-padding);
     padding-right: var(--page-padding);
+  }
+
+  /* For blocks that centre a column instead of padding a full-bleed parent —
+     the same edge reached the other way round. Use inside an already-padded
+     or full-bleed section; never nest one `.page-x` inside another. */
+  .shell {
+    width: 100%;
+    max-inline-size: var(--shell-w);
+    margin-inline: auto;
+  }
+
+  /* Section heads sit one step inside the shell on the reference (72.9vw
+     against 75.24vw). It is a small inset and it is the reason its headings
+     never look flush-mounted to the cards below them. */
+  .shell-head {
+    width: 100%;
+    max-inline-size: var(--shell-head-w);
+    margin-inline: auto;
+  }
+
+  /* The vertical rhythm as utilities, so a chapter states its spacing in the
+     system's terms rather than picking a number. */
+  .section-y {
+    padding-block: var(--space-section);
+  }
+  .stack-block > * + * {
+    margin-block-start: var(--space-block);
+  }
+  .stack-group > * + * {
+    margin-block-start: var(--space-group);
   }
 }
 
@@ -1125,101 +1258,6 @@ section[id],
   animation: type-breathe var(--dur-breath) var(--ease-breath) infinite;
 }
 
-/* ===========================================================================
-   Pillar indicator (S2.3)
-   =========================================================================== */
-.pillar-indicator {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  margin-top: 1.5rem;
-}
-.pillar-dot {
-  width: 1.25rem;
-  height: 2px;
-  background: var(--color-paper-faint);
-  transition:
-    width 200ms var(--ease-arrive),
-    background 200ms var(--ease-arrive);
-}
-.pillar-dot.is-active {
-  width: 2rem;
-  background: var(--color-cyan);
-}
-
-/* ===========================================================================
-   Hero metaball (S2.3) — WebGL field traced from zirtuno-logo-mark.svg. The
-   static mark is the base layer: ships server-side, stays for reduced-motion /
-   no-WebGL, and shows until the field paints, then crossfades out.
-   =========================================================================== */
-.metaball-stage {
-  position: relative;
-  width: 100%;
-  max-width: 480px;
-  margin-inline: auto;
-  aspect-ratio: 1 / 1;
-}
-.metaball-stage:focus {
-  outline: none;
-}
-.metaball-stage:focus-visible {
-  outline: 2px solid var(--color-cyan);
-  outline-offset: 8px;
-  border-radius: 12px;
-}
-.metaball-stage > .metaball-fallback,
-.metaball-stage > .metaball-canvas {
-  position: absolute;
-  inset: 0;
-}
-.metaball-fallback {
-  transition: opacity var(--dur-long) var(--ease-arrive);
-}
-.metaball-canvas {
-  pointer-events: auto; /* hover physics: the cursor droplet merges with the liquid */
-}
-
-/* SDF-glass rest (v1.2 §6.1) — subtle ~8s breathing as a cheap CSS transform, so
-   the static glass is alive at rest without any per-frame GPU work. */
-.sdf-glass-breath {
-  animation: sdf-glass-breath 8s ease-in-out infinite;
-  transform-origin: center;
-  will-change: transform;
-}
-@keyframes sdf-glass-breath {
-  0%,
-  100% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(1.02);
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .sdf-glass-breath {
-    animation: none;
-  }
-}
-
-/* Perf HUD (?perf=1) — measure the live glass fps/dpr/resolution on real devices. */
-.perf-overlay {
-  position: fixed;
-  top: calc(var(--topbar-h) + 0.5rem);
-  left: 0.75rem;
-  z-index: 9998;
-  padding: 0.35rem 0.6rem;
-  background: color-mix(in srgb, var(--color-ink) 80%, transparent);
-  border: 1px solid var(--color-cyan);
-  border-radius: 4px;
-  font-family: var(--font-mono);
-  font-size: var(--text-mono-sm);
-  line-height: var(--text-mono-sm--line-height);
-  letter-spacing: var(--tracking-label-dense);
-  color: var(--color-cyan);
-  pointer-events: none;
-}
-
 /* S10 — contact metaball STAGE (R5: the mark renders on the page fluid,
    anchored to this box; the fallback shows on the static path). */
 .contact-metaball-stage {
@@ -1733,60 +1771,7 @@ section[id],
   }
 }
 
-/* Mobile reading apertures: the live field remains visible around the copy,
-   while a page-black feather prevents high-energy droplets from crossing the
-   business message. This is composition, not liquid dimming.
-   R5-E widened the set: the audit found the liquid crossing Problem items, the
-   Ecosystem stack, service descriptions, the Work empty state, Method phases,
-   Origin copy and the Studio lead — every place the argument actually lives,
-   not only the two headline statements the aperture originally covered. */
 @media (max-width: 767px) {
-  .liquid-journey
-    :is(
-      #hero .chapter-label,
-      #hero .type-breathe,
-      #hero .type-hero-title,
-      #hero .type-lead-copy,
-      #problem .type-section-title,
-      #problem .type-lead-copy,
-      #problem .symptom,
-      #ecosystem .type-section-title,
-      #ecosystem .type-lead-copy,
-      #ecosystem .eco-stack-center,
-      #ecosystem .eco-stack-item,
-      #services .type-section-title,
-      #services .type-lead-copy,
-      #services .pillar-accent,
-      #services .pillar-name,
-      #services .pillar-blocks,
-      #services .pillar-caps,
-      #method .type-section-title,
-      #method .method-name,
-      #method .method-desc,
-      #work .type-section-title,
-      #work .type-lead-copy,
-      /* S7's band copy is NOT in this list any more, and that is the point of
-         the band. These apertures exist where the live field crosses business
-         copy; inside .origin-frame nothing crosses it, so on a phone all they
-         did was print a visible grey slab behind every line of the chapter
-         (captures/origin-mobile/m-47.png, before). What remains are the two
-         S7 blocks that genuinely sit in open field: the opening, which reads
-         above the runway, and the manifesto coda, which reads below it. */
-      #name .origin-open,
-      #name .origin-headline,
-      #name .name-word-text,
-      #name .manifesto-line,
-      #studio .studio-lead,
-      #studio .type-feature-title,
-      #contact .type-section-title
-    ) {
-    background: rgb(0 0 0 / 0.86);
-    box-shadow: 0 0 1.1rem 0.8rem rgb(0 0 0 / 0.86);
-  }
-
-  /* the aperture hugs the words on short, non-filling lines. The creed is
-     NOT in this set any more: its rows are a full-measure table, and
-     fit-content would pull each rule in to the width of its own sentence. */
   .liquid-journey #services .pillar-accent {
     width: fit-content;
     max-width: 100%;
@@ -2001,7 +1986,9 @@ section[id],
   top: auto;
   width: clamp(12rem, 36vmin, 22rem);
   height: auto;
-  aspect-ratio: 2950 / 3200;
+  /* THE CONFLUENCE is authored in cloud space, which is square — the old ratio
+     was the Zirtuno mark's own artboard. */
+  aspect-ratio: 1;
 }
 
 /* R6 — each symptom is a STATEMENT, not a list row.
@@ -2588,7 +2575,7 @@ html:has(.disclose[data-disclose="live"][open]) {
 .svc-lead {
   margin-top: var(--type-space-title-lead);
   margin-inline: auto;
-  max-width: 54ch;
+  max-width: var(--measure-lead);
   color: var(--color-paper-mute);
 }
 .svc-outro {
@@ -2710,130 +2697,8 @@ html:has(.disclose[data-disclose="live"][open]) {
 }
 
 /* ===========================================================================
-   Selected Work — cards, filters, case study (S7)
+   Selected Work — filters, empty state, gallery, case study (S7)
    =========================================================================== */
-.project-card {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-  text-decoration: none;
-}
-.project-card:focus-visible {
-  outline-offset: 7px;
-}
-.project-preview {
-  position: relative;
-  aspect-ratio: 16 / 10;
-  overflow: hidden;
-  display: grid;
-  place-items: center;
-  border: 1px solid var(--color-paper-faint);
-  background: radial-gradient(
-    120% 120% at 30% 20%,
-    color-mix(in srgb, var(--color-cyan) 16%, var(--color-surface)),
-    var(--color-ink) 70%
-  );
-  transition: border-color 200ms var(--ease-arrive);
-}
-.project-card:hover .project-preview,
-.project-card:focus-visible .project-preview,
-.project-card:active .project-preview {
-  border-color: var(--color-cyan);
-}
-/* the category's SDF-glass form as placeholder ART (R3) — contained with
-   breathing room; lifts slightly on hover, like liquid noticing you */
-.project-preview-form {
-  object-fit: contain;
-  padding: 9%;
-  transition: transform 500ms var(--ease-arrive);
-}
-.project-card:hover .project-preview-form,
-.project-card:focus-visible .project-preview-form,
-.project-card:active .project-preview-form {
-  transform: scale(1.04);
-}
-.project-preview-cat {
-  font-family: var(--font-mono);
-  font-size: var(--text-mono-sm);
-  font-weight: 500;
-  line-height: var(--text-mono-sm--line-height);
-  letter-spacing: var(--tracking-label-open);
-  text-transform: uppercase;
-  color: var(--color-paper-mute);
-}
-/* over the form art the category becomes a quiet corner tag */
-.project-preview-form + .project-preview-cat {
-  position: absolute;
-  left: 1rem;
-  bottom: 0.85rem;
-}
-.project-body {
-  min-width: 0;
-  padding-top: 1.25rem;
-}
-.project-cats {
-  font-family: var(--font-mono);
-  font-size: var(--text-mono);
-  font-weight: 500;
-  line-height: var(--text-mono--line-height);
-  letter-spacing: var(--text-mono--letter-spacing);
-  text-transform: uppercase;
-  color: var(--color-cyan);
-}
-.project-name {
-  margin-top: 0.5rem;
-  overflow-wrap: anywhere;
-  color: var(--color-paper);
-  transition:
-    color 200ms var(--ease-arrive),
-    transform 200ms var(--ease-arrive);
-}
-.project-card:hover .project-name,
-.project-card:focus-visible .project-name,
-.project-card:active .project-name {
-  color: var(--color-cyan-glow);
-  transform: translateX(0.2rem);
-}
-.project-line {
-  margin-top: 0.6rem;
-  color: var(--color-paper);
-}
-.project-built {
-  margin-top: 0.5rem;
-  color: var(--color-paper-mute);
-}
-.project-services {
-  margin-top: 0.75rem;
-  font-family: var(--font-mono);
-  font-size: var(--text-mono-sm);
-  line-height: var(--text-mono-sm--line-height);
-  letter-spacing: var(--tracking-label-dense);
-  color: var(--color-paper-mute);
-}
-.project-outcome {
-  margin-top: 1rem;
-}
-.project-arch {
-  display: inline-block;
-  padding: 0.3rem 0.6rem;
-  font-family: var(--font-mono);
-  font-size: var(--text-mono-sm);
-  font-weight: 500;
-  line-height: var(--text-mono-sm--line-height);
-  letter-spacing: var(--tracking-label);
-  text-transform: uppercase;
-  color: var(--color-cyan);
-  border: 1px solid color-mix(in srgb, var(--color-cyan) 40%, transparent);
-}
-.project-preview-status {
-  position: absolute;
-  top: 0.85rem;
-  left: 1rem;
-  z-index: 2;
-  max-width: calc(100% - 2rem);
-  background: color-mix(in srgb, var(--color-ink) 82%, transparent);
-  backdrop-filter: blur(8px);
-}
 .work-filter {
   display: inline-flex;
   align-items: center;
@@ -2902,6 +2767,359 @@ html:has(.disclose[data-disclose="live"][open]) {
 /* the homepage strip is the other block that reaches the page's right edge */
 #work .work-strip {
   margin-right: var(--rail-safe);
+}
+
+/* ===========================================================================
+   S7.5 · The work GALLERY — square cards that OPEN into a morphing panel
+   ---------------------------------------------------------------------------
+   Geometry the morph depends on lives in `WorkGallery.tsx`, because it is
+   interpolated per frame and CSS cannot express "lerp between this card and
+   that centred box". Everything static — surface, hairline, type, hover —
+   lives here, so the card is a complete, correct card before a single frame
+   runs, and stays one if the panel never opens.
+
+   The card is SQUARE on purpose. The panel's media slot is square too, so a
+   `cover` crop resolves identically at both ends of the flight and the
+   photograph never slides inside its own frame while it travels.
+   =========================================================================== */
+.zw-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--grid-gap);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+@media (max-width: 767px) {
+  .zw-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--grid-gap);
+  }
+}
+.zw-cell {
+  min-width: 0;
+}
+
+.zw-card {
+  position: relative;
+  display: block;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+  text-decoration: none;
+  border: 1px solid var(--color-paper-faint);
+  background: var(--color-surface);
+  /* the caption scales with the CARD, not the viewport — a two-up grid and a
+     one-up mobile stack then read as the same object at two sizes */
+  container-type: inline-size;
+  transition: border-color 300ms var(--ease-sheet);
+}
+.zw-card:hover,
+.zw-card:focus-visible {
+  border-color: color-mix(in srgb, var(--color-cyan) 55%, transparent);
+}
+.zw-card:focus-visible {
+  outline: 2px solid var(--color-cyan);
+  outline-offset: 4px;
+}
+
+.zw-card-frame {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+/* The scrim belongs to the FRAME, not the photo: during the flight the photo
+   shrinks away into the panel's media slot and the scrim must not follow it. */
+.zw-card-frame::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 58%;
+  pointer-events: none;
+  background: linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0) 18%,
+    rgba(0, 0, 0, 0.3) 58%,
+    rgba(0, 0, 0, 0.8) 100%
+  );
+}
+/* the element the morph drives (`data-card-photo`) — nothing else may claim
+   its transform */
+.zw-card-photo {
+  position: absolute;
+  inset: 0;
+  display: block;
+  will-change: transform;
+}
+.zw-card-img,
+.zw-card-form {
+  object-fit: cover;
+  transform: scale(1.001);
+  transition:
+    transform 1400ms var(--ease-sheet),
+    filter 1400ms var(--ease-sheet);
+}
+.zw-card-form {
+  object-fit: contain;
+  padding: 12%;
+}
+.zw-card:hover .zw-card-img,
+.zw-card:focus-visible .zw-card-img {
+  transform: scale(1.07);
+  filter: brightness(1.06) saturate(1.03);
+}
+.zw-card:hover .zw-card-form,
+.zw-card:focus-visible .zw-card-form {
+  transform: scale(1.04);
+}
+
+.zw-caption {
+  position: absolute;
+  z-index: 2;
+  left: 2.9cqw;
+  right: 2.9cqw;
+  bottom: 2.7cqw;
+  display: flex;
+  align-items: center;
+  gap: 2.4cqw;
+  min-width: 0;
+}
+.zw-mark {
+  flex: 0 0 auto;
+  width: 8.2cqw;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--color-ink) 55%, transparent);
+  box-shadow: inset 0 0 0 1px rgba(242, 240, 235, 0.2);
+  backdrop-filter: blur(6px);
+}
+.zw-mark img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.zw-label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5cqw;
+  min-width: 0;
+}
+.zw-name {
+  font-family: var(--font-sans);
+  font-size: 2.7cqw;
+  font-weight: 550;
+  line-height: 1.1;
+  letter-spacing: -0.015em;
+  color: var(--color-paper);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+}
+.zw-cats {
+  font-family: var(--font-mono);
+  font-size: 2.05cqw;
+  font-weight: 500;
+  line-height: 1.3;
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--color-paper-mute);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+}
+
+/* ── the panel ─────────────────────────────────────────────────────────── */
+.zw-root {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  pointer-events: none;
+}
+.zw-root.is-open {
+  pointer-events: auto;
+}
+/* A wash, not a curtain: at 93% the liquid still reads underneath, so Work
+   does not become a dead zone the moment a card is opened (rule #2). The
+   canvas writes alpha 1, so this has to sit ABOVE it to blend at all. */
+.zw-backdrop {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  will-change: opacity;
+  background:
+    radial-gradient(
+      120% 90% at 50% 45%,
+      color-mix(in srgb, var(--color-cyan) 7%, transparent),
+      transparent 70%
+    ),
+    color-mix(in srgb, var(--color-ink) 93%, transparent);
+}
+/* No real border: the panel's width/height are written every frame and a
+   border box would fight the body laid out at the same numbers. The hairline
+   is an inset ring instead, which costs the box model nothing. */
+.zw-panel {
+  position: fixed;
+  left: 0;
+  top: 0;
+  overflow: hidden;
+  opacity: 0;
+  background: var(--color-surface);
+  box-shadow:
+    0 40px 120px -30px rgba(0, 0, 0, 0.92),
+    inset 0 0 0 1px var(--color-paper-faint),
+    inset 0 0 0 2px color-mix(in srgb, var(--color-cyan) 7%, transparent);
+  will-change: transform, width, height;
+}
+.zw-panel:focus {
+  outline: none;
+}
+.zw-body {
+  position: absolute;
+  top: 0;
+  left: 0;
+  box-sizing: border-box;
+  transform-origin: 0 0;
+  will-change: transform;
+}
+.zw-media {
+  position: absolute;
+  overflow: hidden;
+  background: var(--color-ink);
+  box-shadow: inset 0 0 0 1px var(--color-paper-faint);
+  will-change: left, top, width, height;
+}
+.zw-media-img {
+  object-fit: cover;
+}
+.zw-media-form {
+  object-fit: contain;
+  padding: 10%;
+}
+
+.zw-copy {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+/* every line arrives on its own beat — the open sequence animates these to 1 */
+.zw-copy > * {
+  opacity: 0;
+}
+.zw-copy-cats {
+  font-family: var(--font-mono);
+  font-size: var(--text-mono-sm);
+  font-weight: 500;
+  line-height: var(--text-mono-sm--line-height);
+  letter-spacing: var(--tracking-label-open);
+  text-transform: uppercase;
+  color: var(--color-cyan);
+}
+.zw-copy-title {
+  margin-top: 0.7rem;
+  font-family: var(--font-sans);
+  font-size: var(--text-title);
+  font-weight: 550;
+  line-height: var(--text-title--line-height);
+  letter-spacing: var(--text-title--letter-spacing);
+  color: var(--color-paper);
+}
+.zw-copy-lead {
+  margin-top: 0.85rem;
+  font-size: var(--text-body);
+  line-height: var(--text-body--line-height);
+  letter-spacing: var(--text-body--letter-spacing);
+  color: var(--color-paper-lead);
+}
+.zw-copy-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1rem;
+  padding-top: 1.6rem;
+}
+/* the site's primary CTA, unchanged — the gallery only sizes it down a step
+   and gives its label room for the outbound arrow */
+.zw-visit {
+  min-height: 44px;
+  padding: 0.8rem 1.6rem;
+  font-size: var(--text-mono-sm);
+  letter-spacing: var(--tracking-label);
+}
+.zw-visit .cta-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+}
+.zw-visit svg {
+  width: 0.9em;
+  height: 0.9em;
+  flex: none;
+}
+.zw-case {
+  font-family: var(--font-mono);
+  font-size: var(--text-mono-sm);
+  font-weight: 500;
+  line-height: var(--text-mono-sm--line-height);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  text-decoration: none;
+  color: var(--color-paper-mute);
+  border-bottom: 1px solid var(--color-paper-faint);
+  padding-bottom: 2px;
+  transition:
+    color 200ms var(--ease-arrive),
+    border-color 200ms var(--ease-arrive);
+}
+.zw-case:hover,
+.zw-case:focus-visible {
+  color: var(--color-cyan);
+  border-color: var(--color-cyan);
+}
+
+/* The close chip is positioned by the loop (inside the top-right on desktop,
+   below-centre on mobile) so it rides the morph instead of arriving after it. */
+.zw-chip {
+  position: absolute;
+  z-index: 3;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  opacity: 0;
+  cursor: pointer;
+  color: var(--color-paper);
+  background: color-mix(in srgb, var(--color-ink) 70%, transparent);
+  border: 1px solid var(--color-paper-faint);
+  backdrop-filter: blur(10px);
+  transition:
+    color 200ms var(--ease-arrive),
+    border-color 200ms var(--ease-arrive);
+}
+.zw-chip:hover,
+.zw-chip:focus-visible {
+  color: var(--color-cyan);
+  border-color: var(--color-cyan);
+}
+.zw-chip svg {
+  width: 18px;
+  height: 18px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .zw-card-img,
+  .zw-card-form {
+    transition: none;
+  }
+  .zw-card:hover .zw-card-img,
+  .zw-card:focus-visible .zw-card-img,
+  .zw-card:hover .zw-card-form,
+  .zw-card:focus-visible .zw-card-form {
+    transform: scale(1.001);
+    filter: none;
+  }
+  .zw-copy > * {
+    opacity: 1;
+  }
 }
 
 .case-hero {
@@ -3947,7 +4165,7 @@ html:has(.disclose[data-disclose="live"][open]) {
   gap: clamp(0.85rem, 2.4vh, 1.5rem);
 }
 .origin-coda {
-  max-width: 40ch;
+  max-width: 32ch;
   font-size: var(--text-body-l);
   line-height: var(--text-body-l--line-height);
   letter-spacing: var(--text-body-l--letter-spacing);
@@ -4868,10 +5086,19 @@ html:has(.disclose[data-disclose="live"][open]) {
   box-shadow: inset 0 1px 0 rgb(242 240 235 / 0.1);
   /* the reference's 0.7s settle, on our own `arrive` curve */
   transition:
+    transform var(--dur-medium) var(--ease-arrive),
     background-color var(--dur-medium) var(--ease-arrive),
     box-shadow var(--dur-medium) var(--ease-arrive),
     backdrop-filter var(--dur-medium) var(--ease-arrive),
     -webkit-backdrop-filter var(--dur-medium) var(--ease-arrive);
+}
+/* The reference footer is a quiet end card, not another layer underneath the
+   floating navigation. Once the coda itself occupies the viewport, park the
+   bar above it. Keyboard focus is the exception: tabbing back into the bar
+   brings it straight home, so no navigation target becomes an invisible stop. */
+html[data-footer-coda] .topbar:not(:focus-within) {
+  transform: translateY(calc(-100% - var(--topbar-gap) * 2));
+  pointer-events: none;
 }
 /* Scrolled: real copy is passing underneath now, so the pane has to work
    harder — but it does it by getting THICKER, not by getting more opaque. The
@@ -4933,12 +5160,53 @@ html:has(.disclose[data-disclose="live"][open]) {
   align-self: stretch;
   text-decoration: none;
 }
+/* The square the brand lockup's two mark layers share: the painted mark and
+   the mark `BrandDraw` lays down. The halo lives HERE rather than on the
+   art, so the drawn line inherits it and brightens with it on hover — one lit
+   object, not a logo with a decal on top. */
 .topbar-mark {
+  position: relative;
   width: max(20px, 2.22vw);
+  aspect-ratio: 1 / 1;
   flex-shrink: 0;
   /* the same halo the footer's mark carries, at chrome scale */
   filter: drop-shadow(0 0 14px rgb(0 227 254 / 0.3));
   transition: filter var(--dur-micro) var(--ease-arrive);
+}
+.topbar-mark-art {
+  position: absolute;
+  inset: 0;
+}
+/* The self-drawing mark (components/chrome/BrandDraw.tsx).
+
+   It REPLACES the painted mark rather than sitting over it. The reveal has to
+   be able to take the form away — that is the whole gesture — and it cannot do
+   that while a second copy is painted underneath. The swap is gated on the
+   SVG's presence, not on a JS-set attribute, so it happens in the same paint as
+   the markup: no frame with both, and none with neither. Where `:has()` is
+   unsupported the fallback is a harmless double-draw, because the two are the
+   same mark in the same place (`_probe-brand-trace.mjs` measures the
+   registration at 0.01 px). */
+.topbar-mark:has(.brand-draw) .topbar-mark-art {
+  display: none;
+}
+.brand-draw {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.brand-draw-ink {
+  fill: var(--color-cyan);
+}
+/* The wet edge of the ink, riding just behind the pen. `non-scaling-stroke` so
+   it stays a hairline at every width the bar takes rather than thickening with
+   the viewport. */
+.brand-draw-pen {
+  fill: none;
+  stroke: var(--color-cyan-glow);
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
 }
 .topbar-brand:hover .topbar-mark,
 .topbar-brand:focus-visible .topbar-mark {
@@ -5111,36 +5379,11 @@ html:has(.disclose[data-disclose="live"][open]) {
       background-color: var(--color-ink);
     }
   }
-  /* COPY WINS ON A PHONE. The liquid is a full-bleed layer behind the text and
-     a 390px viewport has no spare column for it to occupy, so it lands on the
-     words. Measured by diffing the page against itself with the canvas hidden:
-     "02 — O Problema" was 100% covered, the symptom labels 36%, the method
-     descriptions 35%. A dark halo separates each glyph from whatever passes
-     underneath without laying a visible plate over the art direction.
-
-     Split by fill type on purpose: with background-clip:text the fill IS the
-     element's background and backgrounds paint BEFORE text-shadow, so a shadow
-     would sit on top of the gradient and wash the glyph out — those get a
-     filter, which applies to the finished glyph. Same reasoning as
-     .liquid-glass-lit, which already carries its own and is left alone. */
+  /* Keep mobile copy clean over the field. The previous black glyph halo and
+     feathered reading apertures visibly smudged the liquid around every line. */
   #content :is(h1, h2, h3, h4, p, dt, dd, li, blockquote, figcaption):not(.liquid-glass) {
-    text-shadow:
-      0 0 4px var(--color-ink),
-      0 0 14px var(--color-ink);
+    text-shadow: none;
   }
-  /* TEXT-SHADOW INHERITS, and that is the whole hazard. Excluding the clipped
-     elements from the selector above is not enough: the hero headline is an h1
-     that CONTAINS gradient-clipped spans, so the h1 takes the halo and the
-     spans inherit it. Their glyphs are transparent — the fill is the element's
-     background — so the inherited shadow paints straight through the fill and
-     greys the word out. It has to be stopped where it lands, not where it is
-     declared. Same rule .liquid-glass-lit documents: on clipped type a shadow
-     belongs in a filter, never in text-shadow.
-
-     Only these four are clipped below 768px; the .liquid-journey title set is
-     gated to ≥768px and still wants the halo down here. No filter is added in
-     exchange — lab.css deliberately keeps blur passes off these glyphs because
-     they are painted while the shader is running. */
   #content
     :is(.liquid-glass, .lab-strong, .lab-word-char, .lab-word-face) {
     text-shadow: none;
@@ -5565,17 +5808,48 @@ html:has(.disclose[data-disclose="live"][open]) {
   border-radius: 2px;
 }
 
-/* MobileMenu */
-/* The trigger reads as the SEED of the panel: same 44px circle, same place, so
-   the island that grows out of it is recognisably the same object. It stays
-   above the island (z-index) and its rules cross while the panel opens. */
+/* ===========================================================================
+   MOBILE NAVIGATION (S12) — the trigger, and the sheet it discloses
+   ---------------------------------------------------------------------------
+   Rebuilt to the reference chrome's mobile menu (upsunday.co — the same source
+   the bar and the footer were drawn from). EVERY NUMBER BELOW THAT LOOKS ODD
+   IS THE REFERENCE'S: 7.67vw card padding, 8vw type, 34px of rise, ∓4deg of
+   tilt, the 80/180/280ms arrival ladder and the 0/70/140ms departure one. They
+   are transferred rather than re-derived, because the thing being replicated is
+   a FEEL, and a feel is the arithmetic between the numbers.
+
+   WHAT IS OURS IS THE LIGHT. The reference is white cards on a
+   white→ice→peach gradient. The token file at the top of this stylesheet opens
+   with "cyan on black only", and the footer already settled the precedent: the
+   reference's structure transfers exactly, its palette does not. So the sheet
+   is ink glass over the live canvas, the cards are paper-lifted glass raised
+   off it, and the commit card — near-black on white in the reference, i.e. the
+   maximum step away from its ground — inverts to cyan on ink, which is the
+   maximum step away from ours.
+
+   THE BAR DOES NOT MOVE. The sheet is a DISCLOSURE that opens underneath the
+   chrome, not a panel that replaces it: `.topbar` is lifted above the sheet
+   while it is open so the trigger stays exactly where the thumb left it and
+   morphs in place. Everything else in the bar goes `pointer-events: none` for
+   the duration — the reference does the same — because a brand link you can
+   still hit through an open menu is a mis-tap waiting to happen.
+   =========================================================================== */
+
+/* ── The trigger ───────────────────────────────────────────────────────────
+   A rounded square, not a disc: the reference's toggle is `--radius`-cornered
+   and so is every other object in this chrome, and a lone circle in a stack of
+   soft rectangles reads as a control borrowed from another design.
+
+   The BOX STAYS 44px. That is the touch-target floor and the number
+   `scripts/_probe-topbar.mjs` measures; the bar's own content box is narrower
+   than that at 375 (11.8vw floors to 3rem, leaving 33px between the paddings),
+   so the trigger deliberately overhangs it rather than shrinking under the
+   thumb. See the bar's height note above. */
 .burger {
   position: relative;
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 5px;
   width: 44px;
   height: 44px;
   padding: 0;
@@ -5583,274 +5857,579 @@ html:has(.disclose[data-disclose="live"][open]) {
      glass that is ~74% see-through, a half-ink disc reads as a solid puck
      dropped into the pane rather than as part of it. The bar's `brightness()`
      has already darkened everything behind the trigger, so the fill is only
-     giving the control an edge to be found by — the border and the two rules
-     do the rest. Kept above the scrim's stacking context (z-index below), where
-     it sits on 88% ink and stays legible regardless. */
+     giving the control an edge to be found by. */
   background: color-mix(in srgb, var(--color-ink) 18%, transparent);
   border: 1px solid color-mix(in srgb, var(--color-paper) 18%, transparent);
-  border-radius: 999px;
+  border-radius: var(--topbar-radius);
+  color: var(--color-paper);
   cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  /* above the sheet, which is the whole point of the in-place morph */
   z-index: 1002;
   transition:
     border-color var(--dur-micro) var(--ease-arrive),
-    background-color var(--dur-micro) var(--ease-arrive);
+    background-color var(--dur-micro) var(--ease-arrive),
+    transform var(--dur-micro) var(--ease-arrive);
 }
 .burger:hover {
   border-color: color-mix(in srgb, var(--color-cyan) 55%, transparent);
 }
+.burger:active {
+  transform: scale(0.96);
+}
 .burger[aria-expanded="true"] {
   border-color: color-mix(in srgb, var(--color-cyan) 65%, transparent);
+  color: var(--color-cyan);
 }
-.burger:focus-visible,
-.mobile-menu-close:focus-visible {
+.burger:focus-visible {
   outline: 2px solid var(--color-cyan);
   outline-offset: 2px;
 }
-.burger span {
+
+/* ── The morph ─────────────────────────────────────────────────────────────
+   One continuous path, one travelling dash window, one rotation. The geometry
+   and the arithmetic are documented on the SVG in `MobileMenu.tsx`; what lives
+   here is only the two states and the curve between them.
+
+   Total arc length is 14 + 6π + 20 + 6π + 14 ≈ 85.70, and the SPINE — the
+   segment that becomes the second stroke of the cross — occupies [32.85,
+   52.85]. So:
+     rest  `12 74`  · offset 0       → 12 units at the very start of the path,
+                                       lying exactly under the top rule, so the
+                                       curl is invisible and you see three bars
+                                       (74 keeps the pattern from repeating:
+                                       12 + 74 > 85.70)
+     open  `20 300` · offset -32.85  → exactly the spine, and nothing else
+
+   Because the window SLIDES between those, the stroke reads as travelling
+   around the loop rather than appearing. `ease-in-out` is the reference's own
+   choice here and is right: this is a shape changing its mind, not an object
+   arriving, so it should accelerate out of rest and decelerate into the cross
+   rather than land on `--ease-arrive`'s front-loaded curve. */
+.burger-icon {
   display: block;
-  width: 18px;
-  height: 1.5px;
-  background: var(--color-paper);
+  width: 1.375rem;
+  height: 1.375rem;
+  transition: transform 0.5s ease-in-out;
+}
+.burger-curl {
+  stroke-dasharray: 12, 74;
+  stroke-dashoffset: 0;
   transition:
-    transform 260ms var(--ease-arrive),
-    background-color var(--dur-micro) var(--ease-arrive);
+    stroke-dasharray 0.5s ease-in-out,
+    stroke-dashoffset 0.5s ease-in-out;
 }
-/* gap 5px + rule 1.5px → the two rules are 6.5px apart; half of that closes
-   them onto the same line before they rotate into the cross */
-.burger[aria-expanded="true"] span {
-  background: var(--color-cyan);
+.burger-bar {
+  transition: opacity 0.35s ease-in-out;
 }
-.burger[aria-expanded="true"] span:first-child {
-  transform: translateY(3.25px) rotate(45deg);
+html[data-nav-open] .burger-icon {
+  transform: rotate(-45deg);
 }
-.burger[aria-expanded="true"] span:last-child {
-  transform: translateY(-3.25px) rotate(-45deg);
+html[data-nav-open] .burger-curl {
+  stroke-dasharray: 20, 300;
+  stroke-dashoffset: -32.85px;
 }
-/* The dialog is now just the LAYER: a scrim plus the island. It no longer
-   paints anything itself, so the panel can be a floating object anchored to
-   the control instead of a full-bleed sheet. */
-.mobile-menu {
+html[data-nav-open] .burger-bar {
+  opacity: 0;
+}
+
+/* ── The bar, while the sheet is open ──────────────────────────────────────
+   Raised above the sheet, and held there through the exit by
+   `data-nav-closing` — drop it on the first frame of the dismissal and the
+   dissolving sheet paints over the trigger the user is still touching.
+
+   The `transform: none` is load-bearing and not tidiness: `[data-footer-coda]`
+   parks the bar off the top of the viewport once the colophon owns the screen,
+   and a menu opened from down there would have no trigger on screen at all.
+   The selector carries a matching specificity on purpose. */
+html[data-nav-open] .topbar,
+html[data-nav-open] .topbar:not(:focus-within),
+html[data-nav-closing] .topbar,
+html[data-nav-closing] .topbar:not(:focus-within) {
+  z-index: 1001;
+  transform: none;
+}
+html[data-nav-open] .topbar {
+  pointer-events: none;
+}
+html[data-nav-open] .topbar .burger {
+  pointer-events: auto;
+}
+
+/* ── The sheet ─────────────────────────────────────────────────────────────
+   Full-bleed, and kept in the DOM at all times: an unmounted element cannot
+   play an exit, and the whole asymmetry below depends on the closed state
+   being a real state rather than an absence. `inert` (set by the component)
+   is what actually removes it from the tab order while it is down.
+
+   The reference's sheet is opaque. Ours is glass — 92% ink over a wide blur —
+   because the liquid canvas is the site's signature and an opaque black plate
+   over it would be the one moment the page stops being itself. The blur still
+   reads as the reference's frosted ground; the cyan bloom stands in for its
+   ice-blue midpoint, and the vertical ink→surface→ink ramp for its gradient. */
+.nav-sheet {
   position: fixed;
   inset: 0;
   z-index: 1000;
-  isolation: isolate;
-  overscroll-behavior: contain;
-}
-.mobile-menu-scrim {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  padding: 0;
-  border: 0;
-  background: color-mix(in srgb, var(--color-ink) 72%, transparent);
-  -webkit-backdrop-filter: blur(6px);
-  backdrop-filter: blur(6px);
-  cursor: default;
-  animation: mobile-menu-scrim var(--dur-short) var(--ease-arrive) both;
-}
-@keyframes mobile-menu-scrim {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-/* THE ISLAND. Anchored to the trigger's own corner and grown from a 44px
-   circle sitting exactly under it (see MobileMenu's timeline), so the panel
-   arrives out of the button rather than from somewhere else on screen.
-   `overflow: hidden` is what makes the expansion read — the contents are
-   clipped by the growing shape instead of spilling out of it. */
-.mobile-menu-island {
-  position: absolute;
-  /* Derived from the bar's own tokens, not from literals: the trigger sits
-     inside a FLOATING plate now, so its corner is the bar's gap plus half the
-     leftover height, and its inset is the bar's inset plus the bar's padding.
-     Hard-coded numbers here would drift out of the button the island is
-     supposed to grow out of the moment any of those clamps resolve
-     differently. 44px is the burger, which is fixed. */
-  top: calc(
-    var(--topbar-gap) + (var(--topbar-bar-h) - 44px) / 2 +
-      env(safe-area-inset-top)
-  );
-  right: calc(
-    var(--topbar-side) + var(--topbar-pad-x) + env(safe-area-inset-right)
-  );
-  z-index: 1;
-  display: grid;
-  grid-template-rows: auto minmax(0, 1fr) auto;
-  width: min(21rem, calc(100vw - 2rem));
-  /* all nine chapters + the CTA fit without scrolling on a normal phone; the
-     scroll area stays for short/landscape viewports, but a menu whose last two
-     entries are hidden behind an invisible scroll is a menu with seven items */
-  max-height: calc(100dvh - var(--topbar-gap) - 3rem);
-  padding: 0.75rem 1rem 1rem;
-  border: 1px solid color-mix(in srgb, var(--color-cyan) 22%, transparent);
-  border-radius: 24px;
-  background: color-mix(in srgb, var(--color-ink) 94%, var(--color-paper));
-  box-shadow:
-    0 1.5rem 3.5rem color-mix(in srgb, black 55%, transparent),
-    0 0 0 1px color-mix(in srgb, var(--color-ink) 80%, transparent);
-  overflow: hidden;
-  transform-origin: top right;
-}
-.mobile-menu-header {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  min-height: 3rem;
-  padding-bottom: 0.6rem;
-  border-bottom: 1px solid var(--color-paper-faint);
+  isolation: isolate;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  background-color: color-mix(in srgb, var(--color-ink) 92%, transparent);
+  background-image:
+    radial-gradient(
+      120% 68% at 50% 42%,
+      color-mix(in srgb, var(--color-cyan) 10%, transparent) 0%,
+      transparent 70%
+    ),
+    linear-gradient(
+      180deg,
+      var(--color-ink) 0%,
+      var(--color-surface) 50%,
+      var(--color-ink) 100%
+    );
+  -webkit-backdrop-filter: blur(30px) saturate(1.7);
+  backdrop-filter: blur(30px) saturate(1.7);
+  overscroll-behavior: contain;
+  /* leaving: 0.55s, and `visibility` waits the whole way out so the sheet
+     stays hittable-by-nothing but visible until the fade completes */
+  transition:
+    opacity 0.55s,
+    visibility linear 0.55s;
 }
-.mobile-menu-wordmark {
-  font-family: var(--font-sans);
-  font-size: var(--text-body-l);
-  font-weight: 600;
-  line-height: var(--text-body-l--line-height);
-  letter-spacing: var(--text-body-l--letter-spacing);
-  color: var(--color-paper);
+html[data-nav-open] .nav-sheet {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  /* arriving is quicker than leaving, and `visibility` flips immediately */
+  transition:
+    opacity 0.4s,
+    visibility linear;
 }
-.mobile-menu-close {
-  display: grid;
-  place-items: center;
-  width: 44px;
-  height: 44px;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  color: var(--color-paper);
-  cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
+/* No backdrop-filter, no glass — and a 92% plate is then simply the plate. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .nav-sheet {
+    background-color: var(--color-ink);
+  }
 }
-.mobile-menu-close-icon {
-  position: relative;
-  display: block;
-  width: 22px;
-  height: 22px;
-}
-.mobile-menu-close-icon span {
-  position: absolute;
-  top: 50%;
-  left: 0;
-  display: block;
-  width: 22px;
-  height: 1.5px;
-  background: currentColor;
-}
-.mobile-menu-close-icon span:first-child {
-  transform: rotate(45deg);
-}
-.mobile-menu-close-icon span:last-child {
-  transform: rotate(-45deg);
-}
-.mobile-menu-scroll {
-  min-height: 0;
-  overflow-x: hidden;
+
+/* The column. Its top padding is derived from the bar's own tokens — the bar's
+   gap, plus the bar, plus the stack's own gap — so the first card clears the
+   chrome by exactly one gutter no matter how those clamps resolve. Hard-coded
+   here, it would slide under the bar the first time the bar changed height. */
+.nav-sheet-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 2.083vw;
+  width: 100%;
+  min-height: 100%;
+  padding:
+    calc(
+      var(--topbar-gap) + var(--topbar-bar-h) + 2.083vw +
+        env(safe-area-inset-top)
+    )
+    calc(var(--topbar-side) + env(safe-area-inset-right))
+    max(4.651vw, env(safe-area-inset-bottom))
+    calc(var(--topbar-side) + env(safe-area-inset-left));
   overflow-y: auto;
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
 }
-.mobile-menu-nav {
+
+/* ── The cards ─────────────────────────────────────────────────────────────
+   Raised glass, tilted off true and dropped 34px below where they belong, so
+   arriving is a settle rather than a slide. `transform-origin: center bottom`
+   is what makes the tilt read as the card pivoting down onto the stack instead
+   of rotating about its middle.
+
+   The hairline is ours. The reference needs no border because a white card on
+   a tinted ground already has an edge; on black, a 6% fill without one has no
+   bottom and no sides. */
+.nav-card {
+  opacity: 0;
+  border: 1px solid color-mix(in srgb, var(--color-paper) 9%, transparent);
+  border-radius: var(--topbar-radius);
+  background: color-mix(in srgb, var(--color-paper) 6%, transparent);
+  -webkit-backdrop-filter: blur(18px) saturate(1.4);
+  backdrop-filter: blur(18px) saturate(1.4);
+  box-shadow:
+    0 24px 50px -24px rgb(0 0 0 / 0.75),
+    inset 0 2px 1.5px rgb(242 240 235 / 0.12);
+  transform: translateY(34px) rotate(-4deg);
+  transform-origin: center bottom;
+  transition:
+    opacity 0.4s,
+    transform 0.55s var(--ease-sheet);
+}
+html[data-nav-open] .nav-card {
+  opacity: 1;
+  transform: translateY(0) rotate(0deg);
+  transition:
+    opacity 0.5s,
+    transform 0.7s var(--ease-sheet);
+}
+
+/* THE LADDER, AND WHY IT IS NOT SYMMETRICAL.
+   In: links at 80ms, contact at 180ms — top-down, so the stack assembles the
+   way it is read. Out: contact at 0ms, the CTA at 70ms, links at 140ms —
+   BOTTOM-UP-ISH, and deliberately not the arrival reversed. Reversing an
+   entrance sends the cards away in the order they came in, which reads as the
+   menu being un-drawn frame by frame; leading with the card nearest the middle
+   reads as the whole stack being let go of. */
+html[data-nav-open] .nav-card-links {
+  transition-delay: 80ms;
+}
+html[data-nav-open] .nav-card-contact {
+  transition-delay: 0.18s;
+}
+.nav-card-links {
+  transition-delay: 0.14s;
+}
+
+/* Card 1 — the destinations. */
+.nav-card-links {
+  position: relative;
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  min-height: 100%;
-  padding-block: 0.75rem;
+  gap: 0.521vw;
+  padding: 7.67vw;
 }
-.mobile-menu-link {
-  display: flex;
-  align-items: center;
-  min-height: 3rem;
-  padding-block: 0.55rem;
-  border-bottom: 1px solid var(--color-paper-faint);
+.nav-sheet-link {
+  display: block;
+  padding: 1.432vw 0;
+  /* Geist, not the display face: the token file assigns nav to the sans, and
+     display scale does not change what a nav item IS. The reference's rounded
+     face carries more weight at 400 than Geist does, so this sits at 500 to
+     land on the same optical colour. */
   font-family: var(--font-sans);
-  font-size: var(--text-title);
-  font-weight: 550;
-  line-height: var(--text-title--line-height);
-  letter-spacing: var(--text-title--letter-spacing);
+  font-size: 8vw;
+  font-weight: 500;
+  line-height: 1.05;
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
   color: var(--color-paper);
   text-decoration: none;
   transition:
-    color var(--dur-micro) var(--ease-arrive),
-    padding-left var(--dur-micro) var(--ease-arrive),
-    border-color var(--dur-micro) var(--ease-arrive);
+    opacity var(--dur-micro) var(--ease-arrive),
+    color var(--dur-micro) var(--ease-arrive);
 }
-.mobile-menu-link:first-child {
-  border-top: 1px solid var(--color-paper-faint);
-}
-.mobile-menu-link:hover,
-.mobile-menu-link:focus-visible {
-  padding-left: 0.5rem;
-  border-color: color-mix(in srgb, var(--color-cyan) 45%, transparent);
+.nav-sheet-link:hover,
+.nav-sheet-link:focus-visible {
   color: var(--color-cyan);
 }
-.mobile-menu-link:focus-visible {
+.nav-sheet-link:active {
+  opacity: 0.55;
+}
+.nav-sheet-link:focus-visible {
   outline: 2px solid var(--color-cyan);
-  outline-offset: -2px;
+  outline-offset: 4px;
+  border-radius: 2px;
 }
-.mobile-menu-footer {
+
+/* Card 2 — the direct line. */
+.nav-card-contact {
+  padding: 7.67vw;
+}
+.nav-card-title {
+  margin: 0 0 6vw;
+  font-family: var(--font-sans);
+  font-size: 8vw;
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: var(--color-paper);
+}
+.nav-mail {
   display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  padding-top: 0.75rem;
-  border-top: 1px solid var(--color-paper-faint);
+  align-items: center;
+  gap: 2.791vw;
+  padding: 2.791vw 2.791vw 2.791vw 4.651vw;
+  border-radius: var(--topbar-radius);
+  background: color-mix(in srgb, var(--color-paper) 10%, transparent);
+  text-decoration: none;
+  transition: background var(--dur-micro) var(--ease-arrive);
 }
-.mobile-menu-footer .lang-opt {
+.nav-mail:hover,
+.nav-mail:focus-visible {
+  background: color-mix(in srgb, var(--color-cyan) 16%, transparent);
+}
+.nav-mail:focus-visible {
+  outline: 2px solid var(--color-cyan);
+  outline-offset: 2px;
+}
+.nav-mail:active {
+  background: color-mix(in srgb, var(--color-cyan) 24%, transparent);
+}
+.nav-mail-addr {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  font-family: var(--font-mono);
+  font-size: 3.223vw;
+  font-weight: 400;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: var(--color-paper);
+}
+.nav-mail-send {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 5.99vw;
+  height: 5.99vw;
+  color: var(--color-paper);
+}
+.nav-mail-send svg {
+  display: block;
+  width: 2.865vw;
+  height: 2.865vw;
+}
+/* Socials on the left, the locale switch on the right. The reference has no
+   locale switch; giving it a fourth card would break a three-card stack, and
+   this row already had the space. */
+.nav-card-base {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2.326vw;
+  margin-top: 5vw;
+}
+.nav-socials {
+  display: flex;
+  gap: 2.326vw;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.nav-social {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 9.36vw;
+  height: 9.36vw;
+  border-radius: var(--topbar-radius);
+  background: color-mix(in srgb, var(--color-paper) 10%, transparent);
+  color: var(--color-paper);
+  transition:
+    background var(--dur-micro) var(--ease-arrive),
+    color var(--dur-micro) var(--ease-arrive);
+}
+.nav-social svg {
+  display: block;
+  width: 4.2vw;
+  height: 4.2vw;
+}
+.nav-social:hover,
+.nav-social:focus-visible,
+.nav-social:active {
+  background: var(--color-cyan);
+  color: var(--color-ink);
+}
+.nav-social:focus-visible {
+  outline: 2px solid var(--color-cyan);
+  outline-offset: 2px;
+}
+.nav-card-base .lang-opt {
   min-width: 44px;
   min-height: 44px;
 }
-.mobile-menu-cta,
-.mobile-menu-cta .cta {
+
+/* Card 3 — the commit. Tilted the OTHER way, so the stack fans rather than
+   leaning, and carrying the deepest colour step available: the reference puts
+   near-black on white here, which is the furthest thing from its ground. On
+   ink, the furthest thing from the ground is cyan. */
+.nav-sheet-cta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2.791vw;
   width: 100%;
+  padding: 4.651vw 6vw;
+  border: 0;
+  border-radius: var(--topbar-radius);
+  background: var(--color-cyan);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  font-size: 8vw;
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: -0.01em;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+  opacity: 0;
+  box-shadow: inset 0 2.24px 5.006px rgb(255 255 255 / 0.45);
+  transform: translateY(34px) rotate(4deg);
+  transform-origin: center bottom;
+  transition:
+    opacity 0.4s 70ms,
+    transform 0.55s var(--ease-sheet) 70ms,
+    background var(--dur-micro) var(--ease-arrive);
 }
-.mobile-menu-cta .cta {
+html[data-nav-open] .nav-sheet-cta {
+  opacity: 1;
+  transform: translateY(0) rotate(0deg);
+  transition:
+    opacity 0.5s 0.28s,
+    transform 0.7s var(--ease-sheet) 0.28s,
+    background var(--dur-micro) var(--ease-arrive);
+}
+.nav-sheet-cta:active {
+  background: var(--color-cyan-glow);
+}
+.nav-sheet-cta:focus-visible {
+  outline: 2px solid var(--color-paper);
+  outline-offset: 3px;
+}
+.nav-sheet-cta-label {
+  min-width: 0;
+}
+.nav-sheet-cta-icon {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
   justify-content: center;
-  min-height: 48px;
-  padding: 0.75rem 1rem;
-  line-height: 1.35;
-  text-align: center;
-  white-space: normal;
+  width: 9.302vw;
+  height: 9.302vw;
+}
+.nav-sheet-cta-icon svg {
+  display: block;
+  width: 4.2vw;
+  height: 4.2vw;
 }
 
-@media (max-height: 600px) and (min-width: 480px) {
-  .mobile-menu-footer {
-    flex-direction: row;
-    align-items: center;
-    justify-content: space-between;
-    gap: 1rem;
-    padding-top: 0.5rem;
-  }
-  .mobile-menu-cta,
-  .mobile-menu-cta .cta {
-    width: auto;
+/* The trigger is `lg:hidden`, but the sheet is portalled to <body> and so is
+   not covered by it. Without this a desktop reader who resized down, opened
+   the menu and resized back up would keep a full-bleed sheet they can no
+   longer close. */
+@media (min-width: 1024px) {
+  .nav-sheet {
+    display: none;
   }
 }
 
+/* The vw ladder above is calibrated to a phone. Past that the type would run
+   to 60px+ and the cards to a third of a metre, so the sheet caps itself and
+   centres — it is still the same object, just no longer measured in viewports. */
+@media (min-width: 600px) and (max-width: 1023px) {
+  .nav-sheet-inner {
+    gap: 0.75rem;
+    max-width: 34rem;
+    margin-inline: auto;
+  }
+  .nav-card-links,
+  .nav-card-contact {
+    padding: 2rem;
+  }
+  .nav-sheet-link,
+  .nav-card-title,
+  .nav-sheet-cta {
+    font-size: 2.75rem;
+  }
+  .nav-mail-addr {
+    font-size: var(--text-body-s);
+  }
+  .nav-mail-send {
+    width: 1.75rem;
+    height: 1.75rem;
+  }
+  .nav-mail-send svg,
+  .nav-social svg,
+  .nav-sheet-cta-icon svg {
+    width: 1.1rem;
+    height: 1.1rem;
+  }
+  .nav-social {
+    width: 2.75rem;
+    height: 2.75rem;
+  }
+  .nav-sheet-cta {
+    padding: 1.5rem 1.75rem;
+  }
+  .nav-sheet-cta-icon {
+    width: 2.75rem;
+    height: 2.75rem;
+  }
+}
+
+/* Short viewports — a phone in landscape — cannot spend 8vh on a card title. */
+@media (max-height: 560px) {
+  .nav-sheet-link,
+  .nav-card-title,
+  .nav-sheet-cta {
+    font-size: 5.5vw;
+  }
+  .nav-card-title {
+    margin-bottom: 3vw;
+  }
+  .nav-card-links,
+  .nav-card-contact {
+    padding: 4vw 5vw;
+  }
+  .nav-sheet-cta {
+    padding: 3vw 5vw;
+  }
+}
+
+/* Reduced motion: the sheet is simply THERE. Not the same choreography played
+   faster — the tilt and the 34px drop are the parts that would trigger, so
+   they do not happen at all, and opacity carries the state on its own. */
 @media (prefers-reduced-motion: reduce) {
-  .mobile-menu {
-    animation: none;
+  .nav-sheet,
+  .nav-card,
+  .nav-sheet-cta,
+  .burger-icon,
+  .burger-curl,
+  .burger-bar {
+    transition-duration: 1ms;
+    transition-delay: 0ms;
   }
-  .mobile-menu-link {
-    transition: none;
+  html[data-nav-open] .nav-card,
+  html[data-nav-open] .nav-sheet-cta {
+    transition-delay: 0ms;
+  }
+  .nav-card,
+  .nav-sheet-cta {
+    transform: none;
   }
 }
 
 /* ===========================================================================
    FOOTER — the colophon panel (S11)
    ---------------------------------------------------------------------------
-   The footer is one RAISED GLASS PANEL inset from the page edges, so the
-   document ends on an object instead of trailing off into black. The dark
-   glass is the site's own reading of the reference layout: the structure
-   (brand block · two link columns · rule · base row) transfers exactly, the
-   palette does not — the token file opens with "cyan on black only", and a
-   cream panel would be the one surface on the site speaking another language.
+   A 1:1 PORT OF THE REFERENCE FOOTER'S GEOMETRY, and it is a straight port
+   because the two footers already share a column: upsunday.co draws `.foot` at
+   `width: var(--site-w)` with `--site-w: 75.24vw`, and `--shell-w` here IS
+   that number — the shell was ported from it in R7 (see the shell block at the
+   top of this file). So every `vw` below is the reference's own value, carried
+   over unchanged, and lands on the same pixel at every width. `--page-padding`
+   is that same column expressed as a gutter, so the panel needs no width of
+   its own; it wears the `.page-x` idiom and fills what is left.
 
-   THE BOTTOM GUTTER IS LOAD-BEARING. `lib/webgl/scenes/footer.ts` reads
-   `.footer`'s bottom edge and sinks the journey's last droplet PAST it. The
-   panel therefore stops short of the page bottom and the released droplet
-   falls through the gutter against pure black — the coda still has somewhere
-   to land. Do not collapse `.footer`'s bottom padding to close the gap.
+   TWO THINGS ARE DELIBERATELY NOT PORTED:
+
+     · THE PALETTE. The token file opens with "cyan on black only", and a cream
+       panel would be the one surface on the site speaking another language.
+
+     · THE ABSOLUTE TYPE SIZES. Zirtuno's body tier runs ~1.11x the reference's
+       by an earlier deliberate choice, so copying `3.58vw` onto the wordmark
+       would make it SMALLER relative to its own body text than the reference's
+       is — breaking the very proportion the reference is kept for. Type here
+       is therefore ported as RATIOS against `--text-footer`, which already
+       carries the reference's own footer:body step. The reference's wordmark
+       is 3.10x its panel text; ours is 3.10x ours. Same picture, our loudness.
+
+   THE PANEL IS FLUSH TO THE PAGE BOTTOM, top corners only, exactly as the
+   reference's is: the document ends ON the object instead of floating above a
+   last strip of black. An earlier revision held a bottom gutter open for a
+   droplet to sink into and called it load-bearing. It is not, any more —
+   `lib/webgl/scenes/footer.ts` was rewritten (R5-D) to `forms: []`, and its
+   own docstring says it "agrees with that resting footprint instead of
+   detaching a lone droplet over the footer": contact's held mark IS the coda.
+   That scene still reads `.footer`'s rect, but only to drive the closing
+   exposure/vignette curve, which is padding-agnostic.
 
    `position: relative` is not decoration either: `.journey-layer` is a
    `z-index: 0` positioned element, so a NON-positioned footer would paint its
@@ -5859,12 +6438,33 @@ html:has(.disclose[data-disclose="live"][open]) {
    =========================================================================== */
 .footer {
   position: relative;
-  padding: 0 var(--page-padding) clamp(2.5rem, 6vh, 4.5rem);
+  /* The reference's `.site-footer`: a breath above the panel, the shell gutter
+     at the sides, and NOTHING below it. */
+  margin-top: 6vh;
+  padding: clamp(0.375rem, 0.9vw, 0.75rem) var(--page-padding) 0;
 }
+
 .footer-panel {
+  /* THE ONE TYPE ANCHOR for the whole panel. The reference sets its footer
+     text one step above its body tier (1.155vw against 1.10vw); `--text-footer`
+     already spells exactly that step in Zirtuno's ladder, so every other size
+     below is a multiple of it and the panel cannot drift internally.
+
+     The two multipliers ARE the reference's proportions, read off its CSS:
+       wordmark  3.58vw / 1.155vw = 3.10
+       mark      2.113vw / 3.58vw = 0.59  ->  0.59 x 3.10 = 1.83 */
+  --text-footer: clamp(var(--text-body), 1.32vw, var(--text-body-l));
+  --footer-word: calc(var(--text-footer) * 3.1);
+  --footer-mark: calc(var(--text-footer) * 1.83);
+
   border: 1px solid var(--color-paper-faint);
-  border-radius: clamp(1.25rem, 2.4vw, 2rem);
-  padding: clamp(2.5rem, 5.5vw, 4.5rem) clamp(1.5rem, 4vw, 3.5rem);
+  border-bottom: 0;
+  /* The reference's own `--radius`, already ported here as `--topbar-radius`
+     (0.673vw / 2.304vw) and worn by six other chrome surfaces. Top corners
+     only — the panel runs off the bottom of the document. */
+  border-radius: var(--topbar-radius) var(--topbar-radius) 0 0;
+  padding: clamp(2.5rem, 5vw, 4.3125rem) clamp(1.75rem, 4vw, 3.75rem)
+    clamp(2rem, 4vw, 3.0625rem);
   /* Glass, lit from the top edge and transmitting into cyan at the foot —
      the same optical story `--liquid-glass-fill` tells in the type, at
      surface strength. Deliberately translucent: the liquid is still running
@@ -5872,156 +6472,180 @@ html:has(.disclose[data-disclose="live"][open]) {
   background:
     linear-gradient(
       180deg,
-      rgba(242, 240, 235, 0.075) 0%,
-      rgba(242, 240, 235, 0.022) 46%,
-      rgba(0, 227, 254, 0.05) 100%
+      rgba(242, 240, 235, 0.055) 0%,
+      rgba(242, 240, 235, 0.018) 46%,
+      rgba(0, 227, 254, 0.025) 100%
     ),
-    color-mix(in srgb, var(--color-surface) 78%, transparent);
+    color-mix(in srgb, var(--color-surface) 86%, transparent);
   box-shadow:
-    inset 0 1px 0 rgba(242, 240, 235, 0.09),
-    0 -1px 60px -30px rgba(0, 227, 254, 0.35);
+    inset 0 1px 0 rgba(242, 240, 235, 0.075),
+    0 -1px 44px -34px rgba(0, 227, 254, 0.22);
 }
 @supports (backdrop-filter: blur(1px)) {
   .footer-panel {
-    backdrop-filter: blur(14px) saturate(1.05);
+    backdrop-filter: blur(10px) saturate(1.03);
   }
 }
 
-/* --- Top row: brand block · link columns ---------------------------------- */
+/* --- Top row: brand block · link columns ----------------------------------
+   The reference's `.foot__top` is a WRAPPING flex row that is already a row at
+   every width and only stacks below its 768 break — not a column that flips to
+   a row at 900, which is what this used to be. `space-between` is what pins the
+   nav to the panel's right inner edge. */
 .footer-top {
   display: flex;
-  flex-direction: column;
-  gap: clamp(2.5rem, 6vw, 4rem);
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: clamp(2.5rem, 6vw, 6rem);
 }
+
 .footer-brand {
-  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.826vw;
+  /* The reference caps the brand at 21.739vw, sized to hold its two tagline
+     lines without wrapping. Ours holds a tagline set 1.14x larger and, in PT,
+     four characters longer ("Criamos ecossistemas digitais completos."), so
+     the cap is scaled by the same type ratio rather than copied flat —
+     21.739vw x (1.32/1.155) = 24.85vw, plus headroom for the PT string. The
+     reference reaches the same guarantee with `white-space: nowrap`, which
+     here would overflow into the nav instead of wrapping. */
+  max-width: 26vw;
+}
+/* The reference wraps mark + wordmark in their own `.foot__logo` box because
+   the two gaps in the brand stack differ: 1.087vw from mark to wordmark,
+   0.826vw from wordmark to tagline. Without the wrapper they collapse to one. */
+.footer-logo {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1.087vw;
 }
 .footer-mark {
-  width: clamp(2.5rem, 5vw, 3.25rem);
+  /* Sized by HEIGHT against the wordmark, as the reference sizes its sun —
+     0.59 of the wordmark's size. `.logo-mark` is a square box with the glyph
+     `contain`-fitted inside, and the glyph is taller than it is wide
+     (2950x3200), so the box's height IS the mark's visible height. */
+  width: var(--footer-mark);
   filter: drop-shadow(0 0 22px rgba(0, 227, 254, 0.28));
 }
 .footer-wordmark {
-  margin-top: 1.25rem;
   font-family: var(--font-grotesk);
-  /* Between display-m and display-l on purpose: the colophon wordmark is the
-     panel's anchor and has to out-rank the tagline the way the reference's
-     does, but it is a sign-off, not a section title, so it stops short of the
-     scale the chapter headings own. */
-  font-size: clamp(2.5rem, 1.85rem + 2.7vw, 3.5rem);
+  font-size: var(--footer-word);
   font-weight: 400;
-  line-height: 0.98;
-  letter-spacing: -0.03em;
+  line-height: 1;
+  letter-spacing: -0.04em;
 }
 .footer-tagline {
-  margin-top: 1rem;
-  max-width: 34ch;
-  font-size: var(--text-body);
-  line-height: var(--text-body--line-height);
+  margin: 0;
+  font-size: var(--text-footer);
+  line-height: 1.391;
   letter-spacing: var(--text-body--letter-spacing);
   color: var(--color-paper-lead);
 }
 
+/* --- Link columns ---------------------------------------------------------
+   Flex, not grid. The old grid pinned the pair to a fixed 25.45vw and then had
+   to hand-tune row heights (and carry a `html[lang^="pt"]` height patch) to
+   keep the two columns level. The reference lets each column size to its own
+   content and spaces the rows with a 0.136vw gap — roughly 2px — so the rows
+   sit on their line-height and nothing needs patching per language. */
 .footer-columns {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  column-gap: clamp(1.25rem, 5vw, 4rem);
-  row-gap: 2rem;
+  display: flex;
+  gap: 4.348vw;
+}
+.footer-col {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  /* the reference's 0.136vw, scaled by the same type ratio as the column cap */
+  gap: 0.155vw;
+  min-width: 9.55vw;
 }
 .footer-col-title {
-  font-family: var(--font-mono);
-  font-size: var(--text-mono-sm);
-  font-weight: 500;
-  line-height: var(--text-mono-sm--line-height);
-  letter-spacing: var(--tracking-label-open);
-  text-transform: uppercase;
-  color: var(--color-cyan);
+  font-family: var(--font-sans);
+  font-size: var(--text-footer);
+  font-weight: 400;
+  line-height: 1.391;
+  letter-spacing: var(--text-body--letter-spacing);
+  color: var(--color-paper);
 }
 .footer-col-list {
-  display: grid;
-  /* Row spacing lives HERE, not in the link's min-height. `Política de
-     Privacidade` wraps to two lines in a 135px column on a 390px screen, which
-     already clears 44px — so a min-height alone left wrapped rows touching. */
-  gap: 0.375rem;
-  margin: 0.25rem 0 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.155vw;
+  margin: 0;
   padding: 0;
   list-style: none;
 }
 .footer-link {
-  display: inline-flex;
-  min-height: 44px;
-  align-items: center;
-  padding-block: 0.25rem;
-  font-size: var(--text-body);
-  line-height: 1.35;
+  display: inline-block;
+  font-size: var(--text-footer);
+  line-height: 1.391;
   letter-spacing: var(--text-body--letter-spacing);
   color: var(--color-paper-lead);
   text-decoration: none;
-  transition:
-    color 200ms var(--ease-arrive),
-    transform 200ms var(--ease-arrive);
+  /* COLOUR ONLY. The reference's footer links do not move on hover — the 3px
+     nudge that used to live here was the one motion in the panel with no
+     counterpart in the thing it was copying. */
+  transition: color 200ms var(--ease-arrive);
 }
 .footer-link:hover,
 .footer-link:focus-visible {
   color: var(--color-cyan);
-  transform: translateX(3px);
 }
 
-/* --- Rule ----------------------------------------------------------------- */
+/* --- Rule -----------------------------------------------------------------
+   Flat and full width, as the reference's `.foot__divider` is. It used to fade
+   out at both ends to avoid reading as a seam against the panel's rounded
+   corners; at 0.673vw those corners are small enough that the reference's own
+   hard rule sits clear of them, and the fade was visibly softer than the thing
+   it was matching. Equal air above and below — 3vw each side, where this
+   previously ran ~3.25rem above and ~3.75rem below. */
 .footer-rule {
-  margin: clamp(2.5rem, 5vw, 3.5rem) 0 clamp(1.5rem, 3vw, 2rem);
+  margin: clamp(1.5rem, 3vw, 2.125rem) 0 0;
   border: 0;
   height: 1px;
-  /* Fades at both ends rather than butting into the panel's rounded corners,
-     where a hard rule would read as a seam in the glass. */
-  background: linear-gradient(
-    90deg,
-    transparent,
-    var(--color-paper-faint) 12%,
-    var(--color-paper-faint) 88%,
-    transparent
-  );
+  background: var(--color-paper-faint);
 }
 
-/* --- Base row: copyright · language · socials ------------------------------ */
+/* --- Base row: copyright · socials ---------------------------------------- */
 .footer-base {
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 1.5rem;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.63vw;
+  margin-top: clamp(1.5rem, 3vw, 2.125rem);
 }
 .footer-copy {
-  font-family: var(--font-mono);
-  font-size: var(--text-mono-sm);
-  font-weight: 500;
-  line-height: var(--text-mono-sm--line-height);
-  letter-spacing: var(--tracking-label);
+  font-family: var(--font-sans);
+  font-size: calc(var(--text-footer) * 0.95); /* reference: 1.097 / 1.155 */
+  font-weight: 400;
+  line-height: 1.391;
+  letter-spacing: var(--text-body--letter-spacing);
   color: var(--color-paper-soft);
 }
 .footer-socials {
   display: flex;
   align-items: center;
   gap: 0;
-  /* Pulled in from the panel's right edge. The 44px boxes already inset each
-     glyph ~6px, so this is the remainder of the breathing room, and it is a
-     margin rather than panel padding so only this row moves. Inert in the
-     stacked mobile layout, where the base row is left-aligned. */
-  margin: 0 1.25rem 0 0;
+  margin: 0;
   padding: 0;
   list-style: none;
 }
-/* GEOMETRY. Started as a pixel match to the reference at 1440 (glyph 27px,
-   10.64px between glyph edges); the owner then asked for larger icons pulled
-   in from the panel edge, so the SIZE is now Zirtuno's own call and only the
-   PROPORTION is inherited.
-
-   The reference's gap-to-glyph ratio is 10.64 / 27 = 0.394, and that ratio is
-   what makes the row read as one cluster rather than three separate marks. At
-   a 32px glyph it wants ~12.6px, and a 32px glyph centred in the 44px box
-   lands at 12px on its own — close enough that no corrective margin is left,
-   which is why the negative `li + li` rule this block used to carry is gone.
-
-   The 44px box stays: it is the touch target `verify-responsive.mjs` enforces,
-   and it paints nothing. */
+/* GEOMETRY. The reference's marks are 1.875vw glyphs in 2.344vw boxes with a
+   0.27vw gap, so the VISIBLE gap between two glyph edges is
+   (2.344 - 1.875) + 0.27 = 0.739vw — 10.64px at 1440, which is the number this
+   block was hand-tuned to before. The 44px box stays, because 2.344vw is only
+   33.75px at 1440 and the responsive gate wants a 44px touch target; the
+   negative margin then gives the visible cadence back. Writing that margin as
+   a calc() rather than the old flat -6.36px is what makes it hold at every
+   width instead of only at 1440:
+     margin = 0.739vw - (44px - 1.875vw) = 2.614vw - 44px   [= -6.36px @ 1440] */
 .footer-social {
   display: inline-flex;
   width: 44px;
@@ -6035,8 +6659,13 @@ html:has(.disclose[data-disclose="live"][open]) {
 }
 .footer-social svg {
   display: block;
-  width: 32px;
-  height: 32px;
+  width: 1.875vw;
+  height: 1.875vw;
+  min-width: 22px;
+  min-height: 22px;
+}
+.footer-socials li + li {
+  margin-left: calc(2.614vw - 44px);
 }
 /* THE REFERENCE'S HOVER, measured frame by frame with a real pointer:
      rest      color rgba(0,0,0,.55)  transform none
@@ -6051,25 +6680,98 @@ html:has(.disclose[data-disclose="live"][open]) {
   transform: translateY(-1px);
 }
 
-@media (min-width: 768px) {
+/* --- Phone ----------------------------------------------------------------
+   The break is 768, not the 900 this block used to carry: 768 is where the
+   shell itself re-breaks (`--shell-w: 94.01vw`) and where the reference
+   stacks its own footer, so the panel and its column now turn over together
+   instead of one flipping 132px before the other. */
+@media (max-width: 768px) {
+  .footer {
+    margin-top: 13vw;
+  }
+  .footer-panel {
+    /* the reference's 7.52vw / 3.259vw = 2.31, and 4.48 / 7.52 = 0.60 */
+    --footer-word: calc(var(--text-footer) * 2.31);
+    --footer-mark: calc(var(--text-footer) * 1.39);
+    padding: 9.302vw 6.512vw 10vw;
+  }
   .footer-top {
-    flex-direction: row;
-    align-items: flex-start;
-    justify-content: space-between;
+    flex-direction: column;
+    gap: 8.372vw;
   }
+  .footer-brand {
+    gap: 3.535vw;
+    max-width: none;
+  }
+  .footer-logo {
+    gap: 3.721vw;
+  }
+  /* The two columns spread to the panel's full inner width on a phone rather
+     than huddling at one end — the reference's `justify-content: space-between`
+     on a full-width nav. */
   .footer-columns {
-    flex: none;
-  }
-  .footer-base {
-    flex-direction: row;
-    align-items: center;
+    width: 100%;
     justify-content: space-between;
+    gap: 3.7vw;
+  }
+  /* Row spacing has to grow back here, and BOTH gaps have to grow TOGETHER or
+     the column title reads as glued to its first link. This is the one number
+     in the block that cannot be the reference's 0.465vw: `Política de
+     Privacidade` wraps to two lines in a narrow column and 2px left the
+     wrapped rows touching. The reference's own legal labels never wrap, which
+     is why it can afford 2px. One value for both, so the cadence stays even. */
+  .footer-col,
+  .footer-col-list {
+    gap: 0.5rem;
+  }
+  .footer-col {
+    min-width: 0;
+  }
+  .footer-rule {
+    margin-top: 5.581vw;
+  }
+  /* Copyright and socials share ONE line on a phone, as the reference's do.
+     Ours cannot promise that with the reference's `white-space: nowrap`: the
+     PT string is 44 characters against its 35 and would push straight out of
+     the panel instead of wrapping — and `verify-devices` fails the build on
+     any horizontal overflow at 390. So the row is allowed to wrap. EN sits on
+     one line; PT drops the marks to a second row, right-aligned, rather than
+     crushing the copy against them. */
+  .footer-base {
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 2.8vw;
+    margin-top: 5.581vw;
+  }
+  /* The reference's copy is 3.259vw here — 12.7px at 390. `--text-footer`
+     floors at 15px on a phone, which is right for the links but wraps this
+     line in both languages, so the copyright takes the reference's own value
+     against the site's smallest sanctioned floor (`--text-body-s`, 0.75rem). */
+  .footer-copy {
+    font-size: max(0.75rem, 3.1vw);
+  }
+  .footer-socials {
+    flex: 0 0 auto;
+    margin-left: auto;
+  }
+  .footer-social {
+    width: 5.6vw;
+    height: 5.6vw;
+    /* The reference's own box is 21.8px at 390, which is not hittable. 2.25rem
+       is the smallest that still leaves the copyright its single line. */
+    min-width: 2.25rem;
+    min-height: 2.25rem;
+  }
+  .footer-social svg {
+    width: 5.013vw;
+    height: 5.013vw;
+  }
+  .footer-socials li + li {
+    margin-left: 0.85vw;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .footer-link:hover,
-  .footer-link:focus-visible,
   .footer-social:hover,
   .footer-social:focus-visible {
     transform: none;
@@ -6085,7 +6787,7 @@ html:has(.disclose[data-disclose="live"][open]) {
    mono/cyan label voice kept only for structure.
    =========================================================================== */
 .legal-doc {
-  max-width: 68ch;
+  max-width: var(--measure-reading);
 }
 .legal-updated {
   margin-top: 1.5rem;
@@ -6148,7 +6850,7 @@ html:has(.disclose[data-disclose="live"][open]) {
    scans rather than reads, and so is set as chips instead of prose.
    =========================================================================== */
 .careers-doc {
-  max-width: 70ch;
+  max-width: var(--measure-reading);
 }
 .careers-section {
   margin-top: clamp(2.75rem, 5vw, 4rem);
@@ -6163,8 +6865,8 @@ html:has(.disclose[data-disclose="live"][open]) {
   color: var(--color-cyan);
 }
 .careers-body {
-  margin-top: 1rem;
-  max-width: 62ch;
+  margin-top: var(--space-group);
+  max-width: var(--measure-reading);
   font-size: var(--text-body);
   line-height: var(--text-body--line-height);
   letter-spacing: var(--text-body--letter-spacing);
@@ -6207,8 +6909,8 @@ html:has(.disclose[data-disclose="live"][open]) {
   color: var(--color-paper);
 }
 .careers-trait-body {
-  margin: 0.625rem 0 0;
-  max-width: 62ch;
+  margin: var(--space-tight) 0 0;
+  max-width: var(--measure-reading);
   font-size: var(--text-body);
   line-height: var(--text-body--line-height);
   letter-spacing: var(--text-body--letter-spacing);
@@ -6220,8 +6922,8 @@ html:has(.disclose[data-disclose="live"][open]) {
   margin-top: 1.75rem;
 }
 .careers-note {
-  margin-top: 1.25rem;
-  max-width: 54ch;
+  margin-top: var(--space-group);
+  max-width: var(--measure-reading);
   font-size: var(--text-body-s);
   line-height: var(--text-body-s--line-height);
   color: var(--color-paper-soft);
@@ -6408,6 +7110,25 @@ html[data-zveil="seen"] .entry-veil {
    the error summary, the :focus-visible outline, and the submit button — which
    keeps its own membrane and its own flood.
    =========================================================================== */
+/* THE BLEED HAS TO BE CLIPPED SOMEWHERE, AND IT WAS NOT.
+   `.fl-svg` is deliberately inset by -96px on every side (PAD in
+   FieldLiquid.tsx) so the liquid can run past the form it belongs to. On a
+   375px viewport that puts its right edge at 447 and NOTHING caught it: the
+   document grew 72px, and — exactly as the page-transition note further down
+   this file predicts — the fixed top bar, sized `calc(100% - 2 * 2.995vw)`,
+   inflated to match and carried the burger 9px OFF the visual viewport, where
+   it could not be tapped at all. `body { overflow-x: hidden }` does not help
+   here: with `html` at `overflow: visible` the body's value propagates to the
+   VIEWPORT, so the clipping happens after the document has already grown.
+
+   `clip` on the x axis alone, at the chapter that owns the form. It leaves
+   `overflow-y: visible`, so it adds no scroll container, does not become a
+   containing block for the fixed layers, and the liquid still bleeds
+   vertically and out to the page edges — just no longer past them. Same
+   instrument, same reason, as `html[data-page-transition]`. */
+#contact {
+  overflow-x: clip;
+}
 .fl {
   position: absolute;
   inset: 0;
@@ -6487,4 +7208,37 @@ html[data-zveil="seen"] .entry-veil {
   stroke: var(--color-paper-faint);
   stroke-width: 1;
   vector-effect: non-scaling-stroke;
+}
+
+/* ===========================================================================
+   PAGE TRANSITION — the GSAP slide-and-scale (components/motion/PageTransition)
+   The wrapper carries NO transform at rest: GSAP writes one for the half
+   second a timeline runs and `clearProps` removes it on arrival, because a
+   standing transform here re-parents every `position: fixed` descendant of the
+   page (AGENTS.md §7). Everything below is scoped to that same window.
+   =========================================================================== */
+/* No `transform-origin` here on purpose: PageTransition sets it per run to
+   the middle of the VIEWPORT. The element's own centre — the CSS default — is
+   ~13 500 px down on the homepage, and scaling about that point throws the
+   visible content clean out of the viewport. */
+html[data-page-transition] .page-transition {
+  /* Only while it is actually moving — a permanent compositing layer over the
+     whole page would sit on top of the liquid canvas for the entire session. */
+  will-change: transform, opacity;
+}
+/* The enter and exit tweens push the wrapper a full viewport sideways. Left
+   unclipped that is real overflow, and the document GROWS — which the fixed
+   topbar then inflates to match. `clip` on the x axis alone leaves `overflow-y`
+   visible, so it adds no scroll container and the sticky liquid stage inside
+   PageStage keeps working. */
+html[data-page-transition] {
+  overflow-x: clip;
+}
+/* `.cine-veils` is `position: fixed; inset: 0` INSIDE the page, so during the
+   window it is laid out against the transformed wrapper: at `scale(0.8)` a
+   full-viewport veil stops being full-viewport and its edge becomes a visible
+   rectangle. It is a decorative exposure layer on a page that is leaving, so
+   it sits the transition out rather than travelling with it. */
+html[data-page-transition] .cine-veils {
+  visibility: hidden;
 }
