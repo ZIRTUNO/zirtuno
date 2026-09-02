@@ -345,7 +345,8 @@ which.
 
 ## Licence
 
-Copyright © 2026 Pedro Paiva Mautone Campos (Zirtuno). All rights reserved.
+Copyright © 2026 Pedro Mautone and Jonathan Delmonte (Zirtuno). All rights
+reserved.
 
 This repository is public to read, but it is not open source. The brand assets,
 the metaball and signed-distance-field engine, the shaders, and the studio copy
