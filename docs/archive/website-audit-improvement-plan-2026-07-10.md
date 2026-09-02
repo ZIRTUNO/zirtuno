@@ -328,11 +328,11 @@ Add privacy-conscious analytics for CTA intent, contact starts, validation failu
 
 ## P2 — Documentation and scalability
 
-### P2.1 `build-spec.md` status labels are stale
+### P2.1 `docs/specs/build-spec.md` status labels are stale
 
-The current `AGENTS.md`, `README.md`, and liquid spec correctly identify R5-D as complete. `build-spec.md` still states near its opening that R5-C and R5-D remain delivery work and retains several “TARGET R5-D” labels.
+The current `AGENTS.md`, `README.md`, and liquid spec correctly identify R5-D as complete. `docs/specs/build-spec.md` still states near its opening that R5-C and R5-D remain delivery work and retains several “TARGET R5-D” labels.
 
-Because `build-spec.md` owns detailed product and acceptance requirements, this mismatch can mislead future agents.
+Because `docs/specs/build-spec.md` owns detailed product and acceptance requirements, this mismatch can mislead future agents.
 
 #### Required fix
 
@@ -461,7 +461,7 @@ R5-D is complete and is no longer an improvement-plan phase. The remaining work 
 ### Work
 
 1. Resolve the five open owner decisions.
-2. Align `build-spec.md` with the completed R5-C/R5-D state.
+2. Align `docs/specs/build-spec.md` with the completed R5-C/R5-D state.
 3. Complete PT/EN content parity and truth review.
 4. Remove dead code and unused assets.
 5. Conduct owner review of Work current, Origin fusion/flash, Studio echoes, Contact gather, and Footer release on real hardware.
@@ -484,13 +484,13 @@ R5-D is complete and is no longer an improvement-plan phase. The remaining work 
 | `npm run lint` | Passed |
 | `npm run build` | Passed |
 | Production routes | Built successfully; localized core routes remain dynamic |
-| `verify-conductor.mjs` | Passed — 48 droplets, 0 invariant failures |
-| `verify-postfx.mjs` | Passed — optics bypass, banding, full-nofx, lite demotion, and governor green |
-| `verify-rest-exact.mjs` | Passed — all eight rest states byte-identical |
-| `verify-cinematics.mjs` | Passed — one flash, two fades, no dead zones, reduced-motion and bypass green |
+| `verify/conductor.mjs` | Passed — 48 droplets, 0 invariant failures |
+| `verify/postfx.mjs` | Passed — optics bypass, banding, full-nofx, lite demotion, and governor green |
+| `verify/rest-exact.mjs` | Passed — all eight rest states byte-identical |
+| `verify/cinematics.mjs` | Passed — one flash, two fades, no dead zones, reduced-motion and bypass green |
 | Cinematic transient contrast | Passed — worst measured 4.03:1 at the automated peak check |
-| `verify-canvas-count.mjs` | Passed — one liquid canvas from load to page end |
-| `verify-cta.mjs` | Passed — CTA intent routing and same-page behavior green |
+| `verify/canvas-count.mjs` | Passed — one liquid canvas from load to page end |
+| `verify/cta.mjs` | Passed — CTA intent routing and same-page behavior green |
 | Targeted desktop captures | Reviewed — Work, Origin, Studio, Contact, and Footer |
 | Browser warnings/errors during targeted review | None observed |
 | Mobile visual re-capture | Not completed in this update; the in-app viewport override did not apply reliably |

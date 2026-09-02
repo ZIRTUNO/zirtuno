@@ -1,12 +1,12 @@
 # AGENTS.md — Zirtuno Website
 
 > Read this at the start of every session. This file is the authority for
-> behavior, taste, protected invariants, and delivery order. `build-spec.md`
+> behavior, taste, protected invariants, and delivery order. `docs/specs/build-spec.md`
 > owns detailed product and acceptance requirements.
-> `metaball-morph-spec.md` owns liquid-engine mechanics.
-> `cta-membrane-spec.md` owns the CTA membrane — the vector half of the same
-> liquid, and `field-liquid-spec.md` owns the form's half of it, where two
-> vector bodies can finally meet. `entry-intro-spec.md` owns S1.10, the opening
+> `docs/specs/metaball-morph-spec.md` owns liquid-engine mechanics.
+> `docs/specs/cta-membrane-spec.md` owns the CTA membrane — the vector half of the same
+> liquid, and `docs/specs/field-liquid-spec.md` owns the form's half of it, where two
+> vector bodies can finally meet. `docs/specs/entry-intro-spec.md` owns S1.10, the opening
 > sequence.
 > If detail conflicts with a rule here, this file wins.
 
@@ -57,7 +57,7 @@ The site is in R5, “One Continuous Liquid.”
   `?fphysv3=0` / `?fobstacles=0` roll them back. Scroll is coupled into
   `fluid-core` as a body force scaled by (1 − bind), and velocity-aligned
   deformation with strain-driven glass optics is the default renderer on glass
-  tiers (`?fshape=0` rolls back). `verify-deformation.mjs` is the machine gate;
+  tiers (`?fshape=0` rolls back). `verify/deformation.mjs` is the machine gate;
   the conductor harness asserts bind=1 parity *under scroll*.
   Interaction is now the whole field. The hand is a volume-conserving
   DISPLACEMENT well with a velocity-signed wake — not the monotone repulsion
@@ -82,14 +82,14 @@ The site is in R5, “One Continuous Liquid.”
   byte-identical, so the exact-rest contract stays a claim about unchanged code
   rather than about floating point. `?fstrike=0` rolls back the click and keeps
   the hand; `?fformtouch=0` rolls back the forms' answer and keeps the
-  droplets'; `verify-strike.mjs` is the wiring gate beside the conductor
+  droplets'; `verify/strike.mjs` is the wiring gate beside the conductor
   harness's force gate.
 - **R5-C is complete:** the framebuffer post chain (selective bloom, blue-noise
   dither, luminance-gated grain), identity-gated in-shader grade (exposure,
   key boost, internal absorption, `iBallZ` depth bands), the `full-nofx`
   watchdog rung, and the ~30 Hz idle energy governor. `?fgrade=0` is the exact
-  optics bypass; `?fgov=0` disables the governor; `verify-postfx.mjs` and the
-  `verify-rest-exact.mjs` byte gate protect it.
+  optics bypass; `?fgov=0` disables the governor; `verify/postfx.mjs` and the
+  `verify/rest-exact.mjs` byte gate protect it.
 - **R5-D is complete:** the cinematic cut. Seven scene modules
   (site · método · work · origin · studio · contact · footer) leave no
   liquid-dead band: the work CURRENT (Método's next-scale cells as a slow gyre
@@ -101,7 +101,7 @@ The site is in R5, “One Continuous Liquid.”
   contrast-audited). The former full-page Origin flash is removed; fusion light
   now comes only from the continuously scored liquid material and afterglow.
   `Reveal variant="blur"` carries the Soul/Invitation copy. `?fcine=0` is
-  the cinematic escape hatch; `verify-cinematics.mjs` is the machine gate.
+  the cinematic escape hatch; `verify/cinematics.mjs` is the machine gate.
 - **R5-E closes:** device, battery, context-loss, accessibility, locale,
   content-truth, conversion, and final regression hardening.
 - **R6 is complete:** the liquid stops being 48 choreographed droplets and
@@ -187,16 +187,16 @@ The site is in R5, “One Continuous Liquid.”
   preserved; its parts are not. `?fleash=0` restores the point-spring exactly.
   Pinch-off measures strain PAST the leash — distance from target is no longer
   strain, and left uncorrected the field sheds spray continuously and never
-  reports idle. `verify-conductor.mjs` gates both halves (free liquid must
-  travel, the body must not) and `probe-wander.mjs` is the harness; its
+  reports idle. `verify/conductor.mjs` gates both halves (free liquid must
+  travel, the body must not) and `probe/wander.mjs` is the harness; its
   coherence and revival columns are the numbers for "does this look
   choreographed", which nothing else here can see.
 
   The pair force gains a uniform grid above 96 droplets (below it every pair is
-  tested in the original order, bit-identical). `verify-conductor.mjs` gates
+  tested in the original order, bit-identical). `verify/conductor.mjs` gates
   the population, the bind gate, grid/all-pairs agreement, the binner against
-  brute force, and the freedom/containment pair; `probe-ball-budget.mjs` is the
-  cost harness and `probe-wander.mjs` is the freedom harness.
+  brute force, and the freedom/containment pair; `probe/ball-budget.mjs` is the
+  cost harness and `probe/wander.mjs` is the freedom harness.
 
 ## 4. Non-Negotiable Rules
 
@@ -217,7 +217,7 @@ The site is in R5, “One Continuous Liquid.”
 4. **Morphs are one in-field liquid bridge, never a crossfade.** Preserve the
    48-droplet §3.3 bridge, min-travel correspondence, regional stagger,
    radius-leading motion, exact form endpoints, and shared iso-surface. See
-   `metaball-morph-spec.md`.
+   `docs/specs/metaball-morph-spec.md`.
 5. **Preserve the conductor contracts.** Scenes emit targets; the conductor
    owns damping, presence, target blending, integration, packing, and score.
    Scenes never allocate per droplet per frame and write every output field.
@@ -243,17 +243,17 @@ The site is in R5, “One Continuous Liquid.”
 10. **The contact submit stays obvious.** The real labeled
     “Solicitar análise inicial / Request initial analysis” button is canonical.
     The metaball exhale is additive feedback, never the only submit control.
-    The FORM's liquid (`field-liquid-spec.md`) is additive on the same terms:
+    The FORM's liquid (`docs/specs/field-liquid-spec.md`) is additive on the same terms:
     it draws outlines and nothing else. `data-fieldliquid` is set only after the
     layer has mounted AND drawn, every rule that changes a field is gated on it,
     and labels, values, validation, the error summary and the focus outline stay
     exactly where they were. Reduced motion, no-JS and any mount failure fall
     through to the bordered form, complete and usable.
 11. **CTA hierarchy and intent are load-bearing.** Keep the placement map in
-    `build-spec.md §7.2`. Every contact CTA carries its entry-intent tag.
+    `docs/specs/build-spec.md §7.2`. Every contact CTA carries its entry-intent tag.
     Homepage CTAs use Lenis smooth-scroll plus `history.replaceState`; cross-page
     CTAs keep routed navigation.
-    The CTA surface itself is the MEMBRANE (`cta-membrane-spec.md`): the field's
+    The CTA surface itself is the MEMBRANE (`docs/specs/cta-membrane-spec.md`): the field's
     hand and strike run on a vector contour, with the same character constants.
     It is strictly ADDITIVE — `data-membrane` is set only after it mounts and
     draws, and every rule that changes the button is gated on that attribute, so
@@ -393,13 +393,13 @@ Ask before adding any dependency or substituting any layer.
   `components/chrome/EntryVeil.tsx` owns only what a timeline cannot — whether
   the intro may play, the DOM it plays on, and the guarantee that it can never
   strand the page. Geometry is GENERATED from the mark
-  (`scripts/generate-intro-trace.mjs` → `lib/animation/intro-trace.data.mjs`);
+  (`scripts/tools/generate-intro-trace.mjs` → `lib/animation/intro-trace.data.mjs`);
   do not hand-author paths for it.
 - `lib/motion/coalesce.mjs` is the merge kernel: the drop that rides S10's form,
   the wetted foot it sits in, and the filament it is pulled off on. Crisp
   geometry, never a `feGaussianBlur` goo filter — a blurred hairline is a glow,
   and a raster pass on a live surface is the second visual engine §4.15 forbids.
-  THE BRIDGE IS AUTHORED, not derived (`field-liquid-spec.md §2`). A
+  THE BRIDGE IS AUTHORED, not derived (`docs/specs/field-liquid-spec.md §2`). A
   smooth-minimum — the vector half of what `sdf-glass-shader.mjs` runs on the
   GPU — merges two bodies correctly but CANNOT make a neck: its bridge is always
   fat and vanishes in one frame rather than thinning. So the profile is traced
@@ -431,12 +431,12 @@ Ask before adding any dependency or substituting any layer.
   somebody is typing into reads as instability. One drop, and it gets out of
   the way. It reads `handle.visible` so an unseen form costs nothing.
 - `lib/motion/membrane.mjs` is the vector liquid's kernel: DOM-free and
-  deterministic like the `.mjs` field kernels, so `verify-membrane.mjs` runs it
+  deterministic like the `.mjs` field kernels, so `verify/membrane.mjs` runs it
   in plain node. `lib/motion/membrane-runtime.ts` owns the ONE rAF, the one
   pointer listener and the one scroll listener that every membrane and thread on
   a page shares — do not give a button its own loop.
-  Gates: `verify-membrane.mjs` (physics), `verify-membrane-mobile.mjs` (the
-  autonomous half, in real device profiles), `capture-membrane.mjs` (state
+  Gates: `verify/membrane.mjs` (physics), `verify/membrane-mobile.mjs` (the
+  autonomous half, in real device profiles), `capture/membrane.mjs` (state
   stills, virtual-clock driven).
 - **There is deliberately no `app/[locale]/loading.tsx`.** Its Suspense boundary
   flushed the document shell — and a 200 status — before `notFound()` could run,
@@ -473,7 +473,7 @@ Ask before adding any dependency or substituting any layer.
   is quiet. The name survives in `sr-only` (always) and on `:focus-visible`
   only, where a sighted keyboard reader lands on a deliberately invisible dot
   and a ring alone cannot say which of nine it is. A pointer never sees it, and
-  `capture-rail.mjs` fails if one ever appears under a hand.
+  `capture/rail.mjs` fails if one ever appears under a hand.
   It is STRICTLY ADDITIVE. `data-rail` is set only after the kernel has mounted
   AND drawn, every rule that changes the rail is gated on it, and reduced
   motion, no-JS, no fine pointer and any mount failure keep the numbered column
@@ -499,7 +499,7 @@ Ask before adding any dependency or substituting any layer.
   resizing by the time the transform is removed, so only the second observation
   ends the stale layout. Anything else that CACHES a measurement of fixed
   chrome has the same exposure.
-  Gates: `verify-rail.mjs` (physics, in plain node), `capture-rail.mjs` (state
+  Gates: `verify/rail.mjs` (physics, in plain node), `capture/rail.mjs` (state
   stills — and it must scroll with the WHEEL, because Lenis eases a native
   `scrollTo` straight back out and the stills then lie about where the page
   was).
@@ -592,25 +592,25 @@ Additional stop-the-line gates:
 - Shader/SDF/post change: `npm run forms:rest` must remain exact.
 - Morph/form change: `npm run forms:melts` and `npm run forms:cursor`.
 - Scene/conductor/physics change:
-  `node scripts/verify-conductor.mjs` and transition diagnostics.
-- Homepage canvas change: `node scripts/verify-canvas-count.mjs` must report
+  `node scripts/verify/conductor.mjs` and transition diagnostics.
+- Homepage canvas change: `node scripts/verify/canvas-count.mjs` must report
   exactly one liquid canvas.
-- CTA/navigation/form change: `node scripts/verify-cta.mjs`.
+- CTA/navigation/form change: `node scripts/verify/cta.mjs`.
 - Form-liquid change (`coalesce.mjs`, `FieldLiquid.tsx`, the S10 controls):
-  `node scripts/verify-coalesce.mjs` (`npm run liquid:form`) — smin exactness,
+  `node scripts/verify/coalesce.mjs` (`npm run liquid:form`) — smin exactness,
   byte-exact rest, the reach, the handover silhouette, a simple closed curve,
   the bead's travel and mass, cost, corner clearance, and the squared-off guard.
   `npm run liquid:form:sheet` renders the bridge at 5x straight from the kernel:
   REVIEW THAT BEFORE the page stills, because a 16 px detail on a 576 px form is
   not judgeable at 1x — this surface has twice shipped a defect that survived
-  rounds of full-form screenshots. `BASE=http://localhost:3071 node scripts/capture-field-liquid.mjs`
+  rounds of full-form screenshots. `BASE=http://localhost:3071 node scripts/capture/field-liquid.mjs`
   is the page contact sheet (rest · fused · four travel ages · the hold at the
   submit button · hover · invalid · BROKEN · reduced motion). `ONLY=broken`
   blocks the kernel's chunk and asserts the form survives it — the merge kernel
   is imported dynamically inside the effect precisely so a bad module cannot
   take the contact form down with it. Because the layer takes over the controls' BORDER, a change
-  here is also an a11y and CTA change: run `verify-a11y.mjs` and `verify-cta.mjs`.
-- Disclosure change (S4 instrument band): `node scripts/verify-disclose.mjs` —
+  here is also an a11y and CTA change: run `verify/a11y.mjs` and `verify/cta.mjs`.
+- Disclosure change (S4 instrument band): `node scripts/verify/disclose.mjs` —
   the additive `data-disclose` contract, an open that ramps and lands exactly
   on the slab, a close that starts moving on the first frame and is NOT the
   open mirrored (the easeReverse gate: ~25% of slab at the midpoint, where a
@@ -620,7 +620,7 @@ Additional stop-the-line gates:
   plain instant `<details>`. It also gates THE PIN: the pillar name must hold
   its line to under 2px on every frame of both directions, because the stage
   centres its copy column and an uncompensated open levers the headline
-  165.7px upward. `node scripts/capture-disclose.mjs` is the review contact
+  165.7px upward. `node scripts/capture/disclose.mjs` is the review contact
   sheet; it slows GSAP's clock (which reads `Date.now`, not `performance.now`)
   so a Playwright burst can actually resolve the curves, and it reports the
   390px excursion because the single-column stage centres differently.
@@ -634,7 +634,7 @@ Additional stop-the-line gates:
   · budget the timing checks in FRAMES, not milliseconds. The liquid starves
     rAF on this page and a single dropped frame blew a 50ms budget to 73ms
     while the animation itself was fine.
-- Entry-intro change: `node scripts/verify-entry-veil.mjs` — plays on EVERY
+- Entry-intro change: `node scripts/verify/entry-veil.mjs` — plays on EVERY
   document load (a reload replays it; a locale switch and any other same-document
   remount are suppressed), releases inside its budget, never paints under `?f*`
   or reduced motion, NEVER animates opacity on any layer, renders the drawn line
@@ -642,32 +642,32 @@ Additional stop-the-line gates:
   than letting the hard cap do it. `npm run intro:sheet` is the review contact
   sheet; `npm run intro:trace` regenerates the geometry from the mark and MUST
   be re-run if `public/brand/zirtuno-logo-mark.svg` ever changes.
-- Performance/tier change: chapter sheets plus `verify-perf.mjs` on relevant
+- Performance/tier change: chapter sheets plus `verify/perf.mjs` on relevant
   hardware.
-- Optics/grade change: `node scripts/verify-postfx.mjs` (statistical `?fgrade=0`
+- Optics/grade change: `node scripts/verify/postfx.mjs` (statistical `?fgrade=0`
   equivalence, banding, seam, full-nofx drill, governor cadence) and
-  `node scripts/verify-rest-exact.mjs` (settled-still byte gate — the machine
+  `node scripts/verify/rest-exact.mjs` (settled-still byte gate — the machine
   teeth behind "rest must remain exact"; conscious re-baselines rerun its
-  `--baseline` and commit `scripts/rest-exact.json`).
-- Cinematic/scene/score change: `node scripts/verify-cinematics.mjs` —
+  `--baseline` and commit `scripts/fixtures/rest-exact.json`).
+- Cinematic/scene/score change: `node scripts/verify/cinematics.mjs` —
   no Origin flash surface or score channel, exactly two act-fade bands on their
   seams (peak ≤ 0.41, released at every reading rest), living liquid over Work/Studio/
   the footer release, meniscus wiring, and the transient-contrast floor
   (≥ 3.5:1 under the fade peak; standing reads are veil-free).
 - Tier/viewport/renderer-lifecycle change (R5-E hardening gates):
-  `node scripts/verify-devices.mjs` (emulated matrix: iPhone-class live +
+  `node scripts/verify/devices.mjs` (emulated matrix: iPhone-class live +
   static, Android-class lite-must-be-live, full-nofx rung, no horizontal
-  overflow, stage == 100svh), `node scripts/verify-context-loss.mjs`
+  overflow, stage == 100svh), `node scripts/verify/context-loss.mjs`
   (§12.5: the loop parks on loss, restore resumes mid-page state), and —
-  for battery/cadence claims — `SOAK_MIN=30 node scripts/verify-soak.mjs`
+  for battery/cadence claims — `SOAK_MIN=30 node scripts/verify/soak.mjs`
   against a production build (governor holds idle, no idle demotion, flat
   heap, never frozen).
-- Copy/semantics/locale/chrome change: `node scripts/verify-a11y.mjs`
+- Copy/semantics/locale/chrome change: `node scripts/verify/a11y.mjs`
   (landmarks, one h1, labels, skip link, keyboard menu, focus visibility,
   effective-background contrast, pt/en key parity, reduced-motion story).
 - Ecosystem gathering change (`gathering.mjs`, the S3 scene block, the
   capability names, system markers, or the column): `node
-  scripts/verify-ecosystem.mjs` — ten names and three system markers drawn,
+  scripts/verify/ecosystem.mjs` — ten names and three system markers drawn,
   clear of the chapter-index rail and of each other, **all type on ONE vertical
   axis**, the column fits the stage at full extension and visibly accumulates
   between beats, no leaders or plate frame remain, hover AND keyboard raise the

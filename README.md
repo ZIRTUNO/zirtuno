@@ -18,11 +18,11 @@ Read these sources in order:
 
 1. `AGENTS.md` — mandatory rules, taste constraints, current priorities, and
    the working/verification protocol for every agent session.
-2. `build-spec.md` — the complete v0.3 product, experience, chapter,
+2. `docs/specs/build-spec.md` — the complete v0.3 product, experience, chapter,
    architecture, delivery, and acceptance specification.
-3. `metaball-morph-spec.md` — the focused v2 contract for the continuous
+3. `docs/specs/metaball-morph-spec.md` — the focused v2 contract for the continuous
    liquid, exact forms, conductor, physics, renderer, optics, and QA controls.
-4. `references.md` — approved technical and visual references mapped to the
+4. `docs/references.md` — approved technical and visual references mapped to the
    v0.3 spec and R5 phases.
 5. `lib/i18n/messages/pt.json` and `lib/i18n/messages/en.json` — the only
    source of shipped interface and conversion copy.
@@ -108,7 +108,7 @@ The ten named transitions are `assembly`, `pour`, `fracture`, `seek`,
   and a bounded deformation trail. All grade uniforms default to 0 = exact identity;
   `?fgrade=0` bypasses everything, verified statistically against the
   recorded pre-C baseline and byte-exactly via settled stills
-  (`verify-rest-exact.mjs`). The watchdog gains the `full-nofx` rung
+  (`verify/rest-exact.mjs`). The watchdog gains the `full-nofx` rung
   (glass, no post), and the energy governor floors a truly idle page at
   ~30 Hz draws — display-rate agnostic, waking within one vsync on any
   input or scene activity (`?fgov=0` disables).
@@ -129,7 +129,7 @@ The ten named transitions are `assembly`, `pour`, `fracture`, `seek`,
   capped at 0.4, contrast-audited). Origin fusion has no full-page flash; its
   light is the continuous in-material key/exposure afterglow.
   `Reveal variant="blur"` gives the Soul/Invitation copy its defocus reveal.
-  `?fcine=0` disables the entire cinematic layer; `verify-cinematics.mjs` is
+  `?fcine=0` disables the entire cinematic layer; `verify/cinematics.mjs` is
   its machine gate.
 
 ### Next, in this order
@@ -233,22 +233,22 @@ npm run forms:cursor     # cursor bulge → neck → merge
 npm run chapters:sheet   # chapter sheet across field tiers/locales
 npm run endpoints        # regenerate registered 48-droplet endpoints
 
-node scripts/verify-conductor.mjs
-node scripts/verify-strike.mjs        # click physics: wiring, passivity, rollback, a11y
-node scripts/verify-canvas-count.mjs
-node scripts/verify-cta.mjs
-node scripts/verify-entry-veil.mjs
-node scripts/verify-perf.mjs
-node scripts/verify-postfx.mjs        # optics gate (vs scripts/postfx-baseline.json)
-node scripts/verify-rest-exact.mjs    # settled-still byte gate (vs scripts/rest-exact.json)
-node scripts/verify-cinematics.mjs    # R5-D gate: no flash, two fades, no dead zones
-node scripts/verify-deformation.mjs   # deformable-material gate: the velocity field
+node scripts/verify/conductor.mjs
+node scripts/verify/strike.mjs        # click physics: wiring, passivity, rollback, a11y
+node scripts/verify/canvas-count.mjs
+node scripts/verify/cta.mjs
+node scripts/verify/entry-veil.mjs
+node scripts/verify/perf.mjs
+node scripts/verify/postfx.mjs        # optics gate (vs scripts/fixtures/postfx-baseline.json)
+node scripts/verify/rest-exact.mjs    # settled-still byte gate (vs scripts/fixtures/rest-exact.json)
+node scripts/verify/cinematics.mjs    # R5-D gate: no flash, two fades, no dead zones
+node scripts/verify/deformation.mjs   # deformable-material gate: the velocity field
                                       # linked, iBallShape/iStrain driven, ambient
                                       # current running, nothing teleports
-node scripts/verify-ecosystem.mjs     # THE GATHERING: names, three beats, collisions, response
-node scripts/verify-boundaries.mjs    # no dead band / no teleport across acts II-III
-node scripts/capture-transition-diagnostics.mjs
-node scripts/record-liquid-motion.mjs # video + per-draw iBalls trace recordings
+node scripts/verify/ecosystem.mjs     # THE GATHERING: names, three beats, collisions, response
+node scripts/verify/boundaries.mjs    # no dead band / no teleport across acts II-III
+node scripts/capture/transition-diagnostics.mjs
+node scripts/capture/record-liquid-motion.mjs # video + per-draw iBalls trace recordings
 ```
 
 Use `LOCALE=pt` or `LOCALE=en` where a harness supports locale selection.
@@ -321,7 +321,7 @@ as a review convenience, never as approved production proof.
   an authoritative document or code constant.
 - Keep historical experiments in Git history, not as competing root specs.
 - Record unresolved owner choices as `TODO(decision)` at the relevant code
-  boundary and in `build-spec.md`.
+  boundary and in `docs/specs/build-spec.md`.
 - If a change affects exact forms, the one-canvas invariant, the form arbiter,
   CTA intent, reduced motion, or honest portfolio proof, stop and re-run the
   associated gate before proceeding.
