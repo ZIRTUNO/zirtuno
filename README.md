@@ -1,329 +1,353 @@
-# Zirtuno Website
+# Zirtuno
 
-Business-first, visually distinctive website for Zirtuno, a Brazilian digital
-studio that builds connected ecosystems across software, AI, automation, data,
-branding, and marketing.
+The website of Zirtuno, a Brazilian digital studio. It is a bilingual
+(PT-BR / EN) marketing site whose central idea is a single continuous liquid:
+one WebGL body that runs from the first pixel of the hero through the footer,
+taking a different form in each chapter, and never restarting.
 
-Primary language: PT-BR. Secondary language: EN. Both are authored, shipped,
-and verified independently.
+The liquid is not an ornament. The studio's argument is that brand, software,
+data, and operations are usually built as disconnected pieces, and that they
+should instead be one connected system. The site makes that argument by
+behaving the way it describes — the same droplets fracture, gather, resolve
+into the studio's mark, and take the exact shape of each service, without a
+single cut.
 
-> Documentation and implementation status snapshot: 2026-07-10. Structural
-> unification (R5-A), fluid physics (R5-B), optics (R5-C), and the cinematic
-> cut (R5-D) are complete. Final hardening (R5-E) is still a delivery phase,
-> not a shipped claim.
+---
 
-## Read First: Documentation Authority
+## The studio
 
-Read these sources in order:
+Zirtuno builds complete digital ecosystems: software, AI, automation, data,
+branding, and marketing, connected into one structure rather than commissioned
+as separate projects.
 
-1. `AGENTS.md` — mandatory rules, taste constraints, current priorities, and
-   the working/verification protocol for every agent session.
-2. `docs/specs/build-spec.md` — the complete v0.3 product, experience, chapter,
-   architecture, delivery, and acceptance specification.
-3. `docs/specs/metaball-morph-spec.md` — the focused v2 contract for the continuous
-   liquid, exact forms, conductor, physics, renderer, optics, and QA controls.
-4. `docs/references.md` — approved technical and visual references mapped to the
-   v0.3 spec and R5 phases.
-5. `lib/i18n/messages/pt.json` and `lib/i18n/messages/en.json` — the only
-   source of shipped interface and conversion copy.
+The name joins two ideas rather than two people — the quiet transforming force
+of *Zéfiro* with the direction and courage of *Ventura*. Force without direction
+is only weather; direction without force is only a map. That fusion is the
+origin story the site tells in its fourth act, and it is also the thesis behind
+the whole design: structure given to what was dispersed.
 
-When sources appear to conflict, use the most specific source above, but never
-override a non-negotiable in `AGENTS.md`. Code describes what exists today;
-the specs describe both the current baseline and the explicitly labeled target.
+The brand voice is deliberately restrained. *Discreto. Preciso. Transformador.
+Claro. Estratégico. Comercialmente forte.*
 
-One-off audits and redevelopment plans do not remain as parallel authorities.
-The decisions from `improvement-plan.md` and
-`tingly-frolicking-stream.md` were consolidated into the v0.3 documentation;
-Git history retains their historical context. New durable decisions must be
-folded into the authoritative files above rather than added as another root plan.
+## What the site is trying to do
 
-## Product North Star
+The site targets a specific balance: **70% strategic clarity, 30% poetic
+atmosphere.**
 
-Zirtuno must feel award-level without becoming an art piece that hides the
-offer. The balance is:
+That ratio is a real constraint, not a slogan. A visitor has to understand what
+Zirtuno sells *before* reaching the emotional peak, see honest proof of work,
+and find an obvious way to make contact. Award-level craft is the goal, but a
+beautiful page that hides the offer would be a failure. Every visual decision is
+weighed against whether it still serves the commercial argument.
 
-- 70% strategic clarity and commercial strength.
-- 30% poetic brand atmosphere.
+---
 
-The visitor must understand the offer before the poetic peak, see honest proof,
-and reach an obvious contact action. The liquid is not decoration: it proves the
-business argument by turning fragmentation into one body.
+## The experience: five acts, one liquid
 
-## The New Experience: Five Acts, One Liquid
+One page-wide canvas carries a shared population of droplets through the entire
+journey. Chapter separation comes from choreography, spacing, and light — not
+from multiple canvases or dividing rules.
 
-One persistent page-wide liquid runs from the first hero pixel through the
-footer. The canonical 48 droplets keep their identity across the whole journey.
-Chapter separation comes from choreography, spacing, and light—not repeated
-canvases or chapter hairlines.
+| Act | Chapters | What the liquid does |
+| --- | --- | --- |
+| **I — Signal** | Entry veil, Hero | The wordmark assembles, then hands off to the living mark |
+| **II — Argument** | Problem, Ecosystem, Services | Pours, fractures into scattered pieces, gathers capability masses out of depth into three systems, resolves into the mark, then takes the exact form of each service in turn |
+| **III — Practice** | Método, Work | Rehearses the client transformation, then settles into a quiet current behind the case studies |
+| **IV — Soul** | Origin, Studio | Two idea-masses fuse into the exact mark, echo into satellites, and continue behind the studio |
+| **V — Invitation** | Contact, Footer | Every droplet gathers into the mark; submitting exhales; one droplet is released past the footer |
 
-| Act            | Chapters                     | Liquid narrative                                                                                | Light narrative                                             |
-| -------------- | ---------------------------- | ----------------------------------------------------------------------------------------------- | ----------------------------------------------------------- |
-| I — Signal     | Entry veil, Hero             | wordmark assembly hands off to the living mark and seven forms                                  | black, then the first cyan presence                         |
-| II — Argument  | Problem, Ecosystem, Services | pour → fracture → THE GATHERING (ten capability masses drawn forward out of depth, arriving in three systems, fusing into the mark) → AS SETE FORMAS (one body taking each service's exact form) | exposure falls through the problem and rises at the fuse |
-| III — Practice | Método, Work                 | the liquid rehearses the client transformation, then becomes a quiet current behind honest work | neutral and workmanlike, with an act boundary before Work   |
-| IV — Soul      | Origin, Studio               | two idea-masses (Zéfiro · Ventura) fuse into the mark; echoes continue behind the studio | emotional peak, continuous material afterglow, then settle  |
-| V — Invitation | Contact, Footer              | every droplet gathers into the mark; submit exhales; one droplet releases beyond the footer     | calm return to black                                        |
+The transitions between these states are handoffs of the same body — `assembly`,
+`pour`, `fracture`, `seek`, `bloom`, `rehearse`, `current`, `fuse`, `gather`,
+and `release` — never a swap between two different effects.
 
-The ten named transitions are `assembly`, `pour`, `fracture`, `seek`,
-`bloom`, `rehearse`, `current`, `fuse + afterglow`, `gather`, and
-`release`. They are handoffs of one liquid, never visual swaps.
+Two details carry most of the weight:
 
-## Implementation Status
+- **The Confluence.** Where the gathering resolves into the studio's symbol, the
+  mark is computed from the liquid's own field rather than rasterised from an
+  SVG. Drawing a vector there would have contradicted the chapter's claim that
+  nothing is placed between the two bodies — they simply stop being separate.
+- **The seven forms.** Each service has an exact silhouette, and the liquid
+  takes it precisely. The droplet count is fixed at 48 so that a morph between
+  any two forms is a pure interpolation of position and radius, with nothing
+  appearing or disappearing mid-transition.
 
-### Complete and protected
+---
 
-- The nine-chapter business-first IA, bilingual copy, CTA intent system,
-  contact plumbing, portfolio routes, SEO/RSC foundation, static fallbacks,
-  and four-role typography.
-- Exact owner-traced mark plus seven form SVGs and their SDF/48-droplet
-  endpoints.
-- One WebGL2/OGL field engine everywhere; the Three.js/R3F raymarch and mesh
-  engines are retired and must not return.
-- R5-A: one `PageStage` canvas, one measurement loop, conductor-owned scene
-  blending, a form-slot arbiter, persistent droplet identity, footer inside the
-  homepage stage, and machine-checked handoff invariants.
-- R5-B: velocity-based fluid core with fixed substeps, goal-seek, repulsion,
-  cohesion, analytic curl drift, page-wide cursor forces, pinch-off satellites,
-  and the `bind` contract. `?fphys=0` preserves the legacy integrator for A/B
-  and rollback. Interaction covers the whole field: the hand is a
-  volume-conserving displacement well with a velocity-signed wake, a click is a
-  travelling strike wave (crest out, trough back, irregular front, crown spray),
-  a held pointer is a press gain, and the ambient beads and the spray answer the
-  same forces through one shared definition. The eight SVG FORMS answer too, as
-  a displacement of the SDF sample domain in a separate compile variant — so the
-  source the exact-rest stills compile stays byte-identical. `?fstrike=0` rolls
-  back the click, `?fformtouch=0` the forms' answer.
-- R5-C: the optics chain. An offscreen scene target (RGBA16F where the
-  context renders it, RGBA8 fallback) feeds a half-res bright pass,
-  separable gaussian ping-pong, and an opaque ink-black composite with
-  selective bloom, interleaved-gradient-noise dither (kills 8-bit banding in
-  the dark gradients), and luminance-gated film grain ≤2.5% — both noise
-  terms gated off flat black so empty canvas stays bit-zero against the
-  page. In the scene shader, identity-gated grade controls: `iExpo`/`iKey`
-  (light-score driven), `iAbsorb`
-  (internal absorption — thick cores read dense), and `iBallZ[80]` +
-  `iDepthFx` depth bands (the ambient family packs at depth 0.62 and reads
-  as a dim sub-surface), plus `iShadow`: soft field-native thickness AO,
-  intersection darkening from contributor overlap, near/far depth variance,
-  and a bounded deformation trail. All grade uniforms default to 0 = exact identity;
-  `?fgrade=0` bypasses everything, verified statistically against the
-  recorded pre-C baseline and byte-exactly via settled stills
-  (`verify/rest-exact.mjs`). The watchdog gains the `full-nofx` rung
-  (glass, no post), and the energy governor floors a truly idle page at
-  ~30 Hz draws — display-rate agnostic, waking within one vsync on any
-  input or scene activity (`?fgov=0` disables).
-- R5-D: the cinematic cut. Seven scene modules —
-  `site · method · work · origin · studio · contact · footer` — cover the
-  page with no liquid-dead bands: Método's evolution satellites become the
-  quiet work CURRENT (a slow gyre behind the grid, plus a five-droplet
-  meniscus that docks along the hovered project card's bottom edge), the
-  origin echo survives as sparse STUDIO orbits, Contact GATHERS whatever
-  still swims into the resting mark, and one droplet — the mark's lowest
-  point, the 404's lone-drop identity — RELEASES past the footer at the
-  page's true bottom. Scenes author the light score (act II exposure dip
-  through the fracture, first light-rise + key at convergence, origin
-  fusion key + afterglow, calm act V), consumed twice: in the liquid via the
-  R5-C grade, and on the page via `CinematicVeils` (black exposure veil and
-  vignette; CSS-var driven at z-20 — above copy, below all chrome).
-  Exactly two act-boundary fades exist (Método→Work, Origin→Studio; peak
-  capped at 0.4, contrast-audited). Origin fusion has no full-page flash; its
-  light is the continuous in-material key/exposure afterglow.
-  `Reveal variant="blur"` gives the Soul/Invitation copy its defocus reveal.
-  `?fcine=0` disables the entire cinematic layer; `verify/cinematics.mjs` is
-  its machine gate.
+## How it is built
 
-### Next, in this order
+### Stack
 
-1. **R5-E — Hardening:** device/battery/context-loss testing, full a11y and
-   i18n regression, conversion-path verification, dead-code sweep, and launch
-   content truth.
+| Layer | Choice |
+| --- | --- |
+| Framework | Next.js 16 (App Router, RSC), React 19, TypeScript, Turbopack |
+| Styling | Tailwind CSS v4 with CSS custom properties as the token source |
+| Graphics | Raw WebGL2 with OGL, custom SDF and metaball shaders |
+| Scroll choreography | GSAP with ScrollTrigger |
+| Micro-interaction | Motion |
+| Scrolling | Lenis |
+| Internationalisation | next-intl |
+| Content | Sanity, with a committed fallback selection |
+| Forms | react-hook-form, Zod, Resend |
+| Hosting and analytics | Vercel, Plausible |
 
-### External launch blockers
+Node 26 is expected; the version is pinned in `.nvmrc`.
 
-- Replace prototype portfolio entries with at least three real projects, or
-  explicitly launch them as “Arquitetura selecionada / Selected architecture.”
-- Confirm verified outcomes; never invent metrics.
-- Confirm WhatsApp, domain email, site URL, and social handles.
-- Decide whether Studio remains an anonymous role grid or gains portraits.
-- Audio remains out of v1 unless explicitly scoped.
+### Rendering pipeline
 
-## Locked Stack
-
-- Next.js 16 App Router, React 19, TypeScript, Turbopack
-- Tailwind CSS v4 with CSS variables
-- Raw WebGL2 + OGL for the unified field and post-processing
-- GSAP + ScrollTrigger for scroll choreography
-- Motion for DOM micro-interactions
-- Lenis for calm smooth scrolling
-- next-intl for PT-BR and EN
-- Sanity for projects/editable content
-- react-hook-form + zod + Resend for contact
-- Vercel hosting/OG plus Vercel Analytics and Plausible as launch integrations
-
-Changing the stack, adding an unlisted dependency, or introducing a second
-homepage rendering engine requires owner approval.
-
-## Runtime Architecture
+Chapter copy is server-rendered and fully crawlable. The canvas measures that
+DOM and animates behind it — the visual layer is an enhancement over real
+markup, never a replacement for it.
 
 ```text
 RSC chapter copy and semantic DOM
         │ measured anchors
         ▼
-PageStage — one sticky page-wide canvas and one measurement loop
+PageStage — one sticky page-wide canvas, one measurement loop
         │
         ▼
-Conductor — damping, presence, droplet handoffs, form arbiter, score
+Conductor — damping, presence, droplet handoffs, form arbiter, light score
         │
-        ├── scene targets + light scores (site / método / work / origin /
-        │                                  studio / contact / footer)
-        ├── fluid-core (physics; ?fphys=0 legacy bypass)
-        └── shared 48-droplet identity + ambient/extras
+        ├── scene targets per chapter (site / método / work / origin /
+        │                              studio / contact / footer)
+        ├── fluid-core — velocity, goal-seek spring, repulsion, cohesion,
+        │                curl drift, cursor forces, strikes, pinch-off
+        ├── tile binning — droplets binned per tile so population is
+        │                  close to free
+        └── motes and temperament — a simulated population beyond the
+                                    authored 48, each with its own character
         │
         ▼
-FieldStage + sdf-glass shader (identity-gated grade: expo/key/absorb/depth/shadow)
+FieldStage + SDF-glass shader (exposure, key, absorption, depth, shadow)
         │
-        ├── post-chain (R5-C): bright pass → bloom → opaque composite
-        │   (dither + grain) · full-nofx rung · ~30 Hz idle governor
+        ├── post-chain — bright pass, bloom, opaque composite with
+        │                dither and grain, idle governor near 30 Hz
         │
-        └── CinematicVeils (R5-D): score → CSS vars → exposure veil · vignette
-            (?fcine=0 off)
+        └── CinematicVeils — light score driven into CSS variables for the
+                             exposure veil and vignette
 ```
 
-Content remains server-rendered and crawlable. WebGL, measurements, and motion
-are client enhancements. Reduced motion, no-WebGL, and “none” tier paths keep
-the complete story and conversion path usable without the canvas.
+A performance note worth keeping in mind when working on this: the field is
+**fill-rate bound**. Frame cost tracks buffer area far more than it tracks
+shader features or CPU physics. Tile binning is what removed droplet count from
+the cost equation, which is what made a larger simulated population affordable.
 
-## Project Layout
+### Graceful degradation
 
-- `app/[locale]/` — locale routes, page composition, work pages, metadata,
-  loading, 404, sitemap/robots integration.
-- `components/chapters/` — semantic chapter UI and contact/project surfaces.
-- `components/field/` — `PageStage` conductor shell and `FieldStage` renderer.
-- `components/hero/` — hero shell and deterministic form/morph QA renderers.
-- `components/chrome/` — navigation, CTAs, cursor, entry veil, footer, 404.
-- `lib/webgl/` — exact SDFs, symbols, driver kernel, conductor, physics,
-  renderer shaders, tiers, and scene modules.
-- `lib/i18n/messages/` — authoritative PT-BR and EN copy.
-- `lib/content/` and `lib/sanity/` — project sources and CMS integration.
-- `public/brand/` — runtime mark, seven form SVGs, and baked form stills.
-- `references/morphs/` — owner originals, traced endpoints, previews, manifest.
-- `scripts/` — deterministic capture and machine-verification harnesses.
+The renderer detects a tier and adapts. The complete story and the full
+conversion path stay usable at every level.
 
-Generated `.next/`, `captures/`, `artifacts/`, `node_modules/`, and
-`*.tsbuildinfo` are disposable local outputs unless a task explicitly asks to
-preserve review evidence.
+| Tier | Behaviour |
+| --- | --- |
+| `full` | The complete liquid, post-processing, and cinematic veils |
+| `lite` | Reduced effects for integrated GPUs and constrained devices |
+| `none` | No WebGL — static traced silhouettes stand in for the liquid |
 
-## Commands
+`prefers-reduced-motion` is honoured throughout: transitions hand navigation
+straight back to the router, and scroll-driven motion resolves to its end state
+rather than animating.
+
+The static tier does not fake the shapes. Silhouettes are traced from the same
+field the GPU would evaluate, because thresholding a blurred set of circles
+produces a visibly different outline than the real metaball field does.
+
+---
+
+## Internationalisation
+
+Portuguese (BR) is primary, English secondary, and both are always prefixed —
+`/pt/...` and `/en/...`. Neither is a machine translation of the other; both are
+authored, and they are allowed to differ where a literal rendering would be
+weaker.
+
+All shipped interface and conversion copy lives in exactly two files:
+
+```
+lib/i18n/messages/pt.json
+lib/i18n/messages/en.json
+```
+
+Text is never hard-coded into components. That constraint is what keeps the two
+locales genuinely equal rather than leaving English as an afterthought.
+
+Locale-aware navigation helpers are exported from `lib/i18n/config.ts`; use
+those rather than `next/link` and `next/navigation` directly. Routing is handled
+by `proxy.ts` at the repository root — Next.js 16 renamed what was previously
+`middleware.ts`.
+
+## Content
+
+Case studies come from Sanity. If Sanity is unreachable or unconfigured in
+production, the site fails closed to an honest, empty portfolio; it never
+substitutes prototype or concept work as though it were client work. Local
+concept studies are available only when `PORTFOLIO_DEMO_MODE=true` outside
+production, and are strictly a review convenience.
+
+A case may optionally carry a Rive animation with a localized description and a
+real poster image. That canvas is supplemental — it never replaces the written
+case or its static fallback.
+
+## Contact
+
+The contact form validates with Zod through react-hook-form and delivers via
+Resend. It reports success only once Resend confirms delivery, rather than
+optimistically on submit.
+
+Retries reuse a stable per-submission identity and a byte-equivalent payload, so
+a retry cannot silently become a second message. Mail that is accepted but not
+yet confirmed keeps the form intact and is tracked to a signature-verified
+webhook for final delivery or bounce handling. Both public endpoints enforce
+streamed-body size ceilings.
+
+Production builds run a readiness gate automatically and refuse to ship with
+placeholder contact identity, an unverified delivery path, or an unattested
+rate-limit rule.
+
+---
+
+## Project structure
+
+```
+app/[locale]/        locale routes, page composition, metadata, sitemap, robots
+components/
+  chapters/          semantic chapter UI and the contact surface
+  chrome/            navigation, CTAs, cursor, footer, brand draw
+  field/             PageStage conductor shell and FieldStage renderer
+  motion/            scroll and page-transition providers
+  work/              the case gallery and its Rive experience
+  lab/               internal QA renderers
+lib/
+  webgl/             SDFs, symbols, conductor, physics, shaders, tiers, scenes
+  animation/         easings, durations, traces, spine geometry
+  i18n/messages/     the only source of shipped copy
+  content/           portfolio and socials sources
+  sanity/            CMS queries and types
+public/brand/        runtime mark, service form SVGs, baked stills
+references/morphs/   originals, traced endpoints, previews, manifest
+scripts/             development and verification tooling
+docs/                specifications, decisions, QA notes
+```
+
+Tooling under `scripts/` is grouped by verb, so the directory carries the verb
+and the filename carries only the subject:
+
+| Directory | Contents |
+| --- | --- |
+| `scripts/verify/` | Pass/fail gates |
+| `scripts/capture/` | Screenshot and filmstrip harnesses |
+| `scripts/probe/` | Diagnostics and investigations |
+| `scripts/tools/` | Generators and asset pipelines |
+| `scripts/support/` | Shared modules imported by the above |
+| `scripts/fixtures/` | Committed baselines |
+
+The shared directory is named `support/` rather than `lib/` deliberately.
+Scripts reach the application engine through `../../lib/webgl/`, and a
+`scripts/lib/` would let a stale `../lib/` reference resolve to the wrong real
+directory instead of failing. The reasoning is recorded in
+`docs/decisions/0002-repository-layout.md`.
+
+---
+
+## Getting started
+
+Requires Node 26 and npm.
 
 ```bash
 npm install
+cp .env.local.example .env.local
 npm run dev
-npm run build
-npm run lint
-npx tsc --noEmit
-npm run verify:production # launch env, CMS, contact, identity, analytics gate
 ```
 
-The visual harnesses launch or reuse a dev server:
+The site runs at `http://localhost:3000`, which redirects to `/pt`.
+
+No environment variables are needed to render the site locally. Sanity, Resend,
+and analytics keys are only required for the features that depend on them; see
+`.env.local.example`, which documents every variable and what each production
+readiness gate means.
+
+### Everyday commands
 
 ```bash
-npm run forms:rest       # exact form endpoints against owner SVG references
-npm run forms:melts      # bridge frames, melt fps, keyboard smoke
-npm run forms:cursor     # cursor bulge → neck → merge
-npm run chapters:sheet   # chapter sheet across field tiers/locales
-npm run endpoints        # regenerate registered 48-droplet endpoints
-
-node scripts/verify/conductor.mjs
-node scripts/verify/strike.mjs        # click physics: wiring, passivity, rollback, a11y
-node scripts/verify/canvas-count.mjs
-node scripts/verify/cta.mjs
-node scripts/verify/entry-veil.mjs
-node scripts/verify/perf.mjs
-node scripts/verify/postfx.mjs        # optics gate (vs scripts/fixtures/postfx-baseline.json)
-node scripts/verify/rest-exact.mjs    # settled-still byte gate (vs scripts/fixtures/rest-exact.json)
-node scripts/verify/cinematics.mjs    # R5-D gate: no flash, two fades, no dead zones
-node scripts/verify/deformation.mjs   # deformable-material gate: the velocity field
-                                      # linked, iBallShape/iStrain driven, ambient
-                                      # current running, nothing teleports
-node scripts/verify/ecosystem.mjs     # THE GATHERING: names, three beats, collisions, response
-node scripts/verify/boundaries.mjs    # no dead band / no teleport across acts II-III
-node scripts/capture/transition-diagnostics.mjs
-node scripts/capture/record-liquid-motion.mjs # video + per-draw iBalls trace recordings
+npm run dev       # development server
+npm run build     # production build
+npm run start     # serve the production build
+npm run lint      # ESLint
+npx tsc --noEmit  # typecheck
 ```
 
-Use `LOCALE=pt` or `LOCALE=en` where a harness supports locale selection.
-Run browser-based capture scripts against a live dev server and review their
-images; a green process exit does not replace visual judgment.
+Continuous integration runs the typecheck, ESLint at zero warnings, and a
+production build on every push and pull request to `main`. Lint is a hard gate:
+a new warning fails the build.
 
-### Current QA parameters
+### Verification harnesses
 
-- `/[locale]/lab/forms?fstate=N` — deterministic exact rest form.
-- `/[locale]/lab/forms?fpair=a-b-m` — deterministic melt frame.
-- `/[locale]/lab/forms?fstate=N&fcursor=x,y` — deterministic cursor merge.
-- `?ftier=full|lite|none` — tier override.
-- `?feco=c` — freeze ecosystem choreography at `c ∈ [0,1]`.
-- `?fphys=0` — bypass fluid physics through the legacy low-pass.
-- `?fphysv3=0` — roll back the area-weighted/viscous physics (default ON).
-- `?fobstacles=0` — roll back cached typography/form avoidance (default ON).
-- `?fstrike=0` — roll back click physics: no strike wave, no crown, no press
-  gain (default ON). Hover physics stays.
-- `?fformtouch=<n>` — gain on the FORMS' response to the pointer (default 1).
-  `0` rolls it back entirely (the droplets carry on answering); any other
-  number scales the dent and the ripple live, for taste rounds without a
-  rebuild — e.g. `?fformtouch=0.5` halves it, `?fformtouch=2` doubles it.
-- `?fglass=0` — drop the liquid-glass MATERIAL to the flat brand-cyan branch
-  (default ON). The core lighting — dome, wrapped diffuse, specular, sheen,
-  fresnel — is what gives the liquid its depth; flat reads as a sticker.
-- `?fstrain=1` — restore the deformation-responsive OPTICS (default OFF):
-  anisotropic specular, brightened leading edge, thinned absorption and
-  advected striations. Off because striations crawling over liquid that is
-  already stretching read as glitchy. `verify-deformation` asks for it.
-- `?fshape=0` — roll back velocity-aligned deformation and its glass optics (default ON).
-- `?fgrade=0` — bypass the optics chain and grade (exact pre-optics output).
-- `?fshadow=1` — enable the field-native dynamic volume shadow (OFF by
-  default: it costs the body ~15% of its brand luminance for contrast the
-  absorption term already provides).
-- `?fgov=0` — disable the idle-cadence governor.
-- `?fcine=0` — disable the cinematic layer (neutral score, no veils).
-- `window.__scenes` — live scene channels for diagnostics.
-- `window.__optics` — live optics/shape state: post/fmt/tier/frames/gov +
-  `demote()` for watchdog-rung drills.
-- `window.__cine` — the merged light score and cinematic diagnostics.
+Beyond CI, the repository carries a set of gates that drive a real browser
+against a running server and assert measured properties of the rendered result —
+frame cost, contrast, transition boundaries, canvas count, geometry, device
+matrices, and so on. They are deliberately not part of CI, since they need a
+live server and a GPU-backed browser; they are meant for deliberate runs while
+working on the thing they measure.
 
-## Content and Environment
+```bash
+npm run confluence         # the mark resolves correctly out of the field
+npm run work               # the gallery's FLIP panel geometry
+npm run liquid:form        # the coalesce merge
+npm run rail               # the chapter index waterline
+npm run verify:production  # the production readiness gate
+```
 
-Copy belongs only in the two locale message files. Do not hard-code shipped
-text in components. Local concept studies are available only when
-`PORTFOLIO_DEMO_MODE=true` in a non-production environment. Missing or failed
-Sanity access in production fails closed to an honest empty portfolio; it
-never falls back to prototype proof. Contact reports success only after Resend
-confirms delivery. A case study may optionally author a Sanity-hosted `.riv`
-file, localized semantic description, and real poster; the lazy Rive canvas is
-supplemental and never replaces the written case or its static fallback.
-Safe retries reuse a stable per-submission identity and
-byte-equivalent provider payload; accepted-but-unconfirmed mail keeps the form
-intact and is tracked to a signature-verified webhook for final delivery/bounce
-alerts. Both public contact endpoints enforce actual streamed-body ceilings.
-Vercel production builds run the readiness gate automatically and cannot ship
-with placeholder contact identity, an unverified delivery path, or an
-unattested rate-limit/firewall rule. Plausible is optional while developing,
-but the production gate requires its approved domain/script so CTA, contact,
-case, locale, and field Web Vitals events are observable without submitted
-content.
+Every gate under `scripts/verify/` can also be run directly with `node`.
+Capture harnesses under `scripts/capture/` produce contact sheets and filmstrips
+for visual review; their output goes to `captures/`, which is not tracked.
 
-See `.env.local.example` for the current variables. Treat its local demo mode
-as a review convenience, never as approved production proof.
+Two measurement cautions are worth knowing before trusting a result.
+Screenshots carry roughly a **1% churn noise floor**, so a small pixel delta is
+not automatically a regression. And under software rendering, the frame-rate
+watchdog can quietly demote the very code being measured — shrink the viewport
+and measure early rather than reading a full-page capture at face value.
 
-## Cleanup and Decision Policy
+### Debug flags
 
-- Keep durable source, specs, references, scripts, and shipped assets.
-- Delete generated captures after review; summarize durable visual findings in
-  an authoritative document or code constant.
-- Keep historical experiments in Git history, not as competing root specs.
-- Record unresolved owner choices as `TODO(decision)` at the relevant code
-  boundary and in `docs/specs/build-spec.md`.
-- If a change affects exact forms, the one-canvas invariant, the form arbiter,
-  CTA intent, reduced motion, or honest portfolio proof, stop and re-run the
-  associated gate before proceeding.
+Runtime layers can be toggled by query string, which makes it possible to
+bisect a visual problem to a specific system without editing code:
 
-_Discreto. Preciso. Transformador. — e comercialmente forte._
+```
+?fphys=0      bypass the fluid physics
+?fcine=0      disable the cinematic veils
+?fmotes=0     disable the simulated population beyond the authored droplets
+?ftier=lite   force a rendering tier (full | lite | none)
+```
+
+Further flags exist for individual shader and physics layers; they follow the
+same `f<layer>=0` pattern.
+
+---
+
+## Documentation
+
+| Document | Contents |
+| --- | --- |
+| `AGENTS.md` | Working rules, taste constraints, and the verification protocol |
+| `docs/specs/build-spec.md` | The complete product, experience, chapter, and acceptance specification |
+| `docs/specs/metaball-morph-spec.md` | The liquid contract: exact forms, conductor, physics, renderer, optics |
+| `docs/specs/field-liquid-spec.md` | The field's behaviour in detail |
+| `docs/specs/cta-membrane-spec.md` | The CTA membrane |
+| `docs/specs/entry-intro-spec.md` | The entry sequence |
+| `docs/decisions/` | Architecture decision records |
+| `docs/design-qa.md` | Design QA notes |
+| `docs/references.md` | Approved technical and visual references |
+
+Where sources disagree, prefer the most specific one, but never override a
+non-negotiable in `AGENTS.md`. Code describes what exists today; the specs
+describe both the current baseline and the intended target, and label which is
+which.
+
+---
+
+## Licence
+
+Copyright © 2026 Pedro Paiva Mautone Campos (Zirtuno). All rights reserved.
+
+This repository is public to read, but it is not open source. The brand assets,
+the metaball and signed-distance-field engine, the shaders, and the studio copy
+are not licensed for reuse. Dependencies keep their own licences. See
+[LICENSE](LICENSE) for the full terms.
