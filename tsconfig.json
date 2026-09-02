@@ -55,10 +55,27 @@
     ".next-forms-build/types/**/*.ts",
     ".next-forms-build/dev/types/**/*.ts",
     ".next-header/types/**/*.ts",
-    ".next-header/dev/types/**/*.ts"
+    ".next-header/dev/types/**/*.ts",
+    ".next-transition/types/**/*.ts",
+    ".next-transition/dev/types/**/*.ts",
+    ".next-transition-build/types/**/*.ts",
+    ".next-transition-build/dev/types/**/*.ts",
+    ".next-transition-prod/types/**/*.ts",
+    ".next-transition-prod/dev/types/**/*.ts",
+    ".next-morph/types/**/*.ts",
+    ".next-morph/dev/types/**/*.ts",
+    ".next-draw/types/**/*.ts",
+    ".next-draw/dev/types/**/*.ts",
+    ".next-gallery/types/**/*.ts",
+    ".next-gallery/dev/types/**/*.ts",
+    ".next-gallery-build/types/**/*.ts",
+    ".next-gallery-build/dev/types/**/*.ts",
+    ".next-dead-code-audit/types/**/*.ts",
+    ".next-dead-code-audit/dev/types/**/*.ts"
   ],
   "exclude": [
     "node_modules",
+    "Dead Code",
     "artifacts",
     ".melt-sim-cache",
     "captures"
