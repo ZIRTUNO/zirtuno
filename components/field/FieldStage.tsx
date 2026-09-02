@@ -40,12 +40,20 @@ import {
   SDF_GLASS_FRAG_SHAPE_TOUCH,
   SDF_FORM_SHOCKS,
   SDF_BALL_MAX,
+  SDF_BALL_CAP_TILED,
+  SDF_BALL_REACH,
+  SDF_GRAD_MARGIN,
+  SDF_GLASS_FRAG_TILED,
+  SDF_GLASS_FRAG_SHAPE_TILED,
+  SDF_GLASS_FRAG_TOUCH_TILED,
+  SDF_GLASS_FRAG_SHAPE_TOUCH_TILED,
   SDF_THICK,
   SDF_RES,
   SDF_GRADE,
   SDF_STRAIN,
 } from "@/lib/webgl/sdf-glass-shader.mjs";
 import { makeLayer, makeSdfTexture, loadSdf } from "@/lib/webgl/sdf-gl";
+import { makeTileBinner, TILE_LIST_W, TILE_PX } from "@/lib/webgl/tile-bin.mjs";
 import { makePostChain } from "@/lib/webgl/post-chain";
 import type { FieldDriver } from "@/lib/webgl/field-drivers";
 import { SVG_URLS, STATE_COUNT } from "@/lib/webgl/symbols";
@@ -107,6 +115,32 @@ const TOUCH_RUNGS = new Set<LiveTier>([
 // exact-identity case, so this is the resting silhouette by construction.
 const ZERO_TOUCH = new Float32Array(4);
 const ZERO_SHOCK = new Float32Array(SDF_FORM_SHOCKS * 4);
+
+/**
+ * POPULATION per rung, as a share of what the conductor is simulating (R6).
+ *
+ * A new lever on the ladder, and a gentler one than anything already on it. The
+ * old descent could only shed FEATURES (post chain, deformation, finally the
+ * glass itself) or RESOLUTION — a demotion was always visible as the material
+ * changing or the image softening. Droplet count degrades differently: the same
+ * material, the same choreography, the same forms, just fewer beads of surface
+ * texture on the body. Motes are ordered by rank, so lowering this peels the
+ * OUTERMOST shell off every host first and the body thins from its surface
+ * inward rather than losing whole regions.
+ *
+ * It is spent BEFORE the glass and after resolution, because per unit of frame
+ * time saved it is the least visible thing here — and because the ball loop is
+ * ~95% of the frame at 1.13 Mpx, so it is also one of the largest levers.
+ */
+const RUNG_POP: Record<LiveTier, number> = {
+  full: 1,
+  fullnofx: 1,
+  glass1x: 0.75,
+  rigid: 0.5,
+  glasshalf: 0.375,
+  lite: 0.25,
+  half: 0, // the authored 48 and nothing else — the floor is a form endpoint
+};
 
 /** Buffer scale per rung — the cheapest lever, so it is spent before the glass. */
 const RUNG_SCALE: Record<LiveTier, number | "max"> = {
@@ -213,20 +247,70 @@ export default function FieldStage({
     // refusal costs an interaction, never the canvas. Ordered most-capable
     // first, so a driver that refuses the widest block still gets whichever
     // half it can afford.
+    // ── R6: the TILED data path ────────────────────────────────────────────
+    // Droplet data in a texture instead of three uniform arrays, and a per-tile
+    // index list so a fragment walks only the droplets that can reach it. The
+    // shipped shader evaluated every droplet at every one of ~1.1M fragments
+    // with no spatial culling at all, which is why ~95% of the frame was the
+    // ball loop and why the population could not grow. Measured at 1.13 Mpx:
+    //
+    //   droplets    uniform array    tiled (re-binned + re-uploaded per frame)
+    //         48         11.5 ms                                      6.8 ms
+    //        192         44.8 ms                                      8.2 ms
+    //       1536      over ceiling                                   13.8 ms
+    //
+    // It goes FIRST in the preference list — it is both faster and the only
+    // path that can carry the population — and the uniform builds stay behind
+    // it, so a driver that refuses the integer samplers renders exactly what it
+    // rendered before. ?ftile=0 is the deliberate rollback to that path.
+    const tileWanted = !/[?&]ftile=0(?:&|$)/.test(window.location.search);
+    // The uniform-array builds, as a map, so the tiled selection below can be
+    // written against the same shape. Both sets are module constants now — the
+    // saturation ceiling is a UNIFORM, so nothing is rebuilt per setting and a
+    // ?fsat= review reload compares two identical programs.
+    const F = {
+      plain: SDF_GLASS_FRAG,
+      shape: SDF_GLASS_FRAG_SHAPE,
+      touch: SDF_GLASS_FRAG_TOUCH,
+      shapeTouch: SDF_GLASS_FRAG_SHAPE_TOUCH,
+    };
+    const T = {
+      plain: SDF_GLASS_FRAG_TILED,
+      shape: SDF_GLASS_FRAG_SHAPE_TILED,
+      touch: SDF_GLASS_FRAG_TOUCH_TILED,
+      shapeTouch: SDF_GLASS_FRAG_SHAPE_TOUCH_TILED,
+    };
+    const satParam = /[?&]fsat=([0-9]*\.?[0-9]+)(?:&|$)/.exec(window.location.search);
+    const satOverride = satParam ? Number(satParam[1]) : null;
     const variants: string[] = [];
-    if (shapeWanted && touchWanted) variants.push(SDF_GLASS_FRAG_SHAPE_TOUCH);
-    if (shapeWanted) variants.push(SDF_GLASS_FRAG_SHAPE);
-    if (touchWanted) variants.push(SDF_GLASS_FRAG_TOUCH);
-    variants.push(SDF_GLASS_FRAG);
+    if (tileWanted) {
+      if (shapeWanted && touchWanted) variants.push(T.shapeTouch);
+      if (shapeWanted) variants.push(T.shape);
+      if (touchWanted) variants.push(T.touch);
+      variants.push(T.plain);
+    }
+    const uniformFirst = variants.length;
+    if (shapeWanted && touchWanted) variants.push(F.shapeTouch);
+    if (shapeWanted) variants.push(F.shape);
+    if (touchWanted) variants.push(F.touch);
+    variants.push(F.plain);
     const layer = makeLayer(container, SDF_GLASS_VERT, variants);
     if (!layer) return; // no WebGL2 → shell's SVG fallback stays
     const linked = variants[layer.variant];
+    const tiledActive = layer.variant < uniformFirst;
     const shapeShaderActive =
-      linked === SDF_GLASS_FRAG_SHAPE ||
-      linked === SDF_GLASS_FRAG_SHAPE_TOUCH;
+      linked === F.shape ||
+      linked === F.shapeTouch ||
+      linked === T.shape ||
+      linked === T.shapeTouch;
     const touchShaderActive =
-      linked === SDF_GLASS_FRAG_TOUCH ||
-      linked === SDF_GLASS_FRAG_SHAPE_TOUCH;
+      linked === F.touch ||
+      linked === F.shapeTouch ||
+      linked === T.touch ||
+      linked === T.shapeTouch;
+    // The population the buffers are sized for. Only the tiled path can carry
+    // more than the uniform arrays hold.
+    const ballCap = tiledActive ? SDF_BALL_CAP_TILED : SDF_BALL_MAX;
     const gl = layer.gl;
 
     // §12.5: on loss the loop PARKS (no zombie GL, no fake frame counts, no
@@ -282,33 +366,74 @@ export default function FieldStage({
     gl.uniform1i(layer.U("iSDF"), 0);
     gl.uniform1i(layer.U("iSDF2"), 1);
 
+    // ── R6 tiled resources ─────────────────────────────────────────────────
+    // iBallTex is (x, y, r, density) on row 0 and (depth, vx, vy, —) on row 1,
+    // so one droplet is two texels and the whole population is one 2-row
+    // texture. iTileHead is (offset, count) per screen tile; iTileList is the
+    // flat index array those offsets point into.
+    const binner = tiledActive ? makeTileBinner() : null;
+    let ballTex: WebGLTexture | null = null;
+    let tileHeadTex: WebGLTexture | null = null;
+    let tileListTex: WebGLTexture | null = null;
+    // Row-major (x,y,r,d | z,vx,vy,0) staging, uploaded whole each frame.
+    const ballRows = tiledActive ? new Float32Array(ballCap * 4 * 2) : null;
+    let tileHeadW = 0;
+    let tileHeadH = 0;
+    let tileListH = 0;
+    const nearestTex = () => {
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    };
+    if (tiledActive) {
+      gl.activeTexture(gl.TEXTURE2);
+      ballTex = gl.createTexture();
+      gl.bindTexture(gl.TEXTURE_2D, ballTex);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA32F, ballCap, 2, 0, gl.RGBA, gl.FLOAT, null);
+      nearestTex();
+      gl.activeTexture(gl.TEXTURE3);
+      tileHeadTex = gl.createTexture();
+      gl.bindTexture(gl.TEXTURE_2D, tileHeadTex);
+      nearestTex();
+      gl.activeTexture(gl.TEXTURE4);
+      tileListTex = gl.createTexture();
+      gl.bindTexture(gl.TEXTURE_2D, tileListTex);
+      nearestTex();
+      gl.useProgram(layer.prog);
+      gl.uniform1i(layer.U("iBallTex"), 2);
+      gl.uniform1i(layer.U("iTileHead"), 3);
+      gl.uniform1i(layer.U("iTileList"), 4);
+      gl.uniform1f(layer.U("iTilePx"), TILE_PX);
+    }
+
     const textures: (WebGLTexture | null)[] = new Array(STATE_COUNT).fill(null);
-    const ballBuf = new Float32Array(SDF_BALL_MAX * 3);
-    const zBuf = new Float32Array(SDF_BALL_MAX); // per-ball depth (iBallZ)
+    const ballBuf = new Float32Array(ballCap * 3);
+    const zBuf = new Float32Array(ballCap); // per-ball depth (iBallZ)
     // per-ball field density (iBallDensity); 1 = solid liquid, 0 = dissolved
-    const dBuf = new Float32Array(SDF_BALL_MAX).fill(1);
-    const ballIds = new Int16Array(SDF_BALL_MAX);
+    const dBuf = new Float32Array(ballCap).fill(1);
+    const ballIds = new Int16Array(ballCap);
     ballIds.fill(-1);
     // `iBallVelocity` is packed as two xy vectors per vec4. Every history and
     // filter buffer is allocated once; the render loop only mutates them.
     // Velocity history is keyed by canonical droplet identity, never by packed
     // slot: satellites, ambient beads, and extras may enter/leave or shift the
     // packing order and must never inherit another particle's stretch.
-    const ballVelocity = new Float32Array(SDF_BALL_MAX * 2);
-    const identityVelocity = new Float32Array(SDF_BALL_MAX * 2);
-    const previousIdentityBalls = new Float32Array(SDF_BALL_MAX * 3);
-    const identitySeen = new Uint8Array(SDF_BALL_MAX);
-    const identitySeenNow = new Uint8Array(SDF_BALL_MAX);
+    const ballVelocity = new Float32Array(ballCap * 2);
+    const identityVelocity = new Float32Array(ballCap * 2);
+    const previousIdentityBalls = new Float32Array(ballCap * 3);
+    const identitySeen = new Uint8Array(ballCap);
+    const identitySeenNow = new Uint8Array(ballCap);
     let lastPackedCount = 0;
     let previousVelocityTime = -1;
     const resetVelocityHistory = (count: number, tMs: number) => {
-      const safeCount = Math.min(count, SDF_BALL_MAX);
+      const safeCount = Math.min(count, ballCap);
       ballVelocity.fill(0);
       identityVelocity.fill(0);
       identitySeen.fill(0);
       for (let slot = 0; slot < safeCount; slot++) {
         const id = ballIds[slot];
-        if (id < 0 || id >= SDF_BALL_MAX) continue;
+        if (id < 0 || id >= ballCap) continue;
         const packed = slot * 3;
         const identity = id * 3;
         previousIdentityBalls[identity] = ballBuf[packed];
@@ -321,7 +446,7 @@ export default function FieldStage({
       return 0;
     };
     const sampleBallVelocity = (count: number, tMs: number) => {
-      const safeCount = Math.min(count, SDF_BALL_MAX);
+      const safeCount = Math.min(count, ballCap);
       if (previousVelocityTime < 0) return resetVelocityHistory(safeCount, tMs);
       const dtMs = tMs - previousVelocityTime;
       // Resize paints can arrive almost on top of a scheduled frame; tab
@@ -337,7 +462,7 @@ export default function FieldStage({
         const packed = slot * 3;
         const packedVelocity = slot * 2;
         const id = ballIds[slot];
-        if (id < 0 || id >= SDF_BALL_MAX) {
+        if (id < 0 || id >= ballCap) {
           ballVelocity[packedVelocity] = 0;
           ballVelocity[packedVelocity + 1] = 0;
           continue;
@@ -396,7 +521,7 @@ export default function FieldStage({
         identitySeenNow[id] = 1;
       }
       ballVelocity.fill(0, safeCount * 2);
-      for (let id = 0; id < SDF_BALL_MAX; id++) {
+      for (let id = 0; id < ballCap; id++) {
         if (identitySeenNow[id] === 1) continue;
         identityVelocity[id * 2] = 0;
         identityVelocity[id * 2 + 1] = 0;
@@ -427,6 +552,12 @@ export default function FieldStage({
       fmt: (post?.fmt ?? "none") as string,
       tier: liveTier as string,
       frames: 0,
+      // the melt the stage is actually drawing, for the shape gate and the
+      // capture harnesses; -1 = not in one
+      meltP: -1,
+      formA: 0,
+      formB: 0,
+      sat: 0,
       gov: 0,
       glassRequested: glassRequested ? 1 : 0,
       glass: 0, // 1 only while the material is actually being shaded
@@ -450,6 +581,34 @@ export default function FieldStage({
       slowMs: 0,
       wdSlow: 0,
       scale: 0, // live buffer scale (CSS px → device px) after the budget
+      // R6: the data path, the population it is carrying, and the binner's own
+      // health. tileOver must stay 0 — a tile longer than the shader's loop
+      // bound silently loses its tail, and the artefact looks like a shader bug.
+      tiled: tiledActive ? 1 : 0,
+      ballCap,
+      pop: 0,
+      count: 0, // balls actually packed last frame
+      // THE BALL BUFFER, for the measurement harnesses.
+      //
+      // Five of them (verify-strike, verify-deformation, verify-boundaries,
+      // record-liquid-motion, diagnose-s4) recover droplet positions by hooking
+      // `gl.uniform3fv` and watching for `iBalls`. On the tiled path that
+      // uniform does not exist — the population rides in a texture — so the tap
+      // goes silent and every one of those gates would quietly measure nothing.
+      // Publishing the packed buffer here keeps them measuring the SHIPPED path
+      // rather than being pointed at ?ftile=0 and told it is equivalent.
+      //
+      // A live reference, not a copy: readers must snapshot (Array.from) if
+      // they intend to keep it past the current frame.
+      balls: ballBuf as Float32Array,
+      /** Per-ball field density, the companion channel to `balls`. */
+      dens: dBuf as Float32Array,
+      motes: 0, // …of which are motes (identity ≥ the authored population)
+      bindAvg: 0, // mean bind over the authored droplets — why motes are absent
+      tiles: 0,
+      tileEntries: 0,
+      tileMax: 0,
+      tileOver: 0,
       demote: () => {},
     };
     (window as unknown as { __optics?: typeof diag }).__optics = diag;
@@ -542,6 +701,14 @@ export default function FieldStage({
       gl.uniform1f(layer.U("iFormB"), formBWeight);
       gl.uniform1f(layer.U("iEroA"), f.ea);
       gl.uniform1f(layer.U("iEroB"), f.eb);
+      // ?fsat=<c> overrides the uploaded ceiling for review; 0 is the exact
+      // rollback to the historical sum.
+      const sat = satOverride != null ? satOverride : (f.sat ?? 0);
+      gl.uniform1f(layer.U("iFieldSat"), sat);
+      diag.sat = sat;
+      diag.meltP = f.meltP ?? -1;
+      diag.formA = f.a;
+      diag.formB = f.b;
       gl.uniform2f(layer.U("iFormOff"), f.ox ?? 0, f.oy ?? 0);
       gl.uniform1f(layer.U("iFormScale"), f.scale ?? 1);
       gl.uniform1f(layer.U("iWarp"), f.warp);
@@ -572,8 +739,11 @@ export default function FieldStage({
       gl.uniform1f(layer.U("iGloss"), glass && glossRequested ? 1 : 0);
       diag.glass = glass ? 1 : 0;
       diag.gloss = glass && glossRequested ? 1 : 0;
-      gl.uniform3fv(layer.U("iBalls"), ballBuf);
       gl.uniform1i(layer.U("iBallCount"), f.count);
+      diag.count = f.count;
+      diag.motes = f.motes ?? 0;
+      diag.bindAvg = f.bindAvg ?? 0;
+      if (!tiledActive) gl.uniform3fv(layer.U("iBalls"), ballBuf);
       // Deformation is its OWN rung, not a passenger of the glass. Measured at
       // ~1.49× the plain glass pass, it is the largest single lever short of
       // resolution — so `rigid` sheds it to buy headroom while the material
@@ -591,7 +761,7 @@ export default function FieldStage({
       // while its endpoints stay put.
       const shape = shapeTierActive ? 1 : 0;
       if (shapeShaderActive) {
-        gl.uniform4fv(layer.U("iBallVelocity"), ballVelocity);
+        if (!tiledActive) gl.uniform4fv(layer.U("iBallVelocity"), ballVelocity);
         // The optics ride the same gate as the geometry — liquid that is not
         // allowed to deform must not be lit as though it were — and on top of
         // that they are OFF unless asked for (see strainRequested). ?fgrade=0
@@ -616,8 +786,88 @@ export default function FieldStage({
       const shadow = grade && shadowRequested;
       gl.uniform1f(layer.U("iShadow"), shadow ? SDF_GRADE.SHADOW : 0);
       diag.shadow = shadow ? 1 : 0;
-      gl.uniform1fv(layer.U("iBallZ"), zBuf);
-      gl.uniform1fv(layer.U("iBallDensity"), dBuf);
+      if (tiledActive && binner && ballRows) {
+        // ── the droplet texture ────────────────────────────────────────────
+        // Only the live slots are written: the tail of the texture is whatever
+        // the previous frame left, and no tile list can reference it, because
+        // the binner only ever emits indices below f.count.
+        const n = Math.min(f.count, ballCap);
+        for (let i = 0; i < n; i++) {
+          const b3 = i * 3;
+          const r0 = i * 4;
+          ballRows[r0] = ballBuf[b3];
+          ballRows[r0 + 1] = ballBuf[b3 + 1];
+          ballRows[r0 + 2] = ballBuf[b3 + 2];
+          ballRows[r0 + 3] = dBuf[i];
+          const r1 = ballCap * 4 + i * 4;
+          ballRows[r1] = zBuf[i];
+          ballRows[r1 + 1] = shape ? ballVelocity[i * 2] : 0;
+          ballRows[r1 + 2] = shape ? ballVelocity[i * 2 + 1] : 0;
+          ballRows[r1 + 3] = 0;
+        }
+        gl.activeTexture(gl.TEXTURE2);
+        gl.bindTexture(gl.TEXTURE_2D, ballTex);
+        gl.texSubImage2D(
+          gl.TEXTURE_2D, 0, 0, 0, ballCap, 2, gl.RGBA, gl.FLOAT, ballRows,
+        );
+
+        // ── the tile lists ─────────────────────────────────────────────────
+        // Rebuilt from the packed buffer every frame: the droplets moved, and a
+        // stale list is liquid missing from a tile rather than liquid slightly
+        // in the wrong place — a seam on a tile boundary, which reads as a
+        // shader bug. SDF_GRAD_MARGIN widens each droplet's footprint so the
+        // four gradient taps stay inside their own fragment's list.
+        binner.bin(
+          ballBuf,
+          n,
+          gl.drawingBufferWidth,
+          gl.drawingBufferHeight,
+          SDF_BALL_REACH,
+          SDF_GRAD_MARGIN,
+        );
+        const st = binner.stats;
+        gl.activeTexture(gl.TEXTURE3);
+        gl.bindTexture(gl.TEXTURE_2D, tileHeadTex);
+        if (st.tilesX !== tileHeadW || st.tilesY !== tileHeadH) {
+          tileHeadW = st.tilesX;
+          tileHeadH = st.tilesY;
+          gl.texImage2D(
+            gl.TEXTURE_2D, 0, gl.RG32UI, tileHeadW, tileHeadH, 0,
+            gl.RG_INTEGER, gl.UNSIGNED_INT, binner.head,
+          );
+        } else {
+          gl.texSubImage2D(
+            gl.TEXTURE_2D, 0, 0, 0, tileHeadW, tileHeadH,
+            gl.RG_INTEGER, gl.UNSIGNED_INT, binner.head,
+          );
+        }
+        gl.activeTexture(gl.TEXTURE4);
+        gl.bindTexture(gl.TEXTURE_2D, tileListTex);
+        // Only the rows the entries actually occupy are uploaded, so a quiet
+        // page pays a fraction of a busy one instead of a fixed worst case.
+        const rowsUsed = Math.max(1, Math.ceil(st.entries / TILE_LIST_W));
+        const capH = Math.max(1, Math.ceil(binner.list.length / TILE_LIST_W));
+        if (capH !== tileListH) {
+          tileListH = capH;
+          gl.texImage2D(
+            gl.TEXTURE_2D, 0, gl.R32UI, TILE_LIST_W, tileListH, 0,
+            gl.RED_INTEGER, gl.UNSIGNED_INT, binner.list,
+          );
+        } else {
+          gl.texSubImage2D(
+            gl.TEXTURE_2D, 0, 0, 0, TILE_LIST_W, rowsUsed,
+            gl.RED_INTEGER, gl.UNSIGNED_INT, binner.list,
+          );
+        }
+        gl.uniform2i(layer.U("iTiles"), st.tilesX, st.tilesY);
+        diag.tiles = st.tilesX * st.tilesY;
+        diag.tileEntries = st.entries;
+        diag.tileMax = st.maxPerTile;
+        diag.tileOver = st.over;
+      } else {
+        gl.uniform1fv(layer.U("iBallZ"), zBuf);
+        gl.uniform1fv(layer.U("iBallDensity"), dBuf);
+      }
       gl.clearColor(0, 0, 0, 0);
       gl.clear(gl.COLOR_BUFFER_BIT);
       gl.drawArrays(gl.TRIANGLES, 0, 3);
@@ -691,12 +941,27 @@ export default function FieldStage({
     ] as const;
     for (const ev of INPUT_EVENTS)
       window.addEventListener(ev, markInput, { passive: true });
+    // Applying a rung's population is a PACKING budget, never an allocation: the
+    // conductor keeps simulating everything it was built with, so a demotion
+    // strands no physics state and a recovered rung brings its motes back where
+    // they would have been rather than snapping them in from their stations.
+    const applyPopulation = () => {
+      const set = driverRef.current.setPopulation;
+      if (!set) return;
+      const sim = driverRef.current.population?.simulated ?? 0;
+      // Only the tiled path has room for a population; the uniform arrays stop
+      // at 80 and every slot past the authored 48 is owed to the atmosphere,
+      // the spray and the cursor chain.
+      diag.pop = set(tiledActive ? Math.round(sim * RUNG_POP[liveTier]) : 0);
+    };
+    applyPopulation();
     const downshift = () => {
       wdWarm = 0;
       wdSlow = 0;
       const next = NEXT_RUNG[liveTier];
       if (!next) return; // already on the floor
       liveTier = next;
+      applyPopulation();
       if (next === "fullnofx") {
         // No rung promotes this instance back to full. Release the framebuffer
         // targets now instead of retaining their GPU memory until unmount; a

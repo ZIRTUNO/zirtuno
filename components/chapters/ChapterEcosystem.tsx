@@ -1,6 +1,6 @@
 import { useTranslations } from "next-intl";
 import { Reveal } from "@/components/ui/Reveal";
-import { LogoMark } from "@/components/hero/LogoMark";
+import { ConfluenceMark } from "@/components/chapters/ConfluenceMark";
 import { CtaStructure, CtaPortfolio } from "@/components/chrome/CtaButton";
 import { GATHER_SYSTEMS } from "@/lib/webgl/gathering.mjs";
 
@@ -20,6 +20,12 @@ type Node = { name: string; tooltip: string };
  * the gathering is scrubbed across — no pins), a closing line that only makes
  * sense once the body is whole, and the semantic capability stack for narrow
  * viewports, assistive tech and static tiers. Copy is server-rendered (RSC).
+ *
+ * What the gathering RESOLVES INTO is THE CONFLUENCE (lib/webgl/confluence.mjs)
+ * — three arms of liquid running in from the three systems and merging into one
+ * core, made of the same 48 droplets that carried them. It is not the Zirtuno
+ * mark and there is no vector behind it; the static fallback below draws the
+ * same stations rather than a different symbol.
  *
  * The live capability names and system markers are portalled into the sticky
  * layer by PageStage, so they can ride the liquid masses in its pixel space.
@@ -61,8 +67,10 @@ export function ChapterEcosystem({ hasWork }: { hasWork: boolean }) {
           id="ecosystem-interactions-host"
           className="ecosystem-interactions-host"
         />
+        {/* Static / reduced-motion / no-WebGL: the same symbol the liquid
+            resolves into, drawn from the same station table. */}
         <div className="journey-static organism-fallback">
-          <LogoMark ariaLabel={t("centerLabel")} />
+          <ConfluenceMark ariaLabel={t("centerLabel")} />
         </div>
       </div>
 

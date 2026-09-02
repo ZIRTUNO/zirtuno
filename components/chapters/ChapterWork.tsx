@@ -1,7 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import { Reveal } from "@/components/ui/Reveal";
 import { CtaAnalysis, CtaPortfolio } from "@/components/chrome/CtaButton";
-import { ProjectCard } from "./ProjectCard";
+import { WorkGallery } from "@/components/work/WorkGallery";
 import { getFeaturedProjects } from "@/lib/content/work";
 
 /**
@@ -21,7 +21,7 @@ export async function ChapterWork() {
     <section
       id="work"
       data-chapter
-      className="page-x relative py-24 md:py-32"
+      className="page-x relative py-[var(--space-section)]"
     >
       <Reveal inView as="p" className="chapter-label">
         {t("chapterLabel")}
@@ -41,28 +41,18 @@ export async function ChapterWork() {
 
       {projects.length > 0 ? (
         <>
-          <div className="work-strip mt-16 grid gap-10 sm:grid-cols-2">
-            {projects.map((project, index) => (
-              <Reveal
-                inView
-                key={project.slug}
-                delay={Math.min(index, 3) * 0.05}
-              >
-                <ProjectCard project={project} />
-              </Reveal>
-            ))}
-          </div>
+          <WorkGallery projects={projects} className="work-strip mt-[var(--space-span)]" />
 
-          <Reveal inView className="mt-12 flex">
+          <Reveal inView className="mt-[var(--space-block)] flex">
             <CtaPortfolio placement="work" />
           </Reveal>
         </>
       ) : (
-        <Reveal inView className="work-empty mt-14">
+        <Reveal inView className="work-empty mt-[var(--space-block)]">
           <p className="work-empty-label">{t("emptyLabel")}</p>
           <p className="work-empty-body">{t("emptyPortfolio")}</p>
           <p className="work-empty-invite">{t("emptyInvite")}</p>
-          <div className="mt-7 flex">
+          <div className="mt-[var(--space-group)] flex">
             <CtaAnalysis placement="work_empty" />
           </div>
         </Reveal>

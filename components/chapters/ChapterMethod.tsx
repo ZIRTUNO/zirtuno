@@ -26,7 +26,7 @@ export function ChapterMethod() {
       data-chapter
       className="relative"
     >
-      <div className="page-x pt-24 md:pt-32">
+      <div className="page-x pt-[var(--space-section)]">
         <Reveal inView as="p" className="chapter-label">
           {t("chapterLabel")}
         </Reveal>
@@ -58,7 +58,7 @@ export function ChapterMethod() {
         </ol>
       </div>
 
-      <div className="page-x pb-24 md:pb-32">
+      <div className="page-x pb-[var(--space-section)]">
         <Reveal inView className="flex flex-wrap items-center gap-x-8 gap-y-4">
           <CtaAnalysis placement="method" />
         </Reveal>

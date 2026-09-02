@@ -22,7 +22,7 @@ export function ChapterProblem() {
 
   return (
     <section id="problem" data-chapter className="relative">
-      <div className="page-x relative py-24 md:py-32">
+      <div className="page-x relative py-[var(--space-section)]">
         <Reveal inView as="p" className="chapter-label">
           {t("chapterLabel")}
         </Reveal>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { createPortal } from "react-dom";
 import dynamic from "next/dynamic";
@@ -22,6 +22,8 @@ import {
   fuse as gatherFuse,
 } from "@/lib/webgl/gathering.mjs";
 import { makeConductor } from "@/lib/webgl/conductor.mjs";
+import { N } from "@/lib/webgl/phys.mjs";
+import { SDF_BALL_CAP_TILED } from "@/lib/webgl/sdf-glass-shader.mjs";
 
 import {
   FLUID_OBSTACLE_MAX,
@@ -40,7 +42,6 @@ import { makeStudioScene } from "@/lib/webgl/scenes/studio";
 import { makeContactScene, EXHALE_EVENT } from "@/lib/webgl/scenes/contact";
 import { makeFooterScene } from "@/lib/webgl/scenes/footer";
 import { CinematicVeils } from "./CinematicVeils";
-import { HeroLiquidContext, type HeroLiquid } from "./hero-liquid-context";
 
 // the unified liquid field is client-only (WebGL2) → lazy, no SSR.
 const FieldStage = dynamic(() => import("@/components/field/FieldStage"), {
@@ -67,16 +68,41 @@ const FLOW_OBSTACLES = [
   ["#contact .contact-form", 1],
 ] as const;
 
+/**
+ * Simulated droplets per authored one (R6).
+ *
+ * The authored population is 48 — what every form SVG is packed to and what the
+ * scenes address. Ranks above the first are MOTES: ordinary droplets whose
+ * targets are derived from a host's (lib/webgl/motes.mjs), so the whole crowd
+ * inherits every composition without a scene knowing it exists.
+ *
+ * 8 ranks is 384 simulated droplets. Measured cost on this machine: 0.69 ms of
+ * conductor step plus 0.11 ms of tile binning per frame, against ~8 ms of GPU —
+ * so the population is a GPU decision, and the renderer's rung ladder is what
+ * actually spends it (RUNG_POP in FieldStage). A probe-lite machine allocates
+ * less rather than allocating everything and immediately shedding it.
+ *
+ * The lite figure is deliberately not timid. The probe (field-tier.ts) measures
+ * the OLD field shader — a full 48-ball uniform-array loop — so it is scoring a
+ * cost model the tiled renderer no longer has, and it classifies this dev
+ * machine lite. A lite machine also opens on the `rigid` rung, where RUNG_POP is
+ * 0.5, so the ranks here are halved again before anything is drawn: at 3 that
+ * left 24 motes over 48 hosts, which is indistinguishable from none. Measured on
+ * that machine at that rung: 10.2 ms median, 16.9 ms p90 — headroom the ladder
+ * will take back on its own if the machine turns out not to have it.
+ */
+const MOTE_RANKS = { full: 8, lite: 5 } as const;
+
 function makeJourneyRuntime(
-  onHeroActive: (active: number) => void,
   search: URLSearchParams | null,
+  tier: FieldTier | null,
 ) {
   // journey order: site → método → work → origin → studio → contact →
   // footer — the R5-D scenes fill what were the liquid-dead bands.
   // The Hero stream is rendered by components/hero/HeroRibbon. The page field
   // begins its work as the Hero leaves for The Problem.
   const scenes: SceneModule[] = [
-    makeSiteScene({ onHeroActive }),
+    makeSiteScene(),
     makeMethodScene(),
     makeWorkScene(),
     makeOriginScene(),
@@ -108,6 +134,35 @@ function makeJourneyRuntime(
   const formGain =
     Number.isFinite(formGainParsed) && formGainParsed >= 0 ? formGainParsed : 1;
   const cine = search?.get("fcine") !== "0";
+  // ?fmotes=<ranks> — the population, in droplets per authored droplet. 1 is
+  // the pre-R6 system exactly: no motes, and every array, loop and force in the
+  // conductor and the fluid core identical to what they were. ?ftemper=<0…1>
+  // is the other half of the rollback: 0 restores pre-R6 MOTION (the shared
+  // curl with no per-droplet character) while leaving the population alone, so
+  // the two halves of R6 can be judged apart.
+  const ranksRaw = search?.get("fmotes");
+  const ranksParsed = ranksRaw === null || ranksRaw === undefined
+    ? (tier === "lite" ? MOTE_RANKS.lite : MOTE_RANKS.full)
+    : Number(ranksRaw);
+  const ranks =
+    Number.isFinite(ranksParsed) && ranksParsed >= 1
+      ? Math.min(Math.floor(ranksParsed), 16)
+      : 1;
+  // ?fleash=<n> — the neighbourhood a free droplet may wander inside instead of
+  // being sprung to a point. 0 restores the pre-R6-B spring exactly, which is
+  // the A/B for "is the liquid too loose"; values above 1 open it further.
+  const leashRaw = search?.get("fleash");
+  const leashParsed =
+    leashRaw === null || leashRaw === undefined ? 1 : Number(leashRaw);
+  const leash =
+    Number.isFinite(leashParsed) && leashParsed >= 0 ? leashParsed : 1;
+  const temperRaw = search?.get("ftemper");
+  const temperParsed =
+    temperRaw === null || temperRaw === undefined ? 1 : Number(temperRaw);
+  const temper =
+    Number.isFinite(temperParsed) && temperParsed >= 0
+      ? Math.min(temperParsed, 1)
+      : 1;
 
   return [
     makeConductor(scenes, {
@@ -117,6 +172,14 @@ function makeJourneyRuntime(
       strike,
       formGain,
       cine,
+      // Only the tiled renderer can carry a population; on a device that falls
+      // back to the uniform arrays FieldStage packs the authored 48 and the
+      // motes stay simulated but undrawn. Allocating for the tier rather than
+      // for the renderer keeps this one decision in one place.
+      pop: tier === null ? undefined : N * ranks,
+      temper,
+      leash,
+      ballMax: SDF_BALL_CAP_TILED,
     }),
     scenes,
     cine,
@@ -139,15 +202,14 @@ function makeJourneyRuntime(
  * capability names and system markers, the origin founding-pillar labels, and
  * the method progress
  * thread (--method-flow). Deterministic layering: canvas z-0 (pointer-events
- * none), copy z-10, Ecosystem controls z-12. Reduced-motion / "none" tier /
- * hero QA stills render no
- * canvas and flag the wrapper `data-liquid="static"` so every chapter's
- * static fallback shows instead.
+ * none), copy z-10, Ecosystem controls z-12. Reduced-motion / "none" tiers
+ * render no canvas and flag the wrapper `data-liquid="static"` so every
+ * chapter's static fallback shows instead.
  *
- * QA: ?feco=c freezes the S3 gathering at c ∈ [0,1]; ?fcycle=1 shortens
- * the hero dwell; ?fstate/?fpair/?fcursor/?fflat switch the hero to its
- * deterministic standalone renderers (page canvas off). window.__liquid
- * exposes the site scene's raw channels; window.__scenes exposes all seven.
+ * QA: ?feco=c freezes the S3 gathering at c ∈ [0,1]. Exact form stills live
+ * on the isolated `/[locale]/lab/forms` route, not inside the homepage.
+ * window.__liquid exposes the site scene's raw channels; window.__scenes
+ * exposes all seven.
  */
 export function PageStage({
   nodes,
@@ -168,9 +230,7 @@ export function PageStage({
   const layerRef = useRef<HTMLDivElement>(null);
   const [tier, setTier] = useState<FieldTier | null>(null);
   const [fEco, setFEco] = useState<number | null>(null);
-  const [heroQA, setHeroQA] = useState(false);
-  const [heroReady, setHeroReady] = useState(false);
-  const [heroActive, setHeroActive] = useState(-1);
+  const [fieldReady, setFieldReady] = useState(false);
   const [ecoInteractive, setEcoInteractive] = useState(false);
   const [ecoKeyboardEnabled, setEcoKeyboardEnabled] = useState(false);
   const [openEcoNode, setOpenEcoNode] = useState<number | null>(null);
@@ -198,32 +258,23 @@ export function PageStage({
     h: number;
   } | null>(null);
   const ecoObstacleOn = useRef(false);
-  const stageEl = useRef<HTMLElement | null>(null);
   const ecoLayerEl = useRef<HTMLDivElement | null>(null);
   const ecoInteractiveRef = useRef(false);
-  const heroPointerActive = useRef(false);
-  const heroFocusActive = useRef(false);
-  const inViewRef = useRef(true);
-  useEffect(() => {
-    inViewRef.current = inView;
-  }, [inView]);
 
   // Client components are also rendered on the server. Build an SSR-safe
   // default bundle, then replace it from the real browser query before the
   // tier probe can mount the canvas. This keeps hydration deterministic while
   // making review/rollback flags effective in production.
-  const [runtime, setRuntime] = useState(() =>
-    makeJourneyRuntime(setHeroActive, null),
-  );
+  const [runtime, setRuntime] = useState(() => makeJourneyRuntime(null, null));
   const [conductor, scenes, cine, physicsMode, obstacleFlow] = runtime;
   const site = conductor.raw.site;
-  const enabled = !reduced && !heroQA && (tier === "full" || tier === "lite");
+  const enabled = !reduced && (tier === "full" || tier === "lite");
 
   useEffect(() => {
     setRuntime(
       makeJourneyRuntime(
-        setHeroActive,
         new URLSearchParams(window.location.search),
+        detectFieldTier(),
       ),
     );
   }, []);
@@ -236,13 +287,7 @@ export function PageStage({
       const c = Number(fc);
       if (Number.isFinite(c) && c >= 0 && c <= 1) setFEco(c);
     }
-    if (sp.get("fcycle") === "1") site.heroDwellMs = 2000;
-    // hero QA stills mount their own deterministic renderers — the page canvas
-    // must not double-render the hero underneath them
-    setHeroQA(
-      ["fstate", "fpair", "fcursor", "fflat"].some((k) => sp.get(k) !== null),
-    );
-  }, [site]);
+  }, []);
 
   // Keep the focusable organism controls in Chapter Ecosystem's DOM order
   // while PageStage retains their shared choreography and geometry.
@@ -278,38 +323,6 @@ export function PageStage({
     w.__cine = { score: conductor.score, stats: conductor.stats };
     w.__flow = conductor.input;
   }, [site, conductor]);
-
-  const setManual = useCallback(
-    (n: number | null) => {
-      site.heroManual = n === null ? -1 : n;
-    },
-    [site],
-  );
-  const syncHeroPause = useCallback(() => {
-    site.heroHover =
-      heroPointerActive.current || heroFocusActive.current ? 1 : 0;
-  }, [site]);
-  const setPaused = useCallback(
-    (paused: boolean) => {
-      heroFocusActive.current = paused;
-      syncHeroPause();
-    },
-    [syncHeroPause],
-  );
-  const registerStage = useCallback((el: HTMLElement | null) => {
-    stageEl.current = el;
-  }, []);
-  const heroCtx = useMemo<HeroLiquid>(
-    () => ({
-      live: enabled,
-      ready: heroReady,
-      active: heroActive,
-      setManual,
-      setPaused,
-      registerStage,
-    }),
-    [enabled, heroReady, heroActive, setManual, setPaused, registerStage],
-  );
 
   // the exhale gesture (ContactForm dispatches on submit) → the contact scene
   useEffect(() => {
@@ -770,48 +783,20 @@ export function PageStage({
       conductor.input.obstacleCount = count;
     };
 
-    // gooey cursor + autocycle hover-pause: the WHOLE hero section is the
-    // pointer surface (the liquid has no interior edge to clip against)
-    const heroSec = document.getElementById("hero");
     const canHover =
       typeof window.matchMedia === "function" &&
       window.matchMedia("(hover: hover) and (pointer: fine)").matches;
-    const toFieldUv = (e: PointerEvent) => {
-      const md = Math.min(window.innerWidth, window.innerHeight);
-      site.heroPx = 0.5 + (e.clientX - window.innerWidth / 2) / md;
-      site.heroPy = 0.5 - (e.clientY - window.innerHeight / 2) / md;
-    };
-    const onEnter = (e: PointerEvent) => {
-      heroPointerActive.current = true;
-      syncHeroPause();
-      toFieldUv(e);
-      site.heroCursorOn = 1;
-    };
-    const onMove = (e: PointerEvent) => {
-      toFieldUv(e);
-      site.heroCursorOn = 1;
-    };
-    const onLeave = () => {
-      heroPointerActive.current = false;
-      syncHeroPause();
-      site.heroCursorOn = 0;
-    };
-    if (canHover && heroSec) {
-      heroSec.addEventListener("pointerenter", onEnter);
-      heroSec.addEventListener("pointermove", onMove);
-      heroSec.addEventListener("pointerleave", onLeave);
-    }
 
     // the work meniscus (R5-D): delegated hover over the project cards → the
     // work scene's raw `hov` channel (index into its measured card list —
     // both sides query the same selector, so the order matches)
     const workSec = document.getElementById("work");
     const workCards = workSec
-      ? Array.from(workSec.querySelectorAll<HTMLElement>(".project-card"))
+      ? Array.from(workSec.querySelectorAll<HTMLElement>(".zw-card"))
       : [];
     const workCardFrom = (target: EventTarget | null) =>
       target instanceof Element
-        ? target.closest<HTMLElement>(".project-card")
+        ? target.closest<HTMLElement>(".zw-card")
         : null;
     const setWorkCard = (card: HTMLElement | null) => {
       conductor.raw.work.hov = card ? workCards.indexOf(card) : -1;
@@ -957,22 +942,10 @@ export function PageStage({
       lastY = y;
       lastNow = now;
 
-      site.heroPlay = inViewRef.current ? 1 : 0;
-
       // pointer velocity decays between move events (a resting hand lets go)
       conductor.input.pvx *= 0.82;
       conductor.input.pvy *= 0.82;
       applyObstacleFlow(vh, vw, md, y);
-
-      // hero staging: the liquid form sits exactly over the stage box and
-      // rides with it — while the POUR sheds its droplets into the fixed field
-      const st = stageEl.current;
-      if (st) {
-        const r = st.getBoundingClientRect();
-        site.heroOx = (r.left + r.width / 2 - vw / 2) / md;
-        site.heroOy = (vh / 2 - (r.top + r.height / 2)) / md;
-        site.heroScale = Math.min(r.width, r.height) / md;
-      }
 
       // every scene's geometry → channels (pure math, reads only)
       for (let si = 0; si < scenes.length; si++) {
@@ -1002,13 +975,6 @@ export function PageStage({
       if (obstacleWarmup) window.clearTimeout(obstacleWarmup);
       if (obstacleFlow)
         window.removeEventListener("resize", queueObstacleGeometry);
-      if (canHover && heroSec) {
-        heroSec.removeEventListener("pointerenter", onEnter);
-        heroSec.removeEventListener("pointermove", onMove);
-        heroSec.removeEventListener("pointerleave", onLeave);
-      }
-      heroPointerActive.current = false;
-      syncHeroPause();
       if (canHover && workSec && workCards.length > 0) {
         workSec.removeEventListener("pointerover", onWorkOver);
         workSec.removeEventListener("pointerleave", onWorkOut);
@@ -1042,21 +1008,18 @@ export function PageStage({
     scenes,
     site,
     obstacleFlow,
-    syncHeroPause,
     wrapRef,
   ]);
 
   return (
-    <HeroLiquidContext.Provider value={heroCtx}>
-      <div
-        ref={wrapRef}
-        className="liquid-journey"
-        data-liquid={enabled ? "live" : "static"}
-        data-field-ready={heroReady ? "true" : "false"}
-        data-hero-qa={heroQA ? "true" : "false"}
-        data-fluid-physics={physicsMode}
-        data-fluid-obstacles={obstacleFlow ? "true" : "false"}
-      >
+    <div
+      ref={wrapRef}
+      className="liquid-journey"
+      data-liquid={enabled ? "live" : "static"}
+      data-field-ready={fieldReady ? "true" : "false"}
+      data-fluid-physics={physicsMode}
+      data-fluid-obstacles={obstacleFlow ? "true" : "false"}
+    >
         <div className="journey-layer" ref={layerRef}>
           {/* S7's ground — inside the sticky layer so it holds still while the
               runway scrolls past. It paints ABOVE the canvas and blends as
@@ -1083,8 +1046,8 @@ export function PageStage({
                 driver={conductor.driver}
                 play={inView}
                 tier={tier === "lite" ? "lite" : "full"}
-                onReady={() => setHeroReady(true)}
-                onContextLost={() => setHeroReady(false)}
+                onReady={() => setFieldReady(true)}
+                onContextLost={() => setFieldReady(false)}
                 onTierChange={setFieldTier}
               />
             </div>
@@ -1202,7 +1165,6 @@ export function PageStage({
         {/* Score-driven light stays above both story layers and below chrome. */}
         {enabled && cine && fEco === null && <CinematicVeils />}
         <div className="journey-content">{children}</div>
-      </div>
-    </HeroLiquidContext.Provider>
+    </div>
   );
 }

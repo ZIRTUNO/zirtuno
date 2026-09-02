@@ -22,7 +22,7 @@ export function ChapterContact({
     <section
       id="contact"
       data-chapter
-      className="page-x relative py-24 md:py-32"
+      className="page-x relative py-[var(--space-section)]"
     >
       <div className="mx-auto max-w-2xl text-center">
         <ContactMetaball />
@@ -46,7 +46,7 @@ export function ChapterContact({
         </Reveal>
       </div>
 
-      <div className="mx-auto mt-14 max-w-xl">
+      <div className="mx-auto mt-[var(--space-block)] max-w-xl">
         <ContactForm
           initialIntent={initialIntent}
           initialStatus={initialStatus}
