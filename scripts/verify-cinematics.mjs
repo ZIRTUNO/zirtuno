@@ -47,7 +47,6 @@ async function sampleAt(page, y, settleMs = 550) {
       const n = parseFloat(s);
       return Number.isFinite(n) ? n : 0;
     };
-    const cine = window.__cine;
     return {
       y: window.scrollY,
       veil: num("--cine-veil"),
@@ -67,7 +66,11 @@ const browser = await chromium.launch(LAUNCH);
     reducedMotion: "no-preference",
   });
   const page = await ctx.newPage();
-  await page.goto(`${BASE}/en?ftier=full&fgov=0`, { waitUntil: "domcontentloaded" });
+  // EXTRA_QS appends rollback flags to section A, so a failure here can be
+  // attributed: rerun with EXTRA_QS="fmotes=1&ftemper=0&ftile=0" and a result
+  // that does not move is a pre-existing one, not a liquid regression.
+  await page.goto(
+    `${BASE}/en?ftier=full&fgov=0${process.env.EXTRA_QS ? "&" + process.env.EXTRA_QS : ""}`, { waitUntil: "domcontentloaded" });
   await page.waitForFunction(() => !!document.querySelector(".journey-canvas canvas"), {
     timeout: 40000,
   });
@@ -189,9 +192,9 @@ const browser = await chromium.launch(LAUNCH);
   // state, not a cinematic defect — the current swims regardless (asserted
   // above). The hover drill only runs when cards exist to hover.
   await sampleAt(page, Math.round(A.work.top + A.work.h * 0.35 - A.vh * 0.45), 800);
-  const hadCard = (await page.locator("#work .project-card").count()) > 0;
+  const hadCard = (await page.locator("#work .zw-card").count()) > 0;
   if (hadCard) {
-    await page.locator("#work .project-card").first().hover();
+    await page.locator("#work .zw-card").first().hover();
     await page.waitForTimeout(400);
     const hov = await page.evaluate(() => ({
       hov: window.__scenes?.work?.hov,

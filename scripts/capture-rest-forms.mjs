@@ -1,7 +1,7 @@
 // Rest-form fidelity sheet (morph-spec v1.6): the hero rests as the EXACT
 // vector forms rendered as living liquid glass (warped SDF). This captures
-// every resting form (?fstate=N, the frozen rest frame — zero warp, pixel-
-// exact) next to its reference SVG to prove the match and catch regressions.
+// every resting form on the isolated /lab/forms QA surface (?fstate=N, the
+// frozen rest frame — zero warp, pixel-exact) next to its reference SVG.
 // Dev server must be running:
 //   node scripts/capture-rest-forms.mjs
 // Writes captures/rest-forms-sheet.png (+ per-form rest-<key>.png).
@@ -49,7 +49,7 @@ page.on("console", (m) => m.type() === "error" && console.error("CONSOLE:", m.te
 
 const cells = [];
 for (let i = 0; i < KEYS.length; i++) {
-  await page.goto(`${BASE}/${LOCALE}?fstate=${i}&ftier=full`, {
+  await page.goto(`${BASE}/${LOCALE}/lab/forms?fstate=${i}`, {
     waitUntil: "networkidle",
   });
   const stage = page.locator("[data-hero-metaball]");

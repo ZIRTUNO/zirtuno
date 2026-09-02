@@ -20,7 +20,16 @@
 import { makeConductor, EPS_FORM } from "../lib/webgl/conductor.mjs";
 import { N, PHYS } from "../lib/webgl/phys.mjs";
 import { FLUID } from "../lib/webgl/fluid-core.mjs";
-import { SDF_BALL_MAX, SDF_WARP_REST } from "../lib/webgl/sdf-glass-shader.mjs";
+import { MOTE } from "../lib/webgl/motes.mjs";
+import { temperOf } from "../lib/webgl/temperament.mjs";
+import { makeTileBinner, TILE_PX } from "../lib/webgl/tile-bin.mjs";
+import {
+  SDF_BALL_MAX,
+  SDF_BALL_CAP_TILED,
+  SDF_BALL_REACH,
+  SDF_GRAD_MARGIN,
+  SDF_WARP_REST,
+} from "../lib/webgl/sdf-glass-shader.mjs";
 
 const failures = [];
 const ok = (cond, msg) => {
@@ -287,24 +296,32 @@ const mkJumpScene = (bind) => ({
     c.driver.frame(t, buf, 1.5); // settle at the initial target
   }
   c.raw.J.jump = 1;
+  // ARRIVAL IS AT THE NEIGHBOURHOOD, not at the point (R6-B). A free droplet is
+  // no longer sprung to its target — it is contained within FLUID.LEASH_R of it
+  // and advected by the flow inside that — so "reaches 0.7 to within 0.004 uv"
+  // is now a test of a behaviour the engine deliberately does not have. What it
+  // was really protecting is intact and still asserted here: the liquid follows
+  // a jumped target PROMPTLY, and it does not ring. Both are measured against
+  // the leash the droplet is actually entitled to.
+  const jumpLeash = FLUID.LEASH_R * 0.02 * temperOf(0).roam;
   let settledAt = -1;
   let overshoot = 0;
   for (let fr = 0; fr < 180; fr++) {
     t += 16.7;
     const f = c.driver.frame(t, buf, 1.5);
     const x = buf[0]; // droplet 0 (first packed)
-    if (x > 0.7) overshoot = Math.max(overshoot, x - 0.7);
-    if (settledAt < 0 && Math.abs(x - 0.7) < 0.004) settledAt = fr * 16.7;
+    if (x > 0.7 + jumpLeash) overshoot = Math.max(overshoot, x - 0.7 - jumpLeash);
+    if (settledAt < 0 && Math.abs(x - 0.7) < jumpLeash) settledAt = fr * 16.7;
     ok(finiteFrame(f), `settle frame ${fr} not finite`);
   }
   ok(
     settledAt >= 0 && settledAt < 1500,
-    `settle: free droplet took ${settledAt}ms (want < 1500)`,
+    `settle: free droplet took ${settledAt}ms to reach its leash (want < 1500)`,
   );
   // a whisper of slosh on a hard 0.4-uv jump is liquid; ringing is not
   ok(
     overshoot < 0.025,
-    `settle: overshoot ${overshoot.toFixed(4)} ≥ 0.025 (ringing)`,
+    `settle: overshoot ${overshoot.toFixed(4)} uv past the leash ≥ 0.025 (ringing)`,
   );
 }
 
@@ -836,34 +853,56 @@ const mkJumpScene = (bind) => ({
       hit.driver.frame(t, buf, 1.5);
       control.driver.frame(t, ctlBuf, 1.5);
     }
+    // DISSIPATION IS A SPEED QUESTION, NOT A POSITION ONE (R6-B).
+    //
+    // This used to require the struck field's POSITIONS to re-converge on the
+    // control's, to within 12% of the peak divergence. That worked while every
+    // droplet was sprung to a point: both runs were pulled back to the same
+    // stations, so the trajectories rejoined. Free droplets advected by a flow
+    // do not rejoin — a perturbation changes which eddy a droplet lands in, and
+    // the two runs stay apart forever. That is sensitive dependence, which is a
+    // property of fluids and not a bug, but it means position can no longer
+    // answer "did the wave's energy dissipate".
+    //
+    // Speed can, and it is the more direct question anyway: after the wave has
+    // passed, the struck field must be moving no faster than the unstruck one.
+    const speeds = (a, b2) => {
+      let sum = 0;
+      for (let i = 0; i < N; i++)
+        sum += Math.hypot(a[i * 3] - b2[i * 3], a[i * 3 + 1] - b2[i * 3 + 1]);
+      return sum / N;
+    };
+    const prevHit = new Float32Array(SDF_BALL_MAX * 3);
+    const prevCtl = new Float32Array(SDF_BALL_MAX * 3);
+    prevHit.set(buf);
+    prevCtl.set(ctlBuf);
     hit.strike(0.5, 0.5, 1);
     let peak = 0;
     let peakMs = 0;
     let quiet = -1;
+    let ctlSpeed = 0;
     for (let fr = 0; fr < 420; fr++) {
       t += 16.7;
       hit.driver.frame(t, buf, 1.5);
       control.driver.frame(t, ctlBuf, 1.5);
-      let maxD = 0;
-      for (let i = 0; i < N; i++)
-        maxD = Math.max(
-          maxD,
-          Math.hypot(
-            buf[i * 3] - ctlBuf[i * 3],
-            buf[i * 3 + 1] - ctlBuf[i * 3 + 1],
-          ),
-        );
-      if (maxD > peak) {
-        peak = maxD;
+      const vHit = speeds(buf, prevHit);
+      const vCtl = speeds(ctlBuf, prevCtl);
+      prevHit.set(buf);
+      prevCtl.set(ctlBuf);
+      // the wave's own contribution: how much faster the struck field moves
+      const excess = vHit - vCtl;
+      ctlSpeed = ctlSpeed * 0.94 + vCtl * 0.06; // the ambient it must return to
+      if (excess > peak) {
+        peak = excess;
         peakMs = fr * 16.7;
       }
-      if (quiet < 0 && fr * 16.7 > peakMs && peak > 0 && maxD < peak * 0.12)
+      if (quiet < 0 && fr * 16.7 > peakMs + 200 && peak > 0 && excess < peak * 0.15)
         quiet = fr * 16.7;
     }
-    ok(peak > 0.02, `strike: barely registered (peak ${peak.toFixed(4)} uv)`);
+    ok(peak > 1e-4, `strike: barely registered (peak excess speed ${peak.toExponential(2)} uv/frame)`);
     ok(
       quiet >= 0 && quiet < 2500,
-      `strike: liquid never settled after the wave passed (peak ${peak.toFixed(4)} at ${peakMs.toFixed(0)}ms, still ringing)`,
+      `strike: the wave's energy never dissipated (peak excess ${peak.toExponential(2)} at ${peakMs.toFixed(0)}ms, still ringing)`,
     );
   }
 
@@ -893,9 +932,34 @@ const mkJumpScene = (bind) => ({
       onLiquid.peak > onLiquid.before,
       `strike: no crown thrown from liquid it landed on (${onLiquid.before} → ${onLiquid.peak})`,
     );
+    // THE CROWN'S BUDGET, ISOLATED FROM THE BLOW'S OTHER SPRAY.
+    //
+    // This used to bound the total rise in packed count, and that stopped
+    // measuring the crown once droplets were given a leash (R6-B): a hard blow
+    // now stretches liquid past leash + SAT_STRAIN and it PINCHES OFF, which is
+    // the shedding mechanism working as intended — a harder blow throws more
+    // spray, which SHOCK_SPRAY alone cannot express because it is a constant.
+    // Measured across ten strike positions at three strengths, the blow adds up
+    // to three pinch-offs of its own.
+    //
+    // So the crown is measured against the same strike with the crown mechanism
+    // SUPPRESSED. The difference is the crown and nothing else, which is the
+    // invariant this test was always trying to state. The flood guard is
+    // separate and unchanged: FLUID.SAT_POOL bounds every satellite family
+    // together, and the buffer-overflow gate above bounds the packed buffer.
+    const keepSpray = FLUID.SHOCK_SPRAY;
+    FLUID.SHOCK_SPRAY = 0;
+    const noCrown = crownPeak(0.5, 0.5);
+    FLUID.SHOCK_SPRAY = keepSpray;
+    const crownOnly =
+      onLiquid.peak - onLiquid.before - (noCrown.peak - noCrown.before);
     ok(
-      onLiquid.peak - onLiquid.before <= FLUID.SHOCK_SPRAY,
-      `strike: crown exceeded its budget (${onLiquid.peak - onLiquid.before} > ${FLUID.SHOCK_SPRAY})`,
+      crownOnly <= FLUID.SHOCK_SPRAY,
+      `strike: the crown exceeded its budget (${crownOnly} > ${FLUID.SHOCK_SPRAY})`,
+    );
+    ok(
+      onLiquid.peak - onLiquid.before <= FLUID.SAT_POOL,
+      `strike: total spray outran the satellite pool (${onLiquid.peak - onLiquid.before} > ${FLUID.SAT_POOL})`,
     );
 
     // inside the wave's reach, far outside any droplet: the front still
@@ -1277,11 +1341,310 @@ const mkScoreScene = (id, sc) => ({
   );
 }
 
+// ── R6-A: the population past the authored 48 ───────────────────────────────
+// The claim this gates is the one the whole R6 population rests on: a mote is an
+// ordinary droplet everywhere except that its target is DERIVED and its presence
+// is its host's freedom. So — finite everywhere, inside the buffer, absent while
+// its host is bound, and never able to displace an authored droplet.
+{
+  const POP = N * 8; // deliberately past the ball buffer, to exercise the ceiling
+  const c = makeConductor([mkScene("P", 0.4, 0)], {
+    pop: POP,
+    ballMax: SDF_BALL_CAP_TILED,
+  });
+  const b2 = new Float32Array(SDF_BALL_CAP_TILED * 3);
+  const z2 = new Float32Array(SDF_BALL_CAP_TILED);
+  const d2 = new Float32Array(SDF_BALL_CAP_TILED).fill(1);
+  ok(
+    c.driver.population.simulated === POP && c.driver.population.authored === N,
+    `motes: population ${JSON.stringify(c.driver.population)}`,
+  );
+  let t = 0;
+  c.raw.P.p = 1;
+  let maxCount = 0;
+  for (let fr = 0; fr < 400; fr++) {
+    t += 16.7;
+    const f = c.driver.frame(t, b2, 1.5, z2, undefined, d2);
+    maxCount = Math.max(maxCount, f.count);
+    ok(f.count <= SDF_BALL_CAP_TILED, `motes: count ${f.count} over buffer`);
+    for (let k = 0; k < f.count * 3; k++)
+      if (!Number.isFinite(b2[k])) {
+        ok(false, `motes: non-finite ball component at ${k}, frame ${fr}`);
+        break;
+      }
+    for (let k = 0; k < f.count; k++)
+      ok(
+        d2[k] >= 0 && d2[k] <= 1 && z2[k] >= 0 && z2[k] <= 1,
+        `motes: density/depth out of range at slot ${k}`,
+      );
+  }
+  ok(maxCount > N, `motes: never packed past the authored 48 (max ${maxCount})`);
+
+  // the LOD lever
+  ok(c.driver.setPopulation(N) === N, "motes: setPopulation floor");
+  ok(c.driver.setPopulation(1) === N, "motes: setPopulation clamps below N");
+  ok(c.driver.setPopulation(1e9) === POP, "motes: setPopulation clamps above POP");
+  c.driver.setPopulation(N);
+  t += 16.7;
+  const lean = c.driver.frame(t, b2, 1.5, z2, undefined, d2);
+  ok(
+    lean.count <= maxCount,
+    `motes: shedding population did not reduce the pack (${lean.count} vs ${maxCount})`,
+  );
+}
+
+// ── R6-B: bind = 1 leaves no mote on the stage ──────────────────────────────
+// The exactness gate, asserted rather than asserted-in-a-comment: while a host
+// is fully bound its motes must contribute NO field at all, so a §3.3 melt and
+// a resting form render the silhouette the byte-exact contract asserts.
+{
+  const bound = {
+    id: "B1",
+    forms: [0],
+    channels: { p: 1 },
+    presence: () => 1,
+    target: (i, ctx, out) => {
+      out.x = 0.5 + 0.08 * Math.cos(i * 2.4);
+      out.y = 0.5 + 0.08 * Math.sin(i * 2.4);
+      out.r = 0.012;
+      out.bind = 1; // the melts, the resting footprints, the exact mark
+      out.cluster = -1;
+      out.z = 0;
+      out.d = 1;
+    },
+    form: () => null,
+  };
+  const POP = N * 6;
+  const c = makeConductor([bound], { pop: POP, ballMax: SDF_BALL_CAP_TILED });
+  const b2 = new Float32Array(SDF_BALL_CAP_TILED * 3);
+  const d2 = new Float32Array(SDF_BALL_CAP_TILED).fill(1);
+  // Identity, so the count is of MOTES and not of the packed buffer: the 12
+  // ambient beads are the site-wide atmosphere and legitimately keep rendering
+  // behind a bound composition. They pack with id −1; a mote packs with its own.
+  const id2 = new Int16Array(SDF_BALL_CAP_TILED);
+  let t = 0;
+  for (let fr = 0; fr < 240; fr++) {
+    t += 16.7;
+    id2.fill(-1);
+    const f = c.driver.frame(t, b2, 1.5, undefined, id2, d2);
+    if (fr < 120) continue; // let the radius/density low-pass settle
+    let motes = 0;
+    for (let k = 0; k < f.count; k++) if (id2[k] >= N) motes++;
+    ok(motes === 0, `bind gate: ${motes} motes packed while every host is bind 1`);
+  }
+}
+
+// ── R6-C: the pair grid agrees with all-pairs ───────────────────────────────
+// Above FLUID.PAIR_GRID_MIN the neighbourhood comes from a uniform grid instead
+// of a full scan. The grid is a conservative superset, so the FORCES must match
+// — not to the bit (the summation order differs) but to well inside any visible
+// difference. Compared as trajectories, which is what would actually show.
+{
+  const mkFree = (id) => ({
+    id,
+    forms: [0],
+    channels: { p: 1 },
+    presence: () => 1,
+    target: (i, ctx, out) => {
+      out.x = 0.5 + 0.16 * Math.cos(i * 1.7);
+      out.y = 0.5 + 0.16 * Math.sin(i * 1.7);
+      out.r = 0.016;
+      out.bind = 0; // fully free — every pair force live
+      out.cluster = 0;
+      out.z = 0;
+      out.d = 1;
+    },
+    form: () => null,
+  });
+  const POP = N * 4; // > PAIR_GRID_MIN, so the grid engages
+  const run = (gridMin) => {
+    const keep = FLUID.PAIR_GRID_MIN;
+    FLUID.PAIR_GRID_MIN = gridMin;
+    const c = makeConductor([mkFree("G")], { pop: POP, ballMax: SDF_BALL_CAP_TILED });
+    FLUID.PAIR_GRID_MIN = keep;
+    const b2 = new Float32Array(SDF_BALL_CAP_TILED * 3);
+    let t = 0;
+    for (let fr = 0; fr < 300; fr++) {
+      t += 16.7;
+      c.driver.frame(t, b2, 1.5);
+    }
+    return b2.slice(0, POP * 3);
+  };
+  const withGrid = run(0); // force the grid on
+  const allPairs = run(1e9); // force it off
+  let worst = 0;
+  for (let i = 0; i < POP; i++) {
+    const dx = withGrid[i * 3] - allPairs[i * 3];
+    const dy = withGrid[i * 3 + 1] - allPairs[i * 3 + 1];
+    worst = Math.max(worst, Math.hypot(dx, dy));
+  }
+  // 1e-3 uv is well under one device pixel on any stage this renders at.
+  ok(worst < 1e-3, `pair grid: diverges from all-pairs by ${worst.toFixed(6)} uv`);
+}
+
+// ── R6-E: free liquid is actually FREE ──────────────────────────────────────
+// The regression this exists to prevent already happened once. R6-A shipped
+// per-droplet character that could not be seen, because every force in the core
+// was competing with a stiff spring to a POINT: at om² = 77…343 the whole
+// ambient current was worth a fraction of a droplet radius, so the droplets
+// differed only in which whisper they got. The leash fixed it, and nothing
+// stopped a later retune from quietly undoing it — a pinned body still passes
+// every other gate in this file.
+//
+// Two assertions, and the second matters as much as the first: a droplet must
+// travel, and the BODY must not. Freedom that moves the composition is not
+// freedom, it is drift.
+{
+  const R0 = 0.022;
+  const ring = (bind) => ({
+    id: "W",
+    forms: [0],
+    channels: { p: 1 },
+    presence: () => 1,
+    target: (i, ctx, out) => {
+      const a = (i / N) * Math.PI * 2;
+      out.x = 0.5 + 0.2 * Math.cos(a);
+      out.y = 0.5 + 0.2 * Math.sin(a);
+      out.r = R0;
+      out.bind = bind;
+      out.cluster = -1;
+      out.z = 0;
+      out.d = 1;
+    },
+    form: () => null,
+  });
+  const measure = (bind) => {
+    const c = makeConductor([ring(bind)], { ballMax: SDF_BALL_MAX });
+    const b2 = new Float32Array(SDF_BALL_MAX * 3);
+    const id2 = new Int16Array(SDF_BALL_MAX);
+    let t = 0;
+    for (let fr = 0; fr < 400; fr++) {
+      t += 16.7;
+      c.driver.frame(t, b2, 1.5, undefined, id2, undefined);
+    }
+    const prev = new Map();
+    const off = [];
+    const path = new Map();
+    const gyr = [];
+    for (let fr = 0; fr < 600; fr++) {
+      t += 16.7;
+      id2.fill(-1);
+      const f = c.driver.frame(t, b2, 1.5, undefined, id2, undefined);
+      let cx = 0, cy = 0, n = 0;
+      for (let k = 0; k < f.count; k++) {
+        const id = id2[k];
+        if (id < 0) continue;
+        const x = b2[k * 3], y = b2[k * 3 + 1];
+        const a = (id / N) * Math.PI * 2;
+        off.push(Math.hypot(x - (0.5 + 0.2 * Math.cos(a)), y - (0.5 + 0.2 * Math.sin(a))));
+        const p = prev.get(id);
+        if (p) path.set(id, (path.get(id) ?? 0) + Math.hypot(x - p[0], y - p[1]));
+        prev.set(id, [x, y]);
+        cx += x; cy += y; n++;
+      }
+      if (!n) continue;
+      cx /= n; cy /= n;
+      let g = 0;
+      for (let k = 0; k < f.count; k++)
+        if (id2[k] >= 0) g += (b2[k * 3] - cx) ** 2 + (b2[k * 3 + 1] - cy) ** 2;
+      gyr.push(Math.sqrt(g / n));
+    }
+    const mean = (a) => a.reduce((s, v) => s + v, 0) / a.length;
+    const gm = mean(gyr);
+    return {
+      offset: mean(off) / R0,
+      travel: mean([...path.values()]) / R0,
+      wobble: Math.sqrt(mean(gyr.map((v) => (v - gm) ** 2))) / gm,
+    };
+  };
+
+  const free = measure(0);
+  ok(free.offset > 1.2, `free liquid is pinned — offset ${free.offset.toFixed(2)} radii (want > 1.2)`);
+  ok(free.travel > 5, `free liquid barely travels — ${free.travel.toFixed(1)} radii per 10 s (want > 5)`);
+  ok(free.wobble < 0.08, `free liquid moves the BODY — gyration wobble ${(100 * free.wobble).toFixed(1)}% (want < 8%)`);
+
+  // …and the leash is scaled by (1 − bind), so a bound composition is still
+  // nailed to its stations. This is the melts' contract, asserted.
+  const bound = measure(1);
+  ok(
+    bound.offset < 0.35,
+    `bound liquid drifted off its stations — offset ${bound.offset.toFixed(2)} radii (want < 0.35)`,
+  );
+}
+
+// ── R6-D: the tile binner is CONSERVATIVE ───────────────────────────────────
+// The whole tiled renderer rests on one claim: a fragment's tile list contains
+// every droplet that could reach it. Miss one and the shader sums a field with
+// liquid absent, which shows up as a seam on a tile boundary and reads like a
+// shader bug. Asserted against brute force rather than trusted.
+{
+  const binner = makeTileBinner();
+  const W = 1280;
+  const H = 800;
+  const md = Math.min(W, H);
+  const REACH = SDF_BALL_REACH;
+  const MARGIN = SDF_GRAD_MARGIN;
+  let worstMiss = 0;
+  let checked = 0;
+  for (const trial of [0, 1, 2]) {
+    // three layouts: tight cluster, full spread, and one with off-screen
+    // strays, which is the case the cull is allowed to drop
+    const n = 220;
+    const buf = new Float32Array(n * 3);
+    for (let i = 0; i < n; i++) {
+      const h = (k) => {
+        const x = Math.sin(i * 127.1 + k * 311.7 + trial * 57.3) * 43758.5453;
+        return x - Math.floor(x);
+      };
+      const spread = trial === 0 ? 0.18 : trial === 1 ? 0.9 : 2.4;
+      buf[i * 3] = 0.5 + (h(1) - 0.5) * spread;
+      buf[i * 3 + 1] = 0.5 + (h(2) - 0.5) * spread;
+      buf[i * 3 + 2] = 0.004 + 0.03 * h(3);
+    }
+    binner.bin(buf, n, W, H, REACH, MARGIN);
+    const { tilesX, tilesY } = binner.stats;
+    const head = binner.head;
+    const list = binner.list;
+    ok(binner.stats.over === 0, `binner: ${binner.stats.over} tiles over the shader's loop bound`);
+    // brute force: for a sample of tiles, who SHOULD be in the list?
+    for (let ty = 0; ty < tilesY; ty += 3)
+      for (let tx = 0; tx < tilesX; tx += 3) {
+        const c = ty * tilesX + tx;
+        const off = head[c * 2];
+        const cnt = head[c * 2 + 1];
+        const got = new Set();
+        for (let k = 0; k < cnt; k++) got.add(list[off + k]);
+        // the tile's pixel rectangle
+        const x0 = tx * TILE_PX;
+        const y0 = ty * TILE_PX;
+        const x1 = Math.min(x0 + TILE_PX, W);
+        const y1 = Math.min(y0 + TILE_PX, H);
+        for (let i = 0; i < n; i++) {
+          const rp = (REACH * buf[i * 3 + 2] + MARGIN) * md;
+          const px = (buf[i * 3] - 0.5) * md + 0.5 * W;
+          const py = (buf[i * 3 + 1] - 0.5) * md + 0.5 * H;
+          // does the droplet's influence square meet this tile at all?
+          if (px + rp < x0 || px - rp > x1 || py + rp < y0 || py - rp > y1) continue;
+          // …and is the droplet itself on screen? off-screen strays are culled
+          // by design — they cannot paint, so charging fragments for them is
+          // exactly the cost the binner exists to remove.
+          if (px + rp < 0 || py + rp < 0 || px - rp > W || py - rp > H) continue;
+          checked++;
+          if (!got.has(i)) worstMiss++;
+        }
+      }
+  }
+  ok(checked > 5000, `binner: only ${checked} membership assertions — the sweep is too thin`);
+  ok(worstMiss === 0, `binner: ${worstMiss} droplets missing from a tile that can see them`);
+}
+
 console.log(
   "CONDUCTOR_CHECK " +
     JSON.stringify({
       droplets: N,
       ballMax: SDF_BALL_MAX,
+      tiledCap: SDF_BALL_CAP_TILED,
+      moteDensity: MOTE.DENSITY,
       failures: failures.length,
     }),
 );

@@ -26,7 +26,9 @@
  */
 import { loadForms, prepareForms, addBalls } from "./_melt-sim.mjs";
 import { CLOUDS, N, STAG } from "../lib/webgl/phys.mjs";
-import { meltDroplet, permFor, formPhase, FORM_SOLIDITY } from "../lib/webgl/melt.mjs";
+import {
+  meltDroplet, permFor, formPhase, FORM_SOLIDITY, meltSat,
+} from "../lib/webgl/melt.mjs";
 
 const argv = process.argv.slice(2);
 const flag = (n, d) => {
@@ -65,10 +67,14 @@ function profile(a, b) {
       balls.push([d[0], d[1], d[2], d[3]]);
     }
     const ph = formPhase(p);
+    // The frame's own saturation ceiling, exactly as the driver uploads it —
+    // without this the sim renders the historical plain sum and the gate
+    // measures a field the site no longer draws.
+    const c = meltSat(p);
     const { T, shield } = prepareForms({
-      forms, a, b, fa: ph.wA, fb: ph.wB, ea: ph.eA, eb: ph.eB, res: RES,
+      forms, a, b, fa: ph.wA, fb: ph.wB, ea: ph.eA, eb: ph.eB, res: RES, n: c,
     });
-    out.push(addBalls(T, shield, RES, balls).lit);
+    out.push(addBalls(T, shield, RES, balls, c).lit);
   }
   return out;
 }

@@ -145,6 +145,12 @@ const smoothstep = (e0, e1, x) => {
   const t = clamp01((x - e0) / (e1 - e0));
   return t * t * (3 - 2 * t);
 };
+/** THE COMBINATION LAW, mirroring satCombine in sdf-glass-shader: the
+ *  strongest source in full, everything it overlaps on a curve that flattens
+ *  toward a ceiling of `c`. `null` is the historical plain sum. */
+const sat = (sum, mx, c) =>
+  !(c > 0) ? sum : mx + c * (1 - Math.exp(-(sum - mx) / c));
+
 /** signed distance → metaball profile; S = 1 exactly at the silhouette. */
 const formField = (d) => {
   const x = Math.max(1 + d / SDF_GOO, 0.04);
@@ -185,6 +191,7 @@ export function prepareForms({
   res = 384,
   warp = 0,
   time = 0,
+  n = 0,
 }) {
   const T = new Float32Array(res * res);
   const texA = forms[a],
@@ -205,12 +212,13 @@ export function prepareForms({
           fv + warp * (Math.cos(fu * 8.1 - time * 0.6) + 0.6 * Math.sin(fu * 15 + time * 0.9)),
         );
       }
-      let t = 0;
-      if (fa > 1e-6) t += fa * formField(sampleSdf(texA, wu, wv) + ea);
-      if (fb > 1e-6) t += fb * formField(sampleSdf(texB, wu, wv) + eb);
+      // the two form slots combine among themselves; their RESULT then enters
+      // the droplet accumulation as one source (the shader nests it the same way)
+      const av = fa > 1e-6 ? fa * formField(sampleSdf(texA, wu, wv) + ea) : 0;
+      const bv = fb > 1e-6 ? fb * formField(sampleSdf(texB, wu, wv) + eb) : 0;
+      const t = sat(av + bv, Math.max(av, bv), n);
       const i = yi * res + xi;
       T[i] = t;
-      // formD = GOO·(T^-½ − 1); shield closes where a droplet is buried deep
       shield[i] = hasForm
         ? smoothstep(-SHIELD_INNER, -SHIELD_EDGE, SDF_GOO * (1 / Math.sqrt(Math.max(t, 1e-6)) - 1))
         : 1;
@@ -224,8 +232,11 @@ export function prepareForms({
  * Non-destructive — `T` is copied — so one prepared frame serves any number of
  * candidate clouds.
  */
-export function addBalls(T0, shield, res, balls) {
-  const T = T0.slice();
+export function addBalls(T0, shield, res, balls, n = 0) {
+  // The prepared form field enters as ONE source, so a frame with no droplets
+  // renders exactly what prepareForms produced, for any law.
+  const sum = T0.slice();
+  const mx = T0.slice();
   // ── the ball loop, scattered over each ball's bounded influence window ───────
   for (const [bx, by, br, bd = 1] of balls) {
     if (!(br > 0) || !(bd > 1e-6)) continue;
@@ -245,16 +256,22 @@ export function addBalls(T0, shield, res, balls) {
         if (d2 >= cut2) continue;
         const win = 1 - smoothstep(0.3 * cut2, cut2, d2);
         const i = yi * res + xi;
-        T[i] += (bd * rr) / d2 * win * shield[i];
+        const f = ((bd * rr) / d2) * win * shield[i];
+        sum[i] += f;
+        if (f > mx[i]) mx[i] = f;
       }
     }
   }
 
+  const T = new Float32Array(sum.length);
   let lit = 0;
-  for (let i = 0; i < T.length; i++) if (T[i] >= 1) lit++;
+  for (let i = 0; i < T.length; i++) {
+    T[i] = sat(sum[i], mx[i], n);
+    if (T[i] >= 1) lit++;
+  }
   return { T, lit, res };
 }
 
 /** Lit-cell count only (the common case). */
 export const litArea = (o) => renderFrame(o).lit;
-export { clamp01, smoothstep, SDF_WARP_REST };
+export { clamp01, smoothstep, SDF_WARP_REST, sat };

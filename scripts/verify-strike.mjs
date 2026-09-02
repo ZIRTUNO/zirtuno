@@ -157,8 +157,15 @@ const BALL_PROBE = () => {
   window.__ballLog = null;
   window.__uniforms = vals; // section E reads iFormOff / iFormA / iBallCount
   G.drawArrays = function () {
-    const count = vals.iBallCount;
-    const balls = vals.iBalls;
+    const count =
+      typeof vals.iBallCount === "number"
+        ? vals.iBallCount
+        : (window.__optics && window.__optics.count);
+    // The tiled renderer (R6) carries the population in a texture, so `iBalls`
+    // never reaches a uniform setter and this tap would see nothing. FieldStage
+    // publishes the same packed buffer on __optics for exactly this reason.
+    const live = window.__optics && window.__optics.balls;
+    const balls = vals.iBalls || (live ? Array.from(live) : null);
     if (typeof count === "number" && balls) {
       const t = performance.now();
       const prev = window.__ballFrame;

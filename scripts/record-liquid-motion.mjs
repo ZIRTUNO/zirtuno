@@ -94,6 +94,50 @@ for (const run of CASES) {
       return location;
     };
 
+    // The frame record, lifted out of the uniform tap so the tiled path can
+    // build a byte-identical one. R6 carries the population in a texture, so
+    // `iBalls` never reaches a uniform setter — see the iBallCount hook below.
+    const makeFrame = (balls) => {
+      const scenes = window.__scenes;
+      const frame = {
+        t: performance.now(),
+        y: window.scrollY,
+        phase: motion.phase,
+        count: -1,
+        balls,
+        internals: captureInternals
+          ? tracked.map((array) => Array.from(array))
+          : null,
+        site: scenes?.site
+          ? [
+              scenes.site.heroPhase,
+              scenes.site.fracture,
+              scenes.site.travel,
+              scenes.site.converge,
+              scenes.site.grow,
+              scenes.site.svcPos,
+              scenes.site.pairA,
+              scenes.site.pairB,
+              scenes.site.pairM,
+              scenes.site.exit,
+              scenes.site.on,
+            ]
+          : null,
+        method: scenes?.method
+          ? [scenes.method.u, scenes.method.ex, scenes.method.on, scenes.method.rIn]
+          : null,
+        work: scenes?.work
+          ? [scenes.work.on, scenes.work.rIn, scenes.work.bp]
+          : null,
+        origin: scenes?.origin ? [scenes.origin.p, scenes.origin.on] : null,
+        studio: scenes?.studio
+          ? [scenes.studio.on, scenes.studio.rIn]
+          : null,
+        };
+      motion.frames.push(frame);
+      motion.pending = frame;
+    };
+
     WebGL2RenderingContext.prototype.uniform3fv = function (location, value, ...rest) {
       if (
         motion.active &&
@@ -102,52 +146,24 @@ for (const run of CASES) {
         value.length >= 48 * 3 &&
         motion.frames.length < 12_000
       ) {
-        const scenes = window.__scenes;
-        const frame = {
-          t: performance.now(),
-          y: window.scrollY,
-          phase: motion.phase,
-          count: -1,
-          balls: Array.from(value.slice(0, 48 * 3)),
-          internals: captureInternals
-            ? tracked.map((array) => Array.from(array))
-            : null,
-          site: scenes?.site
-            ? [
-                scenes.site.heroPhase,
-                scenes.site.fracture,
-                scenes.site.travel,
-                scenes.site.converge,
-                scenes.site.grow,
-                scenes.site.svcPos,
-                scenes.site.pairA,
-                scenes.site.pairB,
-                scenes.site.pairM,
-                scenes.site.exit,
-                scenes.site.on,
-              ]
-            : null,
-          method: scenes?.method
-            ? [scenes.method.u, scenes.method.ex, scenes.method.on, scenes.method.rIn]
-            : null,
-          work: scenes?.work
-            ? [scenes.work.on, scenes.work.rIn, scenes.work.bp]
-            : null,
-          origin: scenes?.origin ? [scenes.origin.p, scenes.origin.on] : null,
-          studio: scenes?.studio
-            ? [scenes.studio.on, scenes.studio.rIn]
-            : null,
-        };
-        motion.frames.push(frame);
-        motion.pending = frame;
+        makeFrame(Array.from(value.slice(0, 48 * 3)));
       }
       return uniform3fv.call(this, location, value, ...rest);
     };
 
     WebGL2RenderingContext.prototype.uniform1i = function (location, value) {
-      if (motion.active && names.get(location) === "iBallCount" && motion.pending) {
-        motion.pending.count = value;
-        motion.pending = null;
+      if (motion.active && names.get(location) === "iBallCount") {
+        // R6 tiled path: iBallCount is uploaded exactly where iBalls used to
+        // be, so building the record here keeps the timing identical.
+        if (!motion.pending) {
+          const o = window.__optics;
+          if (o && o.tiled && o.balls && motion.frames.length < 12_000)
+            makeFrame(Array.from(o.balls.subarray(0, 48 * 3)));
+        }
+        if (motion.pending) {
+          motion.pending.count = value;
+          motion.pending = null;
+        }
       }
       return uniform1i.call(this, location, value);
     };

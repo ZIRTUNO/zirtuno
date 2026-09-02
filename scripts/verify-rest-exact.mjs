@@ -41,7 +41,7 @@ const page = await ctx.newPage();
 
 const hashes = [];
 for (let i = 0; i < STATES; i++) {
-  await page.goto(`${BASE}/en?fstate=${i}&ftier=full`, { waitUntil: "networkidle" });
+  await page.goto(`${BASE}/en/lab/forms?fstate=${i}`, { waitUntil: "networkidle" });
   await page.addStyleTag({
     content: `
       body * { visibility: hidden !important; }

@@ -2,8 +2,8 @@
 // transparent PNG (public/brand/stills/<category>.png). The work cards use
 // these as placeholder ART (consistent, on-brand — replaces the text-in-a-box)
 // until real project media arrives; zero runtime WebGL cost, works on every
-// tier. Renders via the deterministic ?fstate=N frozen path — the EXACT same
-// glass the site ships. Dev server must be running:
+// tier. Renders via the isolated /lab/forms?fstate=N frozen path — the EXACT
+// same glass the site ships. Dev server must be running:
 //   node scripts/build-form-stills.mjs
 import { chromium } from "playwright";
 import fs from "node:fs";
@@ -46,7 +46,7 @@ const page = await browser.newPage({
 });
 
 for (const [state, key] of FORMS) {
-  await page.goto(`${BASE}/en?fstate=${state}`, { waitUntil: "networkidle" });
+  await page.goto(`${BASE}/en/lab/forms?fstate=${state}`, { waitUntil: "networkidle" });
   const stage = page.locator("[data-hero-metaball]");
   await stage.waitFor({ timeout: 20000 });
   await page.waitForTimeout(1400); // SDF build + the frozen draw

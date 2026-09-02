@@ -24,6 +24,10 @@ const FIRST_HOLD_MS = Number(process.env.FIRST_HOLD_MS ?? 2600);
 const FINAL_HOLD_MS = Number(process.env.FINAL_HOLD_MS ?? 4500);
 const REST_SETTLE_MS = Number(process.env.REST_SETTLE_MS ?? 2000);
 const WHEEL_STEPS = Number(process.env.WHEEL_STEPS ?? 120);
+const OUTPUT_FPS = Number(process.env.OUTPUT_FPS ?? 30);
+const FORM_COUNT = Math.max(1, Math.min(7, Number(process.env.FORM_COUNT ?? 7)));
+const HARDWARE_CAPTURE = process.env.HARDWARE_CAPTURE === "1";
+const HEADFUL_CAPTURE = process.env.HEADFUL_CAPTURE === "1";
 const WHEEL_MULTIPLIER = 0.9; // LenisProvider's locked wheelMultiplier
 const VIEWPORT = { width: 1600, height: 1000 };
 const CROP = { x: 600, y: 0, width: 1000, height: 1000 };
@@ -42,12 +46,15 @@ for (const file of [OUT, RAW])
 
 const browser = await chromium.launch({
   ...LAUNCH,
-  args: [
-    "--enable-unsafe-swiftshader",
-    "--use-gl=angle",
-    "--use-angle=swiftshader",
-    "--ignore-gpu-blocklist",
-  ],
+  headless: HEADFUL_CAPTURE ? false : LAUNCH.headless,
+  args: HARDWARE_CAPTURE
+    ? ["--enable-gpu", "--ignore-gpu-blocklist"]
+    : [
+        "--enable-unsafe-swiftshader",
+        "--use-gl=angle",
+        "--use-angle=swiftshader",
+        "--ignore-gpu-blocklist",
+      ],
 });
 const context = await browser.newContext({
   viewport: VIEWPORT,
@@ -100,16 +107,16 @@ await page.evaluate(() => {
   document.body.appendChild(label);
 });
 
-const targets = await page.evaluate(() => {
+const targets = await page.evaluate((formCount) => {
   const pillars = [...document.querySelectorAll("#services .pillar")];
   if (pillars.length !== 7)
     throw new Error(`expected 7 S4 pillars, got ${pillars.length}`);
-  return pillars.map((el) => {
+  return pillars.slice(0, formCount).map((el) => {
     const box = el.getBoundingClientRect();
     const mid = box.top + window.scrollY + box.height / 2;
     return Math.round(mid - window.innerHeight / 2);
   });
-});
+}, FORM_COUNT);
 
 const setLabel = async (html) =>
   page.evaluate((value) => {
@@ -249,7 +256,7 @@ const filter = [
   "setpts=PTS-STARTPTS",
   `crop=${CROP.width}:${CROP.height}:${CROP.x}:${CROP.y}`,
   "scale=1080:1080:flags=lanczos",
-  "fps=30",
+  `fps=${OUTPUT_FPS}`,
   "format=yuv420p",
   "fade=t=in:st=0:d=0.2",
   `fade=t=out:st=${fadeOutAt.toFixed(3)}:d=0.35`,
@@ -288,6 +295,9 @@ console.log(
       output: OUT,
       raw: RAW,
       duration: Number(encodeDuration.toFixed(2)),
+      fps: OUTPUT_FPS,
+      hardwareCapture: HARDWARE_CAPTURE,
+      headfulCapture: HEADFUL_CAPTURE,
       rests,
     },
     null,

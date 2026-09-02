@@ -1,7 +1,7 @@
 // Cursor-goo QA sheet (morph-spec v1.7): the react-bits hover — a cursor droplet
 // that NECKS into and merges with the resting form. Captures deterministic
-// frozen frames (?fstate=N&fcursor=x,y) at increasing merge depth, next to the
-// no-cursor reference, so the goo (bulge → neck → merge) and the guardrail
+// frozen frames on /lab/forms (?fstate=N&fcursor=x,y) at increasing merge
+// depth, next to the no-cursor reference, so the goo and the guardrail
 // (bounded influence; the form never destroyed) are verifiable per pixel.
 // Dev server must be running:
 //   node scripts/capture-cursor-merge.mjs
@@ -50,7 +50,7 @@ for (const f of FORMS) {
   const cells = [];
   for (const stop of STOPS) {
     const cursor = stop ? `&fcursor=${stop[0]},${stop[1]}` : "";
-    await page.goto(`${BASE}/${LOCALE}?fstate=${f}${cursor}&ftier=full`, {
+    await page.goto(`${BASE}/${LOCALE}/lab/forms?fstate=${f}${cursor}`, {
       waitUntil: "networkidle",
     });
     const stage = page.locator("[data-hero-metaball]");

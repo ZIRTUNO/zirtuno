@@ -93,6 +93,18 @@ await context.addInitScript(() => {
   // Everything for a frame is set by the time drawArrays runs; snapshot there.
   const da = WebGL2RenderingContext.prototype.drawArrays;
   WebGL2RenderingContext.prototype.drawArrays = function (...args) {
+    // R6 tiled path: the population rides in a texture, so neither iBalls nor
+    // iBallDensity reaches a uniform setter and the two latches above stay
+    // null. FieldStage publishes both packed buffers on __optics; snapshot them
+    // here, at the same commit point the uniform path uses.
+    if (rec.active) {
+      const o = window.__optics;
+      if (o && o.tiled && o.balls) {
+        rec.balls = Array.from(o.balls);
+        rec.dens = Array.from(o.dens);
+        if (typeof o.count === "number") rec.count = o.count;
+      }
+    }
     if (rec.active && rec.balls && rec.dens && rec.frames.length < 8000) {
       const s = window.__scenes?.site;
       rec.frames.push({

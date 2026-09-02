@@ -3,7 +3,7 @@
 // lib/webgl/sdf-glass-shader. Silhouette + holes remain EXACT from the SVG.
 //
 // Renders with the SAME constants (SDF_RES/DRAW/BLUR/THICK) and the SAME injected
-// EDT math (lib/webgl/sdf-core) as the live component (SdfGlassField), so this
+// EDT math (lib/webgl/sdf-core) as the exact-form lab renderer, so this
 // sheet is exactly what ships by default. Renders every form SVG that exists —
 // mark always;
 // the 7 pillars from public/brand/forms/{key}.svg.
@@ -66,7 +66,7 @@ if(!gl.getProgramParameter(pr,gl.LINK_STATUS))throw new Error(gl.getProgramInfoL
 const pb=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,pb);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,3,-1,-1,3]),gl.STATIC_DRAW);
 const pl=gl.getAttribLocation(pr,'position');gl.enableVertexAttribArray(pl);gl.vertexAttribPointer(pl,2,gl.FLOAT,false,0,0);
 // LINEAR on float textures requires OES_texture_float_linear; NEAREST fallback
-// keeps rendering correct on GPUs without it (matches SdfGlassField).
+// keeps rendering correct on GPUs without it (matches FormStillRenderer).
 const floatLinear = !!gl.getExtension('OES_texture_float_linear');
 const FILTER = floatLinear ? gl.LINEAR : gl.NEAREST;
 const tex=gl.createTexture();

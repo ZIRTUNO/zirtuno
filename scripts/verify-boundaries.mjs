@@ -108,9 +108,37 @@ await ctx.addInitScript(() => {
     return u3.call(this, l, v, ...r);
   };
   WebGL2RenderingContext.prototype.uniform1i = function (l, v) {
-    if (tap.on && names.get(l) === "iBallCount" && tap.pending) {
-      tap.pending.count = v;
-      tap.pending = null;
+    if (tap.on && names.get(l) === "iBallCount") {
+      // R6 — THE TILED PATH. The renderer carries its population in a texture,
+      // so `iBalls` never reaches a uniform setter and the tap above cannot
+      // fire. iBallCount is uploaded at exactly the point iBalls used to be, so
+      // building the frame here keeps the timing identical, and FieldStage
+      // publishes the same packed buffer on __optics for this purpose. Without
+      // it this gate would silently measure nothing on the shipped path.
+      if (!tap.pending) {
+        const o = window.__optics;
+        if (o && o.tiled && o.balls && tap.frames.length < 6000) {
+          const f = {
+            y: window.scrollY,
+            hero: window.__scenes?.site?.heroPhase ?? 0,
+            methodTop:
+              (document.getElementById("method")?.getBoundingClientRect().top ??
+                1e6) / window.innerHeight,
+            pa: window.__scenes?.site?.pairA ?? 0,
+            pb: window.__scenes?.site?.pairB ?? 0,
+            pm: window.__scenes?.site?.pairM ?? 0,
+            form: tap.fa + tap.fb,
+            count: -1,
+            balls: Array.from(o.balls),
+          };
+          tap.frames.push(f);
+          tap.pending = f;
+        }
+      }
+      if (tap.pending) {
+        tap.pending.count = v;
+        tap.pending = null;
+      }
     }
     return u1i.call(this, l, v);
   };
