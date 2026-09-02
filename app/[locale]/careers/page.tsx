@@ -66,7 +66,7 @@ export default async function CareersPage({
     <>
       <main
         id="content"
-        className="page-x min-h-svh pb-28 pt-[calc(var(--topbar-h)+3rem)]"
+        className="page-x min-h-svh pb-[var(--space-section)] pt-[calc(var(--topbar-h)+3rem)]"
       >
         <div className="careers-doc">
           <p className="chapter-label">{t("chapterLabel")}</p>

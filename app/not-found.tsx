@@ -27,15 +27,15 @@ export default function RootNotFound() {
             <p className="font-mono text-mono uppercase text-cyan">
               {copy.code}
             </p>
-            <h1 className="type-page-title mx-auto mt-4 text-paper">
+            <h1 className="type-page-title mx-auto mt-[var(--space-tight)] text-paper">
               {copy.title}
             </h1>
-            <p className="mx-auto mt-4 max-w-lg text-body-l text-paper-lead">
+            <p className="mx-auto mt-[var(--space-tight)] max-w-lg text-body-l text-paper-lead">
               {copy.body}
             </p>
             <Link
               href="/pt"
-              className="cta cta-secondary mt-8"
+              className="cta cta-secondary mt-[var(--space-group)]"
               data-cursor="hover"
             >
               <span className="cta-label">{copy.cta}</span>

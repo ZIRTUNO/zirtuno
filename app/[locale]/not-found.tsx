@@ -20,14 +20,14 @@ export default function NotFound() {
       >
         <div className="max-w-xl">
           <LoneDroplet />
-          <p className="mt-8 font-mono text-mono uppercase text-cyan">
+          <p className="mt-[var(--space-group)] font-mono text-mono uppercase text-cyan">
             {t("code")}
           </p>
-          <h1 className="type-poetic-title mx-auto mt-4 text-paper">
+          <h1 className="type-poetic-title mx-auto mt-[var(--space-tight)] text-paper">
             {t("title")}
           </h1>
-          <p className="mt-4 text-body-l text-paper-lead">{t("body")}</p>
-          <div className="mt-8 flex justify-center">
+          <p className="mt-[var(--space-tight)] text-body-l text-paper-lead">{t("body")}</p>
+          <div className="mt-[var(--space-group)] flex justify-center">
             <Link href="/" data-cursor="hover" className="cta cta-secondary">
               <span className="cta-label">{t("cta")}</span>
               <span className="cta-arrow" aria-hidden="true">

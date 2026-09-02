@@ -75,7 +75,7 @@ export default async function LegalPage({
     <>
       <main
         id="content"
-        className="page-x min-h-svh pb-28 pt-[calc(var(--topbar-h)+3rem)]"
+        className="page-x min-h-svh pb-[var(--space-section)] pt-[calc(var(--topbar-h)+3rem)]"
       >
         <div className="legal-doc">
           <p className="chapter-label">{t("chapterLabel")}</p>

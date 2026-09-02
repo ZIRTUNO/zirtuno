@@ -16,6 +16,7 @@
     "menuClose": "Close menu",
     "chapterNavigation": "Chapter navigation",
     "primaryNavigation": "Primary",
+    "talk": "Let's talk",
     "links": {
       "home": "Home",
       "services": "Services",
@@ -338,7 +339,12 @@
     "empty": "No architecture has been published in this selection.",
     "emptyLabel": "Selection in curation",
     "emptyInvite": "In the meantime, we can design the structure your business needs.",
-    "emptyPortfolio": "The selection is being curated."
+    "emptyPortfolio": "The selection is being curated.",
+    "gallery": {
+      "visit": "Visit the site",
+      "case": "Read the case",
+      "close": "Close"
+    }
   },
   "name": {
     "chapterLabel": "The Origin",

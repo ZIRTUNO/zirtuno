@@ -19,6 +19,7 @@ import LenisProvider from "@/components/motion/LenisProvider";
 import { BreathLayer } from "@/components/ui/BreathLayer";
 import { TopBar } from "@/components/chrome/TopBar";
 import { EntryVeil } from "@/components/chrome/EntryVeil";
+import { TransitionProvider } from "@/lib/animation/transition-context";
 import { SiteAnalytics } from "@/components/analytics/SiteAnalytics";
 
 // Pre-paint skip for the entry intro (S1.10). The attribute lands BEFORE the
@@ -39,7 +40,7 @@ const NO_SCRIPT_CSS = `
   .entry-veil,
   .page-wipe,
   .custom-cursor { display: none !important; }
-  .page-transition-content,
+  .page-transition,
   [data-reveal],
   .lab-headline,
   .lab-sub,
@@ -138,10 +139,12 @@ export default async function LocaleLayout({
           <CustomCursor />
           {/* Footer renders inside each page (R5: on the homepage it lives
               INSIDE PageStage so the liquid reaches the true page bottom) */}
-          <LenisProvider>
-            <TopBar />
-            {children}
-          </LenisProvider>
+          <TransitionProvider>
+            <LenisProvider>
+              <TopBar />
+              {children}
+            </LenisProvider>
+          </TransitionProvider>
         </NextIntlClientProvider>
       </body>
     </html>

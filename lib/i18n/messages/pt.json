@@ -16,6 +16,7 @@
     "menuClose": "Fechar menu",
     "chapterNavigation": "Navegação por capítulos",
     "primaryNavigation": "Principal",
+    "talk": "Vamos conversar",
     "links": {
       "home": "Início",
       "services": "Serviços",
@@ -338,7 +339,12 @@
     "empty": "Nenhuma arquitetura publicada nesta seleção.",
     "emptyLabel": "Seleção em curadoria",
     "emptyInvite": "Enquanto isso, podemos desenhar a estrutura do seu negócio.",
-    "emptyPortfolio": "A seleção está em curadoria."
+    "emptyPortfolio": "A seleção está em curadoria.",
+    "gallery": {
+      "visit": "Ver o site",
+      "case": "Ler o caso",
+      "close": "Fechar"
+    }
   },
   "name": {
     "chapterLabel": "A Origem",
