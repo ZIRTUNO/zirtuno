@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
+import { usePathname } from "next/navigation";
 
 /**
  * The floating bar's one piece of state.
@@ -35,6 +36,7 @@ const SETTLE_AT = 24;
 export function TopBarShell({ children }: { children: ReactNode }) {
   const sentinel = useRef<HTMLDivElement>(null);
   const [settled, setSettled] = useState(false);
+  const pathname = usePathname();
 
   useEffect(() => {
     const el = sentinel.current;
@@ -46,6 +48,35 @@ export function TopBarShell({ children }: { children: ReactNode }) {
     io.observe(el);
     return () => io.disconnect();
   }, []);
+
+  useEffect(() => {
+    const root = document.documentElement;
+    let observer: IntersectionObserver | null = null;
+    const frame = requestAnimationFrame(() => {
+      const footer = document.querySelector<HTMLElement>(".footer");
+      if (!footer) {
+        root.removeAttribute("data-footer-coda");
+        return;
+      }
+
+      observer = new IntersectionObserver(
+        ([entry]) => {
+          root.toggleAttribute(
+            "data-footer-coda",
+            entry.isIntersecting && entry.intersectionRatio >= 0.24,
+          );
+        },
+        { threshold: [0, 0.24] },
+      );
+      observer.observe(footer);
+    });
+
+    return () => {
+      cancelAnimationFrame(frame);
+      observer?.disconnect();
+      root.removeAttribute("data-footer-coda");
+    };
+  }, [pathname]);
 
   return (
     <>

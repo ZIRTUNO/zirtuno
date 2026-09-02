@@ -41,30 +41,28 @@ type CtaButtonProps = {
 };
 
 /**
- * Every intent CTA reaches the contact form with its tag pre-filled via the
- * `intent` query param (read by the contact form in S10). Conversion-path
- * test in S19 verifies this for every placement.
+ * The intent CTA's BEHAVIOUR, lifted out of its skin.
  *
- * Same-page path (R0): on the homepage an intent CTA does NOT route — it sets
- * the intent via history.replaceState (Next syncs useSearchParams, so the
- * ContactForm picks it up) and smooth-scrolls to #contact through Lenis.
- * Cross-page CTAs (e.g. from /work) keep the routed href. Modifier/middle
- * clicks always fall through to the link (new tab keeps working).
+ * `CtaButton` is a MEMBRANE button: a sharp engineered rectangle whose vector
+ * outline traces its own CSS box (see `Membrane`). The mobile nav sheet's third
+ * card needs the same destination, the same `?intent=` handshake with the
+ * contact form and the same conversion tagging on an element that is a rounded
+ * 8vw slab — geometry the membrane cannot follow without the drawn outline
+ * drifting off the box it is drawing. So the card gets its own skin and takes
+ * the behaviour from here; copying the same-page scroll dance into a second
+ * component is how two conversion paths quietly stop agreeing.
  */
-export function CtaButton({
-  variant = "primary",
+export function useCtaIntent({
   intent,
   href,
-  labelKey,
-  label,
   placement,
-  className,
-}: CtaButtonProps) {
-  const t = useTranslations("cta");
+}: {
+  intent?: CtaIntent;
+  href?: string;
+  placement?: string;
+}) {
   const pathname = usePathname(); // locale-stripped ("/" on the homepage)
-  const text = label ?? (labelKey ? t(labelKey) : "");
   const destination = href ?? (intent ? `/?intent=${intent}#contact` : "/");
-  const showArrow = variant === "secondary";
 
   const onClick = (e: MouseEvent<HTMLAnchorElement>) => {
     if (!intent || href || pathname !== "/") return; // routed path
@@ -93,13 +91,51 @@ export function CtaButton({
     }
   };
 
+  return {
+    href: destination,
+    onClick,
+    analytics: {
+      "data-analytics-event": intent ? "cta_intent" : "cta_navigation",
+      "data-analytics-intent": intent,
+      "data-analytics-placement": placement ?? pathname,
+    } as const,
+  };
+}
+
+/**
+ * Every intent CTA reaches the contact form with its tag pre-filled via the
+ * `intent` query param (read by the contact form in S10). Conversion-path
+ * test in S19 verifies this for every placement.
+ *
+ * Same-page path (R0): on the homepage an intent CTA does NOT route — it sets
+ * the intent via history.replaceState (Next syncs useSearchParams, so the
+ * ContactForm picks it up) and smooth-scrolls to #contact through Lenis.
+ * Cross-page CTAs (e.g. from /work) keep the routed href. Modifier/middle
+ * clicks always fall through to the link (new tab keeps working).
+ */
+export function CtaButton({
+  variant = "primary",
+  intent,
+  href,
+  labelKey,
+  label,
+  placement,
+  className,
+}: CtaButtonProps) {
+  const t = useTranslations("cta");
+  const text = label ?? (labelKey ? t(labelKey) : "");
+  const showArrow = variant === "secondary";
+  const { href: destination, onClick, analytics } = useCtaIntent({
+    intent,
+    href,
+    placement,
+  });
+
   return (
     <Link
       href={destination}
       data-cursor="hover"
-      data-analytics-event={intent ? "cta_intent" : "cta_navigation"}
-      data-analytics-intent={intent}
-      data-analytics-placement={placement ?? pathname}
+      {...analytics}
       onClick={onClick}
       className={cn(VARIANT_CLASS[variant], className)}
     >

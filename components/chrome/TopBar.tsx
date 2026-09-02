@@ -1,6 +1,7 @@
 import { useTranslations } from "next-intl";
 import { Link } from "@/lib/i18n/config";
 import { LogoMark } from "@/components/hero/LogoMark";
+import { BrandDraw } from "./BrandDraw";
 import { CtaButton } from "./CtaButton";
 import { LanguageToggle } from "./LanguageToggle";
 import { MobileMenu } from "./MobileMenu";
@@ -32,7 +33,12 @@ const PRIMARY_LINKS = [
  *     and it densifies on scroll instead of merely gaining a shadow, because
  *     over a live canvas the resting state has to stay see-through;
  *   · the mark leads the wordmark, so the chrome carries the brand form the
- *     whole page is built out of;
+ *     whole page is built out of, and it DRAWS ITSELF — `BrandDraw` lays the
+ *     mark down along its own spine, on arrival and on hover, so the chrome
+ *     shows the brand being MADE rather than merely displayed. The reference
+ *     for it is GSAP's "Draw a path", whose whole trick is that nothing is
+ *     filled; the Zirtuno version keeps the canonical fill and reveals it,
+ *     because §4.3 makes the owner-traced form sacred;
  *   · the link underline wipes in cyan, on `--ease-arrive`, which is the same
  *     curve the reference uses (0.22, 1, 0.36, 1) — it was already ours;
  *   · the action is the MEMBRANE CTA, and it stays a sharp rectangle inside the
@@ -54,7 +60,15 @@ export function TopBar() {
   return (
     <TopBarShell>
       <Link href="/" className="topbar-brand" data-cursor="hover">
-        <LogoMark className="topbar-mark" />
+        {/* `.topbar-mark` is now the SQUARE the two renderings share — the
+            painted mark, and the one that draws itself and stands in for it
+            wherever motion is allowed — so it keeps the size, the halo and the
+            hover state it always had, and `_probe-topbar.mjs` keeps measuring
+            the same box. */}
+        <span className="topbar-mark">
+          <LogoMark className="topbar-mark-art" />
+          <BrandDraw />
+        </span>
         <span className="wordmark">Zirtuno</span>
       </Link>
 
