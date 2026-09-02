@@ -6,6 +6,7 @@ const projectFields = `
   title,
   category,
   servicesInvolved,
+  summary,
   challenge,
   built,
   outcome,
@@ -15,6 +16,7 @@ const projectFields = `
   featured,
   order,
   "previewImage": previewMedia.asset->url,
+  "markImage": markMedia.asset->url,
   "riveExperience": select(
     defined(riveExperience.file.asset) &&
     defined(riveExperience.title.pt) &&

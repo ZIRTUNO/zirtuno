@@ -121,29 +121,29 @@ export default async function CaseStudyPage({
     <>
       <main
         id="content"
-        className="page-x min-h-svh pb-28 pt-[calc(var(--topbar-h)+3rem)]"
+        className="page-x min-h-svh pb-[var(--space-section)] pt-[calc(var(--topbar-h)+3rem)]"
       >
-        <header className="mt-10 max-w-5xl">
+        <header className="mt-[var(--space-block)] max-w-5xl">
           <p className="project-cats">{categories.join(" · ")}</p>
           {isSelectedArchitecture && (
-            <p className="mt-4">
+            <p className="mt-[var(--space-tight)]">
               <span className="project-arch">{t("architectureLabel")}</span>
             </p>
           )}
-          <h1 className="type-page-title mt-4 text-paper">{title}</h1>
+          <h1 className="type-page-title mt-[var(--space-tight)] text-paper">{title}</h1>
           {isSelectedArchitecture && (
-            <p className="mt-5 max-w-2xl text-body-l text-paper-lead">
+            <p className="mt-[var(--space-group)] max-w-2xl text-body-l text-paper-lead">
               {t("architectureNotice")}
             </p>
           )}
           {project.servicesInvolved.length > 0 && (
-            <p className="project-services mt-4">
+            <p className="project-services mt-[var(--space-tight)]">
               {project.servicesInvolved.join(" · ")}
             </p>
           )}
         </header>
 
-        <div className="case-hero mt-10">
+        <div className="case-hero mt-[var(--space-block)]">
           {project.previewImage ? (
             <Image
               src={project.previewImage}
@@ -160,7 +160,7 @@ export default async function CaseStudyPage({
           )}
         </div>
 
-        <div className="case-body mt-16 grid gap-12 md:grid-cols-2">
+        <div className="case-body mt-[var(--space-span)] grid gap-[var(--space-block)] md:grid-cols-2">
           <section>
             <h2 className="case-label">
               {t(
@@ -169,7 +169,7 @@ export default async function CaseStudyPage({
                   : "case.challenge",
               )}
             </h2>
-            <p className="mt-3 text-body-l text-paper">
+            <p className="mt-[var(--space-tight)] text-body-l text-paper">
               {localize(project.challenge, locale)}
             </p>
           </section>
@@ -181,7 +181,7 @@ export default async function CaseStudyPage({
                   : "case.architecture",
               )}
             </h2>
-            <p className="mt-3 text-body-l text-paper">
+            <p className="mt-[var(--space-tight)] text-body-l text-paper">
               {localize(project.built, locale)}
             </p>
           </section>
@@ -199,19 +199,19 @@ export default async function CaseStudyPage({
           />
         )}
 
-        <section className="mt-16 max-w-3xl">
+        <section className="mt-[var(--space-span)] max-w-3xl">
           <h2 className="case-label">
             {t(isSelectedArchitecture ? "case.conceptOutcome" : "case.outcome")}
           </h2>
-          <p className="type-feature-title mt-4 text-paper">
+          <p className="type-feature-title mt-[var(--space-tight)] text-paper">
             {localize(project.outcome, locale)}
           </p>
         </section>
 
         {project.credits && (
-          <section className="mt-16 max-w-3xl">
+          <section className="mt-[var(--space-span)] max-w-3xl">
             <h2 className="case-label">{t("case.credits")}</h2>
-            <p className="mt-3 text-paper-lead">
+            <p className="mt-[var(--space-tight)] text-paper-lead">
               {localize(project.credits, locale)}
             </p>
           </section>
@@ -223,7 +223,7 @@ export default async function CaseStudyPage({
             target="_blank"
             rel="noopener noreferrer"
             data-cursor="hover"
-            className="cta cta-secondary mt-12 inline-flex"
+            className="cta cta-secondary mt-[var(--space-block)] inline-flex"
           >
             <span className="cta-label">{t("case.liveSite")}</span>
             <span className="cta-arrow" aria-hidden="true">
@@ -236,7 +236,7 @@ export default async function CaseStudyPage({
           <Link
             href={`/work/${next.slug}`}
             data-cursor="hover"
-            className="case-next mt-24 flex flex-col gap-4 border-t border-paper-faint pt-8 md:flex-row md:items-baseline md:justify-between md:gap-8"
+            className="case-next mt-[var(--space-section)] flex flex-col gap-[var(--space-group)] border-t border-paper-faint pt-[var(--space-group)] md:flex-row md:items-baseline md:justify-between"
           >
             <span className="case-next-label">
               {t(

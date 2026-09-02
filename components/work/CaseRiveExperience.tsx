@@ -137,8 +137,8 @@ export function CaseRiveExperience({
     isNearViewport && supportsWebGL2 && !reducedMotion && !hasFailed;
 
   return (
-    <section className="mt-16" aria-labelledby={titleId}>
-      <div className="grid gap-5 md:grid-cols-2 md:gap-12">
+    <section className="mt-[var(--space-span)]" aria-labelledby={titleId}>
+      <div className="grid gap-[var(--space-group)] md:grid-cols-2">
         <h2
           id={titleId}
           className="type-card-title max-w-[20ch] font-grotesk text-paper"
@@ -150,7 +150,7 @@ export function CaseRiveExperience({
 
       <div
         ref={hostRef}
-        className="relative isolate mt-8 aspect-video min-h-64 overflow-hidden rounded-3xl border border-paper-faint bg-surface"
+        className="relative isolate mt-[var(--space-group)] aspect-video min-h-64 overflow-hidden rounded-3xl border border-paper-faint bg-surface"
       >
         <div
           className={`absolute inset-0 transition-opacity duration-700 motion-reduce:transition-none ${isReady ? "pointer-events-none opacity-0" : "opacity-100"}`}

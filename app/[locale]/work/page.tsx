@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { setRequestLocale, getTranslations } from "next-intl/server";
 import { Link, routing } from "@/lib/i18n/config";
 import { cn } from "@/lib/utils";
-import { ProjectCard } from "@/components/chapters/ProjectCard";
+import { WorkGallery } from "@/components/work/WorkGallery";
 import { Footer } from "@/components/chrome/Footer";
 import { CtaAnalysis } from "@/components/chrome/CtaButton";
 import { getProjectsByCategory, hasPublishedProjects } from "@/lib/content/work";
@@ -67,7 +67,7 @@ export default async function WorkPage({
     <>
       <main
         id="content"
-        className="page-x min-h-svh pb-28 pt-[calc(var(--topbar-h)+3rem)]"
+        className="page-x min-h-svh pb-[var(--space-section)] pt-[calc(var(--topbar-h)+3rem)]"
       >
         <p className="chapter-label">{t("chapterLabel")}</p>
         <h1 className="type-page-title mt-[var(--type-space-label-title)] text-paper">
@@ -82,7 +82,7 @@ export default async function WorkPage({
             of them led to the same empty result. */}
         {hasWork && (
           <nav
-            className="mt-10 flex flex-wrap gap-2"
+            className="mt-[var(--space-block)] flex flex-wrap gap-[var(--space-tight)]"
             aria-label={t("indexTitle")}
           >
             <Link
@@ -108,22 +108,18 @@ export default async function WorkPage({
         )}
 
         {projects.length === 0 ? (
-          <div className="work-empty mt-12 max-w-2xl">
+          <div className="work-empty mt-[var(--space-block)] max-w-2xl">
             <p className="work-empty-label">{t("emptyLabel")}</p>
             <p className="work-empty-body">
               {t(category ? "empty" : "emptyPortfolio")}
             </p>
             <p className="work-empty-invite">{t("emptyInvite")}</p>
-            <div className="mt-7 flex">
+            <div className="mt-[var(--space-group)] flex">
               <CtaAnalysis placement="work_index_empty" />
             </div>
           </div>
         ) : (
-          <div className="mt-12 grid min-w-0 gap-10 sm:grid-cols-2 lg:grid-cols-3">
-            {projects.map((p) => (
-              <ProjectCard key={p.slug} project={p} />
-            ))}
-          </div>
+          <WorkGallery projects={projects} className="mt-[var(--space-block)]" />
         )}
       </main>
       <Footer />

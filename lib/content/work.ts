@@ -6,13 +6,23 @@ import {
   projectSlugsQuery,
 } from "@/lib/sanity/queries";
 import { SEED_PROJECTS } from "./projects";
+import { VERIFIED_PROJECTS } from "./portfolio";
 import type { Project, ProjectCategory } from "@/lib/sanity/types";
 import { unstable_cache } from "next/cache";
 
-// Portfolio source policy:
-// - production always reads Sanity and fails closed to empty content;
-// - local concept data is available only through an explicit, non-production
-//   demo mode. It is never a silent fallback for CMS failures.
+// Portfolio source policy — three sources, ranked, never blended by accident:
+//
+//   1. Sanity, when it is configured and answers. Approved edits win.
+//   2. `VERIFIED_PROJECTS` — the committed selection of REAL, delivered work
+//      with public URLs. This is the floor, not a fallback: it is authored
+//      content in the repo, exactly like the services and legal copy, and it
+//      is what ships while the CMS is still unconfigured.
+//   3. `SEED_PROJECTS` — unverified concept studies, reachable ONLY through an
+//      explicit non-production demo flag. Never proof, never a CMS fallback.
+//
+// The rule that matters (#9) is that nothing unverifiable is presented as
+// proof. A failed or unconfigured CMS therefore falls back to (2), which every
+// visitor can check by opening the live site, and never to (3).
 const isDemoPortfolio =
   process.env.NODE_ENV !== "production" &&
   process.env.PORTFOLIO_DEMO_MODE === "true";
@@ -35,8 +45,8 @@ async function fromSanity<T>(
   if (!sanityClient) {
     if (process.env.NODE_ENV === "production" && !hasReportedMissingClient) {
       hasReportedMissingClient = true;
-      console.error(
-        "[portfolio] Sanity is not configured; publishing no project content.",
+      console.warn(
+        "[portfolio] Sanity is not configured; serving the committed selection.",
       );
     }
     return null;
@@ -45,7 +55,7 @@ async function fromSanity<T>(
     return (await fetchSanityCached(query, params)) as T;
   } catch (error) {
     console.error(
-      "[portfolio] Sanity request failed; publishing no project content.",
+      "[portfolio] Sanity request failed; falling back to the committed selection.",
       error,
     );
     return null;
@@ -55,7 +65,7 @@ async function fromSanity<T>(
 export async function getAllProjects(): Promise<Project[]> {
   if (isDemoPortfolio) return SEED_PROJECTS;
   const remote = await fromSanity<Project[]>(allProjectsQuery);
-  return remote ?? [];
+  return remote?.length ? remote : VERIFIED_PROJECTS;
 }
 
 /**
@@ -75,7 +85,10 @@ export async function getFeaturedProjects(limit = 4): Promise<Project[]> {
     return SEED_PROJECTS.filter((project) => project.featured).slice(0, limit);
   }
   const remote = await fromSanity<Project[]>(featuredProjectsQuery);
-  return (remote ?? []).slice(0, limit);
+  const source = remote?.length
+    ? remote
+    : VERIFIED_PROJECTS.filter((project) => project.featured);
+  return source.slice(0, limit);
 }
 
 export async function getProjectsByCategory(
@@ -93,13 +106,17 @@ export async function getProjectBySlug(slug: string): Promise<Project | null> {
     return SEED_PROJECTS.find((project) => project.slug === slug) ?? null;
   }
   const remote = await fromSanity<Project | null>(projectBySlugQuery, { slug });
-  return remote ?? null;
+  return (
+    remote ?? VERIFIED_PROJECTS.find((project) => project.slug === slug) ?? null
+  );
 }
 
 export async function getAllProjectSlugs(): Promise<string[]> {
   if (isDemoPortfolio) return SEED_PROJECTS.map((project) => project.slug);
   const remote = await fromSanity<string[]>(projectSlugsQuery);
-  return remote ?? [];
+  return remote?.length
+    ? remote
+    : VERIFIED_PROJECTS.map((project) => project.slug);
 }
 
 /** Next project for the case-study footer (wraps around). */
