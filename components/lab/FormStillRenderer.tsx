@@ -1,13 +1,10 @@
 "use client";
 
 /**
- * FieldMorphHero — the hero's DETERMINISTIC still renderer (QA / capture
- * harnesses only). The LIVING hero machine (autocycle melts, gooey cursor,
- * keyboard retargets) lives in the page fluid's hero segment (lib/webgl/
- * scenes/site, conducted by components/field/PageStage) so the whole site is
- * ONE liquid; what remains here renders one frozen frame on the hero's own
- * square stage — which keeps the rest-exactness sheets byte-comparable to the
- * reference vectors:
+ * FormStillRenderer — the isolated deterministic renderer used only by the
+ * no-index `/[locale]/lab/forms` QA route and its capture gates. Keeping it off
+ * the homepage preserves the one-canvas contract while retaining byte-stable
+ * exact-form evidence:
  *
  *   ?fstate=N   → [N, N, 1]: a zero-warp EXACT rest form
  *   ?fpair=a-b-m → one §3.3 bridge mid-frame (A melts into B at m)
@@ -41,7 +38,7 @@ import {
 } from "@/lib/webgl/field-drivers";
 import { SVG_URLS } from "@/lib/webgl/symbols";
 
-type HeroProps = {
+type FormStillRendererProps = {
   frozenPair: [number, number, number]; // [a, b, m] — one deterministic frame
   /** Deterministic merged cursor droplet (?fcursor=x,y; page-style coords:
    *  x right, y DOWN, both 0..1). */
@@ -50,12 +47,12 @@ type HeroProps = {
   onContextLost?: () => void;
 };
 
-export default function FieldMorphHero({
+export default function FormStillRenderer({
   frozenPair,
   frozenCursor = null,
   onReady = () => {},
   onContextLost = () => {},
-}: HeroProps) {
+}: FormStillRendererProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const cb = useRef({ onReady, onContextLost });
   useEffect(() => {
