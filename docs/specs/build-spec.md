@@ -303,10 +303,9 @@ Rules:
 site where the GROUND moves rather than the page being graded over the top of
 it. `.journey-dawn` is a viewport sheet inside the sticky field layer, driven by
 `--origin-p` (the origin scene's own p, written per frame by PageStage beside
-`--method-flow`): a luminous horizon rises through the stage with the centre's
-pull (R7: 0.12-0.42 of the runway), holds through the fusion and the purpose,
-and closes again with the drain, before the name is spelled and the manifesto
-coda reads. Constraints it is built to respect:
+`--method-flow`): a luminous horizon rises through the stage across the approach,
+holds through the fusion and the purpose, and closes again before the manifesto
+coda. Constraints it is built to respect:
 
 - it is `--color-cyan-deep` / `--color-cyan` mixed into `--color-ink` and
   nothing else - a change of light, never of hue (AGENTS.md rule #8);
@@ -785,41 +784,23 @@ form stills remain approved placeholder art only for the labeled demo set.
 
 **Business job:** reveal why Zirtuno exists after the business case is proven.
 
-**CURRENT — R7, THE CONVERGENCE.** The chapter is the site's thesis in one
-motion — form for what was dispersed — told by the liquid at a new scale.
-Between the Work strip and the runway the liquid lets go: the current's cells
-disperse into small beads across the whole stage and the liquid BOILS OFF into
-THE MIST, tens of thousands of micro-droplets filling the viewport while the
-opening names two ideas. Then five scrubbed beats draw the field back in. FIVE
-is structural, not stylistic: the score (`lib/webgl/origin-score.mjs`) keys
-the liquid's envelopes, the mist's dials and the copy windows to a p that runs
-evenly across this runway, so adding a beat slides every block off the liquid
-it describes.
+Five scrubbed beats. FIVE is structural, not stylistic: the scene's envelopes
+are keyed to a p that runs evenly across this runway, so adding a beat slides
+every copy block off the liquid it describes.
 
-1. **the ideas** — two poles. Zéfiro, the force, draws vapour on the left;
-   Ventura, the direction, on the right; the beads gather to each and the two
-   bodies CONDENSE out of the field. The names hold one baseline below, each
-   letter arriving from its idea's side of the world;
-2. **the tension** — "force without direction is only weather; direction
-   without force is only a map" — the centre, the point of contact, begins to
-   pull. Everything falls inward: the two bodies close on the meeting, the
-   vapour streams past them to the same point, and what reaches a body is
-   taken up as its skin. The two clauses lean into the meeting with it;
-3. **the mark** — the two fuse into exactness: the exact Zirtuno mark grows
-   from its skeleton and the skin rides its outline — the mark, made of what
-   it collected. One answering line, then small mono labels identify
+1. the two idea-masses enter from opposite sides, each NAMED by a plate that
+   holds its side of an empty centre gutter — Zéfiro, the force · Ventura, the
+   direction;
+2. the tension — “force without direction is only weather; direction without
+   force is only a map” — while the two masses close and fuse into the exact
+   Zirtuno mark;
+3. the mark resolves and holds; small mono labels identify
    Social · Saúde · Finanças / Social · Health · Finance;
-4. **the purpose** — on a wide stage the mark yields the right half to the
-   thesis and BREATHES OUT: the skin is released as vapour streaming away
-   along the current, turning aside from the type; a few droplets bud off as
-   seeds. From two ideas to one ecosystem;
-5. **the name** — the mark erodes and its droplets sink into the vapour, and
-   the whole field is drawn onto the letters of ZIRTUNO — the same vapour that
-   made the mark spells the name, and the type fades in over the finished
-   letters as the vapour fades out. Then "Construímos o que ainda não existe /
-   We build what doesn't exist yet."
+4. the mark multiplies into an ecosystem echo under the purpose statement;
+5. droplets drain as CPU wordmark particles assemble ZIRTUNO, followed by
+   “Construímos o que ainda não existe / We build what doesn’t exist yet.”
 
-Then the manifesto coda, on a stage returned to ink:
+Then the manifesto coda:
 
 - Movimento sem ruído.
 - Forma para o que estava disperso.
@@ -828,75 +809,58 @@ Then the manifesto coda, on a stage returned to ink:
 
 The Zéfiro/Ventura etymology IS the chapter, not a grace note beside it — it is
 the only version of this story a reader can actually be shown, because two
-named ideas can be put on the two bodies and an anonymous pair of founders
+named ideas can be put on the two masses and an anonymous pair of founders
 cannot. Three founding pillars are the WHY; seven services are the HOW. Never
 style or count them as the same system.
 
-**The mist is the same liquid.** It runs in the one homepage canvas as two GPU
-passes around the liquid pass (metaball-morph-spec §6.4), feels every force a
-droplet feels — the curl current, the hand, the strike, the scroll, the
-reading surfaces — at a lighter mass, condenses onto the authored droplets by
-identity, and is conserved: nothing is spawned or killed, it changes state.
-Scroll changes the regime; the system is alive on its own clock between scroll
-events. The centre's pull is a constant-magnitude inflow with a soft core,
-never an inverse square: a singularity is the black-hole look this chapter
-must not have. `?fmist=0` removes it and the chapter plays on the droplets.
-
 **Fusion light — CURRENT:** exact mark fusion keeps a restrained, continuous
-material afterglow through the scene's exposure and key score, and dense
-vapour blooms through the same post chain. There is no full-page white or
-cyan-white flash surface or flash score channel.
+material afterglow through the scene’s exposure and key score. There is no
+full-page white/cyan-white flash surface or flash score channel.
 
-**Composition and motion — CURRENT.** The chapter is an unframed editorial
-cut. The liquid is the only progress instrument; no dossier, beat ladder,
-fusion gauge, seam diagram, registration crop, plate, or status readout exists.
+**Composition and motion - CURRENT.** The chapter is an unframed editorial cut.
+The liquid is the only progress instrument; no dossier, beat ladder, fusion
+gauge, seam diagram, registration crop, plate, or status readout remains.
 
 - **Reading bands.** `.origin-frame` keeps each beat pinned long enough to read
-  and keeps the score's windows aligned to their copy. Beats 1-4 reserve the
-  upper field for liquid and the lower band for type, and the vapour is walled
-  out of the band by the scene's own measured floor. Beat 4 is the deliberate
-  wide-stage exception: the exact mark moves left as one body and the purpose
-  statement occupies the right column. Beat 5 is the other: the vapour is
-  drawn INTO the band, onto the letters, and the type takes over from it.
-- **One clock, one director.** All S7 copy arrives and is released by the
-  horizon wipe — a mask edge travelling upward, the same horizon moving behind
-  the stage — and the wipe's two numbers are driven per block by the GSAP
-  master timeline (`OriginDirector.tsx`), scrubbed by the runway's p. The
-  director also condenses the two names letter by letter, leans the clauses,
-  raises the thesis word by word and fades the name's type in over the spelled
-  letters. It never measures scroll and never touches liquid; the physics runs
-  on its own clock and reads dials. `probe/origin-bands.mjs` gates the pin
-  windows, the mark clearance of the stacked beats, and the wide purpose split,
-  reading the score's release intent.
+  and keeps the five scene envelopes aligned to their copy. Beats 1-3 and 5
+  reserve the upper field for liquid and the lower band for type. Beat 4 is the
+  deliberate exception on a wide stage: the exact mark moves left as one body
+  and the purpose statement occupies the right column. On a narrow stage the
+  mark remains centred and the copy stacks below it. No black panel or aperture
+  is introduced on either path.
+- **One gesture.** All S7 copy arrives and is released by a single rising light
+  band - a mask edge travelling upward, the same horizon moving behind the
+  stage. It replaces independent `Reveal variant="blur"` fade-ups. Windows are
+  derived from both the scene envelopes and the band's pin geometry; each
+  release completes while its frame is still pinned. `scripts/probe-origin-
+  bands.mjs` gates the pin windows, the vertical mark clearance of the stacked
+  beats, and the right-column split of the wide purpose beat.
 - **The setting performs the argument.** Beat 1 is a diptych on wide stages and
   a calm authored stack on narrow ones. Beat 2 is the antithesis: one clause per
   half on desktop, one centred clause after the other on mobile. Beat 3 resolves
   the exact mark over one understated pillar baseline. Beat 4 is the asymmetric
-  peak — mark left, purpose right — and Beat 5 removes the field into the name.
-- **Fail-safe.** Nothing is hidden until the chapter's clock is LIVE: the
-  server renders every block visible, the mask's numbers are registered to
-  resolve fully open, and the director builds only on the first live tick. So
-  static tiers, reduced motion, the hero QA still, the `?feco` hold,
-  pre-hydration and no-JS all resolve the copy fully OPEN, the dawn fully
-  closed and the runway collapsed to a reading column (rule #13). The static
-  path also neutralises the beats' negative margins.
+  peak — mark left, purpose right — and Beat 5 removes the field until only the
+  wordmark and closing line remain.
+- **Fail-safe.** `--origin-scrub` defaults to 0 and is raised only by the live
+  frame loop, so static tiers, reduced motion, the hero QA still, the `?feco`
+  hold, pre-hydration and no-JS all resolve the masks fully OPEN, the dawn
+  fully closed and the decorative chrome absent. Content is never hidden behind motion
+  (rule #13). The static path must also neutralise the beats' negative
+  margins: those overlaps are a SCROLL device, and with the runway collapsed
+  they stack five blocks of copy on top of each other.
 - The opening reads above the runway in normal flow as label, headline, and
-  lead only, carried by the Soul act's blur reveal.
-- Two optional Rive SIGIL slots beside the ideas (`NEXT_PUBLIC_ORIGIN_RIVE`)
-  are scrubbed by the same clock and decorative only; unset, they do not exist.
+  lead only. The ghost numeral and dossier are retired.
+- The manifesto coda is four authored italic lines with alternating indentation,
+  not a numbered table or interface metaphor.
 
 **Acceptance:**
 
 - the story reads as the true Origin, not borrowed mythology;
-- dispersed → two → one → exact mark → the name is visually legible;
-- the vapour exists in the ONE canvas, steps only over the chapter, paints
-  and moves at every beat, lights the letters before the type takes over, and
-  is absent under `?fmist=0` and reduced motion (`verify/origin.mjs`);
-- the kernel's rules hold off-GPU (`verify/mist.mjs`);
+- two → three → exact mark is visually legible;
 - pillar labels remain understated and distinct from services;
-- the name resolves legibly in both locales, spelled and then typeset;
+- wordmark particles resolve legibly in both locales;
 - static/reduced-motion mode presents all beats as a plain reading sequence,
-  with no two beats overlapping and nothing hidden;
+  with no two beats overlapping;
 - the stacked beats clear the mark vertically, and the wide purpose beat keeps
   a clean horizontal split between mark and copy;
 - every band's wipe completes its release while the band is still pinned
@@ -1317,7 +1281,6 @@ diptych and its band is a different height.
 | `?fshape=0`               | roll back velocity-aligned deformation + optics (default ON)|
 | `?fgrade=0`               | exact optics/grade bypass                                   |
 | `?fgov=0`                 | disable the idle energy governor for QA                     |
-| `?fwatch=0`               | pin the rung — no FPS-watchdog demotion (capture QA)        |
 | `?fcine=0`                | disable cinematic scoring and veils                         |
 
 `window.__liquid` exposes current site channels and `window.__scenes` exposes

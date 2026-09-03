@@ -16,16 +16,13 @@
  *     stage horizontally, so it must hold the right half rather than pass a
  *     vertical-clearance test that no longer describes its composition;
  *   · the p at which the wipe finishes releasing it (mask fully closed), so
- *     the score's `until + exit` (lib/webgl/origin-score.mjs — the director
- *     tweens the mask's two numbers from it since R7) can be checked against
- *     the pin range.
+ *     `--until + --exit` can be checked against the pin range.
  *
  *   node scripts/probe/origin-bands.mjs
  *   W=1280 H=800 node scripts/probe/origin-bands.mjs
  */
 import { chromium } from "playwright";
 import { LAUNCH } from "../support/launch.mjs";
-import { ORIGIN_BEATS } from "../../lib/webgl/origin-score.mjs";
 
 const BASE = process.env.BASE ?? "http://localhost:3000";
 const W = Number(process.env.W ?? 1440);
@@ -88,11 +85,12 @@ for (let s = 0; s <= STEPS; s++) {
         pinned: Math.abs(fr.bottom - vh) < 3,
         top: (copy.getBoundingClientRect().top / vh) * 100,
         left: (copy.getBoundingClientRect().left / window.innerWidth) * 100,
-        // the wipe's own two numbers, so release can be read directly. The
-        // director writes them inline (GSAP), so the computed value is the
-        // live one.
+        // the wipe's own two numbers, so release can be read directly
         inN: parseFloat(cs.getPropertyValue("--wipe-in")),
         outN: parseFloat(cs.getPropertyValue("--wipe-out")),
+        // --until past 1 means "hold to the end of the runway" (beat 5), not
+        // "released late" — the probe has to read intent, not just numbers
+        holds: parseFloat(cs.getPropertyValue("--until")) > 1,
       };
     }
     return out;
@@ -107,11 +105,7 @@ for (const b of BEATS) {
   // "visible" == the wipe has it at least half open
   const vis = r.filter((x) => x.inN > 0.5 && x.outN < 0.5);
   const release = r.find((x) => x.outN >= 1);
-  // `until` past 1 means "hold to the end of the runway" (beat 5), not
-  // "released late" — the probe has to read intent, not just numbers. Read
-  // from the score, which is where the director reads it.
-  const beat = ORIGIN_BEATS.find((x) => x.id === b);
-  const holds = beat ? beat.until > 1 : false;
+  const holds = r.length ? r[0].holds : false;
   const highest = vis.length ? Math.min(...vis.map((x) => x.top)) : Infinity;
   const leftmost = vis.length ? Math.min(...vis.map((x) => x.left)) : Infinity;
   // Beat 3 stacks under the held mark at every width. Beat 4 stacks on narrow

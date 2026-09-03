@@ -239,16 +239,6 @@ const browser = await chromium.launch(LAUNCH);
       if (!el.textContent?.trim()) continue;
       const cs = getComputedStyle(el);
       if (cs.visibility === "hidden" || +cs.opacity === 0) continue;
-      // a copy clipped away entirely has no pixels to fail: the CTA's ink
-      // label rests at clip-path: circle(0) until the membrane's flood
-      // reveals it (globals.css, ".cta-label-ink")
-      if (/^circle\(0(?:px|%)?(?:\s+at\s[^)]*)?\)$/.test(cs.clipPath)) continue;
-      // glass type paints its glyphs out of a background-image with `color`
-      // set transparent on purpose; `color` says nothing about what is seen.
-      // Its fill is asserted by verify/a11y.mjs ("background-clip:text
-      // headings all carry a fill"), so it is not this check's to fail.
-      const clip = cs.webkitBackgroundClip || cs.backgroundClip;
-      if (clip === "text" && /^rgba\(0, 0, 0, 0\)$|^transparent$/.test(cs.color)) continue;
       const L = lumaOf(cs.color) * (1 - veil);
       const ratio = (L + 0.05) / 0.05; // against ink under the veil
       if (ratio < min) {

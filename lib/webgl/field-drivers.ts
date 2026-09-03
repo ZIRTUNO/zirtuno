@@ -21,7 +21,6 @@
  */
 
 import { SDF_WARP_REST } from "./sdf-glass-shader.mjs";
-import type { MistDials } from "./mist.mjs";
 
 // ── the pure kernel (R5-A): the canonical clouds, the ONE physics table, the
 // per-droplet identity tables and the scatter/orbital target vocabulary live
@@ -94,20 +93,6 @@ export type FieldFrame = {
    *  on drivers with no mote population. */
   motes?: number;
   bindAvg?: number;
-  /** R7 — THE MIST. The strongest present scene's dial block (null when no
-   *  scene is breathing vapour), its weight-scaled master, and the hosts the
-   *  vapour condenses onto: N × (x, y, skin radius, presence), the authored
-   *  droplets as displayed this frame. `mistEnv` is the interaction the
-   *  droplets read, packed for the GPU: px, py, pvx, pvy, pon, press, scroll,
-   *  and the form-to-droplet strike amplitude factor. */
-  mist?: MistDials | null;
-  mistOn?: number;
-  hosts?: Float32Array;
-  mistEnv?: Float32Array;
-  /** The cached reading surfaces (field uv, FLUID_OBSTACLE_STRIDE), live
-   *  count included, so the vapour turns aside from type as the droplets do. */
-  obstacles?: Float32Array;
-  obstacleCount?: number;
 };
 export type FieldDriver = {
   /** SDF state indices to prefetch; forms[0] gates the first paint. */
