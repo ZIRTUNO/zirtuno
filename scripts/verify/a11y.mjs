@@ -365,12 +365,17 @@ for (const locale of ["pt", "en"]) {
     await burger.focus();
     await page.keyboard.press("Enter");
     await page.waitForTimeout(500);
-    const open = await page.evaluate(() => ({
-      expanded: document
-        .querySelector(".burger")
-        ?.getAttribute("aria-expanded"),
-      menu: !!document.querySelector(".mobile-menu"),
-    }));
+    // the menu is whatever the trigger's aria-controls names — the chrome
+    // has renamed its sheet before, and the contract is the attribute
+    const open = await page.evaluate(() => {
+      const burger = document.querySelector(".burger");
+      const id = burger?.getAttribute("aria-controls");
+      const sheet = id ? document.getElementById(id) : null;
+      return {
+        expanded: burger?.getAttribute("aria-expanded"),
+        menu: !!sheet && !sheet.hasAttribute("inert") && !sheet.hidden,
+      };
+    });
     check(
       open.expanded === "true" && open.menu,
       "menu opens by keyboard",

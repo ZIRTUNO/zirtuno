@@ -17,6 +17,8 @@ const eslintConfig = [
       ".claude/**", // local agent worktrees and their generated builds
       ".next/**",
       ".next-*/**", // NEXT_DIST_DIR verification / lab builds
+      ".open-next/**", // the Cloudflare Worker build output
+      ".wrangler/**", // wrangler's local state
       "artifacts/**", // visual evidence and recoverable cache backups
       "captures/**", // local screenshot / QA scratch, never shipped
       "s4-diag/**",

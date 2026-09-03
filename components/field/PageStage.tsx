@@ -42,6 +42,7 @@ import { makeStudioScene } from "@/lib/webgl/scenes/studio";
 import { makeContactScene, EXHALE_EVENT } from "@/lib/webgl/scenes/contact";
 import { makeFooterScene } from "@/lib/webgl/scenes/footer";
 import { CinematicVeils } from "./CinematicVeils";
+import { tickOriginClock, stopOriginClock } from "@/lib/animation/origin-clock";
 
 // the unified liquid field is client-only (WebGL2) → lazy, no SSR.
 const FieldStage = dynamic(() => import("@/components/field/FieldStage"), {
@@ -53,6 +54,13 @@ export type EcoNode = { name: string; tooltip: string };
 // The v3 review path lets free liquid acknowledge a deliberately small set of
 // business-critical reading surfaces. Bounds are cached outside the frame
 // loop; weight controls influence without changing the authored composition.
+//
+// The one exception is S7's beat copy (ORIGIN_SURFACES, below): it sits in
+// sticky frames, so its document position is wrong for exactly the frames
+// that matter — the cache would hold where a band sat UNPINNED, and the
+// vapour streamed straight through the purpose statement while a phantom
+// rect a screen away pushed it about. Those are read live, while the chapter
+// is on stage.
 const FLOW_OBSTACLES = [
   ["#hero .lab-headline", 1],
   ["#hero .lab-sub", 0.72],
@@ -61,11 +69,24 @@ const FLOW_OBSTACLES = [
   ["#services .type-section-title", 0.9],
   ["#method .type-section-title", 0.82],
   ["#work .type-section-title", 0.82],
-  ["#name .origin-statement", 0.9],
-  ["#name .origin-closing", 0.72],
+  // S7 (R7): the chapter's opening block is in normal flow, so it caches
+  // like any other surface. The beat copy is NOT — it lives in bands that
+  // pin — and is measured live in applyObstacleFlow (ORIGIN_SURFACES).
+  ["#name .origin-headline", 0.9],
+  ["#name .origin-open", 0.7],
   ["#studio .type-feature-title", 0.72],
   ["#contact .type-section-title", 0.9],
   ["#contact .contact-form", 1],
+] as const;
+
+// S7's pinned reading surfaces — measured per frame while the chapter is on
+// stage (see FLOW_OBSTACLES). Whole copy blocks rather than single lines, so
+// the vapour and the free beads flow AROUND a band's type instead of between
+// its lines. The resolve band is not listed: the vapour must enter it to
+// spell the name, and the closing line below the name has its own entry.
+const ORIGIN_SURFACES = [
+  ['#name .origin-copy:not([data-beat="resolve"])', 0.9],
+  ["#name .origin-closing", 0.72],
 ] as const;
 
 /**
@@ -577,16 +598,24 @@ export function PageStage({
     ].filter((el): el is HTMLElement => el !== null);
     let lastOriginP = -1;
     let lastOriginOn = -1;
-    const applyOriginDawn = (p: number, on: number) => {
+    let lastOriginLead = -1;
+    const applyOriginDawn = (p: number, on: number, lead: number) => {
       const pMoved = Math.abs(p - lastOriginP) >= 0.0015;
       const onMoved = Math.abs(on - lastOriginOn) >= 0.004;
-      if (!pMoved && !onMoved) return;
+      const leadMoved = Math.abs(lead - lastOriginLead) >= 0.004;
+      if (!pMoved && !onMoved && !leadMoved) return;
       if (pMoved) lastOriginP = p;
       if (onMoved) lastOriginOn = on;
+      if (leadMoved) lastOriginLead = lead;
       for (const el of dawnEls) {
         if (pMoved) el.style.setProperty("--origin-p", p.toFixed(4));
         if (onMoved) el.style.setProperty("--origin-on", on.toFixed(3));
       }
+      // R7: the same clock, handed to the chapter's DIRECTOR — the GSAP master
+      // timeline that choreographs S7's copy (components/chapters/
+      // OriginDirector.tsx). One measurement, three readers: the liquid, the
+      // dawn, the type. The director scrubs; it never measures.
+      tickOriginClock(p, on, lead);
     };
     // R5-D: the merged light score → the veil CSS vars, once per frame (the
     // conductor mutates `score` inside driver.frame from the render loop;
@@ -628,7 +657,9 @@ export function PageStage({
       // NOTE: --origin-scrub is deliberately NOT raised here. This branch never
       // reaches the per-frame loop, so leaving the switch at its registered 0
       // is what gives the deterministic surfaces plain readable S7 copy on pure
-      // ink — no half-driven mask, no dawn frozen mid-sweep.
+      // ink — no half-driven mask, no dawn frozen mid-sweep. The director is
+      // told the same thing: a clock that never ticks never hides copy.
+      stopOriginClock();
       return;
     }
 
@@ -681,6 +712,13 @@ export function PageStage({
           el: wrap.querySelector<HTMLElement>(selector),
           weight,
         }))
+      : [];
+    const originSurfaces = obstacleFlow
+      ? ORIGIN_SURFACES.flatMap(([selector, weight]) =>
+          Array.from(wrap.querySelectorAll<HTMLElement>(selector)).map(
+            (el) => ({ el, weight }),
+          ),
+        )
       : [];
     let obstacleDocCount = 0;
     const cacheObstacleGeometry = () => {
@@ -779,6 +817,28 @@ export function PageStage({
         // FLUID.OBSTACLE_A keeps every other chapter's flow untouched.
         out[dst + 4] = 2.6;
         count++;
+      }
+      // S7's BANDS. Read live — five rects at most, taken after the scroll
+      // read and before any DOM write, so they force no layout the scene's
+      // own reads would not have forced — and only while the chapter is on
+      // stage, which the previous frame's channel already knows.
+      if (conductor.raw.origin.on > 0.01) {
+        for (
+          let i = 0;
+          i < originSurfaces.length && count < FLUID_OBSTACLE_MAX;
+          i++
+        ) {
+          const r = originSurfaces[i].el.getBoundingClientRect();
+          if (r.width < 2 || r.height < 2) continue;
+          if (r.bottom < -overscan || r.top > vh + overscan) continue;
+          const dst = count * FLUID_OBSTACLE_STRIDE;
+          out[dst] = 0.5 + (r.left + r.width * 0.5 - vw * 0.5) / md;
+          out[dst + 1] = 0.5 - (r.top + r.height * 0.5 - vh * 0.5) / md;
+          out[dst + 2] = (r.width * 0.5 + padding) / md;
+          out[dst + 3] = (r.height * 0.5 + padding) / md;
+          out[dst + 4] = originSurfaces[i].weight;
+          count++;
+        }
       }
       conductor.input.obstacleCount = count;
     };
@@ -962,12 +1022,14 @@ export function PageStage({
       applyOriginDawn(
         clamp01(conductor.raw.origin.p),
         clamp01(conductor.raw.origin.on),
+        clamp01(conductor.raw.origin.lead),
       );
       applyScore();
     };
     update();
     return () => {
       if (raf) cancelAnimationFrame(raf);
+      stopOriginClock();
       obstacleDisposed = true;
       conductor.input.obstacleCount = 0;
       obstacleResize?.disconnect();

@@ -57,6 +57,9 @@ import { makeTileBinner, TILE_LIST_W, TILE_PX } from "@/lib/webgl/tile-bin.mjs";
 import { makePostChain } from "@/lib/webgl/post-chain";
 import type { FieldDriver } from "@/lib/webgl/field-drivers";
 import { SVG_URLS, STATE_COUNT } from "@/lib/webgl/symbols";
+import { makeMist } from "@/lib/webgl/mist-gl";
+import { mistSize } from "@/lib/webgl/mist.mjs";
+import { getSpellSamples } from "@/lib/webgl/mist-store";
 
 /** The watchdog ladder, richest first. See the degradation note in the header. */
 type LiveTier =
@@ -140,6 +143,26 @@ const RUNG_POP: Record<LiveTier, number> = {
   glasshalf: 0.375,
   lite: 0.25,
   half: 0, // the authored 48 and nothing else — the floor is a form endpoint
+};
+
+/**
+ * THE MIST's share per rung (R7) — how much of the vapour's population is
+ * DRAWN. Like RUNG_POP it is a packing budget, not an allocation: the whole
+ * field keeps simulating (one small full-screen pass over a 192² texture is
+ * cheap at any rung), and a demoted machine draws a thinner vapour rather than
+ * a different one. It is shed just after the motes and before the glass, for
+ * the same reason: per unit of frame time saved it is nearly invisible. The
+ * flat rungs draw none — a flat-cyan liquid with a glowing vapour around it
+ * would be the one thing on the page made of two materials.
+ */
+const RUNG_MIST: Record<LiveTier, number> = {
+  full: 1,
+  fullnofx: 1,
+  glass1x: 0.6,
+  rigid: 0.4,
+  glasshalf: 0.2,
+  lite: 0,
+  half: 0,
 };
 
 /** Buffer scale per rung — the cheapest lever, so it is spent before the glass. */
@@ -355,6 +378,24 @@ export default function FieldStage({
     // the direct path (= full-nofx rendering) for lite starts, bypass, or
     // contexts without a renderable offscreen format
     let post = gradeOn && tier === "full" ? makePostChain(gl) : null;
+
+    // ── R7: THE MIST ──────────────────────────────────────────────────────
+    // The finest scale of the one liquid, in the one canvas: a GPU particle
+    // field the origin scene breathes on and off through its dial block
+    // (lib/webgl/mist.mjs). Built here because it lives in this context and
+    // dies with it; it renders only while a scene hands the conductor a
+    // block, so every other chapter pays nothing. `?fmist=0` removes it,
+    // `?fmist=<edge>` sets the population's texture edge for review, and a
+    // context without renderable float textures simply has no vapour — the
+    // chapter plays on the droplets alone, which is what it did before R7.
+    const mistParam = /[?&]fmist=(\d+)(?:&|$)/.exec(window.location.search);
+    const mistEdge = mistParam
+      ? Math.min(512, Math.max(0, Number(mistParam[1])))
+      : mistSize(tier);
+    const mist =
+      mistEdge >= 16 && !motionQuery.matches ? makeMist(gl, mistEdge) : null;
+    let mistSpellVersion = -1;
+    let previousMistTime = -1;
 
     // makePostChain initializes its own shaders and leaves the composite
     // program bound. Restore the liquid program before assigning its static
@@ -604,6 +645,18 @@ export default function FieldStage({
       /** Per-ball field density, the companion channel to `balls`. */
       dens: dBuf as Float32Array,
       motes: 0, // …of which are motes (identity ≥ the authored population)
+      // R7: the vapour — whether it stepped and drew this frame, its texture
+      // format, its population and the share of it the rung draws
+      mist: 0,
+      mistFmt: (mist?.fmt ?? "none") as string,
+      mistPop: mist?.count ?? 0,
+      mistShare: 0,
+      mistSteps: 0,
+      mistSim: 0, // substeps run so far — the vapour's own clock, for gates
+      spell: 0, // the name's letter targets are uploaded
+      // a synchronous readback of the vapour (mist-gl stats) for the gate —
+      // never called by a render path
+      mistStats: () => (mist ? mist.stats() : null),
       bindAvg: 0, // mean bind over the authored droplets — why motes are absent
       tiles: 0,
       tileEntries: 0,
@@ -679,6 +732,46 @@ export default function FieldStage({
       const usePost = postChain !== null && liveTier === "full";
       diag.post = usePost ? 1 : 0;
       diag.tier = liveTier;
+      // ── R7: the vapour steps BEFORE the liquid binds anything ─────────
+      // Its own programs, VAOs and framebuffers; it leaves the default
+      // framebuffer bound and blending off, which is what the post path
+      // wants and what the direct path restores just below.
+      let mistLive = false;
+      const mistShare = RUNG_MIST[liveTier];
+      if (
+        mist &&
+        f.mist &&
+        f.hosts &&
+        f.mistEnv &&
+        (f.mistOn ?? 0) > 0.001 &&
+        mistShare > 0 &&
+        !motionReduced
+      ) {
+        const sp = getSpellSamples();
+        if (sp.version !== mistSpellVersion) {
+          mistSpellVersion = sp.version;
+          mist.setSpellSamples(sp.samples);
+          diag.spell = mist.hasSpell ? 1 : 0;
+        }
+        const dtMist = previousMistTime < 0 ? 16.7 : tMs - previousMistTime;
+        diag.mistSteps = mist.step({
+          dtMs: dtMist,
+          tMs,
+          aspect,
+          dials: f.mist,
+          hosts: f.hosts,
+          env: f.mistEnv,
+          shock: f.touchLive && f.shock ? f.shock : null,
+          obstacles: f.obstacles ?? null,
+          obstacleCount: f.obstacleCount ?? 0,
+        });
+        diag.mistSim += diag.mistSteps;
+        mistLive = true;
+        if (!usePost) gl.enable(gl.BLEND);
+      }
+      previousMistTime = tMs;
+      diag.mist = mistLive ? 1 : 0;
+      diag.mistShare = mistLive ? mistShare : 0;
       if (usePost) {
         postChain.begin(gl.drawingBufferWidth, gl.drawingBufferHeight);
         gl.disable(gl.BLEND); // store exact straight alpha in the target
@@ -871,6 +964,18 @@ export default function FieldStage({
       gl.clearColor(0, 0, 0, 0);
       gl.clear(gl.COLOR_BUFFER_BIT);
       gl.drawArrays(gl.TRIANGLES, 0, 3);
+      // ── R7: the vapour draws over the liquid, into the same target ──────
+      // Additive light with a MAX alpha, so the post chain composites and
+      // blooms it exactly as it does the liquid (see mist-gl.ts). Vapour
+      // inside a body is faded in the vertex shader — it IS the body.
+      if (mistLive && mist && f.mist && f.hosts)
+        mist.draw(
+          gl.drawingBufferWidth,
+          gl.drawingBufferHeight,
+          diag.scale || 1,
+          (f.mistOn ?? 0) * f.mist.fade,
+          f.hosts,
+        );
       if (usePost) {
         postChain.end(tMs / 1000); // bright → blur → opaque composite
         gl.enable(gl.BLEND); // the direct path composites over the page
@@ -921,6 +1026,12 @@ export default function FieldStage({
     // conductor energy AND no recent human input; any scene activity, scroll,
     // pointer or spray wakes it within one frame. ?fgov=0 disables (QA).
     const govOn = !/[?&]fgov=0/.test(window.location.search);
+    // ?fwatch=0 pins the rung (QA). The FPS watchdog is right to demote a
+    // machine that sustains slow frames, but a software-rendered capture
+    // harness that has to wait out the vapour's own clock (R7) is exactly
+    // that machine, and a still taken from a demoted rung photographs a
+    // thinner vapour than the rung under review.
+    const watchOn = !/[?&]fwatch=0(?:&|$)/.test(window.location.search);
     const GOV_LOW = 0.1; // conductor energy below this counts as idle
     const GOV_SUSTAIN = 45; // ~0.75 s of consecutive idle draws to enter
     const GOV_INPUT_MS = 1200; // any input holds active cadence this long
@@ -953,6 +1064,7 @@ export default function FieldStage({
       // at 80 and every slot past the authored 48 is owed to the atmosphere,
       // the spray and the cursor chain.
       diag.pop = set(tiledActive ? Math.round(sim * RUNG_POP[liveTier]) : 0);
+      mist?.setShare(RUNG_MIST[liveTier]);
     };
     applyPopulation();
     const downshift = () => {
@@ -1006,7 +1118,10 @@ export default function FieldStage({
         // missing 2+ of THIS display's vsyncs counts up; smooth frames pay it
         // back down (governed frames are INTENTIONALLY ~33 ms — never counted)
         if (dt > slowMs) {
-          if (++wdSlow >= 30) downshift();
+          if (++wdSlow >= 30) {
+            if (watchOn) downshift();
+            else wdSlow = 0;
+          }
         } else {
           wdSlow = Math.max(0, wdSlow - 2);
         }
@@ -1079,6 +1194,7 @@ export default function FieldStage({
       motionQuery.removeEventListener("change", onMotionPreference);
       for (const ev of INPUT_EVENTS) window.removeEventListener(ev, markInput);
       post?.dispose();
+      mist?.dispose();
       const w = window as unknown as { __optics?: typeof diag };
       if (w.__optics === diag) delete w.__optics;
       gl.getExtension("WEBGL_lose_context")?.loseContext();

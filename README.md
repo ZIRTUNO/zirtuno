@@ -53,7 +53,7 @@ from multiple canvases or dividing rules.
 | **I — Signal** | Entry veil, Hero | The wordmark assembles, then hands off to the living mark |
 | **II — Argument** | Problem, Ecosystem, Services | Pours, fractures into scattered pieces, gathers capability masses out of depth into three systems, resolves into the mark, then takes the exact form of each service in turn |
 | **III — Practice** | Método, Work | Rehearses the client transformation, then settles into a quiet current behind the case studies |
-| **IV — Soul** | Origin, Studio | Two idea-masses fuse into the exact mark, echo into satellites, and continue behind the studio |
+| **IV — Soul** | Origin, Studio | The liquid boils off into a field of vapour that is drawn back in: onto two ideas, onto one point, into the exact mark, out again under the thesis, and onto the letters of the name; the seeds continue behind the studio |
 | **V — Invitation** | Contact, Footer | Every droplet gathers into the mark; submitting exhales; one droplet is released past the footer |
 
 The transitions between these states are handoffs of the same body — `assembly`,
@@ -118,6 +118,11 @@ Conductor — damping, presence, droplet handoffs, form arbiter, light score
         │
         ▼
 FieldStage + SDF-glass shader (exposure, key, absorption, depth, shadow)
+        │
+        ├── the mist — a GPU vapour field (ping-pong float state, instanced
+        │              capsules) stepped before and drawn after the liquid
+        │              pass in the same canvas; the Origin's fourth scale,
+        │              on the droplets' own forces, condensing onto them
         │
         ├── post-chain — bright pass, bloom, opaque composite with
         │                dither and grain, idle governor near 30 Hz
@@ -292,6 +297,8 @@ npm run confluence         # the mark resolves correctly out of the field
 npm run work               # the gallery's FLIP panel geometry
 npm run liquid:form        # the coalesce merge
 npm run rail               # the chapter index waterline
+npm run mist               # the Origin's vapour: the kernel's rules, in node
+npm run origin             # the Origin in a browser: vapour, director, rollback
 npm run verify:production  # the production readiness gate
 ```
 
@@ -314,6 +321,8 @@ bisect a visual problem to a specific system without editing code:
 ?fphys=0      bypass the fluid physics
 ?fcine=0      disable the cinematic veils
 ?fmotes=0     disable the simulated population beyond the authored droplets
+?fmist=0      remove the Origin's vapour (the chapter plays on the droplets)
+?fwatch=0     pin the rung: no FPS-watchdog demotion (capture QA)
 ?ftier=lite   force a rendering tier (full | lite | none)
 ```
 
