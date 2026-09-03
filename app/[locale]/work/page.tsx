@@ -7,6 +7,7 @@ import { Footer } from "@/components/chrome/Footer";
 import { CtaAnalysis } from "@/components/chrome/CtaButton";
 import { getProjectsByCategory, hasPublishedProjects } from "@/lib/content/work";
 import { PROJECT_CATEGORIES } from "@/lib/sanity/types";
+import { ogImage } from "@/lib/seo/og-image";
 
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));
@@ -36,13 +37,13 @@ export async function generateMetadata({
       url: canonical,
       title,
       description,
-      images: [{ url: `/${locale}/opengraph-image`, alt: title }],
+      images: [ogImage(locale, title)],
     },
     twitter: {
       card: "summary_large_image",
       title,
       description,
-      images: [`/${locale}/opengraph-image`],
+      images: [ogImage(locale, title)],
     },
   };
 }

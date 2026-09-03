@@ -21,6 +21,7 @@ import { TopBar } from "@/components/chrome/TopBar";
 import { EntryVeil } from "@/components/chrome/EntryVeil";
 import { TransitionProvider } from "@/lib/animation/transition-context";
 import { SiteAnalytics } from "@/components/analytics/SiteAnalytics";
+import { ogImage } from "@/lib/seo/og-image";
 
 // Pre-paint skip for the entry intro (S1.10). The attribute lands BEFORE the
 // veil element parses, so CSS hides it at first paint rather than letting it
@@ -64,6 +65,7 @@ export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));
 }
 
+
 export async function generateMetadata({
   params,
 }: {
@@ -89,8 +91,14 @@ export async function generateMetadata({
       url: `/${locale}`,
       title,
       description,
+      images: [ogImage(locale)],
     },
-    twitter: { card: "summary_large_image", title, description },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: [ogImage(locale)],
+    },
     robots: { index: true, follow: true },
   };
 }

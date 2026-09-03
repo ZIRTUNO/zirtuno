@@ -9,6 +9,7 @@ import {
   findLegalDoc,
   type LegalSection,
 } from "@/lib/content/legal";
+import { ogImage } from "@/lib/seo/og-image";
 
 export function generateStaticParams() {
   return routing.locales.flatMap((locale) =>
@@ -49,6 +50,7 @@ export async function generateMetadata({
       url: canonical,
       title,
       description,
+      images: [ogImage(locale, title)],
     },
   };
 }

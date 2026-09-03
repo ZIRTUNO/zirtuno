@@ -11,6 +11,7 @@ import {
   getAllProjectSlugs,
   getNextProject,
 } from "@/lib/content/work";
+import { ogImage } from "@/lib/seo/og-image";
 
 export async function generateStaticParams() {
   const slugs = await getAllProjectSlugs();
@@ -67,13 +68,13 @@ export async function generateMetadata({
       url: canonical,
       title: metaTitle,
       description: metaDescription,
-      images: [{ url: `/${locale}/opengraph-image`, alt: metaTitle }],
+      images: [ogImage(locale, metaTitle)],
     },
     twitter: {
       card: "summary_large_image",
       title: metaTitle,
       description: metaDescription,
-      images: [`/${locale}/opengraph-image`],
+      images: [ogImage(locale, metaTitle)],
     },
     robots: project.prototype ? { index: false, follow: false } : undefined,
   };
