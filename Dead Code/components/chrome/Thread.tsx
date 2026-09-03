@@ -9,7 +9,8 @@ import {
 } from "@/lib/motion/membrane-runtime";
 
 /**
- * The secondary CTA's rule, as liquid.
+ * Quarantined secondary CTA rule. Its kernel was removed from
+ * `lib/motion/membrane.mjs` with the active secondary CTA family.
  *
  * A secondary is a word, an arrow and a line under it. The line used to arrive
  * by `transform: scaleX(0 → 1)` from the left — which is fine on its own and

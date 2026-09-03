@@ -218,21 +218,6 @@ export default async function CaseStudyPage({
           </section>
         )}
 
-        {project.liveUrl && (
-          <a
-            href={project.liveUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            data-cursor="hover"
-            className="cta cta-secondary mt-[var(--space-block)] inline-flex"
-          >
-            <span className="cta-label">{t("case.liveSite")}</span>
-            <span className="cta-arrow" aria-hidden="true">
-              →
-            </span>
-          </a>
-        )}
-
         {next && (
           <Link
             href={`/work/${next.slug}`}

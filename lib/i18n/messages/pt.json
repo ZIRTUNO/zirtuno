@@ -39,7 +39,6 @@
   },
   "cta": {
     "analysis": "Solicitar análise inicial",
-    "portfolio": "Ver portfólio",
     "structure": "Estruturar meu digital",
     "talk": "Falar com a Zirtuno",
     "talkShort": "Contato"
@@ -333,7 +332,6 @@
       "credits": "Créditos",
       "next": "Próximo projeto",
       "nextArchitecture": "Próxima arquitetura",
-      "liveSite": "Ver site",
       "back": "Voltar aos projetos"
     },
     "empty": "Nenhuma arquitetura publicada nesta seleção.",
@@ -616,7 +614,6 @@
     "code": "404",
     "metaTitle": "Página não encontrada",
     "title": "Esta página se dispersou.",
-    "body": "O caminho que você procurava não existe ou ainda não tomou forma.",
-    "cta": "Voltar ao início"
+    "body": "O caminho que você procurava não existe ou ainda não tomou forma."
   }
 }

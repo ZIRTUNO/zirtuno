@@ -59,7 +59,7 @@ export default async function HomePage({
       >
         <Hero />
         <ChapterProblem />
-        <ChapterEcosystem hasWork={hasWork} />
+        <ChapterEcosystem />
         <ChapterServices hasWork={hasWork} />
         <ChapterMethod />
         <ChapterWork />

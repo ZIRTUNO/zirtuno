@@ -1,5 +1,4 @@
 import { useTranslations } from "next-intl";
-import { Link } from "@/lib/i18n/config";
 import { LoneDroplet } from "@/components/chrome/LoneDroplet";
 import { Footer } from "@/components/chrome/Footer";
 
@@ -27,14 +26,6 @@ export default function NotFound() {
             {t("title")}
           </h1>
           <p className="mt-[var(--space-tight)] text-body-l text-paper-lead">{t("body")}</p>
-          <div className="mt-[var(--space-group)] flex justify-center">
-            <Link href="/" data-cursor="hover" className="cta cta-secondary">
-              <span className="cta-label">{t("cta")}</span>
-              <span className="cta-arrow" aria-hidden="true">
-                →
-              </span>
-            </Link>
-          </div>
         </div>
       </main>
       <Footer />

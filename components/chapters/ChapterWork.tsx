@@ -1,12 +1,12 @@
 import { getTranslations } from "next-intl/server";
 import { Reveal } from "@/components/ui/Reveal";
-import { CtaAnalysis, CtaPortfolio } from "@/components/chrome/CtaButton";
+import { CtaAnalysis } from "@/components/chrome/CtaButton";
 import { WorkGallery } from "@/components/work/WorkGallery";
 import { getFeaturedProjects } from "@/lib/content/work";
 
 /**
  * S7 · Selected Work (homepage strip). A curated set of featured projects,
- * ending with the portfolio CTA → /work. Primary credibility section.
+ * presenting the portfolio selection itself. Primary credibility section.
  *
  * While the selection is empty the chapter must not pretend otherwise, and it
  * must not point at an empty index: the honest statement becomes a designed
@@ -40,13 +40,7 @@ export async function ChapterWork() {
       </Reveal>
 
       {projects.length > 0 ? (
-        <>
-          <WorkGallery projects={projects} className="work-strip mt-[var(--space-span)]" />
-
-          <Reveal inView className="mt-[var(--space-block)] flex">
-            <CtaPortfolio placement="work" />
-          </Reveal>
-        </>
+        <WorkGallery projects={projects} className="work-strip mt-[var(--space-span)]" />
       ) : (
         <Reveal inView className="work-empty mt-[var(--space-block)]">
           <p className="work-empty-label">{t("emptyLabel")}</p>

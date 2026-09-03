@@ -110,7 +110,6 @@ export default async function CareersPage({
                 does not apply, so this navigates home carrying the tag. */}
             <div className="careers-cta">
               <CtaButton
-                variant="primary"
                 intent="careers"
                 label={t("applyCta")}
                 placement="careers"

@@ -30,8 +30,8 @@ const TAG = process.env.TAG ?? "membrane";
 const W = Number(process.env.W ?? 1440);
 const H = Number(process.env.H ?? 900);
 const PAD = 26; // shoot a margin around the button so overflow is visible
-// ONLY=hero|thread|cta|rm — shoot one section. Iterating on the hero meant
-// sitting through the other three every run.
+// ONLY=hero|cta|rm — shoot one section. Iterating on the hero means sitting
+// through the other two every run.
 const ONLY = (process.env.ONLY ?? "").toLowerCase();
 const want = (name) => !ONLY || ONLY === name;
 
@@ -278,134 +278,6 @@ const focusOk = await page.evaluate(() => {
 });
 await frame("8-focus", `(${JSON.stringify(focusOk)})`);
 
-// ── the THREAD, on a secondary CTA ─────────────────────────────────────────
-// Its own page, deliberately. The secondary sits 12 000 px down and by this
-// point the main page's rAF belongs to us — but GSAP's ticker cached the real
-// `requestAnimationFrame` at init, so Lenis is still alive and still owns the
-// scroll, and it drags the viewport back off the element between the scroll
-// and the shutter. A fresh context scrolls normally first, then takes the
-// clock, which is the same order the primary got.
-if (want("thread")) {
-  const tCtx = await browser.newContext({
-    viewport: { width: W, height: H },
-    deviceScaleFactor: 2,
-  });
-  const tp = await tCtx.newPage();
-  await tp.goto(`${BASE}/en?ftier=none&fcine=0`, { waitUntil: "load" });
-  await tp.waitForTimeout(2200);
-
-  const sec = await tp.evaluate(async () => {
-    const el = document.querySelector(".cta-secondary");
-    if (!el) return null;
-    const y =
-      el.getBoundingClientRect().top + window.scrollY - window.innerHeight / 2;
-    for (let i = 0; i < 60; i++) {
-      window.scrollTo(0, y);
-      await new Promise((r) => setTimeout(r, 90));
-      if (Math.abs(window.scrollY - y) < 4) break;
-    }
-    let p = el.parentElement;
-    while (p && p !== document.body) {
-      if (p.hasAttribute("data-reveal")) {
-        p.style.opacity = "1";
-        p.style.transform = "none";
-      }
-      p = p.parentElement;
-    }
-    const hide = document.createElement("style");
-    hide.textContent = ".cursor-dot,.cursor-ring{display:none!important}";
-    document.head.appendChild(hide);
-    el.addEventListener("click", (e) => {
-      e.preventDefault();
-      e.stopImmediatePropagation();
-    }, true);
-    await new Promise((r) => setTimeout(r, 300));
-    const r = el.getBoundingClientRect();
-    return {
-      x: r.x, y: r.y, w: r.width, h: r.height,
-      thread: el.getAttribute("data-thread"),
-    };
-  });
-
-  if (sec && sec.y > 0 && sec.y < H) {
-    await tp.evaluate(() => {
-      let vt = performance.now();
-      const queue = [];
-      window.requestAnimationFrame = (cb) => queue.push(cb);
-      window.cancelAnimationFrame = () => {};
-      performance.now = () => vt;
-      window.__advance = (ms, step = 16.7) => {
-        for (let acc = 0; acc < ms; acc += step) {
-          vt += step;
-          for (const cb of queue.splice(0)) cb(vt);
-        }
-      };
-    });
-    const tAdvance = (ms) => tp.evaluate((m) => window.__advance(m), ms);
-    const sclip = async () => {
-      const r = await tp.evaluate(() => {
-        const b = document.querySelector(".cta-secondary").getBoundingClientRect();
-        return { x: b.x, y: b.y, w: b.width, h: b.height };
-      });
-      return {
-        x: Math.max(0, Math.round(r.x - PAD)),
-        y: Math.max(0, Math.round(r.y - PAD)),
-        width: Math.round(r.w + PAD * 2),
-        height: Math.round(r.h + PAD * 2),
-      };
-    };
-    const sBody = () =>
-      tp.evaluate(() => {
-        const d =
-          document.querySelector(".cta-secondary .thr-fill")?.getAttribute("d") || "";
-        if (!d) return "thread — (empty)";
-        const n = d.match(/-?[0-9.]+/g).map(Number);
-        let lo = 1e9, hi = -1e9, xlo = 1e9, xhi = -1e9;
-        for (let i = 0; i < n.length; i += 2) { xlo = Math.min(xlo, n[i]); xhi = Math.max(xhi, n[i]); }
-        for (let i = 1; i < n.length; i += 2) { lo = Math.min(lo, n[i]); hi = Math.max(hi, n[i]); }
-        return `body ${(hi - lo).toFixed(1)}px over ${Math.round(xhi - xlo)}px`;
-      });
-    const sframe = async (name, extra = "") => {
-      await tp.waitForTimeout(200);
-      log.push(`${name.padEnd(17)} ${(await sBody()).padEnd(30)} ${extra}`);
-      await tp.screenshot({ path: `${OUT}/${TAG}-${name}.png`, clip: await sclip() });
-    };
-
-    log.push(`
-  secondary ${sec.w.toFixed(0)}x${sec.h.toFixed(0)}  data-thread=${sec.thread}`);
-    await tp.mouse.move(20, 20);
-    await tAdvance(1400);
-    await sframe("t1-rest", "(must be empty)");
-    // pour from the RIGHT end, to show the source is the crossing point
-    await tp.mouse.move(sec.x + sec.w - 12, sec.y + sec.h * 0.5);
-    await tAdvance(90);
-    await sframe("t2-pour-90ms", "(entered at the right end)");
-    await tAdvance(130);
-    await sframe("t3-pour-220ms", "(front ahead of the body)");
-    await tAdvance(500);
-    await sframe("t4-poured");
-    await tp.mouse.down();
-    await tAdvance(70);
-    await sframe("t5-press-70ms", "(crest)");
-    await tAdvance(120);
-    await sframe("t6-press-190ms", "(trough — thinner than rest)");
-    await tp.mouse.up();
-    await tp.mouse.move(20, 20);
-    await tAdvance(1800);
-    await sframe("t7-withdrawn", "(must be empty — exact rest)");
-  } else {
-    log.push(`
-  secondary NOT CAPTURED (off-screen: ${JSON.stringify(sec)})`);
-  }
-  await tCtx.close();
-}
-
-// Every section from here gets the browser to itself. With the main context and
-// the thread context still open, `mouse.down()` in a THIRD context dispatched no
-// pointerdown at all — the move landed (hover still deformed, because that runs
-// off a window listener) but the press never reached the element, which reads
-// exactly like a covered button. Closing each context when its block ends fixes
-// it and costs nothing.
 }
 if (want("cta")) await ctx.close();
 
