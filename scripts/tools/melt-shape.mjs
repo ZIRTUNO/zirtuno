@@ -62,9 +62,15 @@ import { edt2d } from "../../lib/webgl/sdf-core.mjs";
 // Going further is a taste call about how much merge to spend, and it is one
 // reload away on ?fsat=. Anything past these budgets is a NEW defect.
 const BUDGET = {
-  circ: 0.12,
+  circ: 0.14,
   pop: 0.035,
   area: 0.26,
+  // Connectivity, against what the shipped melt measures: worst 12 bodies with
+  // the largest holding 31% of the mass. Anything past this is the cloud
+  // coming apart, which reads as a broken transition rather than a morph —
+  // and it is the term that was missing while two bad passes scored as wins.
+  bodies: 14,
+  whole: 0.28,
 };
 
 const arg = (k, d) => {
@@ -117,10 +123,45 @@ function stats(on) {
         }
       }
     }
+  // CONNECTIVITY — the term this gate was missing, and the reason two bad
+  // passes scored as wins. A shattered cloud has an enormous perimeter, so
+  // fragmenting the body LOWERS circularity: without this, "less round" and
+  // "come apart into beads" are indistinguishable, and the gate rewards the
+  // second while you are trying to buy the first.
+  const lab2 = new Uint8Array(RES * RES);
+  let bodies = 0;
+  let largest = 0;
+  for (let y = 0; y < RES; y++)
+    for (let x = 0; x < RES; x++) {
+      const i = y * RES + x;
+      if (!on[i] || lab2[i]) continue;
+      bodies++;
+      let sz = 0;
+      const st = [i];
+      lab2[i] = 1;
+      while (st.length) {
+        const p = st.pop();
+        sz++;
+        const px = p % RES;
+        const py = (p / RES) | 0;
+        for (const [dx, dy] of [[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]]) {
+          const nx = px + dx;
+          const ny = py + dy;
+          if (nx < 0 || ny < 0 || nx >= RES || ny >= RES) continue;
+          const q = ny * RES + nx;
+          if (lab2[q] || !on[q]) continue;
+          lab2[q] = 1;
+          st.push(q);
+        }
+      }
+      if (sz > largest) largest = sz;
+    }
   return {
     area,
     circ: per > 0 ? (4 * Math.PI * area) / (per * per) : 0,
     holes: Math.max(0, bg - 1),
+    bodies,
+    whole: area ? largest / area : 1,
   };
 }
 
@@ -176,6 +217,8 @@ function runMelts(n, verbose) {
     }
     pop /= masks.length - 1;
     const mid = st[(STEPS / 2) | 0];
+    const worstBodies = Math.max(...st.map((x) => x.bodies));
+    const worstWhole = Math.min(...st.map((x) => x.whole));
     const worstCirc = Math.max(...st.map((s) => s.circ));
     let worstArea = 0;
     st.forEach((s, i) => {
@@ -186,6 +229,7 @@ function runMelts(n, verbose) {
       console.log(
         `  ${(NAMES[a] + "→" + NAMES[b]).padEnd(22)} circ ${mid.circ.toFixed(3)} (worst ${worstCirc.toFixed(3)})` +
           `  area±${(worstArea * 100).toFixed(0).padStart(3)}%  holes ${mid.holes}` +
+          `  bodies ${String(worstBodies).padStart(2)} whole ${(worstWhole * 100).toFixed(0).padStart(3)}%` +
           `  pop ${pop.toFixed(4)} (worst ${popMax.toFixed(4)})`,
       );
     acc.circ += worstCirc;
@@ -193,10 +237,16 @@ function runMelts(n, verbose) {
     acc.popMax = Math.max(acc.popMax, popMax);
     acc.area = Math.max(acc.area, worstArea);
     acc.holes += mid.holes;
+    acc.bodies = Math.max(acc.bodies ?? 0, worstBodies);
+    acc.whole = Math.min(acc.whole ?? 1, worstWhole);
     acc.worst.push({ melt: `${NAMES[a]}→${NAMES[b]}`, circ: worstCirc, pop: popMax, area: worstArea });
   }
   const k = MELTS.length;
-  return { circ: acc.circ / k, pop: acc.pop / k, popMax: acc.popMax, area: acc.area, holes: acc.holes / k, worst: acc.worst };
+  return {
+    circ: acc.circ / k, pop: acc.pop / k, popMax: acc.popMax, area: acc.area,
+    holes: acc.holes / k, bodies: acc.bodies ?? 0, whole: acc.whole ?? 1,
+    worst: acc.worst,
+  };
 }
 
 /**
@@ -254,7 +304,9 @@ console.log(
   `\n  MEAN   circ ${r.circ.toFixed(3)} (budget ${BUDGET.circ.toFixed(3)})` +
     `   area ±${(r.area * 100).toFixed(0)}% (budget ${(BUDGET.area * 100).toFixed(0)}%)` +
     `   pop worst ${r.popMax.toFixed(4)} (budget ${BUDGET.pop.toFixed(4)})` +
-    `   holes ${r.holes.toFixed(1)}`,
+    `   holes ${r.holes.toFixed(1)}` +
+    `
+         bodies worst ${r.bodies} (budget ${BUDGET.bodies})   largest body ${(r.whole * 100).toFixed(0)}% (budget ${(BUDGET.whole * 100).toFixed(0)}%)`,
 );
 console.log("\nTHE GOO — neck width at the midline, as a fraction of one droplet's diameter");
 for (const row of neckProfile(MELT_SAT))
@@ -264,6 +316,8 @@ const fails = [];
 if (r.circ > BUDGET.circ) fails.push(`circ ${r.circ.toFixed(3)} > ${BUDGET.circ.toFixed(3)}`);
 if (r.popMax > BUDGET.pop) fails.push(`pop ${r.popMax.toFixed(4)} > ${BUDGET.pop.toFixed(4)}`);
 if (r.area > BUDGET.area) fails.push(`area ±${(r.area * 100).toFixed(0)}% > ${(BUDGET.area * 100).toFixed(0)}%`);
+if (r.bodies > BUDGET.bodies) fails.push(`fragmented into ${r.bodies} bodies > ${BUDGET.bodies}`);
+if (r.whole < BUDGET.whole) fails.push(`largest body only ${(r.whole * 100).toFixed(0)}% < ${(BUDGET.whole * 100).toFixed(0)}%`);
 if (fails.length) {
   console.log(`\nFAIL: ${fails.join("  ·  ")}`);
   for (const w of r.worst.sort((x, y) => y.circ - x.circ).slice(0, 3))

@@ -29,6 +29,7 @@ import { loadForms, prepareForms, addBalls } from "../support/melt-sim.mjs";
 import { CLOUDS, STAG, N, clamp01 } from "../../lib/webgl/phys.mjs";
 import { permFor, formPhase, FORM_SOLIDITY, meltDroplet } from "../../lib/webgl/melt.mjs";
 import { MELT_SAT } from "../../lib/webgl/sdf-glass-shader.mjs";
+import { meltSat } from "../../lib/webgl/melt.mjs";
 import { edt2d } from "../../lib/webgl/sdf-core.mjs";
 
 // The forms' own circularity, and the ceiling the gate holds a melt to.
@@ -42,7 +43,6 @@ const arg = (k, d) => {
 const RES = arg("--res", 256);
 const STEPS = arg("--steps", 13);
 const PASSES = arg("--passes", 4);
-const NF = arg("--n", MELT_SAT);
 // a single global scale on the derived FORM_SOLIDITY, fitted alongside the
 // knots: thicker droplets buy area and cost roundness, so the two levers only
 // mean anything together.
@@ -82,7 +82,7 @@ for (const a of MELTS) {
   for (const end of [0, 1]) {
     const ph = formPhase(end);
     const f = prepareForms({
-      forms, a, b, fa: ph.wA, fb: ph.wB, ea: ph.eA, eb: ph.eB, res: RES, n: NF,
+      forms, a, b, fa: ph.wA, fb: ph.wB, ea: ph.eA, eb: ph.eB, res: RES, n: meltSat(end),
     });
     let lit = 0;
     for (let i = 0; i < f.T.length; i++) if (f.T[i] >= 1) lit++;
@@ -91,7 +91,7 @@ for (const a of MELTS) {
   for (const p of PS) {
     const ph = formPhase(p);
     const f = prepareForms({
-      forms, a, b, fa: ph.wA, fb: ph.wB, ea: ph.eA, eb: ph.eB, res: RES, n: NF,
+      forms, a, b, fa: ph.wA, fb: ph.wB, ea: ph.eA, eb: ph.eB, res: RES, n: meltSat(p),
     });
     frames.push({
       a, b, p, perm, T: f.T, shield: f.shield,
@@ -138,6 +138,8 @@ function popBetween(prev, next) {
 function score(knots, scale) {
   let worst = 0;
   let sum = 0;
+  let over = 0;
+  let under = 0;
   let circSum = 0;
   let circWorst = 0;
   let popWorst = 0;
@@ -155,10 +157,13 @@ function score(knots, scale) {
         FORM_SOLIDITY[f.a] * scale, FORM_SOLIDITY[f.b] * scale, want);
       balls.push([dr[0], dr[1], dr[2], dr[3]]);
     }
-    const s = shapeOf(addBalls(f.T, f.shield, RES, balls, NF).T);
-    const e = Math.abs(1 - s.area / Math.max(f.ref, 1));
+    const s = shapeOf(addBalls(f.T, f.shield, RES, balls, meltSat(f.p)).T);
+    const rel = s.area / Math.max(f.ref, 1);
+    const e = Math.abs(1 - rel);
     sum += e;
     if (e > worst) worst = e;
+    if (rel > 1) over = Math.max(over, rel - 1);
+    else under = Math.max(under, 1 - rel);
     circSum += Math.max(0, s.circ - CIRC_OK);
     circWorst = Math.max(circWorst, s.circ);
     const key = `${f.a}-${f.b}`;
@@ -167,7 +172,7 @@ function score(knots, scale) {
     prevKey = key;
   }
   return {
-    worst, mean: sum / frames.length,
+    worst, mean: sum / frames.length, over, under,
     circMean: circSum / frames.length, circWorst, popWorst,
   };
 }
@@ -176,10 +181,10 @@ function score(knots, scale) {
  *  objective is satisfied perfectly by a body that inflates into a disc. */
 const POP_OK = 0.034; // what the shipped n = 1 melt achieves — do not regress it
 const cost = (s) =>
-  s.worst +
+  s.over * 2.5 + // SWELLING above the endpoint ramp — "everything gets too big"
+  s.under * 1.0 + // …and thinning below it — "the transition feels broken"
   s.mean * 0.5 +
-  s.circMean * 6 +
-  Math.max(0, s.circWorst - 0.15) * 3 +
+  s.circMean * 4 +
   Math.max(0, s.popWorst - POP_OK) * 20;
 
 let best = SHIPPED.slice();
