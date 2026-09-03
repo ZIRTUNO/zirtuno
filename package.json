@@ -6,6 +6,7 @@
     "dev": "next dev",
     "prebuild": "node scripts/verify/production-env.mjs --if-production",
     "build": "next build",
+    "build:webpack": "next build --webpack",
     "start": "next start",
     "lint": "eslint",
     "cf:build": "opennextjs-cloudflare build",
