@@ -1,5 +1,6 @@
 import type { NextConfig } from "next";
 import createNextIntlPlugin from "next-intl/plugin";
+import { initOpenNextCloudflareForDev } from "@opennextjs/cloudflare";
 
 const withNextIntl = createNextIntlPlugin("./lib/i18n/request.ts");
 
@@ -25,3 +26,7 @@ const nextConfig: NextConfig = {
 };
 
 export default withNextIntl(nextConfig);
+
+// Gives `next dev` the same Cloudflare bindings the deployed Worker gets, so
+// getCloudflareContext() does not behave differently locally than in production.
+initOpenNextCloudflareForDev();

@@ -1,0 +1,4 @@
+# Next fingerprints everything under /_next/static, so it is safe to cache the
+# hashed bundles — including the shader and metaball chunks — permanently.
+/_next/static/*
+  Cache-Control: public,max-age=31536000,immutable

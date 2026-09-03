@@ -68,3 +68,9 @@ s4-diag/
 # history, so the working copy is a local convenience, not a tracked artifact.
 # Rationale: docs/decisions/0001-dead-code-quarantine.md
 /Dead Code/
+
+# cloudflare workers (opennext adapter)
+.open-next/
+.wrangler/
+.dev.vars
+cloudflare-env.d.ts
