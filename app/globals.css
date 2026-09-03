@@ -718,7 +718,7 @@ html.lenis body {
 }
 
 /* ===========================================================================
-   CTA system (S1.15) — primary / secondary / ghost
+   CTA system (S1.15) — primary membrane actions
    =========================================================================== */
 .cta {
   display: inline-flex;
@@ -913,78 +913,12 @@ button.cta {
   display: none;
 }
 
-/* ── The thread: the same material under a secondary CTA ────────────────────
-   Same gating as the membrane. `.cta-secondary::after` — the scaleX rule —
-   stays untouched and is still the whole hover state without JS; the thread
-   simply takes over when it mounts. */
-.thr {
-  position: absolute;
-  inset: 0;
-  display: block;
-  pointer-events: none;
-}
-.thr-svg {
-  position: absolute;
-  inset: -6px 0; /* PAD in Thread.tsx — room for the pulse to swell */
-  width: 100%;
-  height: calc(100% + 12px);
-  overflow: visible;
-  pointer-events: none;
-}
-.thr-fill {
-  fill: currentColor;
-  stroke: none;
-}
-.cta-secondary[data-thread]::after {
-  display: none;
-}
-
-/* Secondary — text + trailing arrow; hover nudges arrow, draws underline. */
-.cta-secondary {
-  position: relative;
-  gap: 0.5rem;
-  color: var(--color-paper);
-  font-size: var(--text-mono);
-  line-height: var(--text-mono--line-height);
-  letter-spacing: var(--text-mono--letter-spacing);
-}
-.cta-secondary {
-  min-height: 44px;
-  padding-block: 0.625rem;
-}
-.cta-secondary::after {
-  content: "";
-  position: absolute;
-  left: 0;
-  bottom: -3px;
-  height: 1px;
-  width: 100%;
-  background: currentColor;
-  transform: scaleX(0);
-  transform-origin: left;
-  transition: transform 200ms var(--ease-arrive);
-}
-.cta-secondary:hover::after,
-.cta-secondary:focus-visible::after {
-  transform: scaleX(1);
-}
-
 @media (max-width: 420px) {
   .cta-primary {
     width: 100%;
     justify-content: center;
     padding-inline: clamp(1rem, 6vw, 1.5rem);
   }
-}
-
-/* Shared arrow nudge */
-.cta-arrow {
-  display: inline-block;
-  transition: transform 200ms var(--ease-arrive);
-}
-.cta-secondary:hover .cta-arrow,
-.cta-secondary:focus-visible .cta-arrow {
-  transform: translateX(6px);
 }
 
 /* ===========================================================================
@@ -1775,11 +1709,6 @@ section[id],
   .liquid-journey #services .pillar-accent {
     width: fit-content;
     max-width: 100%;
-  }
-
-  .liquid-journey .cta-secondary {
-    background: rgb(0 0 0 / 0.86);
-    box-shadow: 0 0 0.9rem 0.7rem rgb(0 0 0 / 0.86);
   }
 
   /* the stack's cyan spine would be cut by the per-item apertures — it moves

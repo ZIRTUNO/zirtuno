@@ -103,8 +103,7 @@ to the next control. `LIFT_MAX` (54 px) is set past `BREAK` (42 px) so an
 ordinary focus move detaches fully rather than smearing.
 
 **The lift is asymmetric**, and that is the whole feel of the arrival. Liquid
-runs when it is let go and is drawn back slowly — `THREAD` in `membrane.mjs`
-splits its own springs for exactly this reason. Departure rides
+runs when it is let go and is drawn back slowly. Departure rides
 `LIFT_TAU_OUT` (70 ms); the return rides `LIFT_TAU_IN` (240 ms). The stretch is
 split the same way.
 

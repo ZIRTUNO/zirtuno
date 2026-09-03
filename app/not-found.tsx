@@ -1,4 +1,3 @@
-import Link from "next/link";
 import {
   bricolage,
   geist,
@@ -33,16 +32,6 @@ export default function RootNotFound() {
             <p className="mx-auto mt-[var(--space-tight)] max-w-lg text-body-l text-paper-lead">
               {copy.body}
             </p>
-            <Link
-              href="/pt"
-              className="cta cta-secondary mt-[var(--space-group)]"
-              data-cursor="hover"
-            >
-              <span className="cta-label">{copy.cta}</span>
-              <span className="cta-arrow" aria-hidden="true">
-                →
-              </span>
-            </Link>
           </div>
         </main>
       </body>

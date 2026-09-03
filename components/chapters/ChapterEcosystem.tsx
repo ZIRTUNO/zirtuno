@@ -1,7 +1,7 @@
 import { useTranslations } from "next-intl";
 import { Reveal } from "@/components/ui/Reveal";
 import { ConfluenceMark } from "@/components/chapters/ConfluenceMark";
-import { CtaStructure, CtaPortfolio } from "@/components/chrome/CtaButton";
+import { CtaStructure } from "@/components/chrome/CtaButton";
 import { GATHER_SYSTEMS } from "@/lib/webgl/gathering.mjs";
 
 type Node = { name: string; tooltip: string };
@@ -30,7 +30,7 @@ type Node = { name: string; tooltip: string };
  * The live capability names and system markers are portalled into the sticky
  * layer by PageStage, so they can ride the liquid masses in its pixel space.
  */
-export function ChapterEcosystem({ hasWork }: { hasWork: boolean }) {
+export function ChapterEcosystem() {
   const t = useTranslations("ecosystem");
   const nodes = t.raw("nodes") as Node[];
   const systems = t.raw("systems") as Record<string, string>;
@@ -75,7 +75,7 @@ export function ChapterEcosystem({ hasWork }: { hasWork: boolean }) {
       </div>
 
       {/* The liquid has done the joining. Close with the operational result,
-          then the two existing conversion routes. */}
+          then the primary conversion route. */}
       <div className="page-x gather-outro">
         <Reveal inView className="gather-resolution">
           <p className="gather-resolution-line">{t("resolution")}</p>
@@ -110,8 +110,6 @@ export function ChapterEcosystem({ hasWork }: { hasWork: boolean }) {
           className="gather-actions"
         >
           <CtaStructure placement="ecosystem" />
-          {/* the portfolio link only exists while there is a portfolio */}
-          {hasWork && <CtaPortfolio placement="ecosystem" />}
         </Reveal>
       </div>
     </section>

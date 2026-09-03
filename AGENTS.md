@@ -433,8 +433,8 @@ Ask before adding any dependency or substituting any layer.
 - `lib/motion/membrane.mjs` is the vector liquid's kernel: DOM-free and
   deterministic like the `.mjs` field kernels, so `verify/membrane.mjs` runs it
   in plain node. `lib/motion/membrane-runtime.ts` owns the ONE rAF, the one
-  pointer listener and the one scroll listener that every membrane and thread on
-  a page shares — do not give a button its own loop.
+  pointer listener and the one scroll listener that every vector-liquid surface
+  on a page shares — do not give a button its own loop.
   Gates: `verify/membrane.mjs` (physics), `verify/membrane-mobile.mjs` (the
   autonomous half, in real device profiles), `capture/membrane.mjs` (state
   stills, virtual-clock driven).

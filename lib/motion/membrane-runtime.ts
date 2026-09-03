@@ -25,9 +25,9 @@
  */
 
 /**
- * The only shape the scheduler needs. A closed `Membrane` and a 1-D `Thread`
- * both satisfy it, which is what keeps a page carrying both down to one rAF
- * and one pointer listener rather than two parallel systems.
+ * The only shape the scheduler needs. Keeping this structural lets the CTA
+ * membrane and the contact-form liquid share the scheduler without coupling
+ * their concrete kernels.
  */
 export type Driven = {
   hand(x: number | null, y?: number, vx?: number, vy?: number): void;

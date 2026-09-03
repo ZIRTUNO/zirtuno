@@ -39,7 +39,6 @@
   },
   "cta": {
     "analysis": "Request initial analysis",
-    "portfolio": "See portfolio",
     "structure": "Structure my digital",
     "talk": "Talk to Zirtuno",
     "talkShort": "Contact"
@@ -333,7 +332,6 @@
       "credits": "Credits",
       "next": "Next project",
       "nextArchitecture": "Next architecture",
-      "liveSite": "Visit site",
       "back": "Back to work"
     },
     "empty": "No architecture has been published in this selection.",
@@ -616,7 +614,6 @@
     "code": "404",
     "metaTitle": "Page not found",
     "title": "This page has dispersed.",
-    "body": "The path you were looking for doesn't exist or hasn't taken shape yet.",
-    "cta": "Back home"
+    "body": "The path you were looking for doesn't exist or hasn't taken shape yet."
   }
 }

@@ -22,15 +22,6 @@ tags and placement; none of that changed.
 | **Release** | pointerup | Flood drains back toward its entry point. The surface returns through exactly **one** soft overshoot. | ζ = 0.55, settles ≈700 ms |
 | **Focus** | keyboard only (`:focus-visible`) | A second contour offset 4.5 px along the ring's own normals, so it deforms with the surface. | opacity 0.7 |
 
-### Secondary (`.cta-secondary`) — the thread
-
-The rule under the label is a filled ribbon, not a stroke, so its **thickness**
-can taper. It **pours from wherever the pointer crossed in** — not always from
-the left — with the front running ahead of the body. A press sends the same
-crest-then-trough pulse along it.
-
-Resting 0 px · poured 2.3 px · press crest 3.7 px · press trough 1.8 px.
-
 ### Hero (`.lab-cta`) — the same membrane over live liquid
 
 The hero CTA is a separate component from the CTA system (its own class, its own
@@ -147,7 +138,6 @@ lib/motion/membrane.mjs          the kernel — DOM-free, deterministic
 lib/motion/membrane.d.mts        its types (keep in sync by hand)
 lib/motion/membrane-runtime.ts   one rAF, one pointer listener, one scroll listener
 components/chrome/Membrane.tsx   the primary's SVG + input wiring
-components/chrome/Thread.tsx     the secondary's ribbon
 components/hero/Hero.tsx         the hero CTA (and components/lab/LabHero.tsx)
 app/globals.css                  everything under "THE MEMBRANE"
 app/lab.css                      the hero CTA's membrane rules
@@ -168,12 +158,10 @@ carrying both `cta-label` and `cta-label-ink`:
 </button>
 ```
 
-For a text CTA use `<Thread />` instead, after the label.
-
 ### Tuning
 
-Every constant lives in `MEM` / `THREAD` in the kernel with the reasoning beside
-it. The ones worth touching:
+Every constant lives in `MEM` in the kernel with the reasoning beside it. The
+ones worth touching:
 
 | Constant | Effect |
 |---|---|
@@ -207,8 +195,8 @@ BASE=http://localhost:3021 node scripts/capture/membrane.mjs
 ONLY=hero BASE=http://localhost:3021 node scripts/capture/membrane.mjs
 ```
 
-State stills of all four surfaces — primary, thread, hero, reduced motion.
-`ONLY=cta|thread|hero|rm` shoots one of them. Uses a **virtual clock** — rAF and `performance.now`
+State stills of the three surfaces — primary, hero, reduced motion.
+`ONLY=cta|hero|rm` shoots one of them. Uses a **virtual clock** — rAF and `performance.now`
 are replaced after the page settles, so a frame labelled "140 ms after the
 press" was taken at exactly that age. Note that CSS transitions still run on the
 browser's own clock, which is why `frame()` also waits in real time.

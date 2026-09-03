@@ -560,7 +560,7 @@ The copy files define exact strings.
 ### 6.1 Chapter 01 — Hero / Overture
 
 **Business job:** state the complete-ecosystem offer in the first reading and
-offer two clear next actions.
+offer one clear next action.
 
 **Content hierarchy:**
 
@@ -568,7 +568,7 @@ offer two clear next actions.
 2. poetic eyebrow;
 3. Bricolage positioning headline;
 4. Geist subline naming connected disciplines and growth value;
-5. `cta.analysis` and `cta.portfolio`;
+5. `cta.analysis`;
 6. living mark and seven-form indicator.
 
 **Liquid:** entry wordmark assembly hands off to the exact mark. The hero
@@ -644,7 +644,7 @@ becoming one, not by a diagram placed on top.
   drawn after the fact;
 - no counters, equation, progress register, pseudo-HUD, or dashboard chrome;
 - no literal separate canvas/core swap;
-- end CTAs: `cta.structure` and `cta.portfolio`.
+- end CTA: `cta.structure`.
 
 ### 6.4 Chapter 04 — The Services
 
@@ -778,7 +778,7 @@ form stills remain approved placeholder art only for the labeled demo set.
   framed as selected architectures;
 - filters, routes, locale metadata, keyboard focus, and media fallbacks work;
 - current remains subtle enough for card reading;
-- section-end `cta.portfolio`.
+- the project cards themselves remain the portfolio navigation.
 
 ### 6.7 Chapter 07 — The Origin
 
@@ -1006,19 +1006,18 @@ plainly-worded open-door page misleads nobody if it is never revised.
 | Key             | PT-BR                     | EN                       | Variant         | Action/intent                |
 | --------------- | ------------------------- | ------------------------ | --------------- | ---------------------------- |
 | `cta.analysis`  | Solicitar análise inicial | Request initial analysis | primary         | Contact, `analysis`          |
-| `cta.portfolio` | Ver portfólio             | See portfolio            | secondary       | `/work`                      |
 | `cta.structure` | Estruturar meu digital    | Structure my digital     | primary         | Contact, `structure`         |
-| `cta.talk`      | Falar com a Zirtuno       | Talk to Zirtuno          | ghost/secondary | Contact or approved WhatsApp |
+| `cta.talk`      | Falar com a Zirtuno       | Talk to Zirtuno          | primary/chrome  | Contact or approved WhatsApp |
 
 ### 7.2 CTA placement map — LOCKED
 
 - TopBar: Talk.
-- Hero: Analysis + Portfolio.
+- Hero: Analysis.
 - Problem end: Structure.
-- Ecosystem end: Structure + Portfolio.
+- Ecosystem end: Structure.
 - Each Service: filtered Work link; Services end: Analysis.
 - Método end: Analysis + Talk.
-- Each Work card: project link; Work end: Portfolio.
+- Each Work card: project link; no section-end CTA.
 - Studio end: Talk.
 - Contact: labeled Analysis submit plus approved secondary contact paths.
 - Mobile menu: Analysis pinned as primary action.

@@ -5,20 +5,12 @@ import { useTranslations } from "next-intl";
 import { Link, usePathname } from "@/lib/i18n/config";
 import { getLenis } from "@/lib/animation/lenis-store";
 import { Membrane } from "@/components/chrome/Membrane";
-import { Thread } from "@/components/chrome/Thread";
 import { cn } from "@/lib/utils";
 
 // build-spec S1.15 — the load-bearing CTA system.
-export type CtaVariant = "primary" | "secondary";
 export type CtaIntent = "analysis" | "structure" | "talk" | "careers";
 
-const VARIANT_CLASS: Record<CtaVariant, string> = {
-  primary: "cta cta-primary",
-  secondary: "cta cta-secondary",
-};
-
 type CtaButtonProps = {
-  variant?: CtaVariant;
   /** Routes to the contact form carrying this entry-intent tag (S1.15). */
   intent?: CtaIntent;
   /** Explicit destination (locale-relative), e.g. "/work" or "/work?category=ai". */
@@ -32,7 +24,7 @@ type CtaButtonProps = {
    * it is drawn from. Callers pass `intent="talk"` alongside it, so the
    * placement map in build-spec §7.2 and the conversion tagging are unchanged.
    */
-  labelKey?: "analysis" | "portfolio" | "structure" | "talk" | "talkShort";
+  labelKey?: "analysis" | "structure" | "talk" | "talkShort";
   /** Literal label override (skips i18n). */
   label?: string;
   /** Privacy-safe source label for conversion attribution. */
@@ -114,7 +106,6 @@ export function useCtaIntent({
  * clicks always fall through to the link (new tab keeps working).
  */
 export function CtaButton({
-  variant = "primary",
   intent,
   href,
   labelKey,
@@ -124,7 +115,6 @@ export function CtaButton({
 }: CtaButtonProps) {
   const t = useTranslations("cta");
   const text = label ?? (labelKey ? t(labelKey) : "");
-  const showArrow = variant === "secondary";
   const { href: destination, onClick, analytics } = useCtaIntent({
     intent,
     href,
@@ -137,47 +127,34 @@ export function CtaButton({
       data-cursor="hover"
       {...analytics}
       onClick={onClick}
-      className={cn(VARIANT_CLASS[variant], className)}
+      className={cn("cta cta-primary", className)}
     >
-      {variant === "primary" && (
-        <>
-          {/* The CSS sweep stays as the no-JS / reduced-motion state. The
-              membrane hides it when it mounts (see globals.css). */}
-          <span className="cta-fill" aria-hidden="true" />
-          <Membrane filled />
-          {/* The ink copy of the label, clipped to the flood front so the
-              words flip along a curved liquid edge. Hidden from the a11y tree
-              and from selection — the real label is the sibling above. */}
-          <span className="cta-label cta-label-ink" aria-hidden="true">
-            {text}
-          </span>
-        </>
-      )}
+      {/* The CSS sweep stays as the no-JS / reduced-motion state. The
+          membrane hides it when it mounts (see globals.css). */}
+      <span className="cta-fill" aria-hidden="true" />
+      <Membrane filled />
+      {/* The ink copy of the label, clipped to the flood front so the
+          words flip along a curved liquid edge. Hidden from the a11y tree
+          and from selection — the real label is the sibling above. */}
+      <span className="cta-label cta-label-ink" aria-hidden="true">
+        {text}
+      </span>
       <span className="cta-label">{text}</span>
-      {variant === "secondary" && <Thread />}
-      {showArrow && (
-        <span className="cta-arrow" aria-hidden="true">
-          →
-        </span>
-      )}
     </Link>
   );
 }
 
-// ── Canonical preset CTAs (placement map, S1.15). Variant overridable. ──
+// ── Canonical primary CTAs (placement map, S1.15). ──
 
 export function CtaAnalysis({
-  variant = "primary",
   placement,
   className,
 }: {
-  variant?: CtaVariant;
   placement?: string;
   className?: string;
 }) {
   return (
     <CtaButton
-      variant={variant}
       intent="analysis"
       labelKey="analysis"
       placement={placement}
@@ -186,40 +163,15 @@ export function CtaAnalysis({
   );
 }
 
-export function CtaPortfolio({
-  variant = "secondary",
-  href = "/work",
-  placement,
-  className,
-}: {
-  variant?: CtaVariant;
-  href?: string;
-  placement?: string;
-  className?: string;
-}) {
-  return (
-    <CtaButton
-      variant={variant}
-      href={href}
-      labelKey="portfolio"
-      placement={placement}
-      className={className}
-    />
-  );
-}
-
 export function CtaStructure({
-  variant = "primary",
   placement,
   className,
 }: {
-  variant?: CtaVariant;
   placement?: string;
   className?: string;
 }) {
   return (
     <CtaButton
-      variant={variant}
       intent="structure"
       labelKey="structure"
       placement={placement}
@@ -229,17 +181,14 @@ export function CtaStructure({
 }
 
 export function CtaTalk({
-  variant = "primary",
   placement,
   className,
 }: {
-  variant?: CtaVariant;
   placement?: string;
   className?: string;
 }) {
   return (
     <CtaButton
-      variant={variant}
       intent="talk"
       labelKey="talk"
       placement={placement}
