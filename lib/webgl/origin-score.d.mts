@@ -21,6 +21,7 @@ export declare const ORIGIN_ARC: {
   readonly MEET: Window;
   readonly FUSE: Window;
   readonly GROW: Window;
+  readonly EVAP: Window;
   readonly PURPOSE_IN: Window;
   readonly PURPOSE_OUT: Window;
   readonly ECHO: Window;
@@ -37,6 +38,9 @@ export declare const ORIGIN_ARC: {
   readonly SPELL: Window;
   readonly FADE: Window;
 };
+
+export declare const EVAP_MAX: number;
+export declare const CONDENSE_MAX: number;
 
 export declare const ramp: (p: number, w: Window) => number;
 export declare const easeRamp: (
@@ -58,6 +62,7 @@ export type OriginEnvelopes = {
   poles: number;
   pull: number;
   condense: number;
+  recirc: number;
   release: number;
   spell: number;
   fade: number;

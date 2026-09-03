@@ -199,6 +199,7 @@ export function makeMist(gl: WebGL2RenderingContext, size: number): Mist | null 
     dialB: U(pUpdate, "uDialB"),
     centre: U(pUpdate, "uCentre"),
     poleB: U(pUpdate, "uPoleB"),
+    dialC: U(pUpdate, "uDialC"),
     hand: U(pUpdate, "uHand"),
     handK: U(pUpdate, "uHandK"),
     shock: U(pUpdate, "uShock"),
@@ -256,6 +257,7 @@ export function makeMist(gl: WebGL2RenderingContext, size: number): Mist | null 
     gl.uniform4f(uU.dialB, dials.release, dials.spell, dials.curl, dials.floorOn);
     gl.uniform4f(uU.centre, dials.cx, dials.cy, dials.ax, dials.ay);
     gl.uniform4f(uU.poleB, dials.bx, dials.by, dials.floor, Math.max(input.aspect, 0.6) / 2);
+    gl.uniform4f(uU.dialC, dials.recirc, 0, 0, 0);
     gl.uniform4f(uU.hand, env[0], env[1], env[2], env[3]);
     gl.uniform4f(uU.handK, env[4], env[5], env[6], hasSpell && dials.spellOn > 0.5 ? 1 : 0);
     gl.uniform4fv(uU.shock, input.shock ?? zeroShock);

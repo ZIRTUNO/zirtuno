@@ -160,13 +160,32 @@ export function makeOriginScene(): SceneModule {
       const wr = g.rect("wrap");
       if (wr) {
         out.p = clamp01(-wr.top / Math.max(wr.height - vh, 1));
+        // THE HANDOFF (R7-B). Origin's grip used to be full at wr.top = 1.4vh
+        // — the house window, which assumes the previous chapter has already
+        // gone. Work's has not: it drains as ITS runway's foot leaves, and the
+        // opening block holds that foot a fixed 1.0vh above this rect, so Work
+        // was still at 1.000 when this reached 1.000 and the two scenes stood
+        // at full presence together (scripts/probe/origin-approach.mjs). The
+        // conductor weights droplet POSITIONS, so a summed weight of two is
+        // not a crossfade — it is both chapters' material averaged on one
+        // stage, which is exactly what made S7 arrive rather than begin.
+        //
+        // This now rises across Work's drain, one clock, one constant apart —
+        // the same argument work.ts makes about método, one chapter along.
         out.on =
-          clamp01((vh * 1.9 - wr.top) / (vh * 0.5)) *
+          clamp01((vh * 1.35 - wr.top) / (vh * 0.6)) *
           clamp01((wr.bottom + vh * 0.3) / (vh * 0.5));
         // THE APPROACH — the chapter's opening block scrolls by BEFORE the
-        // runway's p starts. The liquid boils off across it, so the stage is
-        // pure vapour by the time the first band pins.
-        out.lead = clamp01((vh * 1.45 - wr.top) / (vh * 0.85));
+        // runway's p starts, and the liquid boils off across it. Nearly twice
+        // the travel it had (1.55vh against 0.85), and it now finishes just
+        // INSIDE the runway rather than a full viewport before it, so the
+        // field is still arriving when the first band pins.
+        //
+        // It opens a little ahead of the grip on purpose: `dials.on` gates the
+        // vapour on `on` as well, so nothing is drawn until the scene has
+        // presence, and the two then rise together instead of the boil having
+        // to catch up from zero the moment the stage is handed over.
+        out.lead = clamp01((vh * 1.45 - wr.top) / (vh * 1.55));
       }
       // The type band's top, as the vapour's floor: the highest edge of any
       // copy block on screen. Bands pin one at a time at the viewport foot, so
@@ -278,11 +297,16 @@ export function makeOriginScene(): SceneModule {
       // Alive from the first speck of the boil-off to the last letter, and
       // skipped entirely (on = 0) everywhere else on the page.
       const on = clamp01(ctx.ch.on);
-      dials.on = on * smooth01(ctx.ch.lead / 0.05 + p * 20);
+      // The master opens ACROSS the approach rather than at the first hint of
+      // it. At lead/0.05 the gain was full a twentieth of the way in, so the
+      // vapour's brightness switched on and only its population grew after —
+      // the two together are what an appearance is.
+      dials.on = on * smooth01(ctx.ch.lead / 0.18 + p * 20);
       dials.evap = E.evap;
       dials.pull = E.pull;
       dials.poles = E.poles;
       dials.condense = E.condense;
+      dials.recirc = E.recirc;
       dials.release = E.release;
       dials.spellOn = ctx.ch.wOn > 0.5 ? 1 : 0;
       dials.spell = E.spell * dials.spellOn;

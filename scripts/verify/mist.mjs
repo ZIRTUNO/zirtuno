@@ -13,6 +13,9 @@
 //                     droplet, progressively, never all at once
 //   3. CONVERGENCE    the centre's pull draws the field in — mean distance to
 //                     the centre falls, and nothing passes through it
+//  3b. THE RETURN     …and with `recirc` dialled the inflow is a cycle: the
+//                     field holds a steady radius instead of collapsing, and
+//                     nothing piles at the core
 //   4. CONDENSATION   vapour that reaches a body becomes its skin and rides
 //                     its outline at the skin radius
 //   5. RELEASE        the skin is breathed out: captured count → 0, moving
@@ -205,6 +208,50 @@ const finiteState = (ref) => {
   for (let i = 0; i < NP; i++) maxSpeed = Math.max(maxSpeed, Math.hypot(ref.V[i * 2], ref.V[i * 2 + 1]));
   ok(maxSpeed <= MIST.V_MAX + 1e-6, `convergence: speed ${maxSpeed.toFixed(3)} past V_MAX`);
   ok(finiteState(ref), "convergence: non-finite state");
+}
+
+// ── 3b: the return (R7-B) ────────────────────────────────────────────────────
+// With `recirc` dialled the inflow is a CYCLE, not a collapse: the field
+// reaches a steady state that still has a rim to fall from, so the drawing's
+// arrows keep having something to carry. Without it (invariant 3 above) the
+// pull's meaning is unchanged — which is why this is a dial and not a rewrite.
+{
+  const ref = makeMistReference(NP, { probe: core.probe });
+  const hosts = hostsRing(0.02, 0); // hosts absent: pure field
+  ref.seedAt(hosts);
+  const d = makeMistDials();
+  d.evap = 1;
+  d.cx = 0.5;
+  d.cy = 0.5;
+  let t = run(ref, hosts, d, 800);
+  const meanR = () => {
+    let s = 0;
+    for (let i = 0; i < NP; i++) s += Math.hypot(ref.P[i * 2] - 0.5, ref.P[i * 2 + 1] - 0.5);
+    return s / NP;
+  };
+  const atCore = () => {
+    let n = 0;
+    for (let i = 0; i < NP; i++)
+      if (Math.hypot(ref.P[i * 2] - 0.5, ref.P[i * 2 + 1] - 0.5) < MIST.RECIRC_R) n++;
+    return n;
+  };
+  d.pull = 1;
+  d.recirc = 0.85;
+  t = run(ref, hosts, d, 4000, quietEnv, null, t);
+  const rA = meanR();
+  run(ref, hosts, d, 3000, quietEnv, null, t);
+  const rB = meanR();
+  // a steady state: the field settles instead of draining to the centre
+  ok(rA > MIST.RECIRC_R * 3, `the return: field collapsed to ${rA.toFixed(3)}`);
+  ok(
+    Math.abs(rB - rA) < rA * 0.25,
+    `the return: no steady state — mean radius ${rA.toFixed(3)} → ${rB.toFixed(3)}`,
+  );
+  // …and the centre does not pile up: what stays is the share `recirc` leaves
+  ok(atCore() < NP * 0.2, `the return: ${atCore()}/${NP} piled at the core`);
+  ok(finiteState(ref), "the return: non-finite state");
+  // the dial is OFF by default, so every other consumer is untouched
+  ok(makeMistDials().recirc === 0, "the return: dial not off by default");
 }
 
 // ── 4: condensation ──────────────────────────────────────────────────────────

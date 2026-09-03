@@ -63,6 +63,8 @@ export type MistDials = {
   pull: number;
   poles: number;
   condense: number;
+  /** R7-B — share of the field returned to the rim on arrival (0 = off) */
+  recirc: number;
   release: number;
   spell: number;
   fade: number;
