@@ -8,6 +8,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "cf:build": "opennextjs-cloudflare build",
+    "cf:preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
+    "cf:deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
     "forms:rest": "node scripts/capture/rest-forms.mjs",
     "forms:melts": "node scripts/capture/morph-scrub.mjs",
     "forms:shape": "node scripts/tools/melt-shape.mjs",
@@ -30,6 +33,7 @@
   },
   "dependencies": {
     "@hookform/resolvers": "^5.4.0",
+    "@opennextjs/cloudflare": "^1.20.6",
     "@rive-app/react-webgl2": "^4.29.5",
     "@sanity/client": "^7.23.0",
     "clsx": "^2.1.1",
@@ -57,7 +61,8 @@
     "playwright": "^1.61.1",
     "pngjs": "^7.0.0",
     "tailwindcss": "^4.3.2",
-    "typescript": "^6.0.3"
+    "typescript": "^6.0.3",
+    "wrangler": "^4.128.0"
   },
   "overrides": {
     "next": {
