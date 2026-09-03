@@ -3,6 +3,7 @@ import { setRequestLocale, getTranslations } from "next-intl/server";
 import { Footer } from "@/components/chrome/Footer";
 import { CtaButton } from "@/components/chrome/CtaButton";
 import { routing } from "@/lib/i18n/config";
+import { ogImage } from "@/lib/seo/og-image";
 
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));
@@ -31,6 +32,7 @@ export async function generateMetadata({
       url: canonical,
       title: t("metaTitle"),
       description: t("metaDescription"),
+      images: [ogImage(locale, t("metaTitle"))],
     },
   };
 }
