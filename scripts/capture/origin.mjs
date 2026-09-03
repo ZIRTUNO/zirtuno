@@ -11,6 +11,17 @@
  *
  *   node scripts/capture/origin.mjs
  *   STOPS=0,0.25,0.5,0.75,1 TAG=after node scripts/capture/origin.mjs
+ *
+ * R7: a NEGATIVE stop parks the viewport ABOVE the runway, inside the
+ * chapter's opening — where the liquid boils off into the vapour before p
+ * starts — so the entrance can be photographed too:
+ *   STOPS=-0.2,-0.08,0.04,0.12,0.24,0.34,0.45,0.66,0.88,0.96 BASE=http://localhost:3001 node scripts/capture/origin.mjs
+ *
+ * Each stop settles WAIT ms of wall clock (default 1400) and then SIM ms of
+ * the vapour's own clock (default 2500 — substeps, read from
+ * window.__optics.mistSim), because the software renderer runs the
+ * simulation slower than time and a wall-clock wait alone photographs the
+ * letters still arriving.
  */
 import fs from "node:fs";
 import { chromium } from "playwright";
@@ -31,7 +42,10 @@ const browser = await chromium.launch({
   args: ["--enable-unsafe-swiftshader", "--use-gl=angle", "--use-angle=swiftshader", "--ignore-gpu-blocklist"],
 });
 const page = await (await browser.newContext({ viewport: { width: W, height: H } })).newPage();
-await page.goto(`${BASE}/${process.env.LOC ?? "en"}?ftier=full${process.env.Q ?? ""}`, { waitUntil: "load" });
+// fgov=0 and fwatch=0: the software renderer runs a few frames a second, and
+// waiting out the vapour's clock at that cadence would otherwise wake the
+// idle governor and demote the rung under review to one without a vapour
+await page.goto(`${BASE}/${process.env.LOC ?? "en"}?ftier=full&fgov=0&fwatch=0${process.env.Q ?? ""}`, { waitUntil: "load" });
 await page.waitForFunction(() => !!window.__scenes, { timeout: 30000 });
 await page.waitForTimeout(1500);
 
@@ -48,7 +62,14 @@ for (const f of STOPS) {
       if (Math.abs(window.scrollY - t) < 3) break;
     }
   }, y);
+  // settle on the wall clock, then on the vapour's own clock (SIM ms of
+  // substeps — the software renderer runs the simulation slower than time)
+  const simStart = await page.evaluate(() => window.__optics?.mistSim ?? 0);
   await page.waitForTimeout(Number(process.env.WAIT ?? 1400));
+  const simNeed = simStart + Number(process.env.SIM ?? 2500) / 8;
+  await page
+    .waitForFunction((n) => (window.__optics?.mistSim ?? 0) >= n, simNeed, { timeout: 25000 })
+    .catch(() => {});
 
   const info = await page.evaluate(() => {
     const vis = (el) => {

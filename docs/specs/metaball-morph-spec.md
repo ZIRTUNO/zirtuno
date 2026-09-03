@@ -350,6 +350,58 @@ Ambient droplets are conductor-owned, not scene-owned background particles.
 Scenes may scale their presence but not create another unrelated ambient
 system. They reinforce one atmosphere across dead gaps and handoffs.
 
+### 6.4 The mist — R7
+
+THE MIST is the fourth scale of the one liquid, and it exists for the Origin's
+argument: dispersal at the scale of a droplet is a scatter, while dispersal at
+the scale of vapour is a field with nothing solid in it. `lib/webgl/mist.mjs`
+owns the tuning table (`MIST`), the population sizing per probe tier (192² on
+full, 96² on lite) and a CPU REFERENCE of the update rule; `mist-shaders.mjs`
+generates the GLSL from that table and from `FLUID`; `mist-gl.ts` owns the GPU
+resources inside FieldStage's context.
+
+It is one family of the one material, on the same rules:
+
+- **one canvas, one clock.** FieldStage steps the vapour (ping-pong RGBA32F
+  or RGBA16F state, MRT: position+velocity and life+state+host+phase, fixed
+  8 ms substeps, at most 12 per frame, 90 at a reset so a deep link lands
+  settled) BEFORE its liquid pass and draws it AFTER, into the same target
+  the post chain composites. It is never a second canvas and never a
+  self-clocked layer: the conductor hands it the dials, the hosts and the
+  environment every frame, and scroll changes the regime while the system
+  stays alive between scroll events;
+- **the same forces.** The curl-noise ladder from `noise.mjs`, the hand's
+  displacement well and wake, the travelling strike (read from the FORM
+  uniforms the conductor already resolves, converted back to the droplets'
+  acceleration amplitude), the scroll lean and the type-aware obstacle flow
+  are ported with the `FLUID` constants injected. A retune moves droplets,
+  forms and vapour together or none of them;
+- **dials, not physics, from the scene.** A scene may implement `mist(ctx)`
+  and return a stable `MistDials` block: `on`, `evap` (emission from the
+  hosts), `pull` and `poles` (the centre and the two idea attractors —
+  constant-magnitude inflows with soft cores, never inverse squares),
+  `condense` (vapour at a host's surface becomes its SKIN and rides its
+  outline), `release` (the skin is breathed out), `spell` (a critically damped
+  spring onto per-particle letter targets), `fade`, `curl`, the band `floor`
+  and the wordmark box, plus `hostR`, the skin radius per authored droplet.
+  The conductor carries the strongest present scene's block, scales its
+  master by the scene's weight, writes the HOSTS by identity (the authored
+  48 as displayed — never by packed slot), and packs the environment;
+- **conserved.** Nothing is spawned or killed across the chapter; a particle
+  changes state — dormant, vapour, skin, vapour, type;
+- **inside a body it is the body.** The draw fades vapour inside any host's
+  radius, so the skin reads as a rind on the outline and free vapour never
+  speckles a solid interior;
+- **the ladder sheds it.** `RUNG_MIST` draws a share of the population per
+  rung (shed after the motes, before the glass; none on the flat rungs). A
+  context without renderable float textures has no vapour and the chapter
+  plays on the droplets alone. `?fmist=0` is the rollback; `?fmist=<edge>`
+  sets the texture edge for review.
+
+Gates: `verify/mist.mjs` (node — the rule, through the reference: score
+ordering, emission, convergence, condensation, release, spelling, the wall,
+the conductor plumbing, determinism) and `verify/origin.mjs` (browser).
+
 ## 7. Scene and Conductor Contract
 
 ### 7.1 Current architecture
@@ -834,7 +886,7 @@ free, since no shocks are ever registered.
 | Services/Bloom     | seven exact forms              | scrubbed §3.3 bridges                                                                           | high                     | no physics drift at endpoints                    |
 | Método/Rehearse    | exact mark only at Integration | probe, lattice, clusters, satellites                                                            | phase-specific           | three masses use cohesion                        |
 | Work/Current       | no dominant form               | Método's satellites become the gyre (i%3=0) + 5-droplet meniscus at the hovered card            | low (0.12; meniscus 0.4) | CURRENT R5-D · z 0.55 sub-surface · act fade III |
-| Origin/Fuse        | exact mark at fusion           | two clusters → mark → echo                                                                      | low → high → low         | continuous material afterglow                    |
+| Origin/Converge    | exact mark at fusion           | dispersed beads → two condensing bodies → mark → a few seeds → drain, with THE MIST boiling off the liquid, converging on the poles then the centre, condensing as the bodies' skin, breathed out under the purpose and drawn onto the letters of the name | low → high → low         | R7 · GPU vapour in the one canvas · continuous afterglow · `?fmist=0` |
 | Studio             | no dominant form               | origin echo survives as sparse orbits (i%6=0)                                                   | low (0.08)               | CURRENT R5-D · z 0.6 · act fade IV               |
 | Contact/Gather     | exact mark                     | all droplets gather; submit exhale                                                              | low → high → low         | labeled submit remains canonical                 |
 | Footer/Release     | no form                        | the mark's lowest droplet detaches and sinks out (overshot targets vs contact's held 50% blend) | low                      | CURRENT R5-D · ends at true page bottom          |
@@ -902,6 +954,11 @@ The renderer:
 | `lib/webgl/fluid-core.mjs`            | R5-B dynamics and satellite pool                              |
 | `lib/webgl/conductor.mjs`             | scene state, handoffs, arbiter, integration, score, energy    |
 | `lib/webgl/scenes/*.ts`               | geometry-to-target choreography                               |
+| `lib/webgl/origin-score.mjs`          | S7's beat map: envelopes, mist dial windows, copy windows    |
+| `lib/webgl/mist.mjs`                  | THE MIST's tuning table, sizing, CPU reference of the rule    |
+| `lib/webgl/mist-shaders.mjs`          | the vapour's GLSL, generated from MIST and FLUID              |
+| `lib/webgl/mist-gl.ts`                | the vapour's GPU resources inside the one canvas              |
+| `components/chapters/OriginDirector.tsx` | S7's GSAP master timeline, scrubbed by the origin clock    |
 | `components/field/PageStage.tsx`      | measurements, inputs, scene assembly, one canvas              |
 | `components/field/FieldStage.tsx`     | WebGL resource lifecycle and draw loop                        |
 | `components/lab/FormStillRenderer.tsx` | isolated deterministic exact-form QA path                     |
@@ -938,7 +995,10 @@ Retired architecture is not an alternate path. Do not create:
 | `?fgrade=0`               | exact optics bypass (no post, grade uniforms at 0 identity)    |
 | `?fshadow=0`              | isolate dynamic volume-shadow rollback; the rest of grade stays |
 | `?fgov=0`                 | idle-cadence governor bypass                                   |
+| `?fwatch=0`               | pin the rung: the FPS watchdog never demotes (capture QA)     |
 | `?fcine=0`                | cinematic bypass (neutral score, no veils)                    |
+| `?fmist=0`                | remove THE MIST (S7 plays on the droplets alone)              |
+| `?fmist=<edge>`           | the vapour's texture edge (population = edge²) for review     |
 
 ### 14.2 Required harnesses
 
@@ -956,6 +1016,8 @@ node scripts/verify/perf.mjs
 node scripts/verify/postfx.mjs
 node scripts/verify/rest-exact.mjs
 node scripts/verify/cinematics.mjs
+node scripts/verify/mist.mjs
+node scripts/verify/origin.mjs
 node scripts/verify/ecosystem.mjs
 node scripts/verify/devices.mjs
 node scripts/verify/context-loss.mjs

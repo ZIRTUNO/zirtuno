@@ -17,6 +17,7 @@
  */
 
 import type { FieldDriver } from "../field-drivers";
+import type { MistDials } from "../mist.mjs";
 
 /** Raw/damped control channels — every value is a plain number (booleans as
  *  0/1, "null" selections as -1) so damping and simulation stay trivial. */
@@ -140,6 +141,11 @@ export type SceneModule = {
   score?(ctx: SceneCtx): Partial<LightScore>;
   /** Form SDF texture became drawable (the hero autocycle gates on this). */
   formReady?(s: number): void;
+  /** R7 — THE MIST's dials for this frame, or null. The conductor hands the
+   *  strongest present scene's block to the renderer, scaled by its weight,
+   *  and fills the hosts (the authored 48 as displayed) beside it. A stable
+   *  object, rewritten in `tick` — never allocated per frame. */
+  mist?(ctx: SceneCtx): MistDials | null;
 };
 
 /** What makeConductor returns: the FieldStage-compatible driver plus the

@@ -120,6 +120,18 @@ verification.
   — frame scheduling and timestamp behavior.
 - [Page Visibility API — MDN](https://developer.mozilla.org/en-US/docs/Web/API/Page_Visibility_API)
   — pause/idle behavior and background-tab expectations.
+- [GPU Gems 3, ch. 23 — Kipfer, Segal, Westermann: particle systems on the GPU](https://developer.nvidia.com/gpugems/gpugems3/part-iv-image-effects/chapter-23-high-speed-off-screen-particles)
+  and the classic state-in-textures construction (position and velocity in
+  ping-pong float render targets, one fragment per particle) — the basis of
+  THE MIST (R7). The project's version is raw WebGL2 with MRT and instanced
+  quads driven by `gl_InstanceID`; no framework.
+- [Transform feedback and float render targets — WebGL2 fundamentals](https://webgl2fundamentals.org/webgl/lessons/webgl-gpgpu.html)
+  — the GPGPU pattern in plain WebGL2, including the float-texture
+  extension checks (`EXT_color_buffer_float` / half-float) the mist gates on.
+- [Codrops — GPGPU particle and attractor experiments](https://tympanus.net/codrops/tag/particles/)
+  — study the staging of convergence, streak-by-velocity rendering and
+  scroll-driven regime changes. Translate the principle only: the mist reads
+  its forces from the droplets' own tables and draws into the one canvas.
 
 Project-specific physics remains the `FLUID` table plus bind contract in
 `docs/specs/metaball-morph-spec.md §8`:
@@ -247,7 +259,7 @@ Do not copy:
 | Services | build spec §6.4, morph spec §5 | §6 ScrollTrigger |
 | Método | build spec §6.5 | §5 physics, §6 ScrollTrigger |
 | Work/Studio/Footer scenes | build spec §6.6/6.8/6.10 | §5–6 |
-| Origin particles/flash | build spec §6.7 | §6 scroll, §8 accessibility, Codrops particles |
+| Origin convergence / the mist | build spec §6.7, morph spec §6.4 | §5 GPGPU and curl noise, §6 scroll (GSAP owns the copy, scrubbed), §8 accessibility |
 | Contact | build spec §6.9 | §7 forms/email, §8 accessibility |
 | R5-C post chain | build spec §5.8/§9, morph spec §10 | §2 and §4 |
 | R5-D cinematic layer | build spec §4.5/§9 | §6 and §8 |

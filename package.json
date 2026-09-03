@@ -21,6 +21,8 @@
     "confluence": "node scripts/verify/confluence.mjs",
     "confluence:sheet": "node scripts/capture/confluence.mjs",
     "rail": "node scripts/verify/rail.mjs",
+    "mist": "node scripts/verify/mist.mjs",
+    "origin": "node scripts/verify/origin.mjs",
     "rail:sheet": "node scripts/capture/rail.mjs",
     "liquid:form:sheet": "node scripts/capture/coalesce-sheet.mjs",
     "chapters:sheet": "node scripts/capture/chapters.mjs",

@@ -88,7 +88,8 @@ The site is in R5, “One Continuous Liquid.”
   dither, luminance-gated grain), identity-gated in-shader grade (exposure,
   key boost, internal absorption, `iBallZ` depth bands), the `full-nofx`
   watchdog rung, and the ~30 Hz idle energy governor. `?fgrade=0` is the exact
-  optics bypass; `?fgov=0` disables the governor; `verify/postfx.mjs` and the
+  optics bypass; `?fgov=0` disables the governor; `?fwatch=0` pins the rung
+  against the watchdog (capture QA only); `verify/postfx.mjs` and the
   `verify/rest-exact.mjs` byte gate protect it.
 - **R5-D is complete:** the cinematic cut. Seven scene modules
   (site · método · work · origin · studio · contact · footer) leave no
@@ -197,12 +198,78 @@ The site is in R5, “One Continuous Liquid.”
   the population, the bind gate, grid/all-pairs agreement, the binner against
   brute force, and the freedom/containment pair; `probe/ball-budget.mjs` is the
   cost harness and `probe/wander.mjs` is the freedom harness.
+- **R7 is complete:** THE CONVERGENCE — S7 rebuilt around a FOURTH scale of the
+  one liquid. The chapter opens with the liquid letting go: the Work current's
+  cells disperse into small beads across the whole stage and the liquid BOILS
+  OFF into THE MIST (`lib/webgl/mist.mjs`), tens of thousands of micro-droplets
+  filling the viewport while the headline names two ideas. The whole chapter
+  is that field being drawn back in — onto two poles (the ideas condense out
+  of it), onto one point (the meeting; the centre's pull is a constant-magnitude
+  inflow with a soft core, never an inverse square, because a singularity is
+  the black-hole look this chapter must not have), into the exact mark (vapour
+  that reaches a body is taken up as its SKIN and rides the mark's outline),
+  breathed out again under the thesis, and finally onto the letters of the
+  name — the same vapour that made the mark spells ZIRTUNO, and the type takes
+  over from it. Form for what was dispersed, at the scale where dispersal has
+  nothing solid in it.
+
+  **It is the same material and the same canvas.** The vapour is a GPU field
+  (ping-pong float textures, MRT, instanced velocity-aligned capsules — the
+  arrows of the owner's drawing, drawn by the motion itself) that FieldStage
+  steps and draws around its liquid pass, into the same target the post chain
+  composites, so dense vapour blooms exactly as dense liquid does. Every force
+  it feels is the droplets' own law, ported with the FLUID constants injected:
+  the curl-noise ladder from noise.mjs, the hand's displacement well and wake,
+  the travelling strike (read from the FORM uniforms the conductor already
+  resolves, so one wave moves droplets, forms and vapour at one instant), the
+  scroll lean, the type-aware obstacle flow. Population is conserved through
+  the chapter: nothing is spawned or killed, it changes STATE — vapour, skin,
+  vapour, type. The scene owns none of the physics; it emits DIALS through a
+  `mist()` hook (a `MistDials` block) and the hosts' skin radii, the conductor
+  carries the block to the renderer with the authored 48 by IDENTITY and the
+  same environment the droplets read, and scroll changes the REGIME while the
+  system stays alive on its own clock between scroll events. `?fmist=0`
+  removes it; `?fmist=<edge>` sets the population's texture edge for review; a
+  context without renderable float textures simply has no vapour, and the
+  rung ladder sheds it (RUNG_MIST) after the motes and before the glass.
+
+  **THE SCORE is stated once.** `lib/webgl/origin-score.mjs` is the beat map —
+  the liquid's envelopes, the mist's dial windows and the copy's arrival and
+  release windows — on the house eases evaluated as arithmetic
+  (`cubicBezierAt` in easings.mjs). Two readers, neither a second measurement:
+  the origin scene, and THE DIRECTOR (`components/chapters/OriginDirector.tsx`),
+  the chapter's GSAP master timeline, positioned in p and SCRUBBED by the
+  clock PageStage already measures for the liquid (`lib/animation/
+  origin-clock.ts`; `timeline.time(p)`, never a ScrollTrigger of its own). GSAP
+  owns the cinematic layer — the horizon wipe's two numbers per block, the
+  letters of the two names condensing from their idea's side of the world
+  (SplitText, aria kept), the two clauses leaning into the meeting, the thesis
+  rising word by word, the type taking over from the spelled name — and never
+  touches a droplet or a particle. The fail-safe survives: nothing is hidden
+  until the clock is LIVE, so reduced motion, static tiers, the QA holds and
+  no-JS never lose a word. The Canvas-2D wordmark assembly is gone from S7 (it
+  survives for the entry veil); the name's targets are sampled from the DOM
+  glyphs themselves (`lib/animation/wordmark-targets.ts`) and mapped through
+  the measured box every frame. Two optional Rive SIGIL slots beside the ideas
+  (`OriginRive.tsx`, `NEXT_PUBLIC_ORIGIN_RIVE`) follow the intro's contract:
+  scrubbed, decorative, never a second clock and never the particle system.
+
+  Gates: `verify/mist.mjs` (the kernel's rules, in node, through a CPU
+  reference built from the same MIST table the GLSL is generated from — score
+  ordering, emission, convergence, condensation, release, spelling, the band
+  wall, the conductor plumbing, determinism) and `verify/origin.mjs` (browser:
+  the vapour exists, steps only over the chapter, paints and moves at every
+  beat, lights the letters before the type takes over, the director's split
+  and windows, `?fmist=0`, reduced motion, one canvas). `probe/origin-bands.mjs`
+  still gates the bands, now reading the score's release intent.
 
 ## 4. Non-Negotiable Rules
 
 1. **One liquid means one persistent homepage canvas.** The same canonical 48
    AUTHORED droplets travel from Hero to Footer, now carrying a mote population
-   derived from them (R6). Do not add per-chapter canvases,
+   derived from them (R6) and, through the Origin, a vapour population that
+   condenses onto them (R7) — in the same canvas, the same conductor frame,
+   the same forces. Do not add per-chapter canvases,
    remount the liquid between sections, or simulate continuity with a swap.
    Deterministic hero QA renderers and separate non-homepage surfaces are the
    only narrow exceptions.
@@ -378,7 +445,21 @@ Ask before adding any dependency or substituting any layer.
 - `lib/webgl/scenes/*.ts` translates measured geometry into scene targets,
   form claims, extras, activity, and light score.
 - `lib/webgl/fluid-core.mjs` owns velocity and environmental forces.
-- `components/field/FieldStage.tsx` owns WebGL resources and drawing.
+- `components/field/FieldStage.tsx` owns WebGL resources and drawing — and,
+  through `lib/webgl/mist-gl.ts`, THE MIST's GPU resources (R7): its ping-pong
+  state, its programs and VAOs, stepped before the liquid pass and drawn after
+  it into the same target. `lib/webgl/mist.mjs` owns the vapour's tuning table
+  and the CPU reference of its rule; `lib/webgl/mist-shaders.mjs` generates the
+  GLSL from that table and from FLUID, so a retune moves both. Scenes reach the
+  vapour ONLY through the `mist()` hook's dial block; the conductor carries it.
+- `lib/webgl/origin-score.mjs` owns S7's beat map — the liquid's envelopes,
+  the mist's dial windows and the copy windows, on the house eases. The origin
+  scene and the director both read it; neither restates a boundary.
+- `components/chapters/OriginDirector.tsx` owns S7's GSAP master timeline:
+  DOM choreography only, scrubbed by `lib/animation/origin-clock.ts`, which
+  PageStage ticks beside `--origin-p`. It never measures scroll and never
+  moves liquid. `components/chapters/OriginWordmark.tsx` publishes the name's
+  glyph samples (`lib/webgl/mist-store.ts`) for the spelling.
 - `lib/webgl/sdf-glass-shader.mjs` owns the unified field and locked glass.
 - `lib/webgl/post-chain.ts` + `post-shaders.mjs` (R5-C) own the framebuffer
   pipeline beside the renderer; every grade control defaults to identity.
@@ -565,6 +646,9 @@ rounds:
 - page-wide physics feel, including cursor and pinch-off;
 - R5-C bloom, depth, banding, exposure, and grain;
 - Origin fusion, flash-free afterglow, and pacing;
+- the convergence (R7): the boil-off across the opening, the two poles, the
+  inflow at the meeting, the skin on the mark, the breath under the purpose,
+  the name spelled and handed to type — and the vapour's answer to the hand;
 - Contact gather/exhale and Footer release;
 - the chapter rail's swell, tautening and lit run — the one piece of chrome
   that answers a hand, and the only surface a reader touches while reading.
@@ -649,6 +733,14 @@ Additional stop-the-line gates:
   `node scripts/verify/rest-exact.mjs` (settled-still byte gate — the machine
   teeth behind "rest must remain exact"; conscious re-baselines rerun its
   `--baseline` and commit `scripts/fixtures/rest-exact.json`).
+- Origin change (`scenes/origin.ts`, `origin-score.mjs`, `mist*.mjs`,
+  `mist-gl.ts`, `OriginDirector.tsx`, `OriginWordmark.tsx`, the S7 block in
+  `globals.css`): `node scripts/verify/mist.mjs` (`npm run mist` — the kernel
+  and the conductor plumbing, in node) and `node scripts/verify/origin.mjs`
+  (`npm run origin` — the vapour in a real browser, the director's windows,
+  the rollback, reduced motion, one canvas), then `node scripts/probe/
+  origin-bands.mjs` at 1440x900 AND 390x844, `verify/cinematics.mjs`, and
+  `capture/origin.mjs` for the stills (negative STOPS reach the entrance).
 - Cinematic/scene/score change: `node scripts/verify/cinematics.mjs` —
   no Origin flash surface or score channel, exactly two act-fade bands on their
   seams (peak ≤ 0.41, released at every reading rest), living liquid over Work/Studio/
@@ -716,3 +808,13 @@ honest in every claim, and independently reversible at the physics and optics
 layers without breaking exact form output.
 
 *One liquid. One system. One motivated story.*
+
+<!-- BEGIN:nextjs-agent-rules -->
+
+# This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->
