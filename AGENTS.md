@@ -438,14 +438,43 @@ Ask before adding any dependency or substituting any layer.
   Gates: `verify/membrane.mjs` (physics), `verify/membrane-mobile.mjs` (the
   autonomous half, in real device profiles), `capture/membrane.mjs` (state
   stills, virtual-clock driven).
+- `lib/motion/veil.mjs` is THE VEIL — the route transition, and the fourth
+  member of the vector-liquid family. Ported from GSAP's Dynamic Morphing demo
+  (`demos.gsap.com/demo/dynamic-morphing`): eleven columns of a `0 0 100 100`
+  viewBox climbing from the bottom edge to the top, each on its own delay, with
+  a smooth polybezier rebuilt through them every frame. Three gradient sheets —
+  crest, body, ink — arrive in that order and leave in the reverse, so a
+  navigation is light, then colour, then black, and back out black, colour,
+  light. Only the ink is opaque, and only the ink is load-bearing: it is what
+  the route swap happens behind.
+  IT NEVER TOUCHES THE PAGE. The transition it replaced scaled and slid the
+  page wrapper, and §7's fixed-descendant rule cost that implementation five
+  separate workarounds. A curtain painted over the top needs none of them, so
+  `template.tsx` renders no wrapper at all — it remounts, tells the provider a
+  route arrived, and that is the whole of its job.
+  THE SEAM is the contract: `cover` closes its path down onto y=100 and
+  `reveal` closes it up onto y=0, and both tween their columns 100 → 0, so the
+  wave always travels the same way and only the side the paint sits on changes.
+  At the swap both formulas describe the identical full-screen rectangle, which
+  is what lets the route commit inside the transition without a frame of
+  flicker. THE GRADIENT UNITS follow from it: `objectBoundingBox` on the way in
+  so the lit stop rides the crest, `userSpaceOnUse` on the way out so the body
+  drains off a ramp pinned to the viewport instead of re-lighting as it thins.
+  Seeded, not `Math.random()` — `?fveil=<n>` reproduces one exact wave.
+  Gates: `verify/veil.mjs` (`npm run veil` — geometry, in plain node) and
+  `capture/veil.mjs` (`npm run veil:sheet` — the crossing, plus a live check
+  that the browser's own `getBBox()` agrees with where the kernel put the wave;
+  it is a gate as well as a sheet, and it exits non-zero). Because the curtain
+  takes the pointer while it is opaque and covers the chrome, a change here is
+  also a navigation change: run `verify/cta.mjs` and `verify/a11y.mjs`.
 - **There is deliberately no `app/[locale]/loading.tsx`.** Its Suspense boundary
   flushed the document shell — and a 200 status — before `notFound()` could run,
   so every unmatched path answered as a soft 404. Route transitions are covered
-  by the cyan wipe in `template.tsx`, which now plays only on client navigation
-  (a document's first paint has nothing to transition from). The localized 404's
-  head comes from the sibling layouts at `[locale]/[...rest]` and
-  `[locale]/work/[slug]`: a `not-found` boundary cannot export
-  `generateMetadata`, but a layout that never throws can.
+  by THE VEIL above, which plays only on client navigation (a document's first
+  paint has nothing to transition from). The localized 404's head comes from the
+  sibling layouts at `[locale]/[...rest]` and `[locale]/work/[slug]`: a
+  `not-found` boundary cannot export `generateMetadata`, but a layout that never
+  throws can.
 - `lib/motion/rail.mjs` is THE WATERLINE — the chapter rail, and the third
   member of the vector-liquid family beside the membrane and the coalescing
   drop. The rail is no longer nine numbers in a column; it is the page's own
@@ -610,6 +639,28 @@ Additional stop-the-line gates:
   is imported dynamically inside the effect precisely so a bad module cannot
   take the contact form down with it. Because the layer takes over the controls' BORDER, a change
   here is also an a11y and CTA change: run `verify/a11y.mjs` and `verify/cta.mjs`.
+- Route-transition change (`veil.mjs`, `PageVeil.tsx`, `transition-context.tsx`,
+  the `.page-veil` block): `npm run veil` — the tempo against the site's own
+  duration ladder, the reference's construction re-derived from the emitted
+  path (midpoint handles, horizontal tangents at every column, continuity), the
+  bounding box tracking the crest, the SEAM (cover's last frame and reveal's
+  first describing one identical rectangle, exactly), one-way monotone
+  coverage, a wave that is actually wavy, the crest-first / ink-first stack
+  order, the wash's single armed layer, clamped and idempotent seeking, seed
+  determinism, and — read straight out of `globals.css` — an ink that is opaque
+  at every stop and a crest that is opaque at none.
+  `BASE_URL=http://localhost:3071 npm run veil:sheet` is the review sheet AND a
+  live gate: it clicks a real link, slows GSAP's clock so the 720ms crossing is
+  resolvable by a Playwright burst, and asserts that the browser's own
+  `getBBox()` agrees with where the kernel put the wave. THAT IS NOT REDUNDANT
+  with the node gate — the reference's cover path opens `M 0 0 V y₀`, which
+  encloses no area and every number about it is correct, but it pins the box to
+  the top of the viewport and turns an `objectBoundingBox` gradient into a
+  screen-fixed one. The kernel gate passed and the first capture was three dark
+  humps rising under a bright band that had nothing to do with them.
+  Because the curtain takes the pointer while it is opaque and covers the
+  chrome, this is also a navigation change: run `verify/cta.mjs` and
+  `verify/a11y.mjs`.
 - Disclosure change (S4 instrument band): `node scripts/verify/disclose.mjs` —
   the additive `data-disclose` contract, an open that ramps and lands exactly
   on the slab, a close that starts moving on the first frame and is NOT the

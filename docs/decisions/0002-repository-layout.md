@@ -82,4 +82,5 @@ looked for.
 
 ## See also
 
-[0001 — Retire the dead-code quarantine folder](0001-dead-code-quarantine.md)
+[0001 — Retire the dead-code quarantine folder](0001-dead-code-quarantine.md) ·
+[0003 — Retire the slide-and-scale page transition for THE VEIL](0003-the-veil.md)

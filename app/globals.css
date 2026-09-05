@@ -6931,15 +6931,10 @@ html[data-nav-open] .nav-sheet-cta {
 
 /* ===========================================================================
    Page transition + loading (S1.9–S1.10)
+   The route transition is THE VEIL, and it lives at the foot of this file with
+   the rest of its paint. The flat cyan `.page-wipe` that used to sit here went
+   with the transition before last — see docs/decisions/0003.
    =========================================================================== */
-.page-wipe {
-  position: fixed;
-  inset: 0;
-  z-index: 60;
-  background: var(--color-cyan);
-  transform-origin: top;
-  pointer-events: none;
-}
 /* 404 — the lone dispersed droplet (R3). Fallback = the fractured mark. */
 .lone-drop-stage {
   position: relative;
@@ -6974,7 +6969,11 @@ html[data-nav-open] .nav-sheet-cta {
 .entry-veil {
   position: fixed;
   inset: 0;
-  z-index: 80; /* above the page wipe and the route loading screen */
+  /* Above the page and its chrome. Deliberately BELOW the route veil (1100):
+     the two never coexist — this plays on a document's first paint and the
+     veil only on a client navigation — and if a race ever put them together,
+     the curtain closing over a half-drawn intro is the better picture. */
+  z-index: 80;
   overflow: hidden;
   /* the sequence is decorative; only the skip control takes a pointer */
   pointer-events: none;
@@ -7211,34 +7210,140 @@ html[data-zveil="seen"] .entry-veil {
 }
 
 /* ===========================================================================
-   PAGE TRANSITION — the GSAP slide-and-scale (components/motion/PageTransition)
-   The wrapper carries NO transform at rest: GSAP writes one for the half
-   second a timeline runs and `clearProps` removes it on arrival, because a
-   standing transform here re-parents every `position: fixed` descendant of the
-   page (AGENTS.md §7). Everything below is scoped to that same window.
+   THE VEIL — the route transition (S1.9)
+   components/motion/PageVeil.tsx · lib/motion/veil.mjs ·
+   docs/decisions/0003-the-veil.md
+   ---------------------------------------------------------------------------
+   Ported from GSAP's Dynamic Morphing demo: eleven columns of a `0 0 100 100`
+   viewBox, each climbing from the bottom edge to the top on its own delay, with
+   a smooth polybezier rebuilt through them every frame. The kernel decides
+   where the edges are; THIS BLOCK IS THE PAINT, and it is the whole reason the
+   transition reads as Zirtuno rather than as a generic curtain.
+
+   THE OPTICAL STORY IS `--liquid-glass-fill`'s, told at full-screen scale: lit
+   along the top edge, transmitting deeper into cyan and then into ink the
+   further down it goes. On a rising wave the top edge IS the crest, so the
+   site's display type and its route transition are lit by the same key.
+
+   THREE SHEETS OF ONE LIQUID, seen at three depths. They arrive crest-first
+   and leave ink-first, so a navigation is: light, then colour, then black —
+   and back out black, colour, light. Only the ink is opaque, and only the ink
+   is load-bearing: it is the sheet the route swap happens behind. The other
+   two could fail to paint entirely and the transition would still be correct,
+   just less beautiful.
+
+   NOTHING HERE TOUCHES THE PAGE. The transition this replaced scaled and slid
+   the page wrapper, and every rule that used to live at this spot existed to
+   undo the damage a standing transform does to `position: fixed` descendants
+   (AGENTS.md §7) — a per-run transform-origin, a root `overflow-x: clip`, a
+   hidden `.cine-veils`. A curtain painted over the top needs none of them.
    =========================================================================== */
-/* No `transform-origin` here on purpose: PageTransition sets it per run to
-   the middle of the VIEWPORT. The element's own centre — the CSS default — is
-   ~13 500 px down on the homepage, and scaling about that point throws the
-   visible content clean out of the viewport. */
-html[data-page-transition] .page-transition {
-  /* Only while it is actually moving — a permanent compositing layer over the
-     whole page would sit on top of the liquid canvas for the entire session. */
-  will-change: transform, opacity;
-}
-/* The enter and exit tweens push the wrapper a full viewport sideways. Left
-   unclipped that is real overflow, and the document GROWS — which the fixed
-   topbar then inflates to match. `clip` on the x axis alone leaves `overflow-y`
-   visible, so it adds no scroll container and the sticky liquid stage inside
-   PageStage keeps working. */
-html[data-page-transition] {
-  overflow-x: clip;
-}
-/* `.cine-veils` is `position: fixed; inset: 0` INSIDE the page, so during the
-   window it is laid out against the transformed wrapper: at `scale(0.8)` a
-   full-viewport veil stops being full-viewport and its edge becomes a visible
-   rectangle. It is a decorative exposure layer on a page that is leaving, so
-   it sits the transition out rather than travelling with it. */
-html[data-page-transition] .cine-veils {
+.page-veil {
+  position: fixed;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  /* Above the nav sheet (1000) and the bar and burger that morph over it
+     (1001 / 1002): tapping a link inside the open mobile sheet has to be
+     covered too, and a curtain the chrome pokes through is not a curtain.
+     Below the cursor (9999), which stays the visitor's own mark on the screen
+     for the whole crossing. */
+  z-index: 1100;
   visibility: hidden;
+  pointer-events: none;
+}
+.page-veil[data-veil="cover"],
+.page-veil[data-veil="reveal"],
+.page-veil[data-veil="wash"] {
+  visibility: visible;
+}
+/* COVER and REVEAL are opaque for most of their run, so they take the pointer:
+   a click landing on a page the visitor cannot see is a click they did not
+   mean to make. WASH hides nothing — the page under it is already the page
+   they asked for — so it stays out of the way. */
+.page-veil[data-veil="cover"],
+.page-veil[data-veil="reveal"] {
+  pointer-events: auto;
+}
+/* No stroke, ever. A hairline on the crest would survive sub-pixel rounding as
+   a bright line across the viewport at exactly the moment nothing should be
+   drawing attention to the geometry. */
+.page-veil-layer {
+  stroke: none;
+}
+
+/* CREST — the light on the water. Translucent at every stop by definition:
+   this sheet's whole job is to arrive first and leave last, and at no point to
+   hide what is under it. */
+.page-veil .zv-crest .zv-s0 {
+  stop-color: var(--color-cyan-glow);
+  stop-opacity: 0.95;
+}
+.page-veil .zv-crest .zv-s1 {
+  stop-color: var(--color-cyan);
+  stop-opacity: 0.5;
+}
+.page-veil .zv-crest .zv-s2 {
+  stop-color: var(--color-cyan-deep);
+  stop-opacity: 0.14;
+}
+.page-veil .zv-crest .zv-s3 {
+  stop-color: var(--color-cyan-deep);
+  stop-opacity: 0;
+}
+
+/* BODY — the liquid itself: its own lit surface at the crest, cooling into
+   cyan-in-ink over the first half and holding there. Nearly opaque at its foot
+   and deliberately not quite: what shows through the last few percent is the
+   page it is standing on, which is what keeps it reading as depth. */
+.page-veil .zv-body .zv-s0 {
+  stop-color: var(--color-cyan);
+  stop-opacity: 0.8;
+}
+.page-veil .zv-body .zv-s1 {
+  stop-color: var(--color-cyan-deep);
+  stop-opacity: 0.6;
+}
+.page-veil .zv-body .zv-s2 {
+  stop-color: color-mix(in srgb, var(--color-cyan-deep) 30%, var(--color-ink));
+  stop-opacity: 0.86;
+}
+.page-veil .zv-body .zv-s3 {
+  stop-color: color-mix(in srgb, var(--color-cyan-deep) 8%, var(--color-ink));
+  stop-opacity: 0.97;
+}
+
+/* INK — the blackout, and the only sheet with a contract. Every stop is fully
+   opaque (no `stop-opacity` here on purpose — the default is 1 and an explicit
+   0.99 anywhere would put a ghost of the outgoing route on screen during the
+   swap). It still carries a cyan lip at its leading edge, so even the sheet
+   that exists to be black arrives as liquid rather than as a black rectangle. */
+.page-veil .zv-ink .zv-s0 {
+  stop-color: color-mix(in srgb, var(--color-cyan-deep) 26%, var(--color-ink));
+}
+.page-veil .zv-ink .zv-s1 {
+  stop-color: color-mix(in srgb, var(--color-cyan-deep) 10%, var(--color-ink));
+}
+.page-veil .zv-ink .zv-s2 {
+  stop-color: var(--color-surface);
+}
+.page-veil .zv-ink .zv-s3 {
+  stop-color: var(--color-ink);
+}
+
+/* The component does not render under reduced motion, so this is belt and
+   braces for a preference toggled mid-session — and the honest fallback for
+   forced colours, where a full-screen decorative fill is at best meaningless
+   and at worst a black plate the system cannot re-colour. Both get a hard cut
+   between routes, which is a transition too. */
+@media (prefers-reduced-motion: reduce) {
+  .page-veil {
+    display: none;
+  }
+}
+@media (forced-colors: active) {
+  .page-veil {
+    display: none;
+  }
 }

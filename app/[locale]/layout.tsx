@@ -20,6 +20,7 @@ import { BreathLayer } from "@/components/ui/BreathLayer";
 import { TopBar } from "@/components/chrome/TopBar";
 import { EntryVeil } from "@/components/chrome/EntryVeil";
 import { TransitionProvider } from "@/lib/animation/transition-context";
+import PageVeil from "@/components/motion/PageVeil";
 import { SiteAnalytics } from "@/components/analytics/SiteAnalytics";
 import { ogImage } from "@/lib/seo/og-image";
 
@@ -39,9 +40,8 @@ const VEIL_SKIP =
 const VEIL_SKIP_MARKUP = `<script>${VEIL_SKIP}</script>`;
 const NO_SCRIPT_CSS = `
   .entry-veil,
-  .page-wipe,
+  .page-veil,
   .custom-cursor { display: none !important; }
-  .page-transition,
   [data-reveal],
   .lab-headline,
   .lab-sub,
@@ -148,6 +148,10 @@ export default async function LocaleLayout({
           {/* Footer renders inside each page (R5: on the homepage it lives
               INSIDE PageStage so the liquid reaches the true page bottom) */}
           <TransitionProvider>
+            {/* The curtain is mounted HERE, not inside `template.tsx`: it has
+                to outlive the route it is covering, and a template remounts
+                halfway through every navigation. */}
+            <PageVeil />
             <LenisProvider>
               <TopBar />
               {children}
