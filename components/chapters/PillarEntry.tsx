@@ -105,7 +105,7 @@ export function PillarEntry({
 
       {/* The form's own column. Empty by design and never collapsed: it is what
           gives the liquid a place to be the subject rather than a backdrop. */}
-      <div className="pillar-stage" aria-hidden="true" />
+      <div className="pillar-stage -order-1 min-[60rem]:order-none" aria-hidden="true" />
     </article>
   );
 }

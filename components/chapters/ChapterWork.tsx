@@ -1,5 +1,6 @@
 import { getTranslations } from "next-intl/server";
 import { Reveal } from "@/components/ui/Reveal";
+import { WetType } from "@/components/ui/WetType";
 import { CtaAnalysis } from "@/components/chrome/CtaButton";
 import { WorkGallery } from "@/components/work/WorkGallery";
 import { getFeaturedProjects } from "@/lib/content/work";
@@ -27,17 +28,26 @@ export async function ChapterWork() {
         {t("chapterLabel")}
       </Reveal>
 
-      <Reveal inView delay={0.05}>
-        <h2 className="type-section-title mt-[var(--type-space-label-title)] text-paper">
-          {t("headline")}
-        </h2>
-      </Reveal>
+      {/* Bricolage display type is liquid GLASS at 768px and up — the
+          glyphs are cut out of --liquid-glass-fill by this block's own
+          background-clip:text. paint="glass" is what lets the front travel
+          THROUGH that fill instead of painting over it: the word veils the
+          slab and clears to nothing on arrival, so the resting headline is
+          exactly the one that shipped before. */}
+      <WetType
+        as="h2"
+        paint="glass"
+        className="type-section-title mt-[var(--type-space-label-title)] text-paper"
+      >
+        {t("headline")}
+      </WetType>
 
-      <Reveal inView delay={0.1}>
-        <p className="type-lead-copy mt-[var(--type-space-title-lead)]">
-          {t("lead")}
-        </p>
-      </Reveal>
+      <WetType
+        as="p"
+        className="type-lead-copy mt-[var(--type-space-title-lead)]"
+      >
+        {t("lead")}
+      </WetType>
 
       {projects.length > 0 ? (
         <WorkGallery projects={projects} className="work-strip mt-[var(--space-span)]" />

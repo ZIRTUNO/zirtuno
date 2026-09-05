@@ -1,5 +1,6 @@
 import { useTranslations } from "next-intl";
 import { Reveal } from "@/components/ui/Reveal";
+import { WetType } from "@/components/ui/WetType";
 
 /**
  * S9 · The Studio. Where (Curitiba + coordinates) · Who (anonymous role grid,
@@ -35,9 +36,12 @@ export function ChapterStudio() {
         {/* Who — anonymous role grid */}
         <Reveal inView delay={0.05}>
           <h2 className="case-label">{t("whoLabel")}</h2>
-          <p className="studio-lead mt-[var(--space-group)] max-w-[38ch] text-body-l text-paper-lead">
+          <WetType
+            as="p"
+            className="studio-lead mt-[var(--space-group)] max-w-[38ch] text-body-l text-paper-lead"
+          >
             {t("whoLead")}
-          </p>
+          </WetType>
           <ul className="studio-roles mt-[var(--space-group)]">
             {roles.map((role, i) => (
               <li key={role} className="studio-role">
@@ -50,15 +54,22 @@ export function ChapterStudio() {
       </div>
 
       {/* Why — closing line */}
-      <Reveal inView variant="blur" className="mt-[var(--space-span)] max-w-3xl">
+      <div className="mt-[var(--space-span)] max-w-3xl">
         <h2 className="case-label">{t("whyLabel")}</h2>
-        <p className="type-feature-title mt-[var(--space-group)] text-paper">
+        {/* Glass at 768px and up, like the chapter titles, so it takes the
+            same paint. This is the block that used to carry the rejected
+            `Reveal variant="blur"`. */}
+        <WetType
+          as="p"
+          paint="glass"
+          className="type-feature-title mt-[var(--space-group)] text-paper"
+        >
           {t("closingStatement")}{" "}
           <span className="font-poetic text-paper-mute">
             {t("closingItalic")}
           </span>
-        </p>
-      </Reveal>
+        </WetType>
+      </div>
 
     </section>
   );

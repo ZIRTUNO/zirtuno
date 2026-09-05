@@ -1,5 +1,6 @@
 import { useTranslations } from "next-intl";
 import { Reveal } from "@/components/ui/Reveal";
+import { WetType } from "@/components/ui/WetType";
 import { ConfluenceMark } from "@/components/chapters/ConfluenceMark";
 import { CtaStructure } from "@/components/chrome/CtaButton";
 import { GATHER_SYSTEMS } from "@/lib/webgl/gathering.mjs";
@@ -46,13 +47,27 @@ export function ChapterEcosystem() {
             {t("chapterLabel")}
           </Reveal>
 
-          <Reveal inView delay={0.05} className="gather-intro-copy">
-            <h2 className="type-section-title gather-claim">{t("headline")}</h2>
-          </Reveal>
+          {/* Bricolage display type is liquid GLASS at 768px and up — the
+              glyphs are cut out of --liquid-glass-fill by this block's own
+              background-clip:text. paint="glass" is what lets the front travel
+              THROUGH that fill instead of painting over it: the word veils the
+              slab and clears to nothing on arrival, so the resting headline is
+              exactly the one that shipped before. */}
+          <div className="gather-intro-copy">
+            <WetType
+              as="h2"
+              paint="glass"
+              className="type-section-title gather-claim"
+            >
+              {t("headline")}
+            </WetType>
+          </div>
 
-          <Reveal inView delay={0.12} className="gather-intro-lead-wrap">
-            <p className="type-lead-copy gather-intro-lead">{t("lead")}</p>
-          </Reveal>
+          <div className="gather-intro-lead-wrap">
+            <WetType as="p" className="type-lead-copy gather-intro-lead">
+              {t("lead")}
+            </WetType>
+          </div>
         </div>
       </div>
 
