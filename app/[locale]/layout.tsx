@@ -16,6 +16,7 @@ import {
 } from "@/lib/typography/fonts";
 import CustomCursor from "@/components/chrome/CustomCursor";
 import LenisProvider from "@/components/motion/LenisProvider";
+import { Aura } from "@/components/ui/Aura";
 import { BreathLayer } from "@/components/ui/BreathLayer";
 import { TopBar } from "@/components/chrome/TopBar";
 import { EntryVeil } from "@/components/chrome/EntryVeil";
@@ -138,6 +139,9 @@ export default async function LocaleLayout({
           label={tCommon("introLabel")}
           skipLabel={tCommon("skipIntro")}
         />
+        {/* Atmosphere, then grain — in that order. Both sit at z-1, so DOM
+            order is what puts the film grain on top of the vapour. */}
+        <Aura />
         <BreathLayer />
         <SiteAnalytics />
         <NextIntlClientProvider locale={locale} messages={messages}>
