@@ -212,6 +212,17 @@ function runMelts(n, verbose) {
     let popMax = 0;
     for (let i = 1; i < masks.length; i++) {
       const d = popDistance(masks[i - 1], masks[i]);
+      if (process.env.DETAIL && d > 0.025) {
+        const dist = edt2d(masks[i - 1], RES, RES);
+        let fresh = 0, far = 0, sx = 0, sy = 0;
+        for (let k = 0; k < dist.length; k++) if (masks[i][k] && !masks[i - 1][k]) {
+          fresh++;
+          if (Math.sqrt(dist[k]) / RES > 0.025) {
+            far++; sx += k % RES; sy += Math.floor(k / RES);
+          }
+        }
+        console.log(`  pop ${a}->${b} p=${PS[i]}: ${d.toFixed(5)}, fresh=${fresh}, far=${far}, centre=${sx/far/RES},${sy/far/RES}`);
+      }
       pop += d;
       if (d > popMax) popMax = d;
     }

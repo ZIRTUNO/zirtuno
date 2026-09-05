@@ -24,6 +24,7 @@ export declare const flow: (x: number) => number;
 export declare const bridgeRadiusEnvelope: (p: number) => number;
 export declare const bridgePresence: (p: number) => number;
 export declare const bridgeDensity: (presence: number) => number;
+export declare const meltVolumePresence: (A: Ball[], B: Ball[], p: number) => number;
 export declare const bridgeSwell: (
   swA: number,
   swB: number,
@@ -69,6 +70,9 @@ export declare const formPhase: (p: number) => {
   wB: number;
   eB: number;
 };
+export declare const dampFormPhase: (
+  out: ReturnType<typeof formPhase>, p: number, dt: number,
+) => ReturnType<typeof formPhase>;
 
 /** The melt's EASED progress, for anything that must stay in step with the
  *  transformation visually rather than by mass. Exact at 0 and 1. */

@@ -51,6 +51,7 @@ export {
   packBridge,
   formPresence,
   formPhase,
+  dampFormPhase,
   morphPhase,
   meltSat,
   SAT_OFF,

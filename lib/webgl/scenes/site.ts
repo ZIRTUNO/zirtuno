@@ -48,11 +48,10 @@ import {
   permFor,
   matchClouds,
   meltDroplet,
-  bridgePresence,
-  bridgeDensity,
   FORM_SOLIDITY,
   formPresence,
   formPhase,
+  dampFormPhase,
   morphPhase,
   meltSat,
 } from "../field-drivers";
@@ -293,6 +292,7 @@ export function makeSiteScene(): SceneModule {
   let ecoOx = 0; // uv x of THE GATHERING's field centre (type owns the column)
   let stageW = 0; // viewport width — decides whether the column exists at all
   let cachedWide = -1;
+  let cachedServicesWide = -1;
 
   // One Services droplet, written in place by the shared melt kernel. Keeping
   // this fixed scratch is both allocation-free and what makes the browser run
@@ -313,6 +313,7 @@ export function makeSiteScene(): SceneModule {
   // ── pair melt: snap on pair switch, damp otherwise (self-managed) ───────────
   let lastPair = "0-0";
   let mState = 0;
+  let formHandoff = formPhase(0);
 
   /**
    * THE PARCELS — which droplet of the current form's cloud each slot carries.
@@ -611,9 +612,13 @@ export function makeSiteScene(): SceneModule {
       // so the cache key carries it too — an aspect that happens not to move
       // across a resize must not leave the liquid composed for the other one.
       const colWide = stageW >= FIELD_MIN_W ? 1 : 0;
-      if (Math.abs(aspect - cachedAspect) > 0.02 || colWide !== cachedWide) {
+      // Match .pillar's 60rem CSS column breakpoint, including tall tablets.
+      // Aspect ratio alone can put the form on copy in either layout.
+      const servicesWide = stageW >= 960 ? 1 : 0;
+      if (Math.abs(aspect - cachedAspect) > 0.02 || colWide !== cachedWide || servicesWide !== cachedServicesWide) {
         cachedAspect = aspect;
         cachedWide = colWide;
+        cachedServicesWide = servicesWide;
         // S3's liquid lives right of the copy column on wide stages
         const sCx =
           0.5 + Math.min(0.14 * aspect, Math.max(aspect / 2 - 0.34, 0));
@@ -629,10 +634,9 @@ export function makeSiteScene(): SceneModule {
         //
         // uv x for a page fraction f is 0.5 + (f - 0.5) * aspect, so the centre
         // of the right column (f = 0.75) is an offset of 0.25 * aspect.
-        const wide = aspect >= 1.4;
-        svcOx = wide ? 0.25 * aspect : 0;
-        svcOy = wide ? 0 : 0.24; // narrow stacks: form above the copy
-        svcScale = wide ? 0.62 : 0.38;
+        svcOx = servicesWide ? 0.25 * aspect : 0;
+        svcOy = servicesWide ? 0 : 0.24; // narrow stacks: form above the copy
+        svcScale = servicesWide ? 0.62 : 0.38;
         Tclu = clusterTargets(aspect, sCx);
         Tdis = wideScatter(aspect, sCx, 0.5, 0.85);
         // THE GATHERING's dispersed field is scattered inside the FIELD, not
@@ -667,6 +671,7 @@ export function makeSiteScene(): SceneModule {
         carryParcels(+lastPair.slice(0, cut), +lastPair.slice(cut + 1), pa, pb);
         lastPair = pairKey;
         mState = mRaw;
+        formHandoff = formPhase(mRaw);
       } else {
         mState += (mRaw - mState) * k;
       }
@@ -893,9 +898,9 @@ export function makeSiteScene(): SceneModule {
             // THE §3.3 HANDOFF, which is the same law the crossing above runs:
             // form A erodes away while the 48-droplet cloud condenses on its
             // footprint, travels, and fuses into form B as its weight rises.
-            // formPhase and bridgePresence are exact complements measured
-            // against each other, so the total on screen never steps.
-            const ph = formPhase(mState);
+            // The measured bridge density controls overlap; match the form
+            // channels to the droplets' low-pass during the moving handoff.
+            const ph = dampFormPhase(formHandoff, mState, dt);
             formOut.fa = ph.wA;
             formOut.fb = ph.wB;
             formOut.ea = ph.eA;
@@ -1305,22 +1310,31 @@ export function makeSiteScene(): SceneModule {
         // as the form is absent, so the total on screen never changes. It opens
         // at 0 where the gathered droplets arrive absorbed at 0, so the seam
         // needs no blend of its own.
-        densJ = serviceDrop[3];
-        // …EXCEPT ACROSS THE CROSSING, where the droplets ARE the body. On
-        // every other pillar boundary a form holds full presence for the whole
-        // transformation and any density here is a second body summed onto it.
-        // On the first there is no form until the web silhouette erodes in, so
-        // zero density would blank the stage for two thirds of the passage.
         //
-        // The law is not invented for this: it is bridgePresence — the schedule
-        // melt-mass.mjs MEASURED for a cloud handing over to a landing form —
-        // read on its second half, so it starts at 1 (the confluence, standing
-        // alone) and reaches 0 exactly as pillar 1 becomes solid. formPhase
-        // drives the form side from the same clock, so the two are complements
-        // by construction rather than by tuning.
-        if (crossing)
-          densJ =
-            svcM <= 0.5 ? 1 : bridgeDensity(bridgePresence(svcM));
+        // …AND THE CROSSING IS NO LONGER AN EXCEPTION TO IT. It used to be:
+        // because the droplets ARE the body until the web silhouette erodes in,
+        // this held density at 1 to mid-melt and then handed to
+        // `bridgeDensity(bridgePresence(m))`. Both halves of that were a stand-in
+        // for a curve that did not exist. `meltVolumePresence` keys on the SOURCE
+        // cloud, THE CONFLUENCE is not a CLOUDS member, and there was no
+        // `cross-1` table — so the lookup could not hit at any m and the first
+        // melt on the page was the one running the pre-fit symmetric envelope.
+        //
+        // Measured, that envelope does not fit this pair. The confluence body
+        // carries 70% of the web form's area, so the crossing has a real 43%
+        // growth ramp the shared curve does not model; rendered area bounced
+        // 99 → 120 → 103 → 115 → 95 → 100% across the drain while the connected-
+        // body count oscillated 1 ↔ 4. That is mass detaching and re-merging,
+        // and it is the loose specks in the last third of the first morph.
+        //
+        // The pair is now fitted like the other six (scripts/tools/
+        // fit-melt-volume.mjs), against its OWN staging — no form A, and a ramp
+        // that opens on the confluence body's own area rather than on a
+        // silhouette's. The fitted curve therefore already opens at 1 and
+        // already drains to 0 as pillar 1 lands, which is what the override was
+        // reaching for, so the override goes and the crossing reads its density
+        // from the same line as every other pillar.
+        densJ = serviceDrop[3];
         // …and THE RELEASE is that same complement, run one last time with no
         // form on the other side of it. On the seventh pillar svcM is 0, so the
         // bridge holds these droplets at the form's exact rest footprint with
