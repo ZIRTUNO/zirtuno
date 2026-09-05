@@ -1,0 +1,188 @@
+/* S7 — force / direction / convergence / identity / continuation.
+   Default is a complete reading sequence. Only the mounted GSAP score grants
+   the runway and masks. The same p drives material and typography. */
+:root {
+  --text-origin-word: clamp(3.75rem, 5.8vw, 7rem);
+  --text-origin-peak: clamp(2.5rem, 4.4vw, 5.5rem);
+}
+.origin-open-block {
+  min-height: 88svh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding-block: calc(var(--topbar-h) + 4rem) 5rem;
+  padding-right: var(--rail-safe);
+}
+.origin-headline {
+  max-width: 11ch;
+  font-size: var(--text-display-xl);
+  font-weight: 600;
+  line-height: .96;
+  letter-spacing: var(--text-display-xl--letter-spacing);
+  text-wrap: balance;
+}
+.origin-open {
+  max-width: 35ch;
+  margin-top: 2rem;
+  font-size: var(--text-lead);
+  line-height: var(--text-lead--line-height);
+  color: var(--color-paper-lead);
+}
+.liquid-journey #name :is(.origin-headline, .origin-statement) {
+  color: var(--color-paper);
+  background-image: none;
+  -webkit-background-clip: border-box;
+  background-clip: border-box;
+  filter: none;
+}
+.origin-stage { position: relative; }
+.origin-beat { padding-block: 3rem; }
+.origin-frame { max-width: 38rem; }
+.origin-idea-kicker {
+  font-family: var(--font-mono);
+  font-size: var(--text-mono-sm);
+  line-height: var(--text-mono-sm--line-height);
+  letter-spacing: var(--tracking-label-wide);
+  text-transform: uppercase;
+  color: var(--color-cyan);
+}
+.origin-idea-word {
+  margin-top: .5rem;
+  font-family: var(--font-sans);
+  font-size: var(--text-origin-word);
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: -.055em;
+  color: var(--color-paper);
+}
+.origin-idea-gloss {
+  margin-top: .6rem;
+  font-size: var(--text-body-l);
+  color: var(--color-paper-lead);
+}
+.origin-idea-line {
+  max-width: 32ch;
+  margin-top: 1rem;
+  font-size: var(--text-body);
+  line-height: var(--text-body--line-height);
+  color: var(--color-paper-lead);
+}
+.origin-tension {
+  display: grid;
+  gap: .4rem;
+  font-size: var(--text-display-m);
+  line-height: 1.16;
+  color: var(--color-paper);
+}
+.origin-convergence, .origin-fusion {
+  margin-top: 1.2rem;
+  max-width: 44ch;
+  font-size: var(--text-body-l);
+  line-height: var(--text-body-l--line-height);
+  color: var(--color-paper-lead);
+}
+.origin-name {
+  font-size: var(--text-origin-word);
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -.055em;
+  color: var(--color-paper);
+}
+.origin-founding { margin-top: 1.35rem; }
+.origin-pillars-lead {
+  font-size: var(--text-body);
+  color: var(--color-paper-mute);
+}
+.founding-pillars {
+  display: flex;
+  gap: 2rem;
+  margin-top: .8rem;
+  padding: 0;
+  list-style: none;
+}
+.founding-pillar {
+  font-family: var(--font-mono);
+  font-size: var(--text-mono-sm);
+  letter-spacing: var(--tracking-label-wide);
+  text-transform: uppercase;
+  color: var(--color-paper);
+}
+.origin-statement {
+  max-width: 12ch;
+  margin-top: 1.2rem;
+  font-size: var(--text-origin-peak);
+  font-weight: 600;
+  line-height: 1.02;
+  letter-spacing: -.035em;
+  text-wrap: balance;
+}
+.origin-closing {
+  max-width: 27ch;
+  margin-top: 1.25rem;
+  font-size: var(--text-display-s);
+  line-height: 1.15;
+  color: var(--color-paper-lead);
+}
+.origin-static-mark { width: 12rem; margin-bottom: 2rem; }
+.manifesto { padding-block: 7rem 10rem; }
+.manifesto-stream { display: grid; gap: 1rem; max-width: 55rem; }
+.manifesto-line {
+  font-size: var(--text-display-m);
+  line-height: 1.18;
+  color: var(--color-paper-lead);
+}
+.manifesto-line:nth-child(even) { margin-left: 12%; }
+.manifesto-line:last-child { color: var(--color-paper); }
+
+@media (prefers-reduced-motion: no-preference) {
+  .origin-journey[data-origin-live] { height: 700svh; }
+  [data-origin-live] .origin-stage { position: sticky; top: 0; height: 100svh; }
+  [data-origin-live] .origin-beat {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: flex-end;
+    padding-top: 0;
+    padding-bottom: 5svh;
+    padding-right: var(--rail-safe);
+    pointer-events: none;
+  }
+  [data-origin-live] .origin-copy {
+    --arrive: clamp(0, calc((var(--origin-p) - var(--in)) / .032), 1);
+    --leave: clamp(0, calc((var(--origin-p) - var(--out)) / .032), 1);
+    clip-path: inset(calc((1 - var(--arrive)) * 100%) 0 calc(var(--leave) * 100%) 0);
+  }
+  .origin-beat--force { --in: -.04; --out: .145; }
+  .origin-beat--direction { --in: .185; --out: .32; }
+  .origin-beat--convergence { --in: .36; --out: .515; }
+  .origin-beat--identity { --in: .56; --out: .715; }
+  .origin-beat--continuation { --in: .76; --out: 1.02; }
+  [data-origin-live] .origin-beat--direction { justify-content: flex-end; }
+  [data-origin-live] :is(.origin-beat--convergence, .origin-beat--identity) { justify-content: center; text-align: center; }
+  [data-origin-live] :is(.origin-beat--convergence, .origin-beat--identity) .origin-frame { max-width: 52rem; }
+  [data-origin-live] .origin-convergence, [data-origin-live] .origin-fusion { margin-inline: auto; }
+  [data-origin-live] .founding-pillars { justify-content: center; }
+  [data-origin-live] .origin-beat--continuation { justify-content: flex-end; align-items: center; }
+  [data-origin-live] .origin-purpose-copy { width: 43%; }
+}
+@media (max-width: 767px) {
+  :root { --text-origin-word: clamp(2.8rem, 12vw, 4.5rem); }
+  .origin-open-block { min-height: 82svh; }
+  .origin-open { max-width: 28ch; }
+  .origin-frame { max-width: 100%; }
+  .origin-idea-line { max-width: 30ch; }
+  .origin-tension { font-size: var(--text-display-s); }
+  .origin-convergence, .origin-fusion { font-size: var(--text-body); }
+  .origin-name { font-size: var(--text-display-l); }
+  .origin-pillars-lead { max-width: 30ch; margin-inline: auto; }
+  .founding-pillars { gap: 1.1rem; }
+  .origin-statement { font-size: var(--text-display-m); max-width: 15ch; }
+  .origin-closing { font-size: var(--text-body-l); }
+  [data-origin-live] .origin-beat { padding-bottom: 7svh; }
+  [data-origin-live] .origin-beat--direction { justify-content: flex-start; }
+  [data-origin-live] .origin-beat--continuation { align-items: flex-end; justify-content: center; text-align: center; }
+  [data-origin-live] .origin-purpose-copy { width: 100%; }
+  [data-origin-live] .origin-purpose-copy :is(.origin-statement, .origin-closing) { margin-inline: auto; }
+  .manifesto { padding-block: 4rem 7rem; }
+  .manifesto-line { font-size: var(--text-display-s); }
+}

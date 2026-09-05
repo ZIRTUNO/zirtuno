@@ -125,6 +125,11 @@ export type SceneModule = {
   presence(ctx: SceneCtx): number;
   /** Write droplet i's target into `out` (all fields, no allocation). */
   target(i: number, ctx: SceneCtx, out: DropletOut): void;
+  /** Optional composition for existing mote ranks. Index i retains its host
+   * i % 48; conductor blends and integrates it in the same physics arrays. */
+  population?(i: number, ctx: SceneCtx, out: DropletOut): void;
+  /** Bounded pressure basin, applied only to free bodies by fluid-core. */
+  dynamics?(ctx: SceneCtx): { cx: number; cy: number; gain: number; capture: number };
   /** Claim the form slots (or null). See FormState for the arbiter contract. */
   form(ctx: SceneCtx): FormState | null;
   /** Multiplier on the conductor's ambient lava-lamp family (default 1). */

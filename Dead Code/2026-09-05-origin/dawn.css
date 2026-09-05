@@ -1,0 +1,82 @@
+/* ── THE DAWN (S7) ───────────────────────────────────────────────────────────
+   The chapter's own light, and the ONE place on the site where the ground
+   itself moves. It lives inside the sticky field layer so it holds still while
+   the runway scrolls past it.
+
+   It sits ABOVE the canvas and blends as LIGHT, and that is a measured
+   constraint rather than a preference. The GL context really is created with
+   `alpha: true, premultipliedAlpha: false` (sdf-gl.ts) and really does clear
+   to (0,0,0,0) (FieldStage), but the post chain's final pass writes
+   `o = vec4(col, 1.0)` (post-shaders.mjs) — coverage alpha survives the SDF
+   layer and dies at the composite, so the canvas ships OPAQUE and a sheet
+   behind it is simply never seen. Verified: the gradients resolved correctly
+   and painted nothing.
+
+   `mix-blend-mode: screen` is the honest reading of what a dawn is: light
+   ADDED to a scene, never a dim laid over it. Over the ink ground the sheet
+   renders at full strength; over the bright cyan liquid screen barely moves
+   the result — 1-(1-a)(1-b) with b near 1 stays near 1 — so the liquid keeps
+   its own material and the post chain keeps its output.
+
+   The score's veils (`.cine-veils`, z-20) grade the PAGE above the story; this
+   grades the ground the story stands on.
+
+   Rule #8 holds: `--color-cyan-deep` and `--color-cyan` mixed into
+   `--color-ink`, nothing else — a change of light, not of hue. Build-spec
+   §4.5's "the page returns to black; white is a moment, not a theme" holds
+   too: --dawn is an envelope, and it closes before the manifesto.
+
+   `opacity: var(--dawn)` is on the ROOT rather than only the two layers so
+   that outside S7 the element is fully transparent and the compositor has
+   nothing to blend — this is a full-viewport blended surface on a renderer
+   that is already fill-rate bound. */
+.journey-dawn {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  mix-blend-mode: screen;
+  /* how far the light has climbed the stage — keeps rising through the hold */
+  --climb: clamp(0, calc((var(--origin-p) - 0.16) / 0.62), 1);
+  /* the envelope: up over the approach, held through the fusion and the
+     purpose, closed again by the drain */
+  --dawn: calc(
+    clamp(0, calc((var(--origin-p) - 0.16) / 0.30), 1) *
+      clamp(0, calc((0.96 - var(--origin-p)) / 0.16), 1) * var(--origin-on) *
+      var(--origin-scrub)
+  );
+  --horizon: calc(5% + 72% * var(--climb));
+  /* A low light lift, not a stage-sized glow. The form remains the event. */
+  opacity: calc(var(--dawn) * 0.52);
+}
+/* the WASH — the graded ground the boundary leaves behind it */
+.journey-dawn::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to top,
+    color-mix(in oklab, var(--color-cyan-deep) 18%, var(--color-ink)) 0%,
+    color-mix(in oklab, var(--color-cyan-deep) 7%, var(--color-ink))
+      calc(var(--horizon) * 0.44),
+    transparent var(--horizon)
+  );
+}
+/* the BOUNDARY — a soft luminous band travelling up the stage. This is the
+   part that reads as an EVENT rather than a tint: the wash alone brightens,
+   the band arrives. */
+.journey-dawn::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  bottom: calc(var(--horizon) - 7%);
+  left: 0;
+  height: 14%;
+  background: linear-gradient(
+    to top,
+    transparent 0%,
+    color-mix(in oklab, var(--color-cyan) 7%, transparent) 46%,
+    transparent 100%
+  );
+  opacity: 0.46;
+}

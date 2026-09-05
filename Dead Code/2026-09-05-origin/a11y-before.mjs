@@ -406,15 +406,12 @@ for (const locale of ["pt", "en"]) {
     await burger.focus();
     await page.keyboard.press("Enter");
     await page.waitForTimeout(500);
-    const open = await page.evaluate(() => {
-      const trigger = document.querySelector('.burger');
-      const menu = document.getElementById(trigger?.getAttribute('aria-controls'));
-      return {
-        expanded: trigger?.getAttribute('aria-expanded'),
-        menu: !!menu && !menu.inert && menu.getAttribute('aria-hidden') === 'false' &&
-          !!menu.querySelector('nav[aria-label]') && menu.getBoundingClientRect().height > 0,
-      };
-    });
+    const open = await page.evaluate(() => ({
+      expanded: document
+        .querySelector(".burger")
+        ?.getAttribute("aria-expanded"),
+      menu: !!document.querySelector(".mobile-menu"),
+    }));
     check(
       open.expanded === "true" && open.menu,
       "menu opens by keyboard",
@@ -494,15 +491,15 @@ for (const locale of ["pt", "en"]) {
         Number(style.opacity) > 0
       );
     };
-    // "absent" is a PASS: the route veil is a client component that does not
-    // render at all without JS (and there is nothing to transition FROM on a
-    // document's first paint either way), so nothing can cover the no-JS page.
+    // "absent" is a PASS: the route wipe no longer renders on a document's
+    // first paint at all (it is a transition, and there is nothing to
+    // transition from), so nothing can cover the no-JS page.
     const displayOf = (element) =>
       element ? getComputedStyle(element).display : "absent";
     return {
       h1: visible(document.querySelector("h1")),
       veil: displayOf(document.querySelector(".entry-veil")),
-      wipe: displayOf(document.querySelector(".page-veil")),
+      wipe: displayOf(document.querySelector(".page-wipe")),
       hiddenReveals: [...document.querySelectorAll("[data-reveal]")].filter(
         (element) => !visible(element),
       ).length,

@@ -395,6 +395,14 @@ Ask before adding any dependency or substituting any layer.
 
 ## 7. Architecture Boundaries
 
+- **S7 was rebuilt on 2026-09-05.** `docs/specs/origin-field-spec.md` owns the
+  new field-to-mark sequence and its type composition. A GSAP score is sampled
+  by PageStage; the existing conductor/core integrates the same population
+  through a bounded pressure basin. The former two clouds, full-page dawn and
+  secondary wordmark particle engine are quarantined. S7 now has five distinct
+  type compositions with reversible crops; under 600px viewport height its
+  reading sequence stays in normal flow while the shared liquid remains live.
+
 - `app/[locale]/page.tsx` composes semantic RSC chapters and places Footer
   inside `PageStage`.
 - `components/field/PageStage.tsx` owns DOM measurement, global input, live

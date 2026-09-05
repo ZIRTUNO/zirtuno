@@ -4,6 +4,27 @@ This folder preserves code removed from the active Zirtuno application. Files
 here are intentionally excluded from TypeScript, ESLint, Next.js routing, and
 deployment. Nothing in the active app may import from `Dead Code/`.
 
+## 2026-09-05 S7 field and typography redevelopment
+
+`2026-09-05-origin/` preserves the replaced Origin implementation: the scene,
+chapter markup, particle wordmark component/kernel, old CSS layers and dawn,
+and previous Origin capture/probe scripts. `OriginWordmark.tsx` was the only
+consumer of `wordmark-particles.ts`; the replacement chapter renders semantic
+type and the persistent field's exact mark. Active-source search confirms no
+remaining import of either module. The old dossier/wordmark/dawn selectors no
+longer have a rendered host. Their CSS and retired `--origin-on` registration
+are stored here rather than left in the active stylesheet.
+
+The directory also contains the one-off style migration and its intermediate
+style source, plus the pre-correction a11y/cinematic harnesses. Those two
+harnesses referenced the retired `.mobile-menu` and measured a clipped decorative
+CTA ink label against black. Active checks follow the controlled navigation
+sheet and the real readable label; the glass-fill assertion stays explicit.
+
+The replacement contract and research are in `docs/specs/origin-field-spec.md`.
+No active imports point into this quarantine. All added quarantine paths must
+be force-added and verified tracked, as required by AGENTS.md §8.
+
 ## 2026-09-05 S10 contact RESTORED — as a route, not a chapter
 
 The 2026-09-04 entry below said the replacement destination was under
