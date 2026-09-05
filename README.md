@@ -294,6 +294,8 @@ npm run liquid:form        # the coalesce merge
 npm run rail               # the chapter index waterline
 npm run veil               # the route transition's geometry (plain node)
 npm run veil:routes        # every way a route can change, in a browser
+npm run disclose           # the S4 disclosure's easeReverse contract
+npm run disclose:pour      # its line split — fidelity, masks, a11y, reflow
 npm run verify:production  # the production readiness gate
 ```
 
@@ -301,11 +303,17 @@ Every gate under `scripts/verify/` can also be run directly with `node`.
 Capture harnesses under `scripts/capture/` produce contact sheets and filmstrips
 for visual review; their output goes to `captures/`, which is not tracked.
 
-Two measurement cautions are worth knowing before trusting a result.
+Three measurement cautions are worth knowing before trusting a result.
 Screenshots carry roughly a **1% churn noise floor**, so a small pixel delta is
-not automatically a regression. And under software rendering, the frame-rate
+not automatically a regression. Under software rendering, the frame-rate
 watchdog can quietly demote the very code being measured — shrink the viewport
-and measure early rather than reading a full-page capture at face value.
+and measure early rather than reading a full-page capture at face value. And a
+gate that samples an animation per frame is only as good as the frame rate it
+gets: behind a live field a 620ms timeline can arrive in four samples, which
+cannot tell a ramp from a snap. The disclosure suites therefore divide (or
+freeze and step) the clock GSAP reads — `Date.now`, not `performance.now` —
+and read their samples off the same clock, so every measured millisecond is a
+timeline millisecond regardless of what the renderer managed.
 
 ### Debug flags
 
