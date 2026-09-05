@@ -23,6 +23,7 @@
     "confluence": "node scripts/verify/confluence.mjs",
     "confluence:sheet": "node scripts/capture/confluence.mjs",
     "rail": "node scripts/verify/rail.mjs",
+    "hero:word": "node scripts/verify/hero-word.mjs",
     "wet": "node scripts/probe/wet-edge.mjs",
     "wet:sheet": "node scripts/capture/wet-edge.mjs",
     "rail:sheet": "node scripts/capture/rail.mjs",

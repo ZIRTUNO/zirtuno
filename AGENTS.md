@@ -708,6 +708,15 @@ Additional stop-the-line gates:
   for battery/cadence claims — `SOAK_MIN=30 node scripts/verify/soak.mjs`
   against a production build (governor holds idle, no idle demotion, flat
   heap, never frozen).
+- Hero headline change (`WordCycle.tsx`, `.lab-word*` in `lab.css`, the
+  `lab.words` set, or anything that measures inside `.lab-plane`):
+  `node scripts/verify/hero-word.mjs` (`npm run hero:word`) — the rotating
+  noun fits the slot measured for it and clears the fixed words either side,
+  on a cold load AND on arrival from another route. That second case is the
+  point: `PageTransition` holds the arriving page at `scale(.8)`, so anything
+  measured with `getBoundingClientRect()` on mount is measured at 80% and
+  stays there — layout never changes, so no ResizeObserver ever corrects it.
+  Measure with the used `width` (or `offsetWidth`), never with a painted rect.
 - Copy/semantics/locale/chrome change: `node scripts/verify/a11y.mjs`
   (landmarks, one h1, labels, skip link, keyboard menu, focus visibility,
   effective-background contrast, pt/en key parity, reduced-motion story).
