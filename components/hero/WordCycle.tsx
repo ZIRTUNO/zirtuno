@@ -77,6 +77,32 @@ function splitGraphemes(word: string) {
 }
 
 /**
+ * How wide is this word, really?
+ *
+ * NOT `getBoundingClientRect()`. That reports the box as PAINTED, so every
+ * transform on every ancestor is baked into it — and this rig is measured from
+ * inside two of them. The page transition holds the whole route at `scale(.8)`
+ * across its enter timeline (`PageTransition`, ENTER_FROM), and the hero's own
+ * camera tilts `.lab-plane` in perspective. Mounting during that window — which
+ * is exactly what arriving from /contact does — measured every word at 80% of
+ * itself and pinned the slot there: `crescimento` needs 221px and got 178. The
+ * word is centred in its slot and nothing clips it, so it simply hung ~21px out
+ * of both ends and sat on top of the words either side of it. Nothing ever
+ * corrected it, either: ResizeObserver reports LAYOUT, and clearing a transform
+ * changes no layout, so the one thing watching the rig stayed silent.
+ *
+ * The used `width` is the same layout value the observer reports — untouched by
+ * transforms, and unlike `offsetWidth` it keeps its fraction, so `ceil` still
+ * means "never narrower than the word".
+ */
+function layoutWidth(el: Element): number {
+  const used = Number.parseFloat(getComputedStyle(el).width);
+  return Math.ceil(
+    Number.isFinite(used) ? used : el.getBoundingClientRect().width,
+  );
+}
+
+/**
  * The changing noun.
  *
  * The slot is sized to the word CURRENTLY in it and eased between sizes. Held
@@ -109,10 +135,10 @@ export function WordCycle({ words, index }: { words: string[]; index: number }) 
     const sizer = sizerRef.current;
     if (!sizer) return;
 
+    const candidates = [...sizer.children];
+
     const measure = () => {
-      const next = [...sizer.children].map((child) =>
-        Math.ceil(child.getBoundingClientRect().width),
-      );
+      const next = candidates.map(layoutWidth);
       setWidths((current) =>
         current.length === next.length && current.every((w, i) => w === next[i])
           ? current
@@ -124,8 +150,11 @@ export function WordCycle({ words, index }: { words: string[]; index: number }) 
     let alive = true;
     // the display face changes the metrics — remeasure once it lands
     document.fonts?.ready.then(() => alive && measure());
+    // One observer per CANDIDATE, not one on the rig. The rig shrink-wraps its
+    // widest child, so a change to any other word — a font swap that only moves
+    // "futuro" — never changes the rig's own box and never fires.
     const observer = new ResizeObserver(measure);
-    observer.observe(sizer);
+    for (const candidate of candidates) observer.observe(candidate);
 
     return () => {
       alive = false;

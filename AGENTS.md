@@ -463,14 +463,48 @@ Ask before adding any dependency or substituting any layer.
   Gates: `verify/membrane.mjs` (physics), `verify/membrane-mobile.mjs` (the
   autonomous half, in real device profiles), `capture/membrane.mjs` (state
   stills, virtual-clock driven).
+- `lib/motion/veil.mjs` is THE VEIL — the route transition, and the fourth
+  member of the vector-liquid family. Ported from GSAP's Dynamic Morphing demo
+  (`demos.gsap.com/demo/dynamic-morphing`): eleven columns of a `0 0 100 100`
+  viewBox climbing from the bottom edge to the top, each on its own delay, with
+  a smooth polybezier rebuilt through them every frame. Three gradient sheets —
+  crest, body, ink — arrive in that order and leave in the reverse, so a
+  navigation is light, then colour, then black, and back out black, colour,
+  light. Only the ink is opaque, and only the ink is load-bearing: it is what
+  the route swap happens behind.
+  IT NEVER TOUCHES THE PAGE. The transition it replaced scaled and slid the
+  page wrapper, and §7's fixed-descendant rule cost that implementation five
+  separate workarounds. A curtain painted over the top needs none of them, so
+  `template.tsx` renders no wrapper at all — it remounts, tells the provider a
+  route arrived, and that is the whole of its job.
+  THE SEAM is the contract: `cover` closes its path down onto y=100 and
+  `reveal` closes it up onto y=0, and both tween their columns 100 → 0, so the
+  wave always travels the same way and only the side the paint sits on changes.
+  At the swap both formulas describe the identical full-screen rectangle, which
+  is what lets the route commit inside the transition without a frame of
+  flicker. THE GRADIENT UNITS follow from it: `objectBoundingBox` on the way in
+  so the lit stop rides the crest, `userSpaceOnUse` on the way out so the body
+  drains off a ramp pinned to the viewport instead of re-lighting as it thins.
+  Seeded, not `Math.random()` — `?fveil=<n>` reproduces one exact wave.
+  Gates: `verify/veil.mjs` (`npm run veil` — geometry, in plain node),
+  `capture/veil.mjs` (`npm run veil:sheet` — the crossing, plus a live check
+  that the browser's own `getBBox()` agrees with where the kernel put the wave;
+  it is a gate as well as a sheet, and it exits non-zero) and
+  `verify/veil-routes.mjs` (`npm run veil:routes` — every way a route can
+  change). THE THIRD ONE IS NOT OPTIONAL and is where the bugs actually were:
+  geometry and paint were both correct while a click was being swallowed
+  outright, an OS preference toggle was inventing a transition, and a locale
+  switch was silently dropping one. Because the curtain takes the pointer while
+  it is opaque and covers the chrome, a change here is also a navigation
+  change: run `verify/cta.mjs` and `verify/a11y.mjs`.
 - **There is deliberately no `app/[locale]/loading.tsx`.** Its Suspense boundary
   flushed the document shell — and a 200 status — before `notFound()` could run,
   so every unmatched path answered as a soft 404. Route transitions are covered
-  by the cyan wipe in `template.tsx`, which now plays only on client navigation
-  (a document's first paint has nothing to transition from). The localized 404's
-  head comes from the sibling layouts at `[locale]/[...rest]` and
-  `[locale]/work/[slug]`: a `not-found` boundary cannot export
-  `generateMetadata`, but a layout that never throws can.
+  by THE VEIL above, which plays only on client navigation (a document's first
+  paint has nothing to transition from). The localized 404's head comes from the
+  sibling layouts at `[locale]/[...rest]` and `[locale]/work/[slug]`: a
+  `not-found` boundary cannot export `generateMetadata`, but a layout that never
+  throws can.
 - `lib/motion/rail.mjs` is THE WATERLINE — the chapter rail, and the third
   member of the vector-liquid family beside the membrane and the coalescing
   drop. The rail is no longer nine numbers in a column; it is the page's own
@@ -656,7 +690,41 @@ Additional stop-the-line gates:
   chunk and asserts the form survives it — the merge kernel is imported
   dynamically inside the effect precisely so a bad module cannot take the
   contact form down with it, and that guard is only meaningful on a real page.
-- Disclosure change (S4 instrument band): `node scripts/verify/disclose.mjs` —
+- Route-transition change (`veil.mjs`, `PageVeil.tsx`, `transition-context.tsx`,
+  the `.page-veil` block): `npm run veil` — the tempo against the site's own
+  duration ladder, the reference's construction re-derived from the emitted
+  path (midpoint handles, horizontal tangents at every column, continuity), the
+  bounding box tracking the crest, the SEAM (cover's last frame and reveal's
+  first describing one identical rectangle, exactly), one-way monotone
+  coverage, a wave that is actually wavy, the crest-first / ink-first stack
+  order, the wash's single armed layer, clamped and idempotent seeking, seed
+  determinism, and — read straight out of `globals.css` — an ink that is opaque
+  at every stop and a crest that is opaque at none.
+  `BASE_URL=http://localhost:3071 npm run veil:sheet` is the review sheet AND a
+  live gate: it clicks a real link, slows GSAP's clock so the 720ms crossing is
+  resolvable by a Playwright burst, and asserts that the browser's own
+  `getBBox()` agrees with where the kernel put the wave. THAT IS NOT REDUNDANT
+  with the node gate — the reference's cover path opens `M 0 0 V y₀`, which
+  encloses no area and every number about it is correct, but it pins the box to
+  the top of the viewport and turns an `objectBoundingBox` gradient into a
+  screen-fixed one. The kernel gate passed and the first capture was three dark
+  humps rising under a bright band that had nothing to do with them.
+  `BASE_URL=http://localhost:3071 npm run veil:routes` is the third gate and the
+  one that matters most: a cold document, a link click, a history pop, the
+  locale toggle, a 404 that never commits, an interrupted cover, double-clicks
+  and clicks into the curtain, the clicks it must IGNORE (same-document hash,
+  ctrl-click), keyboard entry, reduced motion, and the mobile nav sheet. Three
+  defects came out of writing it, all invisible to the other two gates — see
+  `docs/decisions/0003-the-veil.md §What the audit found`. Two traps recorded
+  there are worth repeating here: GSAP's `kill()` fires `onInterrupt` and NEVER
+  `onComplete`, so any promise wrapped around a tween has to settle on both; and
+  `enter()` must stay identity-stable, because `template.tsx` calls it from an
+  effect keyed on its identity and a rebuild announces an arrival that never
+  happened.
+  Because the curtain takes the pointer while it is opaque and covers the
+  chrome, this is also a navigation change: run `verify/cta.mjs` and
+  `verify/a11y.mjs`.
+- Disclosure change (S4 instrument band): `npm run disclose` —
   the additive `data-disclose` contract, an open that ramps and lands exactly
   on the slab, a close that starts moving on the first frame and is NOT the
   open mirrored (the easeReverse gate: ~25% of slab at the midpoint, where a
@@ -666,11 +734,9 @@ Additional stop-the-line gates:
   plain instant `<details>`. It also gates THE PIN: the pillar name must hold
   its line to under 2px on every frame of both directions, because the stage
   centres its copy column and an uncompensated open levers the headline
-  165.7px upward. `node scripts/capture/disclose.mjs` is the review contact
-  sheet; it slows GSAP's clock (which reads `Date.now`, not `performance.now`)
-  so a Playwright burst can actually resolve the curves, and it reports the
-  390px excursion because the single-column stage centres differently.
-  Three traps this suite was built around, all of which produced confident
+  165.7px upward. `npm run disclose:sheet` is the review contact
+  sheet, and `npm run disclose:pour` gates THE LINE SPLIT (below).
+  Four traps this suite was built around, all of which produced confident
   wrong numbers first:
   · once `open` is dropped the pane sits under `content-visibility: hidden`
     and Chrome keeps serving its LAST rect — measure heights only on frames
@@ -679,7 +745,48 @@ Additional stop-the-line gates:
     from earlier cycles shows up as 32px of phantom pin error;
   · budget the timing checks in FRAMES, not milliseconds. The liquid starves
     rAF on this page and a single dropped frame blew a 50ms budget to 73ms
-    while the animation itself was fine.
+    while the animation itself was fine;
+  · and when even the frame COUNT is too small to say anything — four frames
+    for a 620ms open, on a container sharing a core with the field — divide
+    GSAP's clock instead of accepting the sample. All three suites now do:
+    `Date.now` is stretched 8x in an init script (GSAP reads `Date.now`, NOT
+    `performance.now` — `_getTime = Date.now`, gsap-core.js:1269) and the
+    samplers read the same clock, so every `t` stays in timeline milliseconds
+    and every budget keeps its meaning. It also lifts the animation clear of
+    GSAP's own lag smoothing, which compresses any gap past 500ms to 33ms —
+    on a starved page the gate was not measuring the animation the browser
+    was playing. `capture/disclose.mjs` goes one further and FREEZES the clock
+    after parking, stepping it by hand, so each frame of the sheet is taken at
+    an exact position on the timeline (0ms, 56ms, 112ms …) rather than
+    wherever the renderer happened to be.
+- Line-split change (the disclosure's pour): `npm run disclose:pour` — the
+  panel's copy is split into its real line boxes on the press, each clipped by
+  a mask of its own line box, poured in on a masked stagger, and UN-SPLIT the
+  instant the open settles. The gate holds all of that: the split is the real
+  line boxes and costs no height (a one-line difference between split and
+  resting would snap the panel at settle); not one character moves; the
+  label/answer baselines survive the mask (`overflow: clip`, never `hidden` —
+  a scroll container would synthesise a baseline from its bottom edge and drop
+  "O QUE RESOLVE" to the foot of its own answer); no glyph is clipped by its
+  own mask (measured against canvas font metrics, per block, not eyeballed);
+  the chip separators survive being re-parented into line wrappers; nothing
+  leaves the accessibility tree (`aria: "none"`, because the plugin's default
+  puts `aria-label` on a <dd>, where the role prohibits naming and it is
+  dropped); the settled panel's innerHTML is character-for-character the
+  server's; the pour lands before the sheet settles and lands as a CASCADE;
+  and an open panel REFLOWS with the window, because settling releases the
+  height to `auto` instead of leaving it pinned at the pixel it opened to.
+  Two things to know before touching it:
+  · the stagger is an `amount`, not a per-unit delay. The line count is a
+    function of the measure — ~17 at 1280px, ~13 at 390px — and a per-unit
+    `stagger: 0.03` would have run the pour hundreds of ms past the end of the
+    pane on one breakpoint and not the other. `amount` divides one fixed
+    spread among however many lines there are, so the figure keeps its LENGTH
+    and only changes its density;
+  · nothing in `.disclose-line` / `.disclose-line-mask` may introduce
+    containment, and the masks must never outlive the movement. Both are
+    checked, and both are the reason the resting panel is measurably identical
+    to the one that shipped before the split existed.
 - Entry-intro change: `node scripts/verify/entry-veil.mjs` — plays on EVERY
   document load (a reload replays it; a locale switch and any other same-document
   remount are suppressed), releases inside its budget, never paints under `?f*`
@@ -708,6 +815,15 @@ Additional stop-the-line gates:
   for battery/cadence claims — `SOAK_MIN=30 node scripts/verify/soak.mjs`
   against a production build (governor holds idle, no idle demotion, flat
   heap, never frozen).
+- Hero headline change (`WordCycle.tsx`, `.lab-word*` in `lab.css`, the
+  `lab.words` set, or anything that measures inside `.lab-plane`):
+  `node scripts/verify/hero-word.mjs` (`npm run hero:word`) — the rotating
+  noun fits the slot measured for it and clears the fixed words either side,
+  on a cold load AND on arrival from another route. That second case is the
+  point: `PageTransition` holds the arriving page at `scale(.8)`, so anything
+  measured with `getBoundingClientRect()` on mount is measured at 80% and
+  stays there — layout never changes, so no ResizeObserver ever corrects it.
+  Measure with the used `width` (or `offsetWidth`), never with a painted rect.
 - Copy/semantics/locale/chrome change: `node scripts/verify/a11y.mjs`
   (landmarks, one h1, labels, skip link, keyboard menu, focus visibility,
   effective-background contrast, pt/en key parity, reduced-motion story).
