@@ -38,6 +38,7 @@ import { makeSiteScene } from "@/lib/webgl/scenes/site";
 import { makeMethodScene } from "@/lib/webgl/scenes/method";
 import { makeWorkScene } from "@/lib/webgl/scenes/work";
 import { makeOriginScene } from "@/lib/webgl/scenes/origin";
+import { makeOriginScore } from "@/lib/animation/origin-score";
 import { makeStudioScene } from "@/lib/webgl/scenes/studio";
 import { makeFooterScene } from "@/lib/webgl/scenes/footer";
 import { CinematicVeils } from "./CinematicVeils";
@@ -106,7 +107,7 @@ function makeJourneyRuntime(
     makeSiteScene(),
     makeMethodScene(),
     makeWorkScene(),
-    makeOriginScene(),
+    makeOriginScene(search?.get("foriginforce") !== "0"),
     makeStudioScene(),
     makeFooterScene(),
   ];
@@ -544,40 +545,14 @@ export function PageStage({
       lastFlow = flow;
       methodRunway.style.setProperty("--method-flow", flow.toFixed(4));
     };
-    // S7's DAWN — the one place on the site where the GROUND moves. The origin
-    // scene's own p drives two consumers and no others: `.journey-dawn` (the
-    // horizon sheet behind the canvas) and `.origin-journey` (the horizon wipe
-    // that arrives and releases every block of chapter copy, replacing the
-    // thirteen independent fade-ups the chapter used to run).
-    //
-    // Two targets, not one on `wrap`, for the reason the block above gives: a
-    // custom property written on an ancestor invalidates style for everything
-    // that inherits from it, and these move every frame. `.origin-journey` is
-    // a bounded subtree (five beats), and the dawn sheet has no descendants at
-    // all beyond its two pseudo-elements.
-    //
-    // `--origin-scrub` is raised to 1 once, HERE, and nowhere else. It is the
-    // switch the CSS defaults hang on: every path that does not reach this
-    // loop — static tiers, reduced motion, the hero QA still, the ?feco hold,
-    // pre-hydration, JS-off — leaves it at 0, which resolves the copy masks
-    // fully open and the dawn fully closed. Content is never hidden behind
-    // motion (rule #13) without a branch having to remember to say so.
-    const dawnEls = [
-      wrap.querySelector<HTMLElement>(".journey-dawn"),
-      wrap.querySelector<HTMLElement>(".origin-journey"),
-    ].filter((el): el is HTMLElement => el !== null);
+    // S7's GSAP score drives the copy masks and the liquid together. The
+    // switch stays down on every static/QA path; authored HTML stays readable.
+    const originJourney = wrap.querySelector<HTMLElement>(".origin-journey");
     let lastOriginP = -1;
-    let lastOriginOn = -1;
-    const applyOriginDawn = (p: number, on: number) => {
-      const pMoved = Math.abs(p - lastOriginP) >= 0.0015;
-      const onMoved = Math.abs(on - lastOriginOn) >= 0.004;
-      if (!pMoved && !onMoved) return;
-      if (pMoved) lastOriginP = p;
-      if (onMoved) lastOriginOn = on;
-      for (const el of dawnEls) {
-        if (pMoved) el.style.setProperty("--origin-p", p.toFixed(4));
-        if (onMoved) el.style.setProperty("--origin-on", on.toFixed(3));
-      }
+    const applyOriginProgress = (p: number) => {
+      if (Math.abs(p - lastOriginP) < 0.0001) return;
+      lastOriginP = p;
+      originJourney?.style.setProperty("--origin-p", p.toFixed(5));
     };
     // R5-D: the merged light score → the veil CSS vars, once per frame (the
     // conductor mutates `score` inside driver.frame from the render loop;
@@ -619,14 +594,16 @@ export function PageStage({
       // NOTE: --origin-scrub is deliberately NOT raised here. This branch never
       // reaches the per-frame loop, so leaving the switch at its registered 0
       // is what gives the deterministic surfaces plain readable S7 copy on pure
-      // ink — no half-driven mask, no dawn frozen mid-sweep.
+      // ink — no partially driven mask.
       return;
     }
 
     // The live runway owns S7's clock from here down. Raising the switch after
     // the early return is the whole contract: only a loop that will actually
     // keep writing --origin-p is allowed to turn the masks on.
-    for (const el of dawnEls) el.style.setProperty("--origin-scrub", "1");
+    originJourney?.style.setProperty("--origin-scrub", "1");
+    const originScore = makeOriginScore();
+    originJourney?.setAttribute("data-origin-live", "");
 
     // scene-anchor element caches (queried once — the DOM is stable post-
     // hydration; every chapter renders inside this wrapper)
@@ -948,17 +925,20 @@ export function PageStage({
       }
 
       // DOM choreography (writes AFTER all reads — no layout thrash)
+      const originControl = originScore.sample(clamp01(conductor.raw.origin.p));
+      Object.assign(conductor.raw.origin, originControl);
+      conductor.raw.origin.scored = 1;
       applyEcoLabels(site.gather, site.svcPos);
       applyMethodFlow(clamp01(conductor.raw.method.u / methodPhases));
-      applyOriginDawn(
-        clamp01(conductor.raw.origin.p),
-        clamp01(conductor.raw.origin.on),
-      );
+      applyOriginProgress(clamp01(conductor.raw.origin.p));
       applyScore();
     };
     update();
     return () => {
       if (raf) cancelAnimationFrame(raf);
+      originScore.dispose();
+      originJourney?.removeAttribute("data-origin-live");
+      originJourney?.style.removeProperty("--origin-scrub");
       obstacleDisposed = true;
       conductor.input.obstacleCount = 0;
       obstacleResize?.disconnect();
@@ -1012,25 +992,6 @@ export function PageStage({
       data-fluid-obstacles={obstacleFlow ? "true" : "false"}
     >
         <div className="journey-layer" ref={layerRef}>
-          {/* S7's ground — inside the sticky layer so it holds still while the
-              runway scrolls past. It paints ABOVE the canvas and blends as
-              light (`mix-blend-mode: screen`): the post chain's final pass
-              writes alpha 1, so the canvas ships opaque and a sheet behind it
-              would never be seen. See the .journey-dawn block in globals.css.
-
-              Gated to the FULL probe tier, one notch tighter than the
-              cinematic veils. This is a viewport-sized blended surface, and a
-              blend costs a backdrop read on a renderer that is already
-              fill-rate bound — so it belongs with the effects the ladder sheds
-              first (rule #14: lower effects, never freeze). Note this reads
-              the PROBE, so it excludes devices that start weak; it does not
-              follow a mid-session watchdog demotion, which changes the field
-              tier through the module setter without re-rendering here. The
-              copy's horizon wipe is unaffected and runs at every live tier —
-              only the ground stops moving. */}
-          {enabled && cine && fEco === null && tier === "full" && (
-            <div className="journey-dawn" aria-hidden="true" />
-          )}
           {enabled && seen && (
             <div className="journey-canvas" aria-hidden="true">
               <FieldStage

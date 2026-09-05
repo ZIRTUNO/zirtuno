@@ -346,8 +346,8 @@
   },
   "name": {
     "chapterLabel": "A Origem",
-    "headline": "Duas ideias, um nome.",
-    "open": "A Zirtuno não começou com pessoas. Começou com duas ideias.",
+    "headline": "Onde a força encontra direção.",
+    "open": "Zéfiro traz movimento. Ventura dá direção. Do encontro, nasce Zirtuno.",
     "ideas": [
       {
         "kicker": "A força",
@@ -382,7 +382,8 @@
       "Forma para o que estava disperso.",
       "Direção, não apenas execução.",
       "Discreto. Preciso. Transformador."
-    ]
+    ],
+    "convergence": "O que estava disperso começa a fazer parte do mesmo todo."
   },
   "studio": {
     "chapterLabel": "Studio",

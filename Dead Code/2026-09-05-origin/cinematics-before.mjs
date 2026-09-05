@@ -225,32 +225,20 @@ const browser = await chromium.launch(LAUNCH);
     const lumaOf = (rgb) => {
       const m = rgb.match(/[\d.]+/g)?.map(Number) ?? [0, 0, 0];
       const a = m.length > 3 ? m[3] : 1;
-      const scale = /^color\(\s*srgb/i.test(rgb) ? 255 : 1;
       const ch = (v) => {
-        const s = (v * scale / 255) * a; // over ink: alpha premultiplies toward black
+        const s = (v / 255) * a; // over ink: alpha premultiplies toward black
         return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4);
       };
       return 0.2126 * ch(m[0]) + 0.7152 * ch(m[1]) + 0.0722 * ch(m[2]);
     };
     let min = Infinity;
     let at = "";
-    let missingFill = 0;
     for (const el of document.querySelectorAll("h1,h2,h3,p,li,a,span,button,label")) {
       const r = el.getBoundingClientRect();
       if (r.bottom < 0 || r.top > innerHeight || r.width < 2) continue;
       if (!el.textContent?.trim()) continue;
-      // The CTA's decorative ink duplicate is clipped to its cyan flood;
-      // measuring that hidden duplicate against ink reports a false 1:1.
-      // The real, accessible label remains in this population.
-      if (el.closest('[aria-hidden="true"]')) continue;
       const cs = getComputedStyle(el);
       if (cs.visibility === "hidden" || +cs.opacity === 0) continue;
-      // As in the standing a11y gate: glass glyphs are a background fill,
-      // not transparent ink. Require that fill rather than treating it as black.
-      if (cs.backgroundClip === 'text' || cs.webkitBackgroundClip === 'text') {
-        if (cs.backgroundImage === 'none') missingFill++;
-        continue;
-      }
       const L = lumaOf(cs.color) * (1 - veil);
       const ratio = (L + 0.05) / 0.05; // against ink under the veil
       if (ratio < min) {
@@ -258,14 +246,13 @@ const browser = await chromium.launch(LAUNCH);
         at = `${el.tagName}.${el.className}`.slice(0, 60);
       }
     }
-    return { min, at, veil, missingFill };
+    return { min, at, veil };
   });
   check(
     worst.min >= 3.5,
     "every visible text node clears 3.5:1 under the transient peak",
     `worst=${worst.min.toFixed(2)} at ${worst.at} (veil=${worst.veil})`,
   );
-  check(worst.missingFill === 0, 'visible glass text retains its fill under the veil');
 
   await ctx.close();
 }

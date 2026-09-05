@@ -1,0 +1,30 @@
+/* S8 Beat 5 — wordmark convergence (CPU particles → crisp text crossfade) */
+/* The canvas samples its font as floor(H * 0.62), so the STAGE height is what
+   sets the particle letterforms. At 5.5rem it assembled ZIRTUNO at ~54px and
+   then crossfaded to crisp text at up to 140px: the climax of the whole site
+   rendered as a 250px smudge. Height now follows the wordmark itself. */
+.origin-wordmark {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-height: calc(var(--text-wordmark) * 1.55);
+}
+.origin-wordmark-canvas {
+  width: 100%;
+  height: auto;
+  transition: opacity 600ms var(--ease-arrive);
+}
+.origin-wordmark-canvas.is-faded {
+  opacity: 0;
+}
+.origin-wordmark-text {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  margin: 0;
+  transition: opacity 600ms var(--ease-arrive);
+}
+.origin-wordmark-text.is-hidden {
+  opacity: 0;
+}

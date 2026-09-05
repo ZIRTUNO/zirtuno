@@ -1,7 +1,7 @@
 // R5: the homepage renders exactly ONE liquid canvas (PageStage's conductor
 // stage) from load to end — the four per-runway canvases are gone. 2D helper
-// canvases (EntryVeil / OriginWordmark particle assemblies) are counted
-// separately and are allowed to come and go.
+// canvases on separate brand surfaces are counted separately. Origin itself
+// must not create a canvas; its particle wordmark was retired.
 //   BASE_URL=http://localhost:PORT node scripts/verify/canvas-count.mjs
 
 import { chromium } from "playwright";
@@ -26,7 +26,7 @@ const count = () =>
   }));
 const onLoad = await count();
 
-// scroll the whole page slowly (observers, wordmark assembly, exhale zone)
+// Scroll the whole page slowly through scene handoffs.
 for (let i = 0; i < 26; i++) {
   await page.mouse.wheel(0, 700);
   await page.waitForTimeout(250);

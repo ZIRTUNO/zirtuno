@@ -116,8 +116,8 @@ The liquid is the breath made visible: quiet force that gives form to dispersed
 parts. Zéfiro + Ventura IS the Origin — two ideas, not two people. Zéfiro is the
 west wind: force that changes the shape of what it touches without noise.
 Ventura is direction, and the courage to take it. Neither is sufficient alone,
-which is the chapter's argument and the reason the two masses on the stage have
-to meet. The three founding pillars and the drive to build what does not yet
+which is the chapter's argument: the dispersed force must acquire a direction.
+The three founding pillars and the drive to build what does not yet
 exist follow from that fusion; the founders are not the subject.
 
 ### 2.4 Voice
@@ -153,7 +153,7 @@ the liquid and light compose them into acts.
 | I — Signal     | Entry intro → Hero             | establish the brand and offer immediately               | two lines draw the mark and meet, it floods into liquid and drains into the hero's ribbon (see `docs/specs/entry-intro-spec.md`) | black field, first cyan bloom                                 |
 | II — Argument  | Problem → Ecosystem → Services | name fragmentation, prove connection, show capabilities | mark pours, fractures by symptom, seeks itself, reunifies, blooms through the seven forms           | slow dip through Problem, rise at convergence                 |
 | III — Practice | Método → Work                  | show strategic process and proof                        | five rehearsal states become a quiet current behind the work grid; hovered card receives a meniscus | neutral/workmanlike; fade-to-black boundary before Work       |
-| IV — Soul      | Origin → Studio                | reveal the true origin and human reason                 | the two idea-masses (Zéfiro · Ventura) fuse into the exact mark, echo into satellites, remain behind the role grid | continuous material afterglow, settle; boundary into Studio   |
+| IV — Soul      | Origin → Studio                | reveal the true origin and human reason                 | the dispersed field acquires direction, resolves into the exact mark, and releases into Studio | continuous material afterglow, settle; boundary into Studio   |
 | V — Invitation | Contact → Footer               | convert and close the narrative                         | all droplets gather into the mark, submit exhales, one droplet releases beyond the footer           | calm and final return to black                                |
 
 ### 3.1 Named transitions
@@ -168,7 +168,7 @@ These names are part of the implementation vocabulary:
 6. **Rehearse** — the liquid performs Diagnosis through Evolution.
 7. **Current** — Evolution satellites drain into a calm Work backdrop and card
    meniscus.
-8. **Fuse + afterglow** — two Origin masses form the exact mark and settle into
+8. **Fuse + afterglow** — the Origin population forms the exact mark and releases into
    a restrained material light lift.
 9. **Gather** — echoes and free droplets return to the Contact mark.
 10. **Release** — submit exhale and the final lone droplet leave the page.
@@ -356,26 +356,12 @@ Rules:
 
 - no full-page white/cyan-white flash occurs at Origin fusion;
 - act-boundary fades occur at Método → Work and Origin → Studio;
-- the page returns to black after the S7 dawn and afterglow.
+- the S7 ground stays ink while the liquid carries its afterglow.
 
-**The Dawn - S7 only.** One further light instrument, and the only place on the
-site where the GROUND moves rather than the page being graded over the top of
-it. `.journey-dawn` is a viewport sheet inside the sticky field layer, driven by
-`--origin-p` (the origin scene's own p, written per frame by PageStage beside
-`--method-flow`): a luminous horizon rises through the stage across the approach,
-holds through the fusion and the purpose, and closes again before the manifesto
-coda. Constraints it is built to respect:
-
-- it is `--color-cyan-deep` / `--color-cyan` mixed into `--color-ink` and
-  nothing else - a change of light, never of hue (AGENTS.md rule #8);
-- `--dawn` is an envelope that returns to 0, so the page still returns to black
-  and white remains a moment;
-- it paints ABOVE the canvas with `mix-blend-mode: screen`, because the post
-  chain's final pass writes alpha 1 and the canvas therefore ships opaque - a
-  sheet behind it is never seen. Screen leaves the bright liquid essentially
-  untouched and renders at full strength over ink;
-- FULL probe tier only - a viewport-sized blend costs a backdrop read on a
-  fill-rate-bound renderer, so it sheds with the effects ladder (rule #14).
+**Origin light — current.** The former full-page dawn is quarantined. S7's
+force and fusion are carried by the liquid and its restrained key/exposure
+score. Typography uses reversible crops on `--origin-p`; the ground remains
+ink. See [Origin field spec](origin-field-spec.md).
 
 ## 5. Technical Architecture
 
@@ -843,90 +829,37 @@ form stills remain approved placeholder art only for the labeled demo set.
 
 **Business job:** reveal why Zirtuno exists after the business case is proven.
 
-Five scrubbed beats. FIVE is structural, not stylistic: the scene's envelopes
-are keyed to a p that runs evenly across this runway, so adding a beat slides
-every copy block off the liquid it describes.
+**Current implementation:** [Origin field spec](origin-field-spec.md). The
+2026-09-05 redevelopment replaces the two clouds and separate particle wordmark
+with one broad population of liquid gathering under force, acquiring direction,
+resolving into the exact mark, and releasing into Studio.
 
-1. the two idea-masses enter from opposite sides, each NAMED by a plate that
-   holds its side of an empty centre gutter — Zéfiro, the force · Ventura, the
-   direction;
-2. the tension — “force without direction is only weather; direction without
-   force is only a map” — while the two masses close and fuse into the exact
-   Zirtuno mark;
-3. the mark resolves and holds; small mono labels identify
-   Social · Saúde · Finanças / Social · Health · Finance;
-4. the mark multiplies into an ecosystem echo under the purpose statement;
-5. droplets drain as CPU wordmark particles assemble ZIRTUNO, followed by
-   “Construímos o que ainda não existe / We build what doesn’t exist yet.”
+Five GSAP-scored beats share one stage: Force, Direction, Convergence, Identity,
+Continuation. The score controls the pressure basin and cinematic progression;
+the conductor's fixed-step simulation remains alive when scrolling stops. The
+48 canonical bodies and their mote ranks retain identity through the whole cut.
 
-Then the manifesto coda:
+Typography has five deliberate compositions: oversized names on opposed sides,
+the two poetic tension clauses revealing inward, a centred Zirtuno with quieter
+founding notes, and the large purpose statement beside the departing mark.
+Labels, names, glosses and supporting sentences reveal in a measured sequence.
+The text stays stationary inside reversible crops; it never becomes canvas copy.
 
-- Movimento sem ruído.
-- Forma para o que estava disperso.
-- Direção, não apenas execução.
-- Discreto. Preciso. Transformador.
-
-The Zéfiro/Ventura etymology IS the chapter, not a grace note beside it — it is
-the only version of this story a reader can actually be shown, because two
-named ideas can be put on the two masses and an anonymous pair of founders
-cannot. Three founding pillars are the WHY; seven services are the HOW. Never
-style or count them as the same system.
-
-**Fusion light — CURRENT:** exact mark fusion keeps a restrained, continuous
-material afterglow through the scene’s exposure and key score. There is no
-full-page white/cyan-white flash surface or flash score channel.
-
-**Composition and motion - CURRENT.** The chapter is an unframed editorial cut.
-The liquid is the only progress instrument; no dossier, beat ladder, fusion
-gauge, seam diagram, registration crop, plate, or status readout remains.
-
-- **Reading bands.** `.origin-frame` keeps each beat pinned long enough to read
-  and keeps the five scene envelopes aligned to their copy. Beats 1-3 and 5
-  reserve the upper field for liquid and the lower band for type. Beat 4 is the
-  deliberate exception on a wide stage: the exact mark moves left as one body
-  and the purpose statement occupies the right column. On a narrow stage the
-  mark remains centred and the copy stacks below it. No black panel or aperture
-  is introduced on either path.
-- **One gesture.** All S7 copy arrives and is released by a single rising light
-  band - a mask edge travelling upward, the same horizon moving behind the
-  stage. It replaces independent `Reveal variant="blur"` fade-ups. Windows are
-  derived from both the scene envelopes and the band's pin geometry; each
-  release completes while its frame is still pinned. `scripts/probe-origin-
-  bands.mjs` gates the pin windows, the vertical mark clearance of the stacked
-  beats, and the right-column split of the wide purpose beat.
-- **The setting performs the argument.** Beat 1 is a diptych on wide stages and
-  a calm authored stack on narrow ones. Beat 2 is the antithesis: one clause per
-  half on desktop, one centred clause after the other on mobile. Beat 3 resolves
-  the exact mark over one understated pillar baseline. Beat 4 is the asymmetric
-  peak — mark left, purpose right — and Beat 5 removes the field until only the
-  wordmark and closing line remain.
-- **Fail-safe.** `--origin-scrub` defaults to 0 and is raised only by the live
-  frame loop, so static tiers, reduced motion, the hero QA still, the `?feco`
-  hold, pre-hydration and no-JS all resolve the masks fully OPEN, the dawn
-  fully closed and the decorative chrome absent. Content is never hidden behind motion
-  (rule #13). The static path must also neutralise the beats' negative
-  margins: those overlaps are a SCROLL device, and with the runway collapsed
-  they stack five blocks of copy on top of each other.
-- The opening reads above the runway in normal flow as label, headline, and
-  lead only. The ghost numeral and dossier are retired.
-- The manifesto coda is four authored italic lines with alternating indentation,
-  not a numbered table or interface metaphor.
+The original manifesto follows in normal flow. PT/EN remain authored in the
+locale JSON files. Zéfiro and Ventura are two ideas; Social, Health and Finance
+remain three founding pillars, distinct from the seven service capabilities.
 
 **Acceptance:**
 
-- the story reads as the true Origin, not borrowed mythology;
-- two → three → exact mark is visually legible;
-- pillar labels remain understated and distinct from services;
-- wordmark particles resolve legibly in both locales;
-- static/reduced-motion mode presents all beats as a plain reading sequence,
-  with no two beats overlapping;
-- the stacked beats clear the mark vertically, and the wide purpose beat keeps
-  a clean horizontal split between mark and copy;
-- every band's wipe completes its release while the band is still pinned
-  (`probe/origin-bands.mjs` PASS at 1440x900 AND 390x844);
-- no S7 dossier, HUD, plate, ladder, gauge, seam, or registration chrome renders;
-- the dawn returns the ground to ink before the manifesto coda;
-- flash-absence and reveal gates pass.
+- broad dispersed liquid visibly converges and retains motion during holds;
+- exact mark and existing form optics are preserved;
+- one canvas, one population, no full-page flash or particle wordmark engine;
+- each text composition clears the liquid and the navigation rail;
+- all beats remain readable in both locales, in reverse, without JS/WebGL,
+  under reduced motion, and in a short landscape viewport;
+- no dossier, HUD, gauges or stock particle visual identity;
+- `verify/origin.mjs`, `probe/origin-bands.mjs`, conductor and cinematic gates
+  pass; captured visual review and owner review remain separate checkpoints.
 
 ### 6.8 Chapter 08 — The Studio
 
@@ -1308,6 +1241,7 @@ npm run chapters:sheet
 npm run endpoints
 
 node scripts/verify/conductor.mjs
+node scripts/verify/origin.mjs
 node scripts/verify/canvas-count.mjs
 node scripts/verify/entry-veil.mjs
 node scripts/verify/perf.mjs
@@ -1347,6 +1281,7 @@ diptych and its band is a different height.
 | `?fgrade=0`               | exact optics/grade bypass                                   |
 | `?fgov=0`                 | disable the idle energy governor for QA                     |
 | `?fcine=0`                | disable cinematic scoring and veils                         |
+| `?foriginforce=0`         | remove S7's pressure basin and leash relaxation for A/B     |
 
 `window.__liquid` exposes current site channels and `window.__scenes` exposes
 all live scene channels for diagnostics.

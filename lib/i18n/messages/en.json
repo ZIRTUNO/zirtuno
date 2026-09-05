@@ -346,8 +346,8 @@
   },
   "name": {
     "chapterLabel": "The Origin",
-    "headline": "Two ideas, one name.",
-    "open": "Zirtuno did not begin with people. It began with two ideas.",
+    "headline": "Where force finds direction.",
+    "open": "Zéfiro brings movement. Ventura gives it direction. Their meeting is Zirtuno.",
     "ideas": [
       {
         "kicker": "The force",
@@ -382,7 +382,8 @@
       "Form for what was dispersed.",
       "Direction, not just execution.",
       "Discreet. Precise. Transformative."
-    ]
+    ],
+    "convergence": "What was dispersed begins to belong together."
   },
   "studio": {
     "chapterLabel": "Studio",

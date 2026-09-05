@@ -406,15 +406,12 @@ for (const locale of ["pt", "en"]) {
     await burger.focus();
     await page.keyboard.press("Enter");
     await page.waitForTimeout(500);
-    const open = await page.evaluate(() => {
-      const trigger = document.querySelector('.burger');
-      const menu = document.getElementById(trigger?.getAttribute('aria-controls'));
-      return {
-        expanded: trigger?.getAttribute('aria-expanded'),
-        menu: !!menu && !menu.inert && menu.getAttribute('aria-hidden') === 'false' &&
-          !!menu.querySelector('nav[aria-label]') && menu.getBoundingClientRect().height > 0,
-      };
-    });
+    const open = await page.evaluate(() => ({
+      expanded: document
+        .querySelector(".burger")
+        ?.getAttribute("aria-expanded"),
+      menu: !!document.querySelector(".mobile-menu"),
+    }));
     check(
       open.expanded === "true" && open.menu,
       "menu opens by keyboard",

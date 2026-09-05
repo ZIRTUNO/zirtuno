@@ -1,0 +1,6 @@
+/* The removed full-page dawn was the only consumer of this channel. */
+@property --origin-on {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 0;
+}
