@@ -306,6 +306,15 @@ pinch, the corner arcs, and cost.
 form is not judgeable at 1x, and this feature has twice shipped a defect that
 survived rounds of full-form screenshots.
 
+> **Quarantined 2026-09-04.** S10 was removed from the site, so
+> `FieldLiquid.tsx` has no form to dress and this page harness has no page to
+> shoot. Both are preserved — the component at
+> `Dead Code/components/chapters/FieldLiquid.tsx`, the harness at
+> `Dead Code/scripts/obsolete/capture-field-liquid.mjs` — and the commands
+> below work again once the chapter is remounted. The KERNEL half of this spec
+> is unaffected: `lib/motion/coalesce.mjs` is still active and still gated by
+> `npm run liquid:form` and `npm run liquid:form:sheet`, both DOM-free.
+
 ```bash
 NEXT_DIST_DIR=.next-forms PORT=3071 npm run dev
 BASE=http://localhost:3071 node scripts/capture/field-liquid.mjs
@@ -326,7 +335,8 @@ export, and the whole contact form rendered as empty space. **If a component
 VANISHES rather than merely looks wrong, suspect the cache before the code.**
 
 Because the layer takes over the controls' border, a change here is also an
-accessibility and CTA change: run `verify/a11y.mjs` and `verify/cta.mjs`.
+accessibility and CTA change: run `verify/a11y.mjs`, and `verify/cta.mjs`
+once it is restored alongside the chapter.
 
 ---
 
