@@ -99,4 +99,5 @@ investigations were removed at the same time.
 
 ## See also
 
-[0002 — Repository layout](0002-repository-layout.md)
+[0002 — Repository layout](0002-repository-layout.md) ·
+[0003 — Retire the slide-and-scale page transition for THE VEIL](0003-the-veil.md)
