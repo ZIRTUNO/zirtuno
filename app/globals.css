@@ -1155,6 +1155,40 @@ button.cta {
   );
 }
 
+/* ── THE LINE SPLIT ─────────────────────────────────────────────────────────
+   `.disclose-line` and `.disclose-line-mask` are minted by SplitText when the
+   panel opens and are gone again the moment it settles — so every rule here is
+   scoped to a class that only exists while something is moving, and the
+   resting panel is styled by nothing in this block.
+
+   THE PLUGIN ALREADY WRITES THE STRUCTURE INLINE: `display:block` and the
+   inherited `text-align` on both, plus `overflow:clip` on the mask. Nothing
+   here restates those. What is left is the two things a mask over LIVE COPY
+   needs and the plugin has no opinion about:
+
+     · the clip must not eat a descender. The clip box is the line box, and
+       every block that splits here carries enough leading for the font's
+       descent to sit inside it (1.45 on the mono labels, 1.6 on the answers,
+       1.9 on the chips) — `overflow-clip-margin` is deliberately NOT used to
+       buy more room, because the margin it adds is room the NEXT line would
+       be visible in before it arrived.
+
+     · the transform must be the compositor's. `will-change` is normally a
+       liability precisely because it outlives the animation; here the class
+       carrying it cannot, which makes this the one place it is free.
+
+   And one thing nothing here may ever add: CONTAINMENT. A line is a block
+   inside a <dd> whose grid row is baseline-aligned to its label, and `contain`
+   (or anything else that makes the mask a scroll container) would have it
+   synthesise a baseline from its bottom edge — dropping "O QUE RESOLVE" to the
+   foot of its own three-line answer. `overflow: clip` is chosen over `hidden`
+   for exactly this reason: it clips without becoming a scroll container, so
+   the baseline passes straight through it. Verified at every breakpoint by
+   `npm run disclose:pour` (label-to-answer baseline delta, split vs. resting). */
+.disclose-line {
+  will-change: transform;
+}
+
 /* Forced colors drops background images and box shadows, which would leave the
    slab as an unmarked box. Hand the edge back to the system. */
 @media (forced-colors: active) {
@@ -2484,7 +2518,12 @@ html:has(.disclose[data-disclose="live"][open]) {
   line-height: 1.9;
   color: var(--color-paper-mute);
 }
-.pillar-cap:not(:last-child)::after {
+/* Marked in the markup rather than matched with :last-child. The disclosure
+   splits this paragraph into one wrapper per RENDERED LINE while it opens, and
+   a positional selector would then fire on the last chip of every line — three
+   separators disappearing the instant the panel moved, and coming back when it
+   settled. An explicit class survives being re-parented. */
+.pillar-cap:not(.pillar-cap-last)::after {
   content: "·";
   margin: 0 0.55em;
   color: var(--color-cyan-deep);

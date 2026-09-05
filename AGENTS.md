@@ -656,7 +656,7 @@ Additional stop-the-line gates:
   chunk and asserts the form survives it — the merge kernel is imported
   dynamically inside the effect precisely so a bad module cannot take the
   contact form down with it, and that guard is only meaningful on a real page.
-- Disclosure change (S4 instrument band): `node scripts/verify/disclose.mjs` —
+- Disclosure change (S4 instrument band): `npm run disclose` —
   the additive `data-disclose` contract, an open that ramps and lands exactly
   on the slab, a close that starts moving on the first frame and is NOT the
   open mirrored (the easeReverse gate: ~25% of slab at the midpoint, where a
@@ -666,11 +666,9 @@ Additional stop-the-line gates:
   plain instant `<details>`. It also gates THE PIN: the pillar name must hold
   its line to under 2px on every frame of both directions, because the stage
   centres its copy column and an uncompensated open levers the headline
-  165.7px upward. `node scripts/capture/disclose.mjs` is the review contact
-  sheet; it slows GSAP's clock (which reads `Date.now`, not `performance.now`)
-  so a Playwright burst can actually resolve the curves, and it reports the
-  390px excursion because the single-column stage centres differently.
-  Three traps this suite was built around, all of which produced confident
+  165.7px upward. `npm run disclose:sheet` is the review contact
+  sheet, and `npm run disclose:pour` gates THE LINE SPLIT (below).
+  Four traps this suite was built around, all of which produced confident
   wrong numbers first:
   · once `open` is dropped the pane sits under `content-visibility: hidden`
     and Chrome keeps serving its LAST rect — measure heights only on frames
@@ -679,7 +677,48 @@ Additional stop-the-line gates:
     from earlier cycles shows up as 32px of phantom pin error;
   · budget the timing checks in FRAMES, not milliseconds. The liquid starves
     rAF on this page and a single dropped frame blew a 50ms budget to 73ms
-    while the animation itself was fine.
+    while the animation itself was fine;
+  · and when even the frame COUNT is too small to say anything — four frames
+    for a 620ms open, on a container sharing a core with the field — divide
+    GSAP's clock instead of accepting the sample. All three suites now do:
+    `Date.now` is stretched 8x in an init script (GSAP reads `Date.now`, NOT
+    `performance.now` — `_getTime = Date.now`, gsap-core.js:1269) and the
+    samplers read the same clock, so every `t` stays in timeline milliseconds
+    and every budget keeps its meaning. It also lifts the animation clear of
+    GSAP's own lag smoothing, which compresses any gap past 500ms to 33ms —
+    on a starved page the gate was not measuring the animation the browser
+    was playing. `capture/disclose.mjs` goes one further and FREEZES the clock
+    after parking, stepping it by hand, so each frame of the sheet is taken at
+    an exact position on the timeline (0ms, 56ms, 112ms …) rather than
+    wherever the renderer happened to be.
+- Line-split change (the disclosure's pour): `npm run disclose:pour` — the
+  panel's copy is split into its real line boxes on the press, each clipped by
+  a mask of its own line box, poured in on a masked stagger, and UN-SPLIT the
+  instant the open settles. The gate holds all of that: the split is the real
+  line boxes and costs no height (a one-line difference between split and
+  resting would snap the panel at settle); not one character moves; the
+  label/answer baselines survive the mask (`overflow: clip`, never `hidden` —
+  a scroll container would synthesise a baseline from its bottom edge and drop
+  "O QUE RESOLVE" to the foot of its own answer); no glyph is clipped by its
+  own mask (measured against canvas font metrics, per block, not eyeballed);
+  the chip separators survive being re-parented into line wrappers; nothing
+  leaves the accessibility tree (`aria: "none"`, because the plugin's default
+  puts `aria-label` on a <dd>, where the role prohibits naming and it is
+  dropped); the settled panel's innerHTML is character-for-character the
+  server's; the pour lands before the sheet settles and lands as a CASCADE;
+  and an open panel REFLOWS with the window, because settling releases the
+  height to `auto` instead of leaving it pinned at the pixel it opened to.
+  Two things to know before touching it:
+  · the stagger is an `amount`, not a per-unit delay. The line count is a
+    function of the measure — ~17 at 1280px, ~13 at 390px — and a per-unit
+    `stagger: 0.03` would have run the pour hundreds of ms past the end of the
+    pane on one breakpoint and not the other. `amount` divides one fixed
+    spread among however many lines there are, so the figure keeps its LENGTH
+    and only changes its density;
+  · nothing in `.disclose-line` / `.disclose-line-mask` may introduce
+    containment, and the masks must never outlive the movement. Both are
+    checked, and both are the reason the resting panel is measurably identical
+    to the one that shipped before the split existed.
 - Entry-intro change: `node scripts/verify/entry-veil.mjs` — plays on EVERY
   document load (a reload replays it; a locale switch and any other same-document
   remount are suppressed), releases inside its budget, never paints under `?f*`

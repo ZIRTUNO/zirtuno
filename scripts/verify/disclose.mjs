@@ -33,6 +33,36 @@ const URL = `${BASE}/${LOCALE}?ftier=full`;
 const OUT = "captures/disclose";
 
 const SEL = "#services details.disclose";
+
+/** How far GSAP's clock is stretched on the live path.
+ *
+ *  Every timing assertion below is a statement about the TIMELINE, and every
+ *  one of them is read off a rAF sampler — which on this page is sampling a
+ *  620ms animation from behind a live WebGL field. Measured in a CI-class
+ *  container that is four to six frames for the whole open, and four frames
+ *  cannot tell a ramp from a snap: this gate reported "0 intermediate frames"
+ *  and "pane travelled 0px" for a panel that was animating perfectly.
+ *
+ *  So the clock is DIVIDED. GSAP reads `Date.now` (`_getTime = Date.now`,
+ *  gsap-core.js:1269 — NOT performance.now, patching that one changes
+ *  nothing), so dividing it in an init script stretches the timeline across
+ *  ~8x more real frames without touching a line of shipped code: the curves
+ *  are unchanged, only the wall clock they are read against. The samplers
+ *  below then read `Date.now` TOO, so every `t` here is still in timeline
+ *  milliseconds and every budget keeps the meaning it was written with.
+ *
+ *  It also takes GSAP's lag smoothing out of the picture, which is the second
+ *  win: a starved rAF hands the ticker gaps past its 500ms threshold and it
+ *  compresses those to 33ms — so the animation this gate was measuring was
+ *  not even the animation the browser was playing. */
+const SLOW = 8;
+/** Divide the clock GSAP reads, before any page script runs. */
+const slowClock = (k) => {
+  const raw = Date.now;
+  const t0 = raw();
+  Date.now = () => t0 + (raw() - t0) / k;
+};
+
 let failures = 0;
 const check = (ok, label, detail = "") => {
   console.log(`${ok ? "  ok  " : "  FAIL"}  ${label}${detail ? `  — ${detail}` : ""}`);
@@ -53,9 +83,9 @@ const record = (page, ms) =>
       const samples = [];
 
       await new Promise((resolve) => {
-        const t0 = performance.now();
+        const t0 = Date.now();
         const tick = () => {
-          const t = performance.now() - t0;
+          const t = Date.now() - t0;
           samples.push({
             t,
             h: pane.getBoundingClientRect().height,
@@ -94,14 +124,14 @@ const trackHeadline = (page, ms) =>
       const heights = [];
 
       await new Promise((resolve) => {
-        const t0 = performance.now();
+        const t0 = Date.now();
         const tick = () => {
           const top = name.getBoundingClientRect().top;
           tops.push(top);
           inPillar.push(top - pillar.getBoundingClientRect().top);
           scrolls.push(window.scrollY);
           heights.push(pane.getBoundingClientRect().height);
-          if (performance.now() - t0 < ms) requestAnimationFrame(tick);
+          if (Date.now() - t0 < ms) requestAnimationFrame(tick);
           else resolve();
         };
         summary.click();
@@ -126,9 +156,9 @@ const trackHeadline = (page, ms) =>
 
 // ── the live path ──────────────────────────────────────────────────────────
 {
-  const page = await (
-    await browser.newContext({ viewport: { width: 1280, height: 860 } })
-  ).newPage();
+  const context = await browser.newContext({ viewport: { width: 1280, height: 860 } });
+  await context.addInitScript(slowClock, SLOW);
+  const page = await context.newPage();
   await page.goto(URL, { waitUntil: "domcontentloaded" });
   await page.waitForSelector(SEL, { state: "attached", timeout: 40000 });
   await page.waitForFunction(
@@ -149,7 +179,9 @@ const trackHeadline = (page, ms) =>
         .scrollIntoView({ block: "center", behavior: "instant" }),
     SEL,
   );
-  await page.waitForTimeout(900);
+  // Lenis rides the same divided clock, so a scroll that looks instant takes
+  // SLOW x longer to actually stop.
+  await page.waitForTimeout(900 * SLOW);
 
   const closedShot = `${OUT}/01-closed.png`;
   await page.locator(SEL).first().screenshot({ path: closedShot });
@@ -262,10 +294,10 @@ const trackHeadline = (page, ms) =>
       let tAtCut = null;
 
       await new Promise((resolve) => {
-        const t0 = performance.now();
+        const t0 = Date.now();
         let cutDone = false;
         const tick = () => {
-          const t = performance.now() - t0;
+          const t = Date.now() - t0;
           const h = pane.getBoundingClientRect().height;
           samples.push({ t, h, open: details.open });
           if (!cutDone && t >= at) {
@@ -334,7 +366,7 @@ const trackHeadline = (page, ms) =>
   // close. It must not move at ANY frame — the stage centres this column, so
   // without compensation opening it levers the name 165.7px upward.
   await page.evaluate((sel) => document.querySelector(sel).querySelector("summary").click(), SEL);
-  await page.waitForTimeout(900);
+  await page.waitForTimeout(900 * SLOW);
   // Re-settle the scroll after the earlier cycles. From this point the viewport
   // number is load-bearing: the managed open/close must suppress native
   // document anchoring for its exact lifetime, or the browser compensates the
@@ -347,7 +379,7 @@ const trackHeadline = (page, ms) =>
         .scrollIntoView({ block: "center", behavior: "instant" }),
     SEL,
   );
-  await page.waitForTimeout(1200);
+  await page.waitForTimeout(1200 * SLOW);
 
   for (const [tag, ms] of [["open", 1200], ["close", 1200]]) {
     const { tops, travel, slab, worstViewport, worstInPillar, scrollDrift } =
@@ -372,7 +404,7 @@ const trackHeadline = (page, ms) =>
       `the ${tag} does not move the document or the headline in the viewport`,
       `viewport ${worstViewport.toFixed(2)}px · scroll ${scrollDrift.toFixed(2)}px`,
     );
-    await page.waitForTimeout(600);
+    await page.waitForTimeout(600 * SLOW);
   }
 
   await page.context().close();

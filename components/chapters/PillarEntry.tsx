@@ -61,8 +61,12 @@ export function PillarEntry({
             summaries out of context in a rotor listing, where seven identical
             "Details" toggles would be unusable.
 
-            Each [data-disclose-row] is one beat of the stagger — the three
-            spec rows, the capability set, then the brand's own voice last. */}
+            Every [data-disclose-lines] block is split into its real line
+            boxes when the panel opens, and those lines — not the blocks — are
+            the beats of the stagger: label, answer, label, answer, the
+            capability set, then the brand's own voice last, poured in reading
+            order. [data-disclose-row] stays as the fallback unit for the case
+            where nothing splits. */}
         <Disclose
           className="pillar-detail"
           label={t("detailsLabel")}
@@ -70,25 +74,42 @@ export function PillarEntry({
         >
           <dl className="pillar-blocks">
             <div className="pillar-block" data-disclose-row>
-              <dt className="pillar-label">{t("labelIs")}</dt>
-              <dd>{t(`${base}.is`)}</dd>
+              <dt className="pillar-label" data-disclose-lines>
+                {t("labelIs")}
+              </dt>
+              <dd data-disclose-lines>{t(`${base}.is`)}</dd>
             </div>
             <div className="pillar-block" data-disclose-row>
-              <dt className="pillar-label">{t("labelSolves")}</dt>
-              <dd>{t(`${base}.solves`)}</dd>
+              <dt className="pillar-label" data-disclose-lines>
+                {t("labelSolves")}
+              </dt>
+              <dd data-disclose-lines>{t(`${base}.solves`)}</dd>
             </div>
             <div className="pillar-block" data-disclose-row>
-              <dt className="pillar-label">{t("labelCreates")}</dt>
-              <dd>{t(`${base}.creates`)}</dd>
+              <dt className="pillar-label" data-disclose-lines>
+                {t("labelCreates")}
+              </dt>
+              <dd data-disclose-lines>{t(`${base}.creates`)}</dd>
             </div>
           </dl>
 
-          <p className="pillar-caps" data-disclose-row>
-            {caps.map((c) => (
+          <p className="pillar-caps" data-disclose-row data-disclose-lines>
+            {caps.map((c, i) => (
               // inline-block: the capability and its ::after separator wrap as
               // ONE unit — the trailing dot can no longer hang past the
-              // viewport edge on narrow stages (the 390px 4px-overflow drill)
-              <span key={c} className="pillar-cap inline-block">
+              // viewport edge on narrow stages (the 390px 4px-overflow drill).
+              //
+              // The LAST chip is marked here rather than left to :last-child,
+              // because the disclosure's line split moves these spans into one
+              // wrapper per rendered line: :last-child would then match the
+              // last chip on EVERY line, and three separators would vanish the
+              // moment the panel started opening.
+              <span
+                key={c}
+                className={`pillar-cap inline-block${
+                  i === caps.length - 1 ? " pillar-cap-last" : ""
+                }`}
+              >
                 {c}
               </span>
             ))}
@@ -96,7 +117,7 @@ export function PillarEntry({
 
           {/* the brand's own voice — kept, but as the closing note of the
               detail rather than a second grey line competing with the promise */}
-          <p className="font-poetic pillar-accent" data-disclose-row>
+          <p className="font-poetic pillar-accent" data-disclose-row data-disclose-lines>
             {t(`${base}.accent`)}
           </p>
         </Disclose>
