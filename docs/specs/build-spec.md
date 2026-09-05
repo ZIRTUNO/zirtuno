@@ -278,9 +278,68 @@ morph 1400ms · autocycle 9000ms · breath 8000ms
 - WebGL/conductor: liquid simulation and visual state.
 
 Only one owner controls a property. Generic repeated fade-ups are not the
-cinematic language. R5-D’s `Reveal variant="blur"` is reserved for Soul and
-Invitation copy; it fades opacity, translates gently, and resolves blur
-8px → 0. Reduced motion removes transform, blur, and scrub.
+cinematic language.
+
+**THE WETTING EDGE** is what chapter copy arrives on. A reading front travels
+through a block as it crosses the viewport: ahead of it the type is dry paper,
+behind it the colour the type role actually rests at, and the front itself
+carries the brand cyan and a share of the liquid’s bloom. Nothing fades,
+translates or blurs, and it is reversible — the front is a POSITION, not an
+event, so scrolling back recedes it.
+
+- `lib/motion/wet-edge.ts` owns the clock: one rAF and one
+  IntersectionObserver for the whole page, writing `--wet-p` (0 → 1) per
+  block per frame. Membership and position both come from GEOMETRY, never
+  from a scroll event — Lenis rewrites `window.scrollY` from inside its own
+  rAF and native events do not keep up.
+- `components/ui/WetType.tsx` wraps the words at RENDER time, on the server
+  as well as the client, in plain `display: inline` spans with the whitespace
+  left as real text nodes — so line breaking, `text-wrap: balance` and the
+  accessibility tree are identical to the unsplit paragraph.
+- The stylesheet derives each word’s own arrival from `--wet-p`, its index and
+  the block’s word count. There is no per-word JavaScript.
+- It fails safe like `--origin-scrub`: every rule hangs off `data-wet`, which
+  only the live loop sets, and only once it holds a real position. Reduced
+  motion, no-JS, pre-hydration and static tiers render full-strength copy.
+- It runs on chapter headlines AND the copy under them, in two PAINTS:
+  - `ink` — the word's own colour travels dry → arrived, mixed toward
+    `currentcolor` so a word lands on whatever its parent authored.
+  - `glass` — Bricolage display type is liquid GLASS
+    (`background-clip: text` over `--liquid-glass-fill`) and a word inside it
+    has no ink of its own; setting `color` paints a flat slab over the fill.
+    So the word lays a VEIL over the slab instead and clears it on arrival:
+    the glass is simply not lit until the front reaches it, and at rest the
+    headline is byte-identical to one without the feature. Below 768px these
+    blocks are opaque paper and the same veil darkens them identically.
+  Both dry states rest at the same presence, so the two paints read as one
+  gesture. S7 (Origin) is excluded — it has its own one-gesture horizon wipe on
+  `--origin-p` and must not carry two, and its display statements keep their
+  documented opt-out from the glass at EVERY width.
+- The liquid glass is no longer gated to ≥768px. It was, because a mobile
+  reading aperture set a `background` shorthand on those exact elements; that
+  aperture is gone (measured: `background-image: none` at 390px), so the gate's
+  only remaining effect was that a phone got flat paper where a desktop got the
+  lit slab. The filter's tight 5px black is what keeps a cyan-footed glyph
+  legible out of a bright mass, which is the case a phone hits most often.
+- The DRY state keeps more presence below 768px (0.42 rather than 0.26). A
+  headline that is two lines on a desktop stage is five on a phone, so most of
+  it is unreached copy at any moment; a depth tuned against a block occupying a
+  fifth of the screen turns three quarters of a phone screen unreadable. The
+  ramp is identical — this is a legibility floor, not a different gesture.
+- PACE is measured, not guessed. The reference (brikken.co, 1440x900) pins a
+  reading line at ~0.40 vh and wets each word as it crosses: a 51-word 502px
+  statement reveals across 471px of scroll with 3 words in transit. A window
+  that merely matches that LENGTH but opens with the block at the bottom edge
+  finishes before the copy is comfortable to read, which is what reads as "too
+  fast". So the window STRADDLES the reading line symmetrically
+  (`LINE 0.48 ± 0.38`), putting half-reveal on the line for a block of any
+  height, and the front is ~1.15–2.6 words wide rather than a quarter of the
+  block.
+- `probe/wet-edge.mjs` is the machine gate (fail-safe, arming, ramp shape, and
+  the arrived colour); `capture/wet-edge.mjs` is the filmstrip.
+
+`Reveal` remains for labels and CTA blocks. Its `variant="blur"` is no longer
+used anywhere. Reduced motion removes transform, blur, and scrub.
 
 ### 4.5 Cinematic light score — CURRENT R5-D
 
@@ -1250,12 +1309,19 @@ npm run endpoints
 
 node scripts/verify/conductor.mjs
 node scripts/verify/canvas-count.mjs
-node scripts/verify/cta.mjs
 node scripts/verify/entry-veil.mjs
 node scripts/verify/perf.mjs
 node scripts/probe/origin-bands.mjs
 node scripts/capture/transition-diagnostics.mjs
 ```
+
+`verify/cta.mjs` was in this list until 2026-09-04. S10 — the contact
+chapter and the site's only form — was quarantined that day, and the gate's
+whole subject was the conversion path INTO it: intent routing, the
+same-page Lenis scroll, the pre-filled tag, a confirmed and a pending
+submit. It is preserved at `Dead Code/scripts/obsolete/verify-cta.mjs` and
+goes back in this list the day an intent CTA has somewhere to land
+(`INTENT_DESTINATION_READY` in `components/chrome/CtaButton.tsx`).
 
 R5-C is protected by `verify/postfx.mjs` and `verify/rest-exact.mjs`. R5-D is
 protected by `verify/cinematics.mjs` and the full-page transition diagnostics.

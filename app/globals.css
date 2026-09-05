@@ -1192,21 +1192,6 @@ section[id],
   animation: type-breathe var(--dur-breath) var(--ease-breath) infinite;
 }
 
-/* S10 — contact metaball STAGE (R5: the mark renders on the page fluid,
-   anchored to this box; the fallback shows on the static path). */
-.contact-metaball-stage {
-  position: relative;
-  width: 100%;
-  max-width: 300px;
-  margin: 0 auto 2.5rem;
-  aspect-ratio: 1 / 1;
-}
-.contact-metaball-stage > .contact-metaball-fallback {
-  position: absolute;
-  inset: 0;
-  max-width: none;
-}
-
 /* S8 Beat 5 — wordmark convergence (CPU particles → crisp text crossfade) */
 /* The canvas samples its font as floor(H * 0.62), so the STAGE height is what
    sets the particle letterforms. At 5.5rem it assembled ZIRTUNO at ~54px and
@@ -1468,6 +1453,15 @@ section[id],
   display: none;
 }
 
+/* One truth for the separation below, because the wetting edge has to restate
+   it under each word's own bloom — text-shadow does not compose, so a per-word
+   span would otherwise replace the very thing this rule provides. */
+:root {
+  --copy-shadow-standing:
+    0 1px 10px rgb(0 0 0 / 0.78),
+    0 0 26px rgb(0 0 0 / 0.55);
+}
+
 /* Copy that STANDS on the liquid (R5-E). Every cinematic chapter puts business
    copy over a live cyan field whose luminance wanders through the same band as
    muted paper. A shadow — not a dim, not a veil — separates the two: the
@@ -1514,9 +1508,14 @@ section[id],
     .founding-pillar
   ),
 .side-index-num {
-  text-shadow:
-    0 1px 10px rgb(0 0 0 / 0.78),
-    0 0 26px rgb(0 0 0 / 0.55);
+  text-shadow: var(--copy-shadow-standing);
+  /* The wetting edge splits some of this copy into per-word spans and gives
+     each one its own bloom. text-shadow does not compose, so a word would
+     otherwise REPLACE the separation this rule exists to provide — on exactly
+     the copy that needs it most. Handing the value down as a variable lets a
+     word restate it under its bloom; copy that never had a standing shadow
+     (the Método lead) leaves --wet-under unset and gains nothing. */
+  --wet-under: var(--copy-shadow-standing);
 }
 
 /* ── LIQUID GLASS ────────────────────────────────────────────────────────────
@@ -1611,8 +1610,7 @@ section[id],
       #ecosystem .type-section-title,
       #services .type-section-title,
       #method .type-section-title,
-      #work .type-section-title,
-      #contact .type-section-title
+      #work .type-section-title
     ),
   .liquid-journey #studio .type-feature-title,
   .liquid-journey :is(#name .origin-headline, #name .origin-statement) {
@@ -1647,61 +1645,64 @@ section[id],
   fill: rgb(0 0 0 / 0.68);
 }
 
-/* The chapter display type over the journey canvas takes the glass.
-   ≥768px ONLY, and deliberately: the mobile reading aperture below sets a
-   `background` shorthand on these exact elements. Next to background-clip:text
-   that shorthand both resets the fill and clips the aperture's black to the
-   glyph interiors — an invisible title over a liquid it was supposed to hold
-   back. The aperture is a legibility device and it wins on small screens. */
-@media (min-width: 768px) {
+/* The chapter display type over the journey canvas takes the glass — at
+   EVERY width.
+
+   This was gated to ≥768px because a mobile reading aperture set a
+   `background` shorthand on these exact elements, and next to
+   background-clip:text that shorthand both reset the fill and clipped the
+   aperture's black to the glyph interiors. That aperture is gone: measured at
+   390px these headings compute `background-image: none` and a transparent
+   `background-color`, so the gate now protects against nothing and its only
+   remaining effect is that a phone gets flat paper where a desktop gets the
+   lit slab. The filter below is what makes this safe on a small stage — the
+   tight 5px black is exactly the term that cuts a cyan-footed glyph out of a
+   bright cyan mass, which is the case a phone hits most often. */
+.liquid-journey
+  :is(
+    #problem .type-section-title,
+    #ecosystem .type-section-title,
+    #services .type-section-title,
+    #method .type-section-title,
+    #work .type-section-title
+  ),
+.liquid-journey #studio .type-feature-title,
+.liquid-journey :is(#name .origin-headline, #name .origin-statement) {
+  color: transparent;
+  background-image: var(--liquid-glass-fill);
+  -webkit-background-clip: text;
+  background-clip: text;
+  /* Keep the gradient paint alive through Bricolage's y/g/p descenders.
+     The negative margin preserves every chapter's existing vertical rhythm. */
+  padding-block-end: 0.16em;
+  margin-block-end: -0.16em;
+  /* keep in step with .liquid-glass-lit — the tight 5px black is what cuts
+     a cyan-footed glyph out of a bright cyan mass */
+  filter:
+    drop-shadow(0 1px 0 rgb(0 0 0 / 0.55))
+    drop-shadow(0 0 5px rgb(0 0 0 / 0.72))
+    drop-shadow(0 0 16px rgb(0 0 0 / 0.5))
+    drop-shadow(0 0 26px color-mix(in srgb, var(--color-cyan) 20%, transparent));
+}
+.liquid-journey :is(#name .origin-headline, #name .origin-statement) {
+  /* the black halo it used for legibility is now the filter's job — a
+     text-shadow would paint over the fill, not behind it */
+  text-shadow: none;
+}
+
+@supports not ((background-clip: text) or (-webkit-background-clip: text)) {
   .liquid-journey
     :is(
       #problem .type-section-title,
       #ecosystem .type-section-title,
       #services .type-section-title,
       #method .type-section-title,
-      #work .type-section-title,
-      #contact .type-section-title
+      #work .type-section-title
     ),
   .liquid-journey #studio .type-feature-title,
   .liquid-journey :is(#name .origin-headline, #name .origin-statement) {
-    color: transparent;
-    background-image: var(--liquid-glass-fill);
-    -webkit-background-clip: text;
-    background-clip: text;
-    /* Keep the gradient paint alive through Bricolage's y/g/p descenders.
-       The negative margin preserves every chapter's existing vertical rhythm. */
-    padding-block-end: 0.16em;
-    margin-block-end: -0.16em;
-    /* keep in step with .liquid-glass-lit — the tight 5px black is what cuts
-       a cyan-footed glyph out of a bright cyan mass */
-    filter:
-      drop-shadow(0 1px 0 rgb(0 0 0 / 0.55))
-      drop-shadow(0 0 5px rgb(0 0 0 / 0.72))
-      drop-shadow(0 0 16px rgb(0 0 0 / 0.5))
-      drop-shadow(0 0 26px color-mix(in srgb, var(--color-cyan) 20%, transparent));
-  }
-  .liquid-journey :is(#name .origin-headline, #name .origin-statement) {
-    /* the black halo it used for legibility is now the filter's job — a
-       text-shadow would paint over the fill, not behind it */
-    text-shadow: none;
-  }
-
-  @supports not ((background-clip: text) or (-webkit-background-clip: text)) {
-    .liquid-journey
-      :is(
-        #problem .type-section-title,
-        #ecosystem .type-section-title,
-        #services .type-section-title,
-        #method .type-section-title,
-        #work .type-section-title,
-        #contact .type-section-title
-      ),
-    .liquid-journey #studio .type-feature-title,
-    .liquid-journey :is(#name .origin-headline, #name .origin-statement) {
-      color: var(--color-paper);
-      background-image: none;
-    }
+    color: var(--color-paper);
+    background-image: none;
   }
 }
 
@@ -4352,18 +4353,21 @@ html:has(.disclose[data-disclose="live"][open]) {
 
 /* S7 is the restraint chapter. Its two display statements stay ink-on-paper;
    the shared liquid-glass gradient made both read like generated landing-page
-   typography and competed with the actual liquid. */
-@media (min-width: 768px) {
-  .liquid-journey #name .origin-headline,
-  .liquid-journey #name .origin-statement {
-    color: var(--color-paper);
-    background-image: none;
-    -webkit-background-clip: border-box;
-    background-clip: border-box;
-    padding-block-end: 0;
-    margin-block-end: 0;
-    filter: none;
-  }
+   typography and competed with the actual liquid.
+
+   This opt-out was gated to ≥768px only because the glass it opts out of was.
+   Now that the glass applies at every width, so must this: otherwise ungating
+   the fill silently hands S7 the exact treatment this rule exists to refuse,
+   on phones only. */
+.liquid-journey #name .origin-headline,
+.liquid-journey #name .origin-statement {
+  color: var(--color-paper);
+  background-image: none;
+  -webkit-background-clip: border-box;
+  background-clip: border-box;
+  padding-block-end: 0;
+  margin-block-end: 0;
+  filter: none;
 }
 
 /* The old title card's number, dossier and runway HUD are gone from the DOM.
@@ -4694,199 +4698,6 @@ html:has(.disclose[data-disclose="live"][open]) {
    edge — it stops short of the chapter rail's protected column */
 #studio .studio-roles {
   margin-right: var(--rail-safe);
-}
-
-/* ===========================================================================
-   Contact form (S10)
-   =========================================================================== */
-.contact-form {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
-.contact-honeypot {
-  position: absolute;
-  left: -10000px;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  opacity: 0;
-  pointer-events: none;
-}
-.contact-intent {
-  font-family: var(--font-mono);
-  font-size: var(--text-mono-sm);
-  font-weight: 500;
-  line-height: var(--text-mono-sm--line-height);
-  letter-spacing: var(--tracking-label);
-  text-transform: uppercase;
-  color: var(--color-cyan);
-}
-.field {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-.field label {
-  font-family: var(--font-mono);
-  font-size: var(--text-mono);
-  font-weight: 500;
-  line-height: var(--text-mono--line-height);
-  letter-spacing: var(--text-mono--letter-spacing);
-  text-transform: uppercase;
-  color: var(--color-paper-mute);
-}
-.field input,
-.field textarea {
-  width: 100%;
-  min-width: 0;
-  padding: 0.85rem 1rem;
-  background: transparent;
-  border: 1px solid var(--color-paper-faint);
-  /* Soft to soft. The vector layer draws these corners as arcs (COAL.FIELD_R),
-     and the CSS underneath has to agree or the no-JS and reduced-motion form
-     is a visibly different shape from the enhanced one. */
-  border-radius: 10px;
-  color: var(--color-paper);
-  font-family: var(--font-sans);
-  font-size: var(--text-body);
-  line-height: var(--text-body--line-height);
-  letter-spacing: var(--text-body--letter-spacing);
-  transition: border-color 200ms var(--ease-arrive);
-}
-.field textarea {
-  resize: vertical;
-  min-height: 7rem;
-}
-.field input::placeholder,
-.field textarea::placeholder {
-  color: var(--color-paper-mute);
-}
-.field input:focus,
-.field textarea:focus {
-  outline: none;
-  border-color: var(--color-cyan);
-}
-.field input:focus-visible,
-.field textarea:focus-visible {
-  outline: 2px solid var(--color-cyan);
-  outline-offset: 2px;
-  border-radius: 10px;
-}
-.field input[aria-invalid="true"],
-.field textarea[aria-invalid="true"] {
-  border-color: var(--color-warn);
-}
-.field-error,
-.contact-error,
-.contact-pending {
-  font-family: var(--font-sans);
-  font-size: var(--text-body-s);
-  line-height: var(--text-body-s--line-height);
-  letter-spacing: var(--text-body-s--letter-spacing);
-  color: var(--color-warn);
-}
-
-/* the aggregate error announcement (R5-E) — one focused, spoken summary of the
-   complete error state. Salmon stays validation-only; the block is quiet, not
-   a klaxon, and each line is a direct route to its field. */
-.contact-error-summary {
-  padding: 1rem 1.15rem;
-  border: 1px solid color-mix(in srgb, var(--color-warn) 55%, transparent);
-  border-left-width: 2px;
-  background: color-mix(in srgb, var(--color-warn) 7%, transparent);
-}
-.contact-error-summary:focus {
-  outline: none;
-}
-.contact-error-summary:focus-visible {
-  outline: 2px solid var(--color-warn);
-  outline-offset: 3px;
-}
-.contact-error-summary-title {
-  font-family: var(--font-mono);
-  font-size: var(--text-mono-sm);
-  font-weight: 500;
-  line-height: var(--text-mono-sm--line-height);
-  letter-spacing: var(--tracking-label);
-  text-transform: uppercase;
-  color: var(--color-warn);
-}
-.contact-error-summary ul {
-  margin-top: 0.6rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.3rem;
-}
-.contact-error-summary a {
-  font-size: var(--text-body-s);
-  line-height: var(--text-body-s--line-height);
-  color: var(--color-paper);
-  text-decoration: underline;
-  text-decoration-color: color-mix(
-    in srgb,
-    var(--color-warn) 70%,
-    transparent
-  );
-  text-underline-offset: 3px;
-  transition: color 200ms var(--ease-arrive);
-}
-.contact-error-summary a:hover,
-.contact-error-summary a:focus-visible {
-  color: var(--color-warn);
-}
-.contact-pending {
-  color: var(--color-paper-mute);
-}
-.contact-form button[type="submit"] {
-  max-width: 100%;
-  align-self: flex-start;
-  margin-top: 0.25rem;
-}
-@media (max-width: 420px) {
-  .contact-form button[type="submit"] {
-    width: 100%;
-    align-self: stretch;
-    justify-content: center;
-  }
-}
-.contact-success {
-  padding: 3rem 0;
-  text-align: center;
-}
-.contact-success-title {
-  font-family: var(--font-sans);
-  font-size: var(--text-title);
-  font-weight: 550;
-  line-height: var(--text-title--line-height);
-  letter-spacing: var(--text-title--letter-spacing);
-  color: var(--color-cyan);
-}
-.contact-secondary {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: center;
-  gap: 1.25rem;
-  margin-top: 2.5rem;
-  font-family: var(--font-mono);
-  font-size: var(--text-mono-sm);
-  font-weight: 500;
-  line-height: var(--text-mono-sm--line-height);
-  letter-spacing: var(--tracking-label);
-  text-transform: uppercase;
-  color: var(--color-paper-mute);
-}
-.contact-secondary a {
-  display: inline-flex;
-  min-height: 44px;
-  align-items: center;
-  color: var(--color-paper);
-  text-decoration: none;
-  transition: color 200ms var(--ease-arrive);
-}
-.contact-secondary a:hover {
-  color: var(--color-cyan);
 }
 
 /* ===========================================================================
@@ -6356,9 +6167,11 @@ html[data-nav-open] .nav-sheet-cta {
    droplet to sink into and called it load-bearing. It is not, any more —
    `lib/webgl/scenes/footer.ts` was rewritten (R5-D) to `forms: []`, and its
    own docstring says it "agrees with that resting footprint instead of
-   detaching a lone droplet over the footer": contact's held mark IS the coda.
-   That scene still reads `.footer`'s rect, but only to drive the closing
-   exposure/vignette curve, which is padding-agnostic.
+   detaching a lone droplet over the footer": contact's held mark WAS the coda.
+   With S10 quarantined (2026-09-04) there is no held mark either, so the
+   scene's whole contribution is now the closing exposure/vignette curve it
+   drives off `.footer`'s rect — which is padding-agnostic. The gutter stays
+   unnecessary in both worlds.
 
    `position: relative` is not decoration either: `.journey-layer` is a
    `z-index: 0` positioned element, so a NON-positioned footer would paint its
@@ -7022,124 +6835,6 @@ html[data-zveil="seen"] .entry-veil {
 }
 
 /* ===========================================================================
-   THE FORM'S LIQUID (S10) — coalescence on the contact form
-   (lib/motion/coalesce.mjs · components/chapters/FieldLiquid.tsx)
-   ---------------------------------------------------------------------------
-   Same contract as THE MEMBRANE above, for the same reason: everything in
-   "Contact form (S10)" stays exactly as authored and remains the whole form
-   under reduced motion, without JS, and before hydration. `FieldLiquid.tsx`
-   sets `data-fieldliquid` on the <form> only once the layer has mounted AND
-   drawn its first frame, and every rule below is gated on it. If the vector
-   layer never arrives, none of this applies and the bordered form is the form.
-
-   What it replaces, and only this:
-     · the 1 px CSS border on each control → a live Bézier contour that deforms
-       under a hand, ripples where it is clicked, and can be MERGED WITH.
-   What it deliberately does not touch: the labels, the values, the validation,
-   the error summary, the :focus-visible outline, and the submit button — which
-   keeps its own membrane and its own flood.
-   =========================================================================== */
-/* THE BLEED HAS TO BE CLIPPED SOMEWHERE, AND IT WAS NOT.
-   `.fl-svg` is deliberately inset by -96px on every side (PAD in
-   FieldLiquid.tsx) so the liquid can run past the form it belongs to. On a
-   375px viewport that puts its right edge at 447 and NOTHING caught it: the
-   document grew 72px, and — exactly as the page-transition note further down
-   this file predicts — the fixed top bar, sized `calc(100% - 2 * 2.995vw)`,
-   inflated to match and carried the burger 9px OFF the visual viewport, where
-   it could not be tapped at all. `body { overflow-x: hidden }` does not help
-   here: with `html` at `overflow: visible` the body's value propagates to the
-   VIEWPORT, so the clipping happens after the document has already grown.
-
-   `clip` on the x axis alone, at the chapter that owns the form. It leaves
-   `overflow-y: visible`, so it adds no scroll container, does not become a
-   containing block for the fixed layers, and the liquid still bleeds
-   vertically and out to the page edges — just no longer past them. Same
-   instrument, same reason, as `html[data-page-transition]`. */
-#contact {
-  overflow-x: clip;
-}
-.fl {
-  position: absolute;
-  inset: 0;
-  display: block;
-  pointer-events: none;
-}
-.fl-svg {
-  /* Size and offset are written by FieldLiquid.tsx from the same PAD that
-     writes the viewBox — they must agree to the pixel, and a second copy here
-     is a second thing to get out of step. It has been out of step. */
-  position: absolute;
-  overflow: visible;
-  pointer-events: none;
-}
-.contact-form[data-fieldliquid] {
-  position: relative;
-}
-/* The liquid draws BEHIND the controls: the fields' backgrounds are already
-   transparent, so the interior wash reads through, and no fill can ever sit
-   over the text somebody is typing. */
-.contact-form[data-fieldliquid] > .fl {
-  z-index: 0;
-}
-.contact-form[data-fieldliquid] > *:not(.fl) {
-  position: relative;
-  z-index: 1;
-}
-/* The handover. Only the border goes — padding, colour, font and every state
-   that is not the outline stay in the rules above. */
-.contact-form[data-fieldliquid] .field input,
-.contact-form[data-fieldliquid] .field textarea {
-  border-color: transparent;
-}
-.fl-edge {
-  fill: var(--color-cyan);
-  fill-opacity: 0.012;
-  stroke: var(--color-paper-faint);
-  stroke-width: 1;
-  /* the viewBox is 1:1 with the CSS box, but a sub-pixel resize must never
-     make the brand's hairline thicken */
-  vector-effect: non-scaling-stroke;
-  transition: stroke 200ms var(--ease-arrive);
-}
-/* WET — the field currently holding the drop. It has to be lit, or the drop
-   lands on a dim grey hairline and the brightness falls off a cliff on
-   touchdown. Deep cyan rather than full: focus stays the brightest thing on
-   the form, so dim → lit → focused still reads as a hierarchy. */
-.fl-edge[data-fl="wet"] {
-  stroke: var(--color-cyan-deep);
-}
-.fl-edge[data-fl="focus"] {
-  stroke: var(--color-cyan);
-}
-.fl-edge[data-fl="invalid"] {
-  stroke: var(--color-warn);
-}
-/* The drop carries the same MATERIAL as the contour it is about to join — a
-   merge between two surfaces drawn differently reads as one shape passing
-   behind another, not as two becoming one. It cannot carry the same value,
-   because the contour's value depends on the field's state, so the handover is
-   a cross-fade instead (COAL.FADE_TAU) onto a lit `wet` contour. Opacity is
-   written per frame by FieldLiquid; there is deliberately no CSS transition on
-   it, or the two would fight. */
-/* The drop wears the material of the contour that absorbs it. While the bridge
-   is formed both draw the same circle; identical, the two strokes are
-   indistinguishable from one, and that is the whole reason the outline can stay
-   on through a merge without blinking.
-
-   `stroke` is written per frame by FieldLiquid, COPIED from the host contour's
-   computed value so it matches mid-transition too — mirroring the state alone
-   left a window where a rest-coloured circle sat under a wet-coloured one. The
-   value here is only the pre-mount fallback. Width and fill must stay in step
-   with `.fl-edge` above by hand. */
-.fl-bead {
-  fill: var(--color-cyan);
-  fill-opacity: 0.012;
-  stroke: var(--color-paper-faint);
-  stroke-width: 1;
-  vector-effect: non-scaling-stroke;
-}
-
-/* ===========================================================================
    PAGE TRANSITION — the GSAP slide-and-scale (components/motion/PageTransition)
    The wrapper carries NO transform at rest: GSAP writes one for the half
    second a timeline runs and `clearProps` removes it on arrival, because a
@@ -7170,4 +6865,229 @@ html[data-page-transition] {
    it sits the transition out rather than travelling with it. */
 html[data-page-transition] .cine-veils {
   visibility: hidden;
+}
+
+/* ===========================================================================
+   THE WETTING EDGE — the reading front, on the page's own copy
+
+   The site's copy used to arrive on `Reveal` fade-ups: thirteen independent
+   ScrollTriggers at `top 88%`, unrelated to the liquid they were describing,
+   which is the "generic repeated fade-ups" build-spec §4.4 rules out. This
+   replaces them on every chapter's headline and lead with ONE scrubbed
+   gesture, and it is the same instrument S7 already uses — a front travelling
+   through the type, driven by a number written once per frame.
+
+   What it is, in the site's own material terms: the copy is WETTED. Ahead of
+   the front the type is dry paper; behind it, the ink the type role actually
+   rests at; and the front itself carries brand cyan and a little of the
+   liquid's own bloom, because it is the same surface arriving. Nothing fades,
+   nothing translates, nothing blurs — scroll back and the front recedes,
+   because it is a POSITION and not an event.
+
+   The whole thing is four numbers:
+
+     --wet-p    0 → 1, how far the front has travelled through this block.
+                Written by lib/motion/wet-edge.ts, once per frame, per block.
+     --wet-n    the block's word count.  } together with --wet-i these turn
+     --wet-i    a word's index in it.    } one block number into a per-word one
+     --wet-soft the front's WIDTH, in words.
+
+   …and one derived pair per word: `--wet-w` (its own 0 → 1 arrival) and
+   `--wet-hot` (how much of the front is standing on it right now).
+
+   Fails safe exactly like `--origin-scrub`. Every rule below is gated on
+   `[data-wet="on"]`, which only lib/motion/wet-edge.ts sets, and only once it
+   is actually driving the block. Reduced motion, no-JS, pre-hydration, static
+   tiers and the capture harnesses never get the attribute, so they render
+   plain full-strength copy — there is nothing to un-hide (rule #13).
+   =========================================================================== */
+
+/* Registered so they compute to NUMBERS rather than to the token stream that
+   produced them: the per-word maths below divides by `--wet-soft`, and a probe
+   or a contrast sweep can read an arrival as a value. Both fail safe —
+   a word that is never driven resolves to fully arrived. */
+@property --wet-p {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 1;
+}
+@property --wet-soft {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 3.5;
+}
+@property --wet-w {
+  syntax: "<number>";
+  inherits: false;
+  initial-value: 1;
+}
+@property --wet-hot {
+  syntax: "<number>";
+  inherits: false;
+  initial-value: 0;
+}
+
+:root {
+  /* ARRIVED is never named here: the mix below reaches for `currentcolor`,
+     which inside the `color` property resolves to the INHERITED value, not to
+     a circular reference to itself. So every word lands on whatever colour its
+     own parent authored — full paper on a section title, 0.92 on a lead, the
+     muted italic tail of the studio's closing line — with no per-role table to
+     keep in step. Verified on Chrome: a word inside a 0.5-alpha span mixes to
+     0.38 against a 0.26 dry, not to the block's colour.
+
+     DRY — copy the front has not reached. Deliberately well above the
+     vanishing point: this is a reading state, not a hidden one, and unlike the
+     light-ground references this effect comes from, paper at low alpha on ink
+     still reads as text rather than as absence. */
+  --wet-dry: rgb(242 240 235 / 0.26);
+  /* THE FRONT — the brand hue, and the only colour that enters this at all. */
+  --wet-head: var(--color-cyan-glow);
+  /* How much of it the front carries. */
+  --wet-heat: 0.5;
+  /* GLASS paint. --wet-veil is how far down the unlit slab is turned; --wet-spec
+     is how much of that the front hands back, so the crossing word carries a
+     specular rather than merely being less dark than its neighbours.
+     The veil is set so unlit type keeps the SAME presence the ink paint's dry
+     state does — 1 - 0.74 against --wet-dry's 0.26 — because one dry level
+     across the page is what makes two paints read as one gesture, and because
+     display type on a narrow stage sits over the liquid without the standing
+     shadow body copy gets. */
+  --wet-veil: 0.74;
+  --wet-spec: 0.26;
+  /* The bloom radius under the front, as a share of the type's own size, so a
+     display headline blooms wider than a lead without a second number. */
+  --wet-bloom: 0.42em;
+}
+
+.wet {
+  /* The front's width, in words. Measured off the reference: 3 words in
+     transit across a 51-word statement — 6% of the block, which is what makes
+     each word read as ARRIVING rather than as a gradient sliding past. A front
+     that spans a quarter of its block is a fade wearing a front's clothes,
+     which was the first mistake here (n * 0.26, up to 5 words). The floor
+     keeps a four-word display line at about one word in transit — the
+     reference's own look on a short line. */
+  --wet-soft: clamp(1.15, calc(var(--wet-n) * 0.14), 2.6);
+}
+
+/* A word is a plain inline span and stays one: no `inline-block`, no
+   transform, no `will-change`. Only its COLOUR moves, so line breaking,
+   `text-wrap: balance` and the accessibility tree are identical to the
+   unsplit paragraph, and there is no per-word compositing layer. */
+[data-wet="on"] .wet-w {
+  /* This word's own arrival. The front is `--wet-soft` words wide, so the
+     block's clock is stretched by that much and each word reads its slice of
+     it — the last word finishes exactly as `--wet-p` reaches 1. */
+  --wet-w: clamp(
+    0,
+    calc(
+      (var(--wet-p) * (var(--wet-n) + var(--wet-soft)) - var(--wet-i)) /
+        var(--wet-soft)
+    ),
+    1
+  );
+  /* How much of the front is standing on this word. `w(1-w)²`, normalised to
+     peak at 1 — deliberately NOT the symmetric `4w(1-w)`: the bead rides at
+     the LEADING edge of a wetting front and the trail behind it falls away
+     faster than the reach ahead of it. Peak sits at w = 1/3, on the dry side. */
+  --wet-hot: calc(
+    6.75 * var(--wet-w) * (1 - var(--wet-w)) * (1 - var(--wet-w))
+  );
+  /* The liquid's selective bloom, borrowed for the two or three words the
+     front is actually standing on — laid OVER whatever separation the block
+     already had, never instead of it. Zero everywhere else, so it costs
+     nothing across the rest of the block, and a block with no standing shadow
+     resolves the second layer to a transparent no-op. */
+  text-shadow:
+    0 0 calc(var(--wet-hot) * var(--wet-bloom))
+      rgb(0 227 254 / calc(var(--wet-hot) * 0.3)),
+    var(--wet-under, 0 0 0 rgb(0 0 0 / 0));
+}
+
+/* PAINT · INK — the word's own colour travels. Dry → the colour the block
+   authored, with the front's cyan laid over the crossing. Mixed in oklab so
+   the paper tokens travel by alpha and the cyan enters without swinging
+   through a muddy midpoint. `currentcolor` inside the `color` property is the
+   INHERITED value, so a word lands on whatever its own parent authored — the
+   0.92 of a lead, the 0.80 of the services lead, a muted italic clause —
+   with no per-role table. If `color-mix()` is unavailable the declaration is
+   invalid at computed-value time and `color` simply inherits, which is that
+   same arrived colour: the right fallback by construction. */
+[data-wet="on"]:not([data-paint="glass"]) .wet-w {
+  color: color-mix(
+    in oklab,
+    var(--wet-head) calc(var(--wet-hot) * var(--wet-heat) * 100%),
+    color-mix(in oklab, currentcolor calc(var(--wet-w) * 100%), var(--wet-dry))
+  );
+}
+
+/* PAINT · GLASS — the word VEILS the slab instead of colouring it.
+   Display type on this site is cut out of `--liquid-glass-fill` by the
+   BLOCK's `background-clip: text`, with `color: transparent` on the block
+   itself. A word inside that has no ink to move: giving it a colour paints a
+   flat slab ON TOP of the fill and destroys the signature surface. But a
+   descendant's text paints AFTER its ancestor's background, so a word can lay
+   a translucent black over the glass and turn it down — the slab simply is not
+   lit yet where the front has not reached.
+
+   Two terms:
+     the VEIL  falls from --wet-veil to nothing as the word arrives;
+     the SPEC  lifts it back under the front, so the crossing word is brighter
+               than the ramp alone would leave it — the specular that rides at
+               the leading edge of a wetting front, which is the same shape
+               --wet-hot already describes.
+
+   At rest --wet-w is 1 and --wet-hot is 0, so the veil is rgb(0 0 0 / 0) and
+   the headline renders EXACTLY as it does without this feature. Below 768px
+   these blocks are not glass but opaque paper, and a black veil on a black
+   ground darkens them identically — one rule covers both. */
+[data-wet="on"][data-paint="glass"] .wet-w {
+  color: rgb(
+    0 0 0 /
+      clamp(
+        0,
+        calc(
+          (1 - var(--wet-w)) * var(--wet-veil) - var(--wet-hot) *
+            var(--wet-spec)
+        ),
+        1
+      )
+  );
+}
+
+/* NARROW STAGES READ MORE OF A BLOCK AT ONCE.
+
+   A chapter headline that is two lines on a desktop stage is five on a phone,
+   so at any moment most of it is copy the front has not reached — and a dry
+   state tuned against a block that occupies a fifth of the screen turns three
+   quarters of a phone screen into unreadable type. It looked correct in the
+   numbers (the ramp is the same ramp) and wrong on the device.
+
+   So the dry state keeps more presence here. It is still unmistakably "not
+   yet" against arrived copy, and both paints stay on one level. */
+@media (max-width: 767px) {
+  :root {
+    --wet-dry: rgb(242 240 235 / 0.42);
+    --wet-veil: 0.58;
+  }
+}
+
+/* Belt and braces. The component already skips registration under reduced
+   motion — this covers the frames between an OS-level change and the effect
+   that unregisters, and states the intent where the rest of the rules are. */
+@media (prefers-reduced-motion: reduce) {
+  [data-wet="on"] .wet-w {
+    color: inherit;
+    text-shadow: none;
+  }
+}
+
+/* Forced colours replaces author colours wholesale; hand the text back rather
+   than leaving a computed mix and a glow in front of the system's own. */
+@media (forced-colors: active) {
+  [data-wet="on"] .wet-w {
+    color: inherit;
+    text-shadow: none;
+  }
 }

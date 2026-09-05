@@ -1,5 +1,6 @@
 import { useTranslations } from "next-intl";
 import { Reveal } from "@/components/ui/Reveal";
+import { WetType } from "@/components/ui/WetType";
 import { CtaAnalysis } from "@/components/chrome/CtaButton";
 
 type Phase = { name: string; desc: string };
@@ -31,17 +32,26 @@ export function ChapterMethod() {
           {t("chapterLabel")}
         </Reveal>
 
-        <Reveal inView delay={0.05}>
-          <h2 className="type-section-title mt-[var(--type-space-label-title)] text-paper">
-            {t("headline")}
-          </h2>
-        </Reveal>
+        {/* Bricolage display type is liquid GLASS at 768px and up — the
+            glyphs are cut out of --liquid-glass-fill by this block's own
+            background-clip:text. paint="glass" is what lets the front travel
+            THROUGH that fill instead of painting over it: the word veils the
+            slab and clears to nothing on arrival, so the resting headline is
+            exactly the one that shipped before. */}
+        <WetType
+          as="h2"
+          paint="glass"
+          className="type-section-title mt-[var(--type-space-label-title)] text-paper"
+        >
+          {t("headline")}
+        </WetType>
 
-        <Reveal inView delay={0.1}>
-          <p className="font-poetic mt-[var(--type-space-title-lead)] max-w-2xl text-poetic text-paper-lead">
-            {t("lead")}
-          </p>
-        </Reveal>
+        <WetType
+          as="p"
+          className="font-poetic mt-[var(--type-space-title-lead)] max-w-2xl text-poetic text-paper-lead"
+        >
+          {t("lead")}
+        </WetType>
       </div>
 
       <div className="method-journey">
