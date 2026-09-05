@@ -11,9 +11,12 @@
   overflow: hidden;
 }
 
-/* the inherited site chrome steps aside — the lab carries its own */
+/* the inherited site chrome steps aside — the lab carries its own, and the
+   solo surfaces deliberately carry none */
 body:has(.lab-page) .topbar,
-body:has(.lab-page) .side-index {
+body:has(.lab-page) .side-index,
+body:has(.lab-solo) .topbar,
+body:has(.lab-solo) .side-index {
   display: none;
 }
 
@@ -69,15 +72,44 @@ body:has(.lab-page) .side-index {
 }
 
 /* ── the stage ──────────────────────────────────────────────────────────── */
-/* the stream bleeds out of the Hero on purpose — nothing here may clip it */
+/* THE HERO IS NOW ONLY ITS SENTENCE, so this block is the whole composition:
+   three numbers, and every one of them is derived rather than chosen. The
+   stream still bleeds out of the section on purpose, so `overflow` stays
+   visible — nothing here may clip it.
+
+   INLINE — THE SHELL (R7). `--page-padding` is the top bar's own gutter, so
+   the Hero's column is the bar's column and the chapters' column, and one edge
+   runs down the page. This was the LAST block still padding itself a flat
+   `clamp(1.25rem, 5vw, 3.25rem)`: 52px against a 178px shell gutter at 1440,
+   and 20px against 11.7 on a phone, where it put the first line of the site
+   8px inside the bar it is supposed to line up with. Centred display copy hid
+   it on desktop; the left-aligned phone layout did not.
+
+   TOP — THE CHROME'S FOOTPRINT. `--topbar-h` is defined as how much of the
+   viewport the floating bar occupies, and it is what every other stage on this
+   page clears itself by. The flat 5.5rem it replaces was 88px against a real
+   137px at 1920 and 137px at 768 — the copy was only clear of the bar because
+   `align-content: center` happened to be holding it much further down.
+
+   BOTTOM — THE STREAM'S ROOM, and the reason the sentence is not simply
+   centred in the viewport. `.lab-ribbon` puts its first light at ~84vh at
+   every desktop height (measured, `scripts/probe/hero-light.mjs`), so the copy
+   owns the band between `--topbar-h` and there. With `align-content: center`
+   the block's centre lands at `pt + (100vh - pt - pb) / 2`, and pb = 20vh puts
+   that at 47% of the band — the optical centre, which sits a little above the
+   arithmetic one. Change the ribbon's bleed and this number changes with it;
+   that is the point of writing it down as the stream's room rather than as a
+   pad that looked right. Floor and ceiling are guard rails outside the band
+   people actually browse at, per the vertical rhythm's own discipline. */
 .lab-hero {
   overflow: visible;
   position: relative;
   display: grid;
   align-content: center;
   min-height: 100svh;
-  padding: calc(5.5rem + env(safe-area-inset-top)) clamp(1.25rem, 5vw, 3.25rem)
-    clamp(8rem, 18vh, 12rem);
+  padding-block: calc(var(--topbar-h) + env(safe-area-inset-top))
+    clamp(8rem, 20vh, 16rem);
+  padding-inline: var(--page-padding);
   text-align: center;
 }
 
@@ -645,6 +677,114 @@ body:has(.lab-page) .side-index {
   );
   transform: scaleX(var(--q));
   transform-origin: left;
+}
+
+/* ── the sphere ─────────────────────────────────────────────────────────── */
+/* PARKED. The dot sphere stood under the Hero's subline for a day; the Hero is
+   its sentence again and the object now lives alone at /lab/sphere. The rules
+   stay here, in the stylesheet both surfaces share, because they are the
+   OBJECT's — not the Hero's — and putting it back on a page should not mean
+   rebuilding its box. See components/lab/HeroSphere.tsx.
+
+   What left with the Hero is only the seating: the top margin that spaced it
+   under a subline, and the narrow-stage rule that pulled it left to line up
+   with left-aligned copy. Both belonged to a composition that is gone.
+
+   THE BLOCK AND THE CANVAS ARE DIFFERENT SIZES. The block is what the sphere
+   is worth in the layout; the canvas is bigger, because a swell, a scatter and
+   the assembly's loose shell all put dots outside the seated silhouette and a
+   canvas cut to the silhouette clips them against a straight edge. The overrun
+   is 1.5 and `SPHERE_REST.radius` is scaled to match — the two numbers are one
+   decision, so they are commented in both places (lib/lab/sphere-shader.ts). */
+.lab-sphere {
+  position: relative;
+  width: min(100%, clamp(200px, 34vh, 380px));
+  aspect-ratio: 1;
+  margin-inline: auto;
+  /* the sphere leans to the pointer through a window listener, so it never
+     needs to be a hit target — and it must never sit on top of live copy */
+  pointer-events: none;
+}
+/* No entry animation, and no opacity anywhere: the sphere ARRIVES by gathering
+   (LabSphereStage stages `gather` at 0 and releases it), which is the same rule
+   the rest of the site's motion follows — nothing appears, things assemble. */
+.lab-sphere-canvas {
+  position: absolute;
+  /* STAGE_OVERRUN = 1.5, centred: (150% - 100%) / 2 = 25% out on every side */
+  top: -25%;
+  left: -25%;
+  display: block;
+  width: 150%;
+  height: 150%;
+}
+/* no WebGL2, or a context that went away — the same object as a still ring, so
+   the hero is never a hole where a sphere was meant to be */
+.lab-sphere[data-sphere="fallback"] .lab-sphere-canvas {
+  display: none;
+}
+.lab-sphere[data-sphere="fallback"]::after {
+  content: "";
+  position: absolute;
+  inset: 9%;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at 50% 50%,
+    transparent 58%,
+    color-mix(in srgb, var(--color-cyan-deep) 46%, transparent) 74%,
+    color-mix(in srgb, var(--color-cyan) 88%, transparent) 94%,
+    transparent 100%
+  );
+}
+
+/* ── the workbench (/lab/sphere) ───────────────────────────────────────────── */
+/* Ink, one object, one line of mono saying what is on screen. Nothing else:
+   the whole point of the route is that the sphere has nothing to be read
+   against, so anything added here would be the thing being tested instead. */
+.lab-solo {
+  position: relative;
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: clamp(2rem, 6vh, 4rem);
+  min-height: 100svh;
+  /* the shell, even here — a lab that composes to its own rules teaches the
+     wrong number the moment something is measured off a screenshot of it */
+  padding: var(--space-section) var(--page-padding);
+  background: var(--color-ink);
+}
+.lab-solo-stage {
+  display: grid;
+  place-items: center;
+  width: 100%;
+}
+/* DENSITY IS THE OBJECT, so the default stage is only a little bigger than the
+   Hero's block — not as big as the screen allows.
+
+   The cloud is a fixed 7800 dots built once (HeroSphere), so its density falls
+   with the square of the stage: at 620px the same cloud is a third as dense as
+   it was at 380 and the body reads as a wireframe shell instead of a solid.
+   A reference surface that does not look like the thing is worse than none.
+
+   To go bigger, raise the count with it: `/lab/sphere?dots=20000` holds the
+   density of the Hero's 380px block out to about 620px. */
+.lab-sphere-solo {
+  width: min(100%, clamp(260px, 44vh, 440px));
+}
+.lab-solo-caption {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.55rem;
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: var(--text-mono-sm);
+  font-weight: 500;
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--color-paper-mute);
+}
+.lab-solo-caption span[aria-hidden] {
+  color: color-mix(in srgb, var(--color-paper-mute) 40%, transparent);
 }
 
 /* ── the action ─────────────────────────────────────────────────────────── */
