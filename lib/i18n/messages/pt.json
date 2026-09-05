@@ -414,11 +414,11 @@
       "emailPlaceholder": "voce@empresa.com",
       "company": "Empresa (opcional)",
       "companyPlaceholder": "Nome da empresa",
-      "message": "Conte o que quer estruturar ou resolver.",
+      "message": "Mensagem",
       "messagePlaceholder": "Onde você está hoje e o que quer alcançar.",
       "websiteTrap": "Deixe este campo vazio"
     },
-    "submit": "Solicitar análise inicial",
+    "submit": "Enviar mensagem",
     "sending": "Enviando…",
     "receivedPending": "Solicitação recebida",
     "successTitle": "Recebido.",
@@ -442,8 +442,45 @@
       "structure": "Estruturar o digital",
       "talk": "Conversar com a Zirtuno",
       "careers": "Trabalhe conosco",
-      "general": "Contato"
-    }
+      "general": "Outro assunto"
+    },
+    "metaTitle": "Contato",
+    "metaDescription": "Conte onde sua operação está hoje. Devolvemos uma primeira leitura da sua estrutura digital.",
+    "title": "Tem algo que vale a pena estruturar? Vamos construir direito.",
+    "lead": "Conte onde você está hoje. Devolvemos uma primeira leitura: o que já funciona, o que está disperso e por onde começar.",
+    "intentHeading": "O que te traz aqui?",
+    "intentHint": "Escolha o mais próximo. Isso orienta a leitura que devolvemos.",
+    "formHeading": "Sobre você",
+    "privacyNote": "Ao enviar, você concorda com o uso dos seus dados para responder a este contato.",
+    "privacyLink": "Política de Privacidade",
+    "channelsHeading": "Ou fale direto",
+    "channelsHint": "Prefere outro canal? Todos chegam na mesma mesa.",
+    "emailLabel": "Email",
+    "responseLabel": "Resposta",
+    "responseValue": "Até 1 dia útil",
+    "locationLabel": "Base",
+    "locationValue": "Curitiba, Brasil",
+    "nextHeading": "O que acontece depois",
+    "nextSteps": [
+      {
+        "step": "01",
+        "heading": "Leitura",
+        "body": "Lemos o que você enviou e mapeamos onde a estrutura está dispersa."
+      },
+      {
+        "step": "02",
+        "heading": "Conversa",
+        "body": "Uma call curta para confirmar o diagnóstico e encontrar a prioridade real."
+      },
+      {
+        "step": "03",
+        "heading": "Caminho",
+        "body": "Você recebe um recorte do que fazer primeiro — com ou sem a Zirtuno."
+      }
+    ],
+    "successReturn": "Voltar ao início",
+    "errorBodyLost": "Não foi possível confirmar o envio. Preencha novamente ou use um dos canais diretos.",
+    "rateLimitBodyLost": "Muitas tentativas em pouco tempo. Aguarde alguns minutos e envie de novo."
   },
   "footer": {
     "copyright": "© 2026 Zirtuno. Todos os direitos reservados.",

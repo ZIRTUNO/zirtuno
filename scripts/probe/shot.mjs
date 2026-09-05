@@ -9,7 +9,7 @@ const ctx = await browser.newContext({ viewport: { width: W, height: H }, device
 const page = await ctx.newPage();
 await page.goto("http://localhost:3000/en", { waitUntil: "domcontentloaded", timeout: 90000 });
 await page.waitForTimeout(3000);
-const targets = ["#hero", "#problem", "#ecosystem", "#services", "#method", "#work", "#name", "#studio", "#contact"];
+const targets = ["#hero", "#problem", "#ecosystem", "#services", "#method", "#work", "#name", "#studio"];
 for (const sel of targets) {
   const ok = await page.evaluate((s) => {
     const el = document.querySelector(s);

@@ -199,7 +199,6 @@ for (const run of CASES) {
       work: boundsOf("#work"),
       origin: boundsOf("#name"),
       studio: boundsOf("#studio"),
-      contact: boundsOf("#contact"),
       scrollHeight: document.documentElement.scrollHeight,
       viewport: [window.innerWidth, window.innerHeight],
     };

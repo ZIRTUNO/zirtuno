@@ -3,7 +3,6 @@
 //
 //   · document lang, landmarks, ONE h1, no heading-level skips
 //   · every image has alt; decorative layers are aria-hidden
-//   · every contact field is labelled; the submit is a real labelled button
 //   · skip link is first-focusable and lands on #content; the mobile menu
 //     opens/closes by keyboard with aria-expanded truth
 //   · focus is VISIBLE on the interactive chrome
@@ -11,8 +10,19 @@
 //     token/opacity regression tripwire (composition over liquid is the
 //     owner's visual call; transient veil contrast is verify-cinematics')
 //   · pt.json / en.json carry EXACTLY the same key tree
-//   · reduced motion keeps the whole story + conversion path
-//   · no-JS keeps the authored reading order and native form action visible
+//   · reduced motion keeps the whole story
+//   · no-JS keeps the authored reading order
+//
+// The contact-form assertions (labelled fields, a real labelled submit, the
+// native POST fallback markup) were dropped on 2026-09-04 when S10 was
+// quarantined and RESTORED on 2026-09-05 against `/[locale]/contact`, the
+// route that replaced the chapter. They now also cover the intent chooser,
+// which is new: the `?intent=` handshake used to land in a hidden field where
+// nothing could observe whether it had been honoured.
+//
+// The homepage chapter count stays EIGHT. Contact is a route now, not a
+// chapter, so it is deliberately absent from `lib/content/chapters.ts` and
+// from the no-JS chapter sweep — those assert what the homepage contains.
 //
 // Dev server must be running:  node scripts/verify/a11y.mjs
 
@@ -78,7 +88,12 @@ const browser = await chromium.launch(LAUNCH);
       document.querySelector(".gather-row-trigger")?.tabIndex === 0,
     { timeout: 40000 },
   );
-  await page.locator("#problem a.cta").focus();
+  // Element-agnostic on purpose: an intent CTA renders as `<a>` when it has
+  // a destination and as `<button aria-disabled>` while the S10 replacement
+  // is under development. Both are focusable, which is the property this
+  // test actually depends on — `a.cta` silently stopped matching on
+  // 2026-09-04 and the gate timed out rather than failing a check.
+  await page.locator("#problem .cta").focus();
   await page.keyboard.press("Tab");
   await page.waitForTimeout(1000);
   const first = await page.evaluate(() => ({
@@ -145,18 +160,6 @@ for (const locale of ["pt", "en"]) {
       prev = lv;
     }
     const imgs = [...document.querySelectorAll("img")];
-    const fields = [
-      ...document.querySelectorAll(
-        "#contact input, #contact textarea, #contact select",
-      ),
-    ].filter((f) => f.type !== "hidden");
-    const unlabelled = fields.filter(
-      (f) =>
-        !f.labels?.length &&
-        !f.getAttribute("aria-label") &&
-        !f.getAttribute("aria-labelledby"),
-    );
-    const submit = document.querySelector('#contact button[type="submit"]');
     return {
       lang: document.documentElement.lang,
       mains: document.querySelectorAll("main#content").length,
@@ -168,9 +171,6 @@ for (const locale of ["pt", "en"]) {
       canvasHidden: ![...document.querySelectorAll(".journey-canvas")].some(
         (c) => c.getAttribute("aria-hidden") !== "true",
       ),
-      fieldCount: fields.length,
-      unlabelled: unlabelled.map((f) => f.name || f.id).join(","),
-      submitLabelled: !!submit && submit.textContent.trim().length > 3,
     };
   });
   check(
@@ -184,12 +184,6 @@ for (const locale of ["pt", "en"]) {
   check(!sem.headingSkip, "no heading-level skips", sem.headingSkip);
   check(sem.noAlt === 0, "every image carries alt", `${sem.noAlt} missing`);
   check(sem.canvasHidden, "liquid canvas is aria-hidden");
-  check(
-    sem.fieldCount >= 3 && sem.unlabelled === "",
-    `all ${sem.fieldCount} contact fields labelled`,
-    sem.unlabelled,
-  );
-  check(sem.submitLabelled, "contact submit is a real labelled button");
 
   // keyboard: skip link first, lands on content
   await page.keyboard.press("Tab");
@@ -229,6 +223,20 @@ for (const locale of ["pt", "en"]) {
   // ancestor, itself composited onto ink); decorative aria-hidden content
   // (watermarks, canvas labels) is out of scope by definition.
   const contrast = await page.evaluate(() => {
+    // THE WETTING EDGE is a scrub, and this sweep measures STANDING contrast.
+    // A wetted block's words carry a scroll-derived colour that is dry ahead
+    // of the reading front by design, so measuring them mid-travel audits a
+    // state no reader ever rests on — the same reason the veils are audited by
+    // verify-cinematics rather than here. Dropping `data-wet` disables the
+    // scrub's only rule, which returns every word to the colour it INHERITS
+    // from its block: the colour the block itself reported before it was split
+    // into words, and the one a reader actually rests on. Recorded, not
+    // skipped — the words stay in the population below, and the arrived state
+    // is what has to pass. probe/wet-edge.mjs gates that the front does in
+    // fact land there, and that no path but the live loop ever dims a word.
+    const scrubbed = document.querySelectorAll("[data-wet]");
+    for (const el of scrubbed) el.removeAttribute("data-wet");
+
     // Chromium serialises a color-mix() result as `color(srgb 0.94 0.94 0.92 /
     // 0.54)` — channels 0..1 — while everything else still comes back as
     // `rgb(242 240 235 / 0.54)`, channels 0..255. Reading the srgb form on the
@@ -292,11 +300,27 @@ for (const locale of ["pt", "en"]) {
       // These are audited by a different property instead: they must declare a
       // fill, and they must hand the text back to system colours under
       // forced-colors, where the fill is dropped. Recorded, not skipped.
-      const clip = cs.webkitBackgroundClip || cs.backgroundClip;
-      if (clip === "text" && parse(cs.color).a === 0) {
+      // The clipping element is not always the one holding the text: the
+      // wetting edge splits a glassed heading into per-word spans, and a word
+      // inherits the block's transparent `color` while carrying no clip of
+      // its own. Measuring it reports 1.00 on a headline that is plainly
+      // visible — the same false failure this branch was written for, one
+      // level down. So the fill is looked for on the element OR the nearest
+      // ancestor that declares it.
+      let clipper = null;
+      if (parse(cs.color).a === 0) {
+        for (let n = el; n && n !== document.documentElement; n = n.parentElement) {
+          const ncs = getComputedStyle(n);
+          if ((ncs.webkitBackgroundClip || ncs.backgroundClip) === "text") {
+            clipper = { el: n, cs: ncs };
+            break;
+          }
+        }
+      }
+      if (clipper) {
         glassed.push({
-          tag: `${el.tagName}.${String(el.className).slice(0, 40)}`,
-          hasFill: cs.backgroundImage !== "none",
+          tag: `${clipper.el.tagName}.${String(clipper.el.className).slice(0, 40)}`,
+          hasFill: clipper.cs.backgroundImage !== "none",
         });
         continue;
       }
@@ -319,7 +343,16 @@ for (const locale of ["pt", "en"]) {
         at = tag;
       }
     }
-    return { glassed, worstSmall, worstLarge, at, atL };
+    for (const el of scrubbed) el.setAttribute("data-wet", "on");
+    return {
+      glassed,
+      scrubbed: scrubbed.length,
+      words: document.querySelectorAll(".wet-w").length,
+      worstSmall,
+      worstLarge,
+      at,
+      atL,
+    };
   });
   check(
     contrast.worstSmall >= 4.5,
@@ -341,6 +374,14 @@ for (const locale of ["pt", "en"]) {
       .filter((g) => !g.hasFill)
       .map((g) => g.tag)
       .join(", ") || "all filled",
+  );
+  // The wetting edge is only allowed to be a scrub if the copy under it is
+  // real copy. This says how much of the page it covers, so a future change
+  // that quietly wraps the whole document in it is visible here.
+  check(
+    contrast.words === 0 || contrast.scrubbed > 0,
+    `${contrast.words} scrubbed words audited at their arrived colour`,
+    `${contrast.scrubbed} blocks`,
   );
   await ctx.close();
 }
@@ -392,7 +433,7 @@ for (const locale of ["pt", "en"]) {
   await ctx.close();
 }
 
-// ── reduced motion — the whole story + the conversion path ────────────────────
+// ── reduced motion — the whole story ───────────────────────────────────
 {
   console.log("reduced motion · complete reading path");
   const ctx = await browser.newContext({
@@ -416,24 +457,23 @@ for (const locale of ["pt", "en"]) {
       "work",
       "name",
       "studio",
-      "contact",
     ]
       .filter((id) => !document.getElementById(id))
       .join(","),
-    submit: !!document.querySelector('#contact button[type="submit"]'),
     veils: document.querySelectorAll(".cine-veils").length,
   }));
   check(rm.static === "static", "liquid takes the static path", rm.static);
-  check(rm.missing === "", "all nine chapters readable", rm.missing);
-  check(rm.submit, "conversion path intact");
+  check(rm.missing === "", "all eight chapters readable", rm.missing);
   check(rm.veils === 0, "no cinematic veils under reduced motion");
   await ctx.close();
 }
 
 // ── no JavaScript — progressive enhancement never hides the business case ───
+// The `?intent=structure` param is kept on the URL deliberately: it is the tag
+// the CTAs still write, and the page must render identically with it present.
 {
   console.log(
-    "no JavaScript · complete static reading and native contact path",
+    "no JavaScript · complete static reading",
   );
   const ctx = await browser.newContext({
     viewport: { width: 1280, height: 800 },
@@ -451,7 +491,6 @@ for (const locale of ["pt", "en"]) {
         Number(style.opacity) > 0
       );
     };
-    const form = document.querySelector("#contact form");
     // "absent" is a PASS: the route wipe no longer renders on a document's
     // first paint at all (it is a transition, and there is nothing to
     // transition from), so nothing can cover the no-JS page.
@@ -473,18 +512,10 @@ for (const locale of ["pt", "en"]) {
         "work",
         "name",
         "studio",
-        "contact",
       ]
         .filter((id) => !document.getElementById(id))
         .join(","),
       canvases: document.querySelectorAll(".journey-canvas canvas").length,
-      action: form?.getAttribute("action"),
-      method: form?.getAttribute("method"),
-      intent: form?.querySelector('input[name="intent"]')?.value,
-      required: document.querySelectorAll(
-        "#contact input[required], #contact textarea[required]",
-      ).length,
-      submit: visible(document.querySelector('#contact button[type="submit"]')),
     };
   });
   const inert = (value) => value === "none" || value === "absent";
@@ -495,18 +526,15 @@ for (const locale of ["pt", "en"]) {
   );
   check(
     noJs.hiddenReveals === 0 && noJs.missing === "" && noJs.canvases === 0,
-    "all nine authored chapters render visibly without JavaScript or WebGL",
+    "all eight authored chapters render visibly without JavaScript or WebGL",
     JSON.stringify(noJs),
   );
-  check(
-    noJs.action === "/api/contact?locale=en" &&
-      noJs.method === "post" &&
-      noJs.intent === "structure" &&
-      noJs.required >= 3 &&
-      noJs.submit,
-    "native contact form has a constrained POST fallback",
-    JSON.stringify(noJs),
-  );
+  // The no-JS POST fallback. Since 2026-09-05 the form is its own route, so
+  // the redirect target is `/{locale}/contact` — the page that can actually
+  // render the status it carries. It used to be `/{locale}?contact=…#contact`,
+  // and pinning the exact string here is the point: a redirect to a page that
+  // does not read `?contact=` is a submission that silently does nothing, and
+  // it looks identical to a working one from the server's side.
   const fallback = await ctx.request.post(`${BASE}/api/contact?locale=en`, {
     form: {
       name: "x",
@@ -520,9 +548,92 @@ for (const locale of ["pt", "en"]) {
   });
   check(
     fallback.status() === 303 &&
-      fallback.headers().location?.endsWith("/en?contact=error#contact"),
+      fallback.headers().location?.endsWith("/en/contact?contact=error"),
     "form-encoded fallback returns to an honest localized status",
     `${fallback.status()} ${fallback.headers().location}`,
+  );
+  await ctx.close();
+}
+
+// ── S10 · the contact page — the form's own accessibility floor ──────────────
+// These assertions were dropped on 2026-09-04 when the chapter was quarantined
+// and are restored against the route. What they protect is the property that
+// makes the form usable at all: every control reachable and NAMED, the intent
+// handshake visibly honoured, and a complete native POST underneath the
+// enhancement so a browser with no JavaScript still has a working form.
+for (const locale of ["pt", "en"]) {
+  console.log(`${locale} · contact page`);
+  const ctx = await browser.newContext({
+    viewport: { width: 1280, height: 800 },
+    deviceScaleFactor: 1,
+  });
+  const page = await ctx.newPage();
+  await page.goto(`${BASE}/${locale}/contact?intent=structure`, {
+    waitUntil: "domcontentloaded",
+  });
+  await page.waitForSelector("form.contact-form", { timeout: 30000 });
+
+  const form = await page.evaluate(() => {
+    const el = document.querySelector("form.contact-form");
+    const controls = [
+      ...el.querySelectorAll(".field input, .field textarea"),
+    ];
+    const named = controls.filter((control) => {
+      const label = el.querySelector(`label[for="${control.id}"]`);
+      return !!control.id && !!label && label.textContent.trim().length > 0;
+    });
+    const submit = el.querySelector('button[type="submit"]');
+    const radios = [...el.querySelectorAll('input[type="radio"][name="intent"]')];
+    const legend = el.querySelector("fieldset.contact-choice > legend");
+    return {
+      action: el.getAttribute("action") || "",
+      method: (el.getAttribute("method") || "").toLowerCase(),
+      controls: controls.length,
+      named: named.length,
+      submitLabel: submit?.textContent?.trim() ?? "",
+      // The honeypot must never be focusable and must never be a control a
+      // real visitor can be asked to fill.
+      honeypotTabIndex:
+        el.querySelector(".contact-honeypot input")?.tabIndex ?? null,
+      radios: radios.length,
+      checked: radios.find((radio) => radio.checked)?.value ?? null,
+      legend: legend?.textContent?.trim() ?? "",
+    };
+  });
+
+  check(
+    form.controls === 4 && form.named === 4,
+    "every contact control has a real, non-empty label",
+    JSON.stringify({ controls: form.controls, named: form.named }),
+  );
+  check(
+    form.submitLabel.length > 0,
+    "the submit button carries a visible label",
+    form.submitLabel,
+  );
+  check(
+    form.method === "post" && form.action.includes("/api/contact"),
+    "the form posts natively without JavaScript",
+    `${form.method} ${form.action}`,
+  );
+  check(
+    form.honeypotTabIndex === -1,
+    "the honeypot is out of the tab order",
+    String(form.honeypotTabIndex),
+  );
+  check(
+    form.radios >= 4 && form.legend.length > 0,
+    "the intent chooser is a labelled group of radios",
+    JSON.stringify({ radios: form.radios, legend: form.legend }),
+  );
+  // The handshake, end to end: nine CTAs across the site spend an `?intent=`
+  // tag and this is the only place it is ever spent. A tag that arrives and
+  // is silently ignored is worse than no tag, because the analytics still
+  // report it as a segmented lead.
+  check(
+    form.checked === "structure",
+    "an arriving ?intent= tag pre-selects its chip",
+    String(form.checked),
   );
   await ctx.close();
 }

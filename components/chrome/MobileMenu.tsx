@@ -70,7 +70,8 @@ const CONTACT_EMAIL = process.env.NEXT_PUBLIC_CONTACT_EMAIL?.trim();
  *   · the locale switch, which the reference has no equivalent for. It rides
  *     the contact card's bottom row opposite the socials rather than becoming
  *     a fourth card, so the stack stays three tall.
- *   · the CTA is the Talk intent into `#contact`, not a scheduler. It borrows
+ *   · the CTA is the Talk intent into `#contact`, not a scheduler — and while
+ *     that destination is quarantined it renders inert (see card 3). It borrows
  *     `useCtaIntent` from the membrane button so both conversion paths tag and
  *     route identically (see CtaButton).
  *
@@ -306,7 +307,40 @@ export function MobileMenu() {
           </div>
         </section>
 
-        {/* Card 3 — the commit */}
+        {/* Card 3 — the commit. Live again since 2026-09-05: it routes to
+            `/contact` with the `talk` tag and closes the sheet behind it.
+
+            The inert branch below is retained, not dead weight — it is what
+            `INTENT_DESTINATION_READY` (in CtaButton) renders if the endpoint
+            is ever switched off again, and it must NOT close the sheet on tap,
+            because a sheet that dismisses itself and lands nowhere reads as a
+            swallowed action. The rule already sets `border: 0`, its own
+            background and font, so the button and the anchor are
+            pixel-identical either way. */}
+        {cta.pending ? (
+          <button
+            type="button"
+            aria-disabled="true"
+            data-cta-pending=""
+            className="nav-sheet-cta"
+            data-cursor="hover"
+            {...cta.analytics}
+          >
+            <span className="nav-sheet-cta-label">{tc("talk")}</span>
+            <span className="nav-sheet-cta-icon" aria-hidden="true">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.9"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M5 12h13M13 6l6 6-6 6" />
+              </svg>
+            </span>
+          </button>
+        ) : (
         <Link
           href={cta.href}
           className="nav-sheet-cta"
@@ -331,6 +365,7 @@ export function MobileMenu() {
             </svg>
           </span>
         </Link>
+        )}
       </div>
     </div>
   );

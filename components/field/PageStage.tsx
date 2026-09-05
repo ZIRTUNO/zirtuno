@@ -39,7 +39,6 @@ import { makeMethodScene } from "@/lib/webgl/scenes/method";
 import { makeWorkScene } from "@/lib/webgl/scenes/work";
 import { makeOriginScene } from "@/lib/webgl/scenes/origin";
 import { makeStudioScene } from "@/lib/webgl/scenes/studio";
-import { makeContactScene, EXHALE_EVENT } from "@/lib/webgl/scenes/contact";
 import { makeFooterScene } from "@/lib/webgl/scenes/footer";
 import { CinematicVeils } from "./CinematicVeils";
 
@@ -64,8 +63,6 @@ const FLOW_OBSTACLES = [
   ["#name .origin-statement", 0.9],
   ["#name .origin-closing", 0.72],
   ["#studio .type-feature-title", 0.72],
-  ["#contact .type-section-title", 0.9],
-  ["#contact .contact-form", 1],
 ] as const;
 
 /**
@@ -97,8 +94,12 @@ function makeJourneyRuntime(
   search: URLSearchParams | null,
   tier: FieldTier | null,
 ) {
-  // journey order: site → método → work → origin → studio → contact →
-  // footer — the R5-D scenes fill what were the liquid-dead bands.
+  // journey order: site → método → work → origin → studio → footer — the
+  // R5-D scenes fill what were the liquid-dead bands. Contact (S10) sat
+  // between studio and footer until it was quarantined on 2026-09-04; its
+  // scene module went to `Dead Code/lib/webgl/scenes/contact.ts` with the
+  // chapter, because it grips `.contact-metaball-stage` and can never reach
+  // presence without it.
   // The Hero stream is rendered by components/hero/HeroRibbon. The page field
   // begins its work as the Hero leaves for The Problem.
   const scenes: SceneModule[] = [
@@ -107,7 +108,6 @@ function makeJourneyRuntime(
     makeWorkScene(),
     makeOriginScene(),
     makeStudioScene(),
-    makeContactScene(),
     makeFooterScene(),
   ];
   // ?fphys=0 routes the legacy low-pass integrator (A/B + escape hatch).
@@ -191,9 +191,9 @@ function makeJourneyRuntime(
 /**
  * PageStage (R5-A) — the CONDUCTOR's shell: ONE persistent fluid renderer for
  * the ENTIRE page. One sticky full-viewport canvas under every chapter, one
- * rAF measurement loop, seven scenes (site · method · work · origin · studio ·
- * contact · footer) whose 48 droplets are the SAME 48 droplets end to end —
- * the conductor damps every
+ * rAF measurement loop, six scenes (site · method · work · origin · studio ·
+ * footer) whose 48 droplets are the SAME 48 droplets end to end — the
+ * conductor damps every
  * channel, blends per-droplet targets across scene handoffs, arbitrates the
  * two form slots (ownership transfers only through droplet-only states) and
  * packs the one shared field. No per-chapter canvases, no handoffs-as-swaps.
@@ -323,15 +323,6 @@ export function PageStage({
     w.__cine = { score: conductor.score, stats: conductor.stats };
     w.__flow = conductor.input;
   }, [site, conductor]);
-
-  // the exhale gesture (ContactForm dispatches on submit) → the contact scene
-  useEffect(() => {
-    const onExhale = () => {
-      conductor.raw.contact.exhaleAt = performance.now();
-    };
-    window.addEventListener(EXHALE_EVENT, onExhale);
-    return () => window.removeEventListener(EXHALE_EVENT, onExhale);
-  }, [conductor]);
 
   // THE GATHERING's type no longer has a geometry problem to solve.
   //

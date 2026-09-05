@@ -414,11 +414,11 @@
       "emailPlaceholder": "you@company.com",
       "company": "Company (optional)",
       "companyPlaceholder": "Company name",
-      "message": "Tell us what you want to structure or solve.",
+      "message": "Message",
       "messagePlaceholder": "Where you are today and what you want to achieve.",
       "websiteTrap": "Leave this field empty"
     },
-    "submit": "Request initial analysis",
+    "submit": "Send message",
     "sending": "Sending…",
     "receivedPending": "Request received",
     "successTitle": "Received.",
@@ -442,8 +442,45 @@
       "structure": "Structure the digital",
       "talk": "Talk to Zirtuno",
       "careers": "Work with us",
-      "general": "Contact"
-    }
+      "general": "Something else"
+    },
+    "metaTitle": "Contact",
+    "metaDescription": "Tell us where your operation stands today. We send back a first reading of your digital structure.",
+    "title": "Have something worth structuring? Let's build it properly.",
+    "lead": "Tell us where you are today. We send back a first reading: what already works, what is scattered, and where to start.",
+    "intentHeading": "What brings you here?",
+    "intentHint": "Pick the closest. It shapes the reading we send back.",
+    "formHeading": "About you",
+    "privacyNote": "By sending, you agree to your details being used to answer this enquiry.",
+    "privacyLink": "Privacy Policy",
+    "channelsHeading": "Or reach us directly",
+    "channelsHint": "Prefer another channel? They all land on the same desk.",
+    "emailLabel": "Email",
+    "responseLabel": "Response",
+    "responseValue": "Within 1 business day",
+    "locationLabel": "Based in",
+    "locationValue": "Curitiba, Brazil",
+    "nextHeading": "What happens next",
+    "nextSteps": [
+      {
+        "step": "01",
+        "heading": "Reading",
+        "body": "We read what you sent and map where the structure is scattered."
+      },
+      {
+        "step": "02",
+        "heading": "Conversation",
+        "body": "A short call to confirm the diagnosis and find the real priority."
+      },
+      {
+        "step": "03",
+        "heading": "Path",
+        "body": "You get a cut of what to do first — with or without Zirtuno."
+      }
+    ],
+    "successReturn": "Back to the start",
+    "errorBodyLost": "We could not confirm the send. Please fill the form again, or use one of the direct channels.",
+    "rateLimitBodyLost": "Too many attempts in a short time. Wait a few minutes and send again."
   },
   "footer": {
     "copyright": "© 2026 Zirtuno. All rights reserved.",

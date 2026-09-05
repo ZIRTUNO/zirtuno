@@ -89,7 +89,6 @@ const anchors = await page.evaluate(() => {
     methodH,
     work: box("#work"),
     studio: box("#studio"),
-    contact: box("#contact"),
     maxY: document.documentElement.scrollHeight - window.innerHeight,
     vh: window.innerHeight,
   };
@@ -155,10 +154,18 @@ const RANGES = [
     frames: 26,
   },
   {
-    // R5-D act V: the echoes GATHER into the resting mark over the form,
-    // then the RELEASE — one droplet sinks past the footer at the true bottom
-    id: "contact-gather-release",
-    start: (anchors.contact?.top ?? 0) - anchors.vh * 0.8,
+    // R5-D act V. This USED to be "contact-gather-release": the echoes
+    // gathered into the resting mark over the form and one droplet sank past
+    // the footer. S10 was quarantined on 2026-09-04, so there is no gather and
+    // no held mark — studio's release into the footer's closing light grade is
+    // the whole of the page's ending now, and this range is retargeted onto
+    // studio's bottom because `anchors.contact` would otherwise read 0 and
+    // silently scrub the ENTIRE document into 26 frames.
+    id: "coda-release",
+    start:
+      (anchors.studio?.top ?? 0) +
+      (anchors.studio?.h ?? 0) -
+      anchors.vh * 0.3,
     end: anchors.maxY,
     frames: 26,
   },

@@ -22,7 +22,8 @@ const TARGETS = [
   ["S4 ecosystem", "[data-organism]", 4600, 0],
   ["S5 services", "#services .pillar", 2600, 1],
   ["S8 origin", ".origin-mark-stage", 3400, 0],
-  ["S10 contact", ".contact-metaball-stage", 2200, 0],
+  // ["S10 contact", ".contact-metaball-stage", 2200, 0] — the chapter was
+  // quarantined on 2026-09-04; restore this row with it.
 ];
 fs.mkdirSync(OUT, { recursive: true });
 

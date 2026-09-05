@@ -28,7 +28,7 @@ import { chromium } from "playwright";
 import { LAUNCH } from "../support/launch.mjs";
 
 const BASE = process.env.BASE_URL || "http://localhost:3000";
-const REF_PATH = path.join(process.cwd(), "scripts", "fixtures", "fixtures/rest-exact.json");
+const REF_PATH = process.env.REST_REFERENCE || path.join(process.cwd(), "scripts", "fixtures", "rest-exact.json");
 const baselineMode = process.argv.includes("--baseline");
 const STATES = 8;
 
