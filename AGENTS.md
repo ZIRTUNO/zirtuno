@@ -461,12 +461,17 @@ Ask before adding any dependency or substituting any layer.
   so the lit stop rides the crest, `userSpaceOnUse` on the way out so the body
   drains off a ramp pinned to the viewport instead of re-lighting as it thins.
   Seeded, not `Math.random()` — `?fveil=<n>` reproduces one exact wave.
-  Gates: `verify/veil.mjs` (`npm run veil` — geometry, in plain node) and
+  Gates: `verify/veil.mjs` (`npm run veil` — geometry, in plain node),
   `capture/veil.mjs` (`npm run veil:sheet` — the crossing, plus a live check
   that the browser's own `getBBox()` agrees with where the kernel put the wave;
-  it is a gate as well as a sheet, and it exits non-zero). Because the curtain
-  takes the pointer while it is opaque and covers the chrome, a change here is
-  also a navigation change: run `verify/cta.mjs` and `verify/a11y.mjs`.
+  it is a gate as well as a sheet, and it exits non-zero) and
+  `verify/veil-routes.mjs` (`npm run veil:routes` — every way a route can
+  change). THE THIRD ONE IS NOT OPTIONAL and is where the bugs actually were:
+  geometry and paint were both correct while a click was being swallowed
+  outright, an OS preference toggle was inventing a transition, and a locale
+  switch was silently dropping one. Because the curtain takes the pointer while
+  it is opaque and covers the chrome, a change here is also a navigation
+  change: run `verify/cta.mjs` and `verify/a11y.mjs`.
 - **There is deliberately no `app/[locale]/loading.tsx`.** Its Suspense boundary
   flushed the document shell — and a 200 status — before `notFound()` could run,
   so every unmatched path answered as a soft 404. Route transitions are covered
@@ -658,6 +663,18 @@ Additional stop-the-line gates:
   the top of the viewport and turns an `objectBoundingBox` gradient into a
   screen-fixed one. The kernel gate passed and the first capture was three dark
   humps rising under a bright band that had nothing to do with them.
+  `BASE_URL=http://localhost:3071 npm run veil:routes` is the third gate and the
+  one that matters most: a cold document, a link click, a history pop, the
+  locale toggle, a 404 that never commits, an interrupted cover, double-clicks
+  and clicks into the curtain, the clicks it must IGNORE (same-document hash,
+  ctrl-click), keyboard entry, reduced motion, and the mobile nav sheet. Three
+  defects came out of writing it, all invisible to the other two gates — see
+  `docs/decisions/0003-the-veil.md §What the audit found`. Two traps recorded
+  there are worth repeating here: GSAP's `kill()` fires `onInterrupt` and NEVER
+  `onComplete`, so any promise wrapped around a tween has to settle on both; and
+  `enter()` must stay identity-stable, because `template.tsx` calls it from an
+  effect keyed on its identity and a rebuild announces an arrival that never
+  happened.
   Because the curtain takes the pointer while it is opaque and covers the
   chrome, this is also a navigation change: run `verify/cta.mjs` and
   `verify/a11y.mjs`.

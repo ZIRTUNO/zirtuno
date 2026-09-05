@@ -57,7 +57,7 @@ rebuilt through them every frame.
 | runtime | `components/motion/PageVeil.tsx` — mounted once in the locale layout |
 | routing | `lib/animation/transition-context.tsx` |
 | paint | the `.page-veil` block at the foot of `app/globals.css` |
-| gates | `npm run veil` (node) · `npm run veil:sheet` (live) |
+| gates | `npm run veil` (node) · `npm run veil:sheet` (paint) · `npm run veil:routes` (routing) |
 
 Three things are ours rather than the reference's, and each one is a
 requirement the demo does not have:
@@ -89,7 +89,55 @@ A back/forward arrives with the page already changed, so there is nothing to
 cover for and covering would hide what the visitor came back to see. Those get
 the **wash**: the crest sheet alone crossing the viewport, hiding nothing. It
 is the same current and the same light, and it is not the same transition as a
-link click. That is a deliberate asymmetry, not an oversight.
+link click. That is a deliberate asymmetry, not an oversight. The locale toggle
+takes the same path for the same reason — it is a `<button>` calling
+`router.replace`, and it exists to keep the reader exactly where they were.
+
+While the curtain is opaque it takes the pointer, so a click cannot land on a
+page nobody can see. It does NOT trap focus: a keyboard user can still tab
+through the outgoing page during the ~1s crossing. Starting another navigation
+that way is already blocked by the departure latch; activating some other
+control on a page that is about to be replaced is not. The transition this
+replaced had the same gap, and closing it means marking the whole page `inert`
+mid-navigation, which is a bigger change than the exposure warrants.
+
+## What the audit found
+
+Four defects, none of which the geometry gate or a screenshot could see. They
+are recorded because each one names a trap that is easy to walk back into.
+
+**The reference's bounding box.** The cover path opened `M 0 0 V y₀ C …`. That
+prefix encloses no area, so every geometric assertion passed — but it pins the
+path's bounding box to the top of the viewport, which turns an
+`objectBoundingBox` gradient into a screen-fixed one. The crest painted black
+and the light sat where the wave had not reached. Fixed by starting the cover on
+its first column; `capture/veil.mjs` now reads the browser's own `getBBox()`.
+
+**A swallowed click.** `play()` resolved only from GSAP's `onComplete`, and
+`kill()` fires `onInterrupt` and never `onComplete` (verified against 3.15). Any
+tween killed mid-cover therefore left a dangling promise — and `cover()` is what
+the provider awaits before it routes. The click did nothing, and `leavingRef`
+was never cleared, so nothing could navigate afterwards either. Two ordinary
+things kill a tween mid-cover: a competing `wash()` from a history pop, and the
+registration effect re-running when `prefers-reduced-motion` changes. Fixed with
+`onInterrupt` plus a run token, so a superseded run also cannot `rest()` over the
+top of the run that replaced it.
+
+**A phantom transition.** `enter()` was rebuilt whenever `useReducedMotion`
+changed, and `template.tsx` calls it from an effect keyed on its identity — so
+toggling the OS setting announced an arrival that had not happened and washed a
+page nobody had navigated away from. `enter()` now reads the preference through
+a ref and is identity-stable. Note the interaction: fixing this one ALONE would
+have upgraded the swallowed click into permanently dead navigation, because the
+spurious `enter()` was what happened to be clearing the stuck latch.
+
+**A silent locale switch.** `app/[locale]/layout.tsx` is keyed on the segment,
+so `/en` → `/pt` remounts the provider and the curtain. `template.tsx` announces
+the arrival from a LAYOUT effect and the curtain registers from a PASSIVE one,
+so on that commit the announcement arrived first and found an empty slot — the
+switch played nothing, where the transition this replaced had played its enter.
+The provider now holds a pending arrival and releases it on registration, rather
+than depending on effect ordering between two siblings in different phases.
 
 ## Consequences
 

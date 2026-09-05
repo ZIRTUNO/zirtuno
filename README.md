@@ -293,6 +293,7 @@ npm run work               # the gallery's FLIP panel geometry
 npm run liquid:form        # the coalesce merge
 npm run rail               # the chapter index waterline
 npm run veil               # the route transition's geometry (plain node)
+npm run veil:routes        # every way a route can change, in a browser
 npm run verify:production  # the production readiness gate
 ```
 

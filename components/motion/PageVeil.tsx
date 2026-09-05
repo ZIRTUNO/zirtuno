@@ -93,6 +93,9 @@ export default function PageVeil() {
   const veilRef = useRef<Veil | null>(null);
   const tweenRef = useRef<gsap.core.Tween | null>(null);
   const seedRef = useRef(0);
+  /** Which run owns the veil. Bumped by every entry point; a run that no longer
+   *  matches it has been superseded and must not write to the DOM again. */
+  const runRef = useRef(0);
 
   if (veilRef.current === null) veilRef.current = makeVeil();
 
@@ -120,14 +123,32 @@ export default function PageVeil() {
     if (svg) svg.dataset.veil = value;
   }, []);
 
-  /** One run of the kernel, on GSAP's clock. The tween is LINEAR on purpose —
-   *  every curve in this transition is per column, inside `veil.mjs`, so the
-   *  clock must not ease anything a second time. */
+  /**
+   * One run of the kernel, on GSAP's clock. Resolves TRUE only if it played to
+   * the end and still owns `runRef` — false if it was superseded, interrupted,
+   * or had nothing to draw into.
+   *
+   * IT MUST SETTLE EITHER WAY, and that is not decoration. `kill()` fires
+   * `onInterrupt` and never `onComplete` (verified against gsap 3.15), so a
+   * version of this that only resolved from `onComplete` left a dangling
+   * promise behind every interrupted run — and `cover()` awaits one of those
+   * before `TransitionProvider` is allowed to push. A tween killed mid-cover
+   * therefore swallowed the click outright: no navigation, and `leavingRef`
+   * never cleared, so nothing could navigate afterwards either. Two ordinary
+   * things kill a tween mid-cover — a competing `wash()` from a history pop,
+   * and the registration effect re-running when `prefers-reduced-motion`
+   * changes — and the second one is reproducible on demand.
+   *
+   * The tween itself is LINEAR on purpose: every curve in this transition is
+   * per column, inside `veil.mjs`, so the clock must not ease anything twice.
+   */
   const play = useCallback(
-    (mode: "cover" | "reveal", layerCount: number) =>
-      new Promise<void>((resolve) => {
+    (mode: "cover" | "reveal", layerCount: number, token: number) =>
+      new Promise<boolean>((resolve) => {
         const veil = veilRef.current;
-        if (!veil || !svgRef.current) return resolve();
+        if (!veil || !svgRef.current) return resolve(false);
+        // A newer run claimed the veil while this one was waiting on a paint.
+        if (runRef.current !== token) return resolve(false);
 
         tweenRef.current?.kill();
         const total = veil.arm(mode, seedRef.current++, layerCount);
@@ -149,8 +170,9 @@ export default function PageVeil() {
           onComplete: () => {
             veil.seek(total);
             draw();
-            resolve();
+            resolve(runRef.current === token);
           },
+          onInterrupt: () => resolve(false),
         });
       }),
     [draw],
@@ -167,29 +189,38 @@ export default function PageVeil() {
   useEffect(() => {
     if (reduced) return;
 
+    // Every entry point claims the veil before it touches anything. Whoever
+    // claimed last owns the DOM; everyone else unwinds without a further write,
+    // which is what keeps a superseded run from calling `rest()` over the top
+    // of the run that replaced it and blanking the curtain for a frame.
     const runner = {
       /** Close over the page, and let the route warm behind the same 0.72s. */
       cover: async (ready: Promise<void>) => {
+        const token = ++runRef.current;
         stage("cover");
-        await Promise.all([play("cover", VEIL.LAYERS), ready]);
+        // Deliberately NOT gated on the run still being ours: this is what the
+        // provider waits on before routing, so it has to settle even when the
+        // curtain was taken away mid-cover. Resolving early costs a transition;
+        // not resolving costs the navigation.
+        await Promise.all([play("cover", VEIL.LAYERS, token), ready]);
       },
       /** Drain off the top. Held until here, the swap has already happened. */
       reveal: async () => {
+        const token = ++runRef.current;
         stage("reveal");
         await afterPaint();
-        await play("reveal", VEIL.LAYERS);
-        rest();
+        if (await play("reveal", VEIL.LAYERS, token)) rest();
       },
       /** A back/forward arrives with the page ALREADY changed, so there is
        *  nothing to cover for and covering would only hide what the visitor
        *  came back to see. The crest alone crosses the viewport instead: the
        *  same current, the same light, nothing hidden. */
       wash: async () => {
+        const token = ++runRef.current;
         stage("wash");
         await afterPaint();
-        await play("cover", 1);
-        await play("reveal", 1);
-        rest();
+        if (!(await play("cover", 1, token))) return;
+        if (await play("reveal", 1, token)) rest();
       },
       covered: () => veilRef.current?.covered ?? false,
     };

@@ -159,12 +159,49 @@ export function TransitionProvider({ children }: { children: ReactNode }) {
   const veilRef = useRef<VeilRunner | null>(null);
   const leavingRef = useRef(false);
   const watchdogRef = useRef<number | null>(null);
+  // `enter()` HAS TO BE IDENTITY-STABLE, so it reads the preference through a
+  // ref rather than closing over it. `template.tsx` calls it from an effect
+  // keyed on `[isRouteChange, enter]`, and `isRouteChange` cannot change for a
+  // given mount — so if `enter` is rebuilt, that effect re-runs and announces
+  // an ARRIVAL THAT DID NOT HAPPEN. `useReducedMotion` rebuilds it on every
+  // change of the OS setting, and the observed result was a crest washing
+  // across a page nobody had navigated away from.
+  // Mirrored in an effect, not in render: `enter()` is only ever called from an
+  // effect of its own, so it is always reading a committed value.
+  const reducedRef = useRef(reduced);
+  useEffect(() => {
+    reducedRef.current = reduced;
+  }, [reduced]);
+
+  // An arrival that landed before the curtain was registered, waiting for one.
+  //
+  // SWITCHING LOCALE REMOUNTS THIS PROVIDER. `app/[locale]/layout.tsx` is keyed
+  // on the segment, so `/en` → `/pt` tears down the whole subtree — the veil
+  // included — and builds it again. `template.tsx` announces the arrival from a
+  // LAYOUT effect and the curtain registers from a PASSIVE one, so on that
+  // commit the announcement arrives first and finds an empty slot. The observed
+  // symptom was a locale switch that played nothing at all, where the
+  // transition it replaced had played its enter.
+  //
+  // Holding the arrival rather than reordering the effects: effect ordering
+  // between two siblings in different phases is a guarantee this file should
+  // not be spending, and any other route to a late registration gets the same
+  // treatment for free.
+  const pendingArrivalRef = useRef(false);
 
   // React mounts the incoming template BEFORE it unmounts the outgoing one, so
   // a naive `registerVeil(null)` cleanup would erase a live runner. The
   // disposer therefore only clears the slot it still owns.
   const registerVeil = useCallback((runner: VeilRunner) => {
     veilRef.current = runner;
+    if (pendingArrivalRef.current) {
+      pendingArrivalRef.current = false;
+      // A curtain that has only just been built cannot be covering anything,
+      // so this is always the wash — which is the right answer for the one
+      // navigation that gets here: a locale switch deliberately keeps the
+      // reader where they were, and hiding the page would contradict it.
+      void runner.wash().catch(() => {});
+    }
     return () => {
       if (veilRef.current === runner) veilRef.current = null;
     };
@@ -182,7 +219,14 @@ export function TransitionProvider({ children }: { children: ReactNode }) {
     const veil = veilRef.current;
     const departed = leavingRef.current;
     leavingRef.current = false;
-    if (reduced || !veil) return;
+    if (reducedRef.current) return;
+    // No curtain yet — see `pendingArrivalRef`. Only an arrival WE did not
+    // cover for is worth holding: one we covered for has lost its curtain
+    // mid-flight, and the page underneath is already the new one.
+    if (!veil) {
+      pendingArrivalRef.current = !departed;
+      return;
+    }
     // COVERED means we put the curtain there and the swap happened behind it,
     // so the only thing left to do is drain. Anything else is an arrival on a
     // page the visitor can already see — a back/forward, or a push from
@@ -192,7 +236,7 @@ export function TransitionProvider({ children }: { children: ReactNode }) {
     // be a second transition for one navigation.
     if (veil.covered()) void veil.reveal().catch(() => {});
     else if (!departed) void veil.wash().catch(() => {});
-  }, [clearWatchdog, reduced]);
+  }, [clearWatchdog]);
 
   const navigate = useCallback(
     (href: string) => {
