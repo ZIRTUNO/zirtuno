@@ -1,8 +1,14 @@
 /**
- * FOOTER scene (R5-D) — the journey's coda. Contact holds the gathered
- * resting mark above the form all the way to the page's end (its presence
- * never drains). This scene agrees with that resting footprint instead of
+ * FOOTER scene (R5-D) — the journey's coda. Contact held the gathered resting
+ * mark above the form all the way to the page's end (its presence never
+ * drained), and this scene agrees with that resting footprint instead of
  * detaching a lone droplet over the footer.
+ *
+ * S10 was quarantined on 2026-09-04, so `.contact-metaball-stage` no longer
+ * exists: the `stage` rect reads null, the offsets keep their defaults, and
+ * since every target parks at radius 0 the coda now contributes ONLY its light
+ * score. The anchor stays declared — it is null-safe, and restoring the
+ * chapter restores the held mark with no edit here.
  *
  * Light: the calm return to black — exposure eases below neutral and a soft
  * vignette closes as the last pixel of the journey arrives.

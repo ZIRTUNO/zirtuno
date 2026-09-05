@@ -3,12 +3,32 @@
 import type { MouseEvent } from "react";
 import { useTranslations } from "next-intl";
 import { Link, usePathname } from "@/lib/i18n/config";
-import { getLenis } from "@/lib/animation/lenis-store";
 import { Membrane } from "@/components/chrome/Membrane";
 import { cn } from "@/lib/utils";
 
 // build-spec S1.15 — the load-bearing CTA system.
 export type CtaIntent = "analysis" | "structure" | "talk" | "careers";
+
+/**
+ * Does an intent CTA have somewhere to land?
+ *
+ * YES, since 2026-09-05: `/contact` (`app/[locale]/contact/page.tsx`).
+ *
+ * S10 was quarantined on 2026-09-04 and this flag went false, which rendered
+ * all nine intent placements as inert `aria-disabled` buttons at once. The
+ * replacement destination is now a ROUTE rather than a homepage anchor, so the
+ * flag is back on and every placement re-armed together — which was the whole
+ * reason it existed: nine CTAs turned off one by one would have come back on
+ * one by one, and one of them would have been missed.
+ *
+ * It stays as a switch rather than being deleted. It is the kill switch for
+ * the entire conversion path, and the one thing worth being able to do in a
+ * single edit if the endpoint ever has to come down again.
+ */
+const INTENT_DESTINATION_READY = true;
+
+/** Where an intent CTA lands. Locale-relative — `Link` adds the prefix. */
+const INTENT_DESTINATION = "/contact";
 
 type CtaButtonProps = {
   /** Routes to the contact form carrying this entry-intent tag (S1.15). */
@@ -38,11 +58,12 @@ type CtaButtonProps = {
  * `CtaButton` is a MEMBRANE button: a sharp engineered rectangle whose vector
  * outline traces its own CSS box (see `Membrane`). The mobile nav sheet's third
  * card needs the same destination, the same `?intent=` handshake with the
- * contact form and the same conversion tagging on an element that is a rounded
+ * contact form, the same held-back `pending` state and the same conversion
+ * tagging on an element that is a rounded
  * 8vw slab — geometry the membrane cannot follow without the drawn outline
  * drifting off the box it is drawing. So the card gets its own skin and takes
- * the behaviour from here; copying the same-page scroll dance into a second
- * component is how two conversion paths quietly stop agreeing.
+ * the behaviour from here; a second copy of the destination and the tagging is
+ * how two conversion paths quietly stop agreeing about where they go.
  */
 export function useCtaIntent({
   intent,
@@ -54,37 +75,19 @@ export function useCtaIntent({
   placement?: string;
 }) {
   const pathname = usePathname(); // locale-stripped ("/" on the homepage)
-  const destination = href ?? (intent ? `/?intent=${intent}#contact` : "/");
+  // An explicit `href` is never part of the contact handshake ("/work" and
+  // friends still route normally); only the intent path is held back.
+  const pending = !href && !!intent && !INTENT_DESTINATION_READY;
+  const destination =
+    href ?? (intent ? `${INTENT_DESTINATION}?intent=${intent}` : "/");
 
   const onClick = (e: MouseEvent<HTMLAnchorElement>) => {
-    if (!intent || href || pathname !== "/") return; // routed path
-    if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0)
-      return;
-    const target = document.getElementById("contact");
-    if (!target) return; // fall through to the routed navigation
-    e.preventDefault();
-    window.history.replaceState(null, "", `?intent=${intent}#contact`);
-    window.dispatchEvent(
-      new CustomEvent("zirtuno:intent", { detail: { intent } }),
-    );
-    const lenis = getLenis();
-    if (lenis) {
-      lenis.scrollTo(target, {
-        offset: 0,
-        onComplete: () => {
-          // late-streamed sections can grow the layout mid-scroll, leaving the
-          // landing short — correct once against the element's final position
-          if (Math.abs(target.getBoundingClientRect().top) > 4)
-            lenis.scrollTo(target, { offset: 0 });
-        },
-      });
-    } else {
-      target.scrollIntoView({ behavior: "smooth", block: "start" });
-    }
+    if (pending) e.preventDefault();
   };
 
   return {
     href: destination,
+    pending,
     onClick,
     analytics: {
       "data-analytics-event": intent ? "cta_intent" : "cta_navigation",
@@ -96,14 +99,21 @@ export function useCtaIntent({
 
 /**
  * Every intent CTA reaches the contact form with its tag pre-filled via the
- * `intent` query param (read by the contact form in S10). Conversion-path
- * test in S19 verifies this for every placement.
+ * `intent` query param, which `/contact` reads on the SERVER and turns into a
+ * pre-selected chip in a visible chooser. Conversion-path test in S19 verified
+ * the handshake for every placement.
  *
- * Same-page path (R0): on the homepage an intent CTA does NOT route — it sets
- * the intent via history.replaceState (Next syncs useSearchParams, so the
- * ContactForm picks it up) and smooth-scrolls to #contact through Lenis.
- * Cross-page CTAs (e.g. from /work) keep the routed href. Modifier/middle
- * clicks always fall through to the link (new tab keeps working).
+ * THE SAME-PAGE PATH IS GONE, and it is gone rather than disabled. While
+ * contact was the homepage's last chapter, an intent CTA pressed ON the
+ * homepage did not route: it rewrote the query with `history.replaceState`,
+ * announced the change on a custom event the mounted form listened for, and
+ * smooth-scrolled to `#contact` through Lenis — with a second corrective
+ * scroll because late-streamed sections could grow the layout mid-flight.
+ * Every line of that existed to avoid a navigation that is now the correct
+ * behaviour: `#contact` is not on the homepage any more, so the branch could
+ * only ever fall through to the routed href it was written to avoid. Keeping
+ * it would have meant maintaining a Lenis dependency, a custom event and a
+ * layout-growth workaround for a code path with no way to execute.
  */
 export function CtaButton({
   intent,
@@ -115,20 +125,17 @@ export function CtaButton({
 }: CtaButtonProps) {
   const t = useTranslations("cta");
   const text = label ?? (labelKey ? t(labelKey) : "");
-  const { href: destination, onClick, analytics } = useCtaIntent({
+  const { href: destination, pending, onClick, analytics } = useCtaIntent({
     intent,
     href,
     placement,
   });
 
-  return (
-    <Link
-      href={destination}
-      data-cursor="hover"
-      {...analytics}
-      onClick={onClick}
-      className={cn("cta cta-primary", className)}
-    >
+  // The skin is identical in both states on purpose: an intent CTA waiting on
+  // its destination is UNFINISHED, not disabled, and dressing it as disabled
+  // would claim a permanence the flag above does not have.
+  const skin = (
+    <>
       {/* The CSS sweep stays as the no-JS / reduced-motion state. The
           membrane hides it when it mounts (see globals.css). */}
       <span className="cta-fill" aria-hidden="true" />
@@ -140,6 +147,38 @@ export function CtaButton({
         {text}
       </span>
       <span className="cta-label">{text}</span>
+    </>
+  );
+
+  // No destination → no link. A `<Link>` whose href cannot be honoured still
+  // offers "open in new tab" and still announces as a link; a button that
+  // reports itself unavailable tells the truth to the pointer, the keyboard
+  // and the screen reader at once. `aria-disabled` rather than `disabled`
+  // keeps it focusable and keeps `.cta:disabled`'s grey-out off it.
+  if (pending) {
+    return (
+      <button
+        type="button"
+        aria-disabled="true"
+        data-cta-pending=""
+        data-cursor="hover"
+        {...analytics}
+        className={cn("cta cta-primary", className)}
+      >
+        {skin}
+      </button>
+    );
+  }
+
+  return (
+    <Link
+      href={destination}
+      data-cursor="hover"
+      {...analytics}
+      onClick={onClick}
+      className={cn("cta cta-primary", className)}
+    >
+      {skin}
     </Link>
   );
 }

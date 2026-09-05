@@ -13,7 +13,10 @@ const COMPANY_LINKS = [
   // routes whose names both start "work" would be a coin flip for anyone
   // scanning the column. The label carries the meaning; the slug stays plain.
   { key: "careers", href: "/careers" },
-  { key: "contact", href: "/#contact" },
+  // Last in the column and untagged. Every OTHER route to the form carries an
+  // `?intent=`; this one is the colophon's plain door, and a visitor who takes
+  // it lands on `general` and picks for themselves.
+  { key: "contact", href: "/contact" },
 ] as const;
 
 /**
@@ -34,7 +37,11 @@ const COMPANY_LINKS = [
  * `lib/webgl/scenes/footer.ts` anchors the closing exposure/vignette curve on
  * its rect, and `TopBarShell` watches it to raise `data-footer-coda`. Neither
  * depends on the panel's padding — the scene is `forms: []` and detaches
- * nothing over the footer, contact's held mark being the coda itself.
+ * nothing over the footer. It was written when contact's held mark WAS the
+ * coda; S10 left the homepage on 2026-09-04 and came back as its own route on
+ * 2026-09-05, so the footer's only liquid is still that closing light grade —
+ * but the column carries a contact line again, pointing at `/contact` rather
+ * than at a homepage anchor.
  *
  * Content answers build-spec 6.10 (Zirtuno/copyright, language, approved
  * social paths, Talk CTA) and adds the two link columns the colophon needs to

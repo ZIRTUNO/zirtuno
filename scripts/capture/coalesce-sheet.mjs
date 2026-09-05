@@ -1,7 +1,8 @@
 /**
  * THE MERGE, LARGE — a geometry contact sheet straight from the kernel.
  *
- * `capture/field-liquid.mjs` photographs the real page, which is the only way
+ * `capture/field-liquid.mjs` (quarantined 2026-09-04 with S10) photographed
+ * the real page, which is the only way
  * to know the layer is wired up. But the merge itself is a 16 px detail on a
  * 576 px form, and judging its SHAPE from a full-form screenshot is guessing:
  * the squared-off tab that this design went through survived two rounds of

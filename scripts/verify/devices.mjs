@@ -173,11 +173,9 @@ const newPage = async (opts) => {
       "work",
       "name",
       "studio",
-      "contact",
     ]
       .filter((id) => !document.getElementById(id))
       .join(","),
-    cta: !!document.querySelector('#contact button[type="submit"]'),
   }));
   check(
     s.live === "static" && s.canvases === 0,
@@ -186,10 +184,11 @@ const newPage = async (opts) => {
   );
   check(
     s.sections === "",
-    "all nine chapters present without WebGL",
+    "all eight chapters present without WebGL",
     s.sections,
   );
-  check(s.cta, "the labeled contact submit is reachable");
+  // The "labeled contact submit is reachable" check went with S10 on
+  // 2026-09-04 — see `Dead Code/README.md`.
   check(errors.length === 0, "zero errors on the static path", errors[0]);
   await ctx.close();
 }
