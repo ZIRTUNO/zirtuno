@@ -5,11 +5,9 @@
  * morph on the live page is the Services scrub, which is scroll-driven and
  * therefore deterministic and still: scroll to a position, let it settle, shoot.
  *
- * Targeting is closed-loop rather than computed. window.__optics now reports
- * the morph exactly as uploaded (morph = the shader's p, morphA/morphB = the
- * pair, flow = 1 once the solved correspondence is in play rather than the zero
- * fallback), so this binary-searches scrollY for each requested p instead of
- * guessing at viewport offsets that change with every layout edit.
+ * Targeting starts from the measured pillar centres and closes the loop on
+ * window.__optics (meltP, formA, formB). A binary search corrects each scroll
+ * position until the uploaded progress matches the requested still.
  *
  * Run with the dev server up:
  *   BASE=http://localhost:3411 node scripts/capture/morph-scrub.mjs
@@ -21,7 +19,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
-const OUT = path.join(HERE, "..", "..", "captures", "morph-scrub");
+const OUT = process.env.OUT || path.join(HERE, "..", "..", "captures", "morph-scrub");
 fs.mkdirSync(OUT, { recursive: true });
 const BASE = process.env.BASE || "http://localhost:3000";
 const LOCALE = process.env.LOCALE || "en";
@@ -41,11 +39,10 @@ const browser = await chromium.launch({
   chromiumSandbox: false,
   ...(executablePath ? { executablePath } : {}),
 });
-// Deliberately small: headless Chrome rasterises this shader in software, and
-// the FPS watchdog demotes the tier when it starves — a demoted tier is not the
-// code under test.
+// Review the actual desktop layout by default; WIDTH/HEIGHT cover narrow
+// stages. The explicit full tier below keeps the glass material under test.
 const ctx = await browser.newContext({
-  viewport: { width: 760, height: 640 },
+  viewport: { width: Number(process.env.WIDTH || 1440), height: Number(process.env.HEIGHT || 900) },
   deviceScaleFactor: 1,
 });
 const page = await ctx.newPage();
@@ -56,58 +53,47 @@ page.on("console", (m) => m.type() === "error" && errors.push(`CONSOLE: ${m.text
 await page.goto(`${BASE}/${LOCALE}?ftier=full`, { waitUntil: "networkidle" });
 await page.waitForSelector("canvas", { timeout: 25000 });
 await page.waitForTimeout(3000); // SDFs, then the flow solves
+await page.mouse.move(2, 2);
 
 /** Scroll there and let the damped scrub settle, then read what was uploaded. */
 async function probe(y) {
-  await page.evaluate((to) => window.scrollTo({ top: to, behavior: "instant" }), y);
-  await page.waitForTimeout(420); // mState is damped; let it land
+  for (let attempt = 0; attempt < 4; attempt++) {
+    const current = await page.evaluate(() => window.scrollY);
+    if (Math.abs(y - current) < 1) break;
+    await page.mouse.wheel(0, (y - current) / 0.9);
+    await page.waitForTimeout(650);
+  }
+  await page.waitForTimeout(400); // settle the droplets as well as the progress
   return page.evaluate(() => {
     const o = window.__optics || {};
     return { morph: o.meltP ?? -1, a: o.formA ?? 0, b: o.formB ?? 0, flow: 1 };
   });
 }
 
-const docH = await page.evaluate(() => document.documentElement.scrollHeight - window.innerHeight);
-
-// ── 1. find every scroll band where a morph is running ────────────────────────
-const STEP = 120;
-const scan = [];
-for (let y = 0; y <= docH; y += STEP) {
-  const r = await probe(y);
-  scan.push({ y, ...r });
-}
-const live = scan.filter((s) => s.morph >= 0 && s.a !== s.b);
-console.log(`scanned ${scan.length} positions; ${live.length} in a morph`);
-if (!live.length) {
-  console.log("no morph found — is the Services chapter reachable?");
-  console.log(scan.map((s) => `${s.y}:${s.morph.toFixed(2)} ${s.a}->${s.b}`).join("  "));
-  await browser.close();
-  process.exit(1);
-}
-
-// group the scan into contiguous pairs
-const bands = [];
-for (const s of live) {
-  const last = bands[bands.length - 1];
-  if (last && last.a === s.a && last.b === s.b && s.y - last.hi <= STEP * 2) last.hi = s.y;
-  else bands.push({ a: s.a, b: s.b, lo: s.y, hi: s.y });
-}
+// Measure the seven actual reading stops; unrelated chapters need no scan.
+const centers = await page.locator("#services .pillar").evaluateAll((els) =>
+  els.map((el) => { const r = el.getBoundingClientRect(); return r.top + scrollY + r.height / 2 - innerHeight / 2; }));
+if (centers.length !== 7) throw new Error(`Expected seven Services forms, found ${centers.length}`);
+const bands = centers.slice(0, -1).map((lo, i) => ({a: i + 1, b: i + 2, lo, hi: centers[i + 1]}));
 console.log(bands.map((b) => `${KEYS[b.a]}→${KEYS[b.b]} [${b.lo}..${b.hi}]`).join("\n"));
 
 /** Binary-search scrollY for the p we want inside one band. */
 async function seek(band, want) {
-  let lo = Math.max(0, band.lo - STEP);
-  let hi = Math.min(docH, band.hi + STEP);
+  let lo = band.lo;
+  let hi = band.hi;
   let best = null;
+  let mid = Math.round(lo + (hi - lo) * (0.12 + 0.76 * want));
   for (let it = 0; it < 16; it++) {
-    const mid = Math.round((lo + hi) / 2);
     const r = await probe(mid);
-    const m = r.a === band.a && r.b === band.b ? r.morph : r.y > mid ? 1 : -1;
+    const m = r.a === band.a && r.b === band.b ? r.morph : r.a > band.a ? 1 : -1;
     if (!best || Math.abs(m - want) < Math.abs(best.m - want)) best = { y: mid, m, ...r };
     if (m < want) lo = mid;
     else hi = mid;
     if (Math.abs(m - want) < 0.01) break;
+    mid = Math.round((lo + hi) / 2);
   }
+  if (!best || Math.abs(best.m - want) >= 0.012) throw new Error(`Missed ${band.a}->${band.b} at ${want}`);
+  await probe(best.y);
   return best;
 }
 

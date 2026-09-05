@@ -90,7 +90,11 @@ for (const a of PAIRS) {
   let step = 0;
   for (let i = 1; i < STEPS; i++) step = Math.max(step, (Math.abs(v[i] - v[i - 1]) / lo) * 100);
   rows.push({ dip, bump, step });
-  const bad = dip > MAX_DIP || bump > MAX_BUMP || step > MAX_STEP;
+  // The six calibrated Services pairs now stay inside 1% of their endpoint
+  // area bounds. Retain the old limits only for the separate entry vocabulary.
+  const bad = a > 0
+    ? dip > 1 || bump > 1 || step > 10
+    : dip > MAX_DIP || bump > MAX_BUMP || step > MAX_STEP;
   if (bad) failed++;
   const top = Math.max(...v);
   const spark = v
@@ -104,7 +108,7 @@ for (const a of PAIRS) {
 const mean = (k) => rows.reduce((x, r) => x + r[k], 0) / rows.length;
 console.log(
   `\n  MEAN   ${mean("dip").toFixed(1)}%  ${mean("bump").toFixed(1)}%  ${mean("step").toFixed(1)}%` +
-    `      budget ${MAX_DIP}/${MAX_BUMP}/${MAX_STEP}`,
+    `      Services budget 1/1/10; entry ${MAX_DIP}/${MAX_BUMP}/${MAX_STEP}`,
 );
 if (GATE) {
   if (failed) {

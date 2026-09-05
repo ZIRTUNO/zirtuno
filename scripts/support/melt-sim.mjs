@@ -60,7 +60,7 @@ const svgFor = (k) =>
 /** Rasterise every form SVG → mask → SDF, exactly as lib/webgl/sdf.ts does. */
 async function buildCache() {
   const { chromium } = await import("playwright");
-  const { LAUNCH } = await import("./_launch.mjs");
+  const { LAUNCH } = await import("./launch.mjs");
   fs.mkdirSync(CACHE, { recursive: true });
   const browser = await chromium.launch(LAUNCH);
   const page = await browser.newPage();

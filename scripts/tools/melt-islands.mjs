@@ -10,8 +10,10 @@
  */
 import { loadForms, renderFrame } from "../support/melt-sim.mjs";
 import { CLOUDS, N, STAG } from "../../lib/webgl/phys.mjs";
+import { CONFLUENCE, CONFLUENCE_STAG } from "../../lib/webgl/confluence.mjs";
 import {
   meltDroplet,
+  matchClouds,
   permFor,
   formPhase,
   FORM_SOLIDITY,
@@ -66,12 +68,20 @@ let worstCount = 0;
 let worstArea = 0;
 
 console.log(`  melt    total frames   form-only   cloud-only   worst count / area   at p`);
+// THE FIRST MELT WAS NEVER UNDER THIS GATE. `a = 0` used to mean
+// CLOUDS[0] → CLOUDS[1] — the mark melting into the web form, with a form on
+// BOTH sides — and the page has not run that melt since THE CONFLUENCE replaced
+// the mark. What it actually runs is CONFLUENCE → CLOUDS[1] with NO form A, so
+// the one melt whose droplets carry the frame unshielded was the one melt this
+// probe was not looking at. It is the shipped staging that gets gated now.
 for (let a = 0; a < CLOUDS.length - 1; a++) {
   const b = a + 1;
-  const A = CLOUDS[a];
+  const crossing = a === 0;
+  const A = crossing ? CONFLUENCE : CLOUDS[a];
   const B = CLOUDS[b];
-  const perm = permFor(a, b);
-  const stag = STAG[a];
+  const perm = crossing ? matchClouds(CONFLUENCE, CLOUDS[1]) : permFor(a, b);
+  const stag = crossing ? CONFLUENCE_STAG : STAG[a];
+  const swA = crossing ? 0 : FORM_SOLIDITY[a];
   let microFrames = 0;
   let pairWorstCount = 0;
   let pairWorstArea = 0;
@@ -83,23 +93,18 @@ for (let a = 0; a < CLOUDS.length - 1; a++) {
     const p = step / (STEPS - 1);
     const balls = [];
     for (let i = 0; i < N; i++) {
-      meltDroplet(
-        droplet,
-        i,
-        A,
-        B,
-        perm,
-        stag,
-        p,
-        FORM_SOLIDITY[a],
-        FORM_SOLIDITY[b],
-      );
+      meltDroplet(droplet, i, A, B, perm, stag, p, swA, FORM_SOLIDITY[b]);
       balls.push([...droplet]);
     }
-    const phase = formPhase(p);
+    // The crossing stages form B alone — S3 has no vector behind it — so its
+    // droplets run unshielded until the pillar's silhouette erodes in.
+    const raw = formPhase(p);
+    const phase = crossing
+      ? { wA: 0, eA: 0, wB: raw.wB, eB: raw.eB }
+      : raw;
     const frame = renderFrame({
       forms,
-      a,
+      a: crossing ? 0 : a,
       b,
       fa: phase.wA,
       fb: phase.wB,
@@ -111,7 +116,7 @@ for (let a = 0; a < CLOUDS.length - 1; a++) {
     const micro = components(frame.T).filter((area) => area <= MICRO_MAX);
     const formFrame = renderFrame({
       forms,
-      a,
+      a: crossing ? 0 : a,
       b,
       fa: phase.wA,
       fb: phase.wB,
@@ -122,7 +127,7 @@ for (let a = 0; a < CLOUDS.length - 1; a++) {
     });
     const cloudFrame = renderFrame({
       forms,
-      a,
+      a: crossing ? 0 : a,
       b,
       res: RES,
       balls,
@@ -151,7 +156,7 @@ for (let a = 0; a < CLOUDS.length - 1; a++) {
   worstCount = Math.max(worstCount, pairWorstCount);
   worstArea = Math.max(worstArea, pairWorstArea);
   console.log(
-    `  ${a}->${b}        ${String(microFrames).padStart(3)}/${STEPS - 2}` +
+    `  ${crossing ? "cross" : a}->${b}    ${String(microFrames).padStart(3)}/${STEPS - 2}` +
       `         ${String(formMicroFrames).padStart(3)}` +
       `          ${String(cloudMicroFrames).padStart(3)}` +
       `             ${String(pairWorstCount).padStart(2)} / ${String(pairWorstArea).padStart(3)}` +
