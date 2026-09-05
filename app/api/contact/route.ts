@@ -88,7 +88,13 @@ function contactFormResponse(
 ) {
   const requestUrl = new URL(req.url);
   const locale = requestUrl.searchParams.get("locale") === "pt" ? "pt" : "en";
-  const destination = new URL(`/${locale}`, requestUrl.origin);
+  // The no-JS answer goes back to the FORM'S OWN PAGE. It used to redirect to
+  // `/{locale}#contact`, the homepage anchor the form lived at while it was
+  // S10; since 2026-09-05 the form is a route of its own, and a hash that no
+  // longer resolves would have dropped a no-JS visitor at the top of the
+  // homepage with a `?contact=` param nothing on that page reads — a submission
+  // that silently appeared to do nothing.
+  const destination = new URL(`/${locale}/contact`, requestUrl.origin);
   const state =
     body.ok && "delivered" in body && body.delivered
       ? "success"
@@ -98,7 +104,6 @@ function contactFormResponse(
           ? "rate_limit"
           : "error";
   destination.searchParams.set("contact", state);
-  destination.hash = "contact";
   return NextResponse.redirect(destination, {
     status: 303,
     headers: {

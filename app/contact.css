@@ -1,0 +1,717 @@
+/* ===========================================================================
+   CONTACT (S10) — the conversion endpoint, as its own page.
+   ---------------------------------------------------------------------------
+   Loaded ONLY by `app/[locale]/contact/page.tsx`, the same way `app/lab.css`
+   is loaded only by the lab layout. Everything here is namespaced under
+   `.contact-page` or under classes the contact form alone wears, so nothing in
+   this file can reach the homepage — which matters, because the generic
+   `.field` control styles live here and the form is still their only consumer.
+
+   WHERE THIS SITS IN THE HOUSE STYLE
+   The homepage grants its display type the liquid-glass fill through three
+   long `:is(...)` selector lists scoped to `.liquid-journey`. This page does
+   NOT join those lists. It wears the standalone `.liquid-glass` utility
+   instead, which already carries the `@supports` and `forced-colors`
+   fallbacks — so the page gets the signature material without an edit to a
+   forty-line selector list that also binds five other chapters.
+
+   THE LIQUID HERE IS THE FORM ITSELF.
+   No WebGL stage, and that is authored rather than conceded. A reader on this
+   page is TYPING; a full-page fluid behind the one screen where they have to
+   compose a sentence is the noise `.legal-doc` and `.careers-doc` already
+   refuse. So the liquid goes exactly where the attention already is: the
+   controls take the membrane material and the bead travels between them
+   (`components/contact/FieldLiquid.tsx`), and everything a reader reads sits
+   on still ground.
+   =========================================================================== */
+
+/* THE BLEED HAS TO BE CLIPPED SOMEWHERE.
+   `.fl-svg` is inset by -96px on every side (PAD in FieldLiquid.tsx) so the
+   liquid can run past the form it belongs to. Unclipped, that grows the
+   document — and the fixed top bar, sized `calc(100% - 2 * 2.995vw)`, inflates
+   with it and carries the burger off the visual viewport where it cannot be
+   tapped at all. `body { overflow-x: hidden }` does not help: with `html` at
+   `overflow: visible` the body's value propagates to the VIEWPORT, so the clip
+   happens after the document has already grown.
+
+   `clip` on the x axis alone. It adds no scroll container, does not become a
+   containing block for the fixed layers, and the liquid still bleeds
+   vertically — just no longer past the page's own edges. */
+.contact-page {
+  overflow-x: clip;
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
+   THE SPLIT — the invitation on the left, the instrument on the right.
+   Single column until 1024: on a phone the headline, the form and the direct
+   lines are one vertical read, and a two-column grid at that width would only
+   halve the form's measure.
+   ─────────────────────────────────────────────────────────────────────────── */
+.contact-masthead {
+  display: grid;
+  gap: var(--space-block);
+  align-items: start;
+}
+
+@media (min-width: 1024px) {
+  .contact-masthead {
+    /* THE INSTRUMENT GETS THE WIDER TRACK, and it is worth saying why, because
+       the reference pages do the opposite and look better for it: on both of
+       them the form is four short single-column fields, so a narrow column
+       costs nothing. This one pairs name with email the way the reference
+       pairs first with last name, and at 1.06fr : 1fr — the statement wider,
+       which is where this started — the shell's 1083px at 1440 left each of
+       those two inputs 191px. That is under the width of the email
+       placeholder they have to hold, so the hint clipped mid-word.
+
+       1fr : 1.05fr moves 26px across and buys 13px per input, which is the
+       whole difference between a clipped placeholder and an intact one. The
+       statement is a five-line display block either way; it is the column that
+       can afford to give. */
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr);
+    gap: clamp(2.5rem, 4.5vw, 5.5rem);
+  }
+
+}
+
+/* The invitation holds while the form scrolls. The form is the taller column
+   by roughly 300px at every width, and a headline that scrolls out from over a
+   half-filled form leaves the reader composing a message to nobody.
+
+   THE HEIGHT QUERY IS NOT DECORATION. The column runs about 650px at 1440
+   (label, three display lines, a three-line lead, the meta rail and the
+   channel chips), and a sticky element TALLER than the space between `top` and
+   the viewport foot does not gently stop sticking — it pins by its top edge
+   and its own bottom is simply cut off, so the direct-line chips would become
+   permanently unreachable on a short laptop screen. Below 860px of viewport
+   the column scrolls normally, which is correct: on a short screen the form is
+   what the visitor needs on screen, not the sentence. */
+@media (min-width: 1024px) and (min-height: 860px) {
+  .contact-aside {
+    position: sticky;
+    top: calc(var(--topbar-h) + var(--space-block));
+  }
+}
+
+/* ── the statement ───────────────────────────────────────────────────────── */
+.contact-title {
+  /* The column governs the measure here, not a character count: inside the
+     grid the `--measure-display-wide` that `.type-page-title` carries is
+     already wider than the track, so it can only ever be a second, quieter
+     constraint that does nothing — except on the single-column layout below
+     1024, where it would cut the line short of the page it was measured for. */
+  max-inline-size: none;
+  margin-top: var(--type-space-label-title);
+}
+
+.contact-lead {
+  margin-top: var(--type-space-title-lead);
+  /* Wider than `--measure-lead`'s 37ch: this lead is doing a paragraph's work
+     (it names the three things the reader gets back), and the sticky column
+     has room the homepage's leads do not. */
+  max-inline-size: 46ch;
+}
+
+/* ── the meta rail — response time and base ──────────────────────────────
+   Two facts a visitor weighs BEFORE they spend five minutes writing, so they
+   are stated before the form rather than under it. A definition list, because
+   that is what it is. */
+.contact-meta {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.55rem 1.25rem;
+  margin-top: var(--space-block);
+  padding-top: var(--space-group);
+  border-top: 1px solid var(--color-paper-faint);
+}
+.contact-meta-term {
+  font-family: var(--font-mono);
+  font-size: var(--text-mono-sm);
+  font-weight: 500;
+  line-height: var(--text-mono-sm--line-height);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--color-cyan);
+}
+.contact-meta-value {
+  margin: 0;
+  font-size: var(--text-body-s);
+  line-height: var(--text-mono-sm--line-height);
+  color: var(--color-paper-lead);
+}
+
+/* ── the direct lines (the parallel path) ────────────────────────────────
+   A form is not the only way to start, and pretending otherwise costs the
+   visitor who would rather send one line on WhatsApp. */
+.contact-channels {
+  margin-top: var(--space-block);
+  padding-top: var(--space-group);
+  border-top: 1px solid var(--color-paper-faint);
+}
+.contact-channels-heading {
+  font-family: var(--font-mono);
+  font-size: var(--text-mono-sm);
+  font-weight: 500;
+  line-height: var(--text-mono-sm--line-height);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--color-paper-mute);
+}
+.contact-channels-hint {
+  margin-top: 0.4rem;
+  font-size: var(--text-body-s);
+  line-height: var(--text-body-s--line-height);
+  color: var(--color-paper-soft);
+}
+.contact-channels-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: var(--space-group) 0 0;
+  padding: 0;
+  list-style: none;
+}
+.contact-channel {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  /* 44px is the pointer-target floor the rest of the chrome keeps. */
+  min-height: 44px;
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--color-paper-faint);
+  border-radius: 999px;
+  background: rgba(242, 240, 235, 0.03);
+  font-family: var(--font-mono);
+  font-size: var(--text-mono-sm);
+  line-height: var(--text-mono-sm--line-height);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--color-paper-mute);
+  text-decoration: none;
+  transition:
+    color var(--dur-micro) var(--ease-arrive),
+    border-color var(--dur-micro) var(--ease-arrive),
+    background-color var(--dur-micro) var(--ease-arrive);
+}
+.contact-channel svg {
+  width: 1em;
+  height: 1em;
+  flex: none;
+}
+.contact-channel:hover,
+.contact-channel:focus-visible {
+  color: var(--color-cyan);
+  border-color: color-mix(in srgb, var(--color-cyan) 45%, transparent);
+  background: color-mix(in srgb, var(--color-cyan) 7%, transparent);
+}
+.contact-channel:focus-visible {
+  outline: 2px solid var(--color-cyan);
+  outline-offset: 3px;
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
+   THE PANEL — the form as a raised object.
+   Same glass family as `.footer-panel`: a hairline edge, a top-lit wash that
+   transmits into cyan at the foot, and the chrome's own radius. It is the one
+   surface on the page meant to read as an INSTRUMENT rather than as page,
+   which is what the reference cards do and why they work.
+   ─────────────────────────────────────────────────────────────────────────── */
+.contact-panel {
+  position: relative;
+  border: 1px solid var(--color-paper-faint);
+  border-radius: var(--topbar-radius);
+  padding: clamp(1.5rem, 3vw, 2.75rem);
+  background:
+    linear-gradient(
+      180deg,
+      rgba(242, 240, 235, 0.055) 0%,
+      rgba(242, 240, 235, 0.018) 46%,
+      rgba(0, 227, 254, 0.025) 100%
+    ),
+    rgba(10, 10, 12, 0.72);
+}
+
+/* ── the intent chooser ──────────────────────────────────────────────────
+   THE HANDSHAKE, MADE VISIBLE. Nine CTAs across the site carry an `?intent=`
+   tag (build-spec S1.15); until now the tag arrived in a hidden field and the
+   visitor never learned that the door they came through had been remembered.
+   Here it arrives PRE-SELECTED, and a visitor who came in cold picks one —
+   the same segmentation both reference pages do with a dropdown, done as chips
+   so all four options are readable at a glance.
+
+   Deliberately NOT wrapped in `.field`: FieldLiquid draws a contour around
+   every `.field input` it finds, and a contour around a visually-hidden radio
+   is a contour around a 1px box. */
+.contact-choice {
+  border: 0;
+  padding: 0;
+  margin: 0;
+}
+.contact-choice-legend {
+  padding: 0;
+  font-family: var(--font-mono);
+  font-size: var(--text-mono);
+  font-weight: 500;
+  line-height: var(--text-mono--line-height);
+  letter-spacing: var(--text-mono--letter-spacing);
+  text-transform: uppercase;
+  color: var(--color-paper);
+}
+.contact-choice-hint {
+  margin-top: 0.45rem;
+  font-size: var(--text-body-s);
+  line-height: var(--text-body-s--line-height);
+  color: var(--color-paper-soft);
+}
+.contact-choice-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: var(--space-group);
+}
+.contact-choice-option {
+  position: relative;
+  display: inline-flex;
+}
+/* Visually hidden, never `display: none` — the radio must stay focusable and
+   must stay in the accessibility tree, because it IS the control. */
+.contact-choice-option input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+.contact-choice-option span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--color-paper-faint);
+  border-radius: 999px;
+  background: rgba(242, 240, 235, 0.03);
+  font-family: var(--font-mono);
+  font-size: var(--text-mono-sm);
+  line-height: var(--text-mono-sm--line-height);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--color-paper-mute);
+  cursor: pointer;
+  transition:
+    color var(--dur-micro) var(--ease-arrive),
+    border-color var(--dur-micro) var(--ease-arrive),
+    background-color var(--dur-micro) var(--ease-arrive);
+}
+.contact-choice-option:hover span {
+  color: var(--color-paper);
+  border-color: color-mix(in srgb, var(--color-paper) 30%, transparent);
+}
+/* The selected chip is the brightest thing in the panel until a field is
+   focused — cyan edge, cyan label, cyan wash. The checked state is carried by
+   the radio itself, so it survives the browser restoring form state on a back
+   navigation without any JavaScript having run. */
+.contact-choice-option input:checked + span {
+  color: var(--color-cyan);
+  border-color: color-mix(in srgb, var(--color-cyan) 62%, transparent);
+  background: color-mix(in srgb, var(--color-cyan) 10%, transparent);
+}
+.contact-choice-option input:focus-visible + span {
+  outline: 2px solid var(--color-cyan);
+  outline-offset: 3px;
+}
+/* FORCED COLORS: the chips carry their state in border and background alone,
+   and forced-colors modes drop both. Hand the state back to the system. */
+@media (forced-colors: active) {
+  .contact-choice-option input:checked + span {
+    border-color: Highlight;
+    border-width: 2px;
+  }
+}
+
+/* ===========================================================================
+   Contact form (S10)
+   =========================================================================== */
+.contact-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+.contact-form-heading {
+  margin-top: var(--space-group);
+  padding-top: var(--space-group);
+  border-top: 1px solid var(--color-paper-faint);
+  font-family: var(--font-mono);
+  font-size: var(--text-mono);
+  font-weight: 500;
+  line-height: var(--text-mono--line-height);
+  letter-spacing: var(--text-mono--letter-spacing);
+  text-transform: uppercase;
+  color: var(--color-paper);
+}
+/* Name and email side by side (the reference's pairing), company and message
+   full width. Below 560 the pair stacks — two 130px inputs is not a form. */
+.contact-row {
+  display: grid;
+  gap: 1.5rem;
+}
+@media (min-width: 560px) {
+  .contact-row {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+.contact-honeypot {
+  position: absolute;
+  left: -10000px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.field label {
+  font-family: var(--font-mono);
+  font-size: var(--text-mono);
+  font-weight: 500;
+  line-height: var(--text-mono--line-height);
+  letter-spacing: var(--text-mono--letter-spacing);
+  text-transform: uppercase;
+  color: var(--color-paper-mute);
+}
+/* The required mark is decoration over a real `required` attribute — it is
+   `aria-hidden` in the markup so a screen reader hears the field's own
+   required state once, not the word "asterisk" after every label. */
+.field-required {
+  color: var(--color-cyan);
+}
+.field input,
+.field textarea {
+  width: 100%;
+  min-width: 0;
+  padding: 0.85rem 1rem;
+  background: transparent;
+  border: 1px solid var(--color-paper-faint);
+  /* Soft to soft. The vector layer draws these corners as arcs (COAL.FIELD_R
+     = 10), and the CSS underneath has to agree or the no-JS and reduced-motion
+     form is a visibly different shape from the enhanced one. */
+  border-radius: 10px;
+  color: var(--color-paper);
+  font-family: var(--font-sans);
+  font-size: var(--text-body);
+  line-height: var(--text-body--line-height);
+  letter-spacing: var(--text-body--letter-spacing);
+  transition: border-color 200ms var(--ease-arrive);
+}
+.field textarea {
+  resize: vertical;
+  min-height: 7rem;
+}
+.field input::placeholder,
+.field textarea::placeholder {
+  color: var(--color-paper-mute);
+}
+.field input:focus,
+.field textarea:focus {
+  outline: none;
+  border-color: var(--color-cyan);
+}
+.field input:focus-visible,
+.field textarea:focus-visible {
+  outline: 2px solid var(--color-cyan);
+  outline-offset: 2px;
+  border-radius: 10px;
+}
+.field input[aria-invalid="true"],
+.field textarea[aria-invalid="true"] {
+  border-color: var(--color-warn);
+}
+.field-error,
+.contact-error,
+.contact-pending {
+  font-family: var(--font-sans);
+  font-size: var(--text-body-s);
+  line-height: var(--text-body-s--line-height);
+  letter-spacing: var(--text-body-s--letter-spacing);
+  color: var(--color-warn);
+}
+
+/* the aggregate error announcement (R5-E) — one focused, spoken summary of the
+   complete error state. Salmon stays validation-only; the block is quiet, not
+   a klaxon, and each line is a direct route to its field. */
+.contact-error-summary {
+  padding: 1rem 1.15rem;
+  border: 1px solid color-mix(in srgb, var(--color-warn) 55%, transparent);
+  border-left-width: 2px;
+  background: color-mix(in srgb, var(--color-warn) 7%, transparent);
+}
+.contact-error-summary:focus {
+  outline: none;
+}
+.contact-error-summary:focus-visible {
+  outline: 2px solid var(--color-warn);
+  outline-offset: 3px;
+}
+.contact-error-summary-title {
+  font-family: var(--font-mono);
+  font-size: var(--text-mono-sm);
+  font-weight: 500;
+  line-height: var(--text-mono-sm--line-height);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--color-warn);
+}
+.contact-error-summary ul {
+  margin-top: 0.6rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+.contact-error-summary a {
+  font-size: var(--text-body-s);
+  line-height: var(--text-body-s--line-height);
+  color: var(--color-paper);
+  text-decoration: underline;
+  text-decoration-color: color-mix(
+    in srgb,
+    var(--color-warn) 70%,
+    transparent
+  );
+  text-underline-offset: 3px;
+  transition: color 200ms var(--ease-arrive);
+}
+.contact-error-summary a:hover,
+.contact-error-summary a:focus-visible {
+  color: var(--color-warn);
+}
+.contact-pending {
+  color: var(--color-paper-mute);
+}
+.contact-form button[type="submit"] {
+  max-width: 100%;
+  align-self: flex-start;
+  margin-top: 0.25rem;
+}
+@media (max-width: 420px) {
+  .contact-form button[type="submit"] {
+    width: 100%;
+    align-self: stretch;
+    justify-content: center;
+  }
+}
+/* The privacy line sits UNDER the action, where it is read at the moment of
+   sending rather than skipped on the way in. Deliberately not a consent
+   tick-box: this form's lawful basis is answering an enquiry the visitor
+   themselves initiated, and a required checkbox in front of that is friction
+   that buys no extra consent. */
+.contact-privacy {
+  font-size: var(--text-body-s);
+  line-height: var(--text-body-s--line-height);
+  color: var(--color-paper-soft);
+}
+.contact-privacy a {
+  color: var(--color-paper-mute);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-color: var(--color-paper-faint);
+  transition: color 200ms var(--ease-arrive);
+}
+.contact-privacy a:hover,
+.contact-privacy a:focus-visible {
+  color: var(--color-cyan);
+}
+
+/* ── the received state ──────────────────────────────────────────────────
+   A screen, not a line. On the homepage chapter this replaced a form the
+   reader could still see the rest of the site around; here it IS the panel, so
+   it restates what happens next and offers the way back out. */
+.contact-success {
+  padding: clamp(1rem, 3vw, 2rem) 0;
+}
+.contact-success-title {
+  font-family: var(--font-sans);
+  font-size: var(--text-title);
+  font-weight: 550;
+  line-height: var(--text-title--line-height);
+  letter-spacing: var(--text-title--letter-spacing);
+  color: var(--color-cyan);
+}
+.contact-success-body {
+  margin-top: var(--space-tight);
+  font-size: var(--text-body-l);
+  line-height: var(--text-body-l--line-height);
+  color: var(--color-paper-lead);
+}
+.contact-success-return {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  margin-top: var(--space-block);
+  font-family: var(--font-mono);
+  font-size: var(--text-mono-sm);
+  font-weight: 500;
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--color-paper-mute);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  text-decoration-color: var(--color-paper-faint);
+  transition: color 200ms var(--ease-arrive);
+}
+.contact-success-return:hover,
+.contact-success-return:focus-visible {
+  color: var(--color-cyan);
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
+   WHAT HAPPENS NEXT — the anxiety a contact form creates, answered.
+   Neither reference page does this and both are worse for it: a visitor about
+   to describe their business to strangers is deciding whether it will vanish.
+   Same numbered voice as the Método chapter, so it reads as the studio's
+   process rather than as reassurance.
+   ─────────────────────────────────────────────────────────────────────────── */
+.contact-next {
+  margin-top: var(--space-section);
+  padding-top: var(--space-span);
+  border-top: 1px solid var(--color-paper-faint);
+}
+.contact-next-list {
+  display: grid;
+  gap: var(--space-block);
+  margin: var(--space-block) 0 0;
+  padding: 0;
+  list-style: none;
+}
+@media (min-width: 768px) {
+  .contact-next-list {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--grid-gap);
+  }
+}
+.contact-next-step {
+  padding-top: var(--space-group);
+  border-top: 1px solid var(--color-paper-faint);
+}
+.contact-next-num {
+  font-family: var(--font-mono);
+  font-size: var(--text-mono-sm);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums lining-nums;
+  letter-spacing: var(--tracking-label);
+  color: var(--color-cyan);
+}
+.contact-next-title {
+  margin-top: 0.5rem;
+  font-family: var(--font-sans);
+  font-size: var(--text-title);
+  font-weight: 550;
+  line-height: var(--text-title--line-height);
+  letter-spacing: var(--text-title--letter-spacing);
+  color: var(--color-paper);
+}
+.contact-next-body {
+  margin-top: var(--space-tight);
+  max-width: 34ch;
+  font-size: var(--text-body);
+  line-height: var(--text-body--line-height);
+  letter-spacing: var(--text-body--letter-spacing);
+  color: var(--color-paper-lead);
+}
+
+/* ===========================================================================
+   THE FORM'S LIQUID (S10) — coalescence on the contact form
+   (lib/motion/coalesce.mjs · components/contact/FieldLiquid.tsx)
+   ---------------------------------------------------------------------------
+   Same contract as THE MEMBRANE: everything above stays exactly as authored
+   and remains the whole form under reduced motion, without JS, and before
+   hydration. `FieldLiquid.tsx` sets `data-fieldliquid` on the <form> only once
+   the layer has mounted AND drawn its first frame, and every rule below is
+   gated on it. If the vector layer never arrives, none of this applies and the
+   bordered form is the form.
+
+   What it replaces, and only this:
+     · the 1 px CSS border on each control → a live Bézier contour that deforms
+       under a hand, ripples where it is clicked, and can be MERGED WITH.
+   What it deliberately does not touch: the labels, the values, the validation,
+   the error summary, the :focus-visible outline, and the submit button — which
+   keeps its own membrane and its own flood.
+   =========================================================================== */
+.fl {
+  position: absolute;
+  inset: 0;
+  display: block;
+  pointer-events: none;
+}
+.fl-svg {
+  /* Size and offset are written by FieldLiquid.tsx from the same PAD that
+     writes the viewBox — they must agree to the pixel, and a second copy here
+     is a second thing to get out of step. It has been out of step. */
+  position: absolute;
+  overflow: visible;
+  pointer-events: none;
+}
+.contact-form[data-fieldliquid] {
+  position: relative;
+}
+/* The liquid draws BEHIND the controls: the fields' backgrounds are already
+   transparent, so the interior wash reads through, and no fill can ever sit
+   over the text somebody is typing. */
+.contact-form[data-fieldliquid] > .fl {
+  z-index: 0;
+}
+.contact-form[data-fieldliquid] > *:not(.fl) {
+  position: relative;
+  z-index: 1;
+}
+/* The handover. Only the border goes — padding, colour, font and every state
+   that is not the outline stay in the rules above. */
+.contact-form[data-fieldliquid] .field input,
+.contact-form[data-fieldliquid] .field textarea {
+  border-color: transparent;
+}
+.fl-edge {
+  fill: var(--color-cyan);
+  fill-opacity: 0.012;
+  stroke: var(--color-paper-faint);
+  stroke-width: 1;
+  /* the viewBox is 1:1 with the CSS box, but a sub-pixel resize must never
+     make the brand's hairline thicken */
+  vector-effect: non-scaling-stroke;
+  transition: stroke 200ms var(--ease-arrive);
+}
+/* WET — the field currently holding the drop. It has to be lit, or the drop
+   lands on a dim grey hairline and the brightness falls off a cliff on
+   touchdown. Deep cyan rather than full: focus stays the brightest thing on
+   the form, so dim → lit → focused still reads as a hierarchy. */
+.fl-edge[data-fl="wet"] {
+  stroke: var(--color-cyan-deep);
+}
+.fl-edge[data-fl="focus"] {
+  stroke: var(--color-cyan);
+}
+.fl-edge[data-fl="invalid"] {
+  stroke: var(--color-warn);
+}
+/* The drop wears the material of the contour that absorbs it. While the bridge
+   is formed both draw the same circle; identical, the two strokes are
+   indistinguishable from one, and that is the whole reason the outline can stay
+   on through a merge without blinking.
+
+   `stroke` is written per frame by FieldLiquid, COPIED from the host contour's
+   computed value so it matches mid-transition too — mirroring the state alone
+   left a window where a rest-coloured circle sat under a wet-coloured one. The
+   value here is only the pre-mount fallback. Width and fill must stay in step
+   with `.fl-edge` above by hand. */
+.fl-bead {
+  fill: var(--color-cyan);
+  fill-opacity: 0.012;
+  stroke: var(--color-paper-faint);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}

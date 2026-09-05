@@ -1,8 +1,27 @@
 # 0001 — Retire the dead-code quarantine folder
 
-- **Status:** accepted
+- **Status:** SUPERSEDED (2026-09-04) by `AGENTS.md` §8, Working Conventions
 - **Date:** 2026-09-02
 - **Supersedes:** the `Dead Code/` folder introduced by the 2026-08-31 audit
+
+> ## Superseded — read this first
+>
+> This decision was never carried into `AGENTS.md`, which has continued to
+> instruct the opposite throughout: move dead code into `Dead Code/`, record it
+> in `Dead Code/README.md`, and never permanently delete. Practice followed
+> AGENTS.md — the 2026-09-03 secondary-CTA removal and the 2026-09-04 S10
+> contact removal both quarantined into the folder — and on 2026-09-04 the
+> owner confirmed AGENTS.md as the authority.
+>
+> **The quarantine folder stays.** What survives from this decision is its
+> warning, which turned out to be exactly right: a second copy that git does
+> not see WILL drift. `/Dead Code/` is still listed in `.gitignore`, so a file
+> moved there with `git mv` stays tracked as a rename while a NEWLY CREATED
+> file there is silently invisible to git and would not survive a clone. Both
+> removals above hit this. `git add -f` is the fix; see `AGENTS.md` §8.
+>
+> The reasoning recorded below is kept as the account of the 2026-08-31 audit,
+> which is still the reason those modules are gone.
 
 ## Context
 

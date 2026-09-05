@@ -20,6 +20,17 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: "monthly",
       priority: 0.8,
     });
+    // The conversion endpoint, and the only page on the site that exists to be
+    // acted on rather than read. Listed WITHOUT a query: `?intent=` is a
+    // handshake spent by the CTAs, not a set of pages — nine indexed variants
+    // of one form would be nine near-duplicates competing with each other, and
+    // the canonical in `generateMetadata` already points every one of them
+    // back here.
+    entries.push({
+      url: `${SITE_URL}/${locale}/contact`,
+      changeFrequency: "monthly",
+      priority: 0.8,
+    });
     entries.push({
       url: `${SITE_URL}/${locale}/careers`,
       changeFrequency: "monthly",

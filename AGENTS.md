@@ -355,6 +355,31 @@ third-party font requests.
 GSAP/ScrollTrigger owns scroll choreography. Motion owns DOM micro-interactions.
 Lenis owns smooth scrolling. Do not make two systems fight over the same value.
 
+**Chapter copy arrives on THE WETTING EDGE, not on a fade.** A reading front
+travels through a block as it crosses the viewport — dry paper ahead of it, the
+type role's own resting colour behind it, brand cyan and a share of the liquid's
+bloom on the front itself. It is scrubbed from geometry and reversible; nothing
+fades, translates or blurs. `lib/motion/wet-edge.ts` writes one number per block
+per frame (`--wet-p`) from ONE rAF and ONE IntersectionObserver for the whole
+page; `components/ui/WetType.tsx` splits the words at render time; the
+stylesheet derives everything else. It fails safe on `data-wet` exactly as
+`--origin-scrub` does, so reduced motion, no-JS, pre-hydration and static tiers
+get full-strength copy. It runs on chapter headlines and the copy under them in
+two PAINTS: `ink` moves the word's own colour, and `glass` lays a veil over
+Bricolage display type — whose glyphs are cut out of `--liquid-glass-fill` by
+the block's `background-clip: text`, so a word there has no ink to move and a
+colour would paint flat over the signature surface. Unlit glass, lit by the
+front. That glass now applies at EVERY width (the mobile aperture its ≥768px
+gate protected against no longer exists), and the dry state keeps more presence
+below 768px because a phone shows far more of a block at once. S7 is excluded
+from both the front and the glass: it has its own horizon wipe, and its display
+statements have a documented opt-out from the fill — ungating one without the
+other silently hands S7 the treatment it refuses. The
+pace is measured off the reference rather than guessed — a reading line at
+0.48 vh with the window straddling it symmetrically, so half-reveal lands on
+the line for a block of any height. `npm run wet` is the gate;
+`npm run wet:sheet` is the filmstrip. See build-spec §4.4.
+
 ### Stack
 
 - Next.js 16 App Router, React 19, TypeScript, Turbopack
@@ -514,6 +539,18 @@ Ask before adding any dependency or substituting any layer.
   remove every active import/script/config reference, and keep `Dead Code/`
   excluded from builds, type checks, lint, and deployment. Restore code only by
   moving it back into the active tree and re-running the relevant gates.
+  - This convention is AUTHORITATIVE and supersedes
+    `docs/decisions/0001-dead-code-quarantine.md`, which proposed retiring the
+    folder and was never enacted here. That decision is marked superseded and
+    kept for the 2026-08-31 audit reasoning it records.
+  - **`/Dead Code/` is listed in `.gitignore`, so quarantining has a trap.**
+    `git mv` on an already-tracked file keeps it tracked as a rename, so moves
+    look fine. A file you CREATE under `Dead Code/` — extracted CSS, a split
+    module, a note — is silently invisible to git and will not survive a
+    clone, and it will not appear in `git status` to warn you. Finish every
+    quarantine with `git add -f "Dead Code/<new file>"` and then confirm the
+    whole bundle with `git ls-files --error-unmatch` on each path. The
+    2026-09-03 and 2026-09-04 removals both hit this.
 - Work one R5 phase or one bounded chapter concern at a time.
 - Use clear commits that identify the phase/spec, for example
   `feat(R5-C): add identity-safe bright pass`.
@@ -595,21 +632,30 @@ Additional stop-the-line gates:
   `node scripts/verify/conductor.mjs` and transition diagnostics.
 - Homepage canvas change: `node scripts/verify/canvas-count.mjs` must report
   exactly one liquid canvas.
-- CTA/navigation/form change: `node scripts/verify/cta.mjs`.
-- Form-liquid change (`coalesce.mjs`, `FieldLiquid.tsx`, the S10 controls):
+- CTA/navigation change: the conversion-path gate `verify/cta.mjs` was
+  quarantined on 2026-09-04 with S10 (`Dead Code/README.md`) — its entire
+  subject was the contact form. Until an intent destination exists again,
+  `verify/a11y.mjs` is the standing navigation gate.
+- Form-liquid change (`coalesce.mjs`, `FieldLiquid.tsx`, the S10 controls).
+  S10 WAS QUARANTINED on 2026-09-04: `FieldLiquid.tsx` now lives in
+  `Dead Code/components/chapters/` and there is no form on the site for it to
+  dress. `lib/motion/coalesce.mjs` deliberately stayed active — it is DOM-free,
+  and the two node gates below still exercise the kernel directly, which is
+  what keeps a restore cheap. The page-level contact sheet went with the form.
   `node scripts/verify/coalesce.mjs` (`npm run liquid:form`) — smin exactness,
   byte-exact rest, the reach, the handover silhouette, a simple closed curve,
   the bead's travel and mass, cost, corner clearance, and the squared-off guard.
   `npm run liquid:form:sheet` renders the bridge at 5x straight from the kernel:
   REVIEW THAT BEFORE the page stills, because a 16 px detail on a 576 px form is
   not judgeable at 1x — this surface has twice shipped a defect that survived
-  rounds of full-form screenshots. `BASE=http://localhost:3071 node scripts/capture/field-liquid.mjs`
-  is the page contact sheet (rest · fused · four travel ages · the hold at the
-  submit button · hover · invalid · BROKEN · reduced motion). `ONLY=broken`
-  blocks the kernel's chunk and asserts the form survives it — the merge kernel
-  is imported dynamically inside the effect precisely so a bad module cannot
-  take the contact form down with it. Because the layer takes over the controls' BORDER, a change
-  here is also an a11y and CTA change: run `verify/a11y.mjs` and `verify/cta.mjs`.
+  rounds of full-form screenshots. The page contact sheet
+  (`capture/field-liquid.mjs`: rest · fused · four travel ages · the hold at the
+  submit button · hover · invalid · BROKEN · reduced motion) needs a mounted
+  form, so it moved to `Dead Code/scripts/obsolete/capture-field-liquid.mjs`
+  with it. Restore both together: its `ONLY=broken` pass blocks the kernel's
+  chunk and asserts the form survives it — the merge kernel is imported
+  dynamically inside the effect precisely so a bad module cannot take the
+  contact form down with it, and that guard is only meaningful on a real page.
 - Disclosure change (S4 instrument band): `node scripts/verify/disclose.mjs` —
   the additive `data-disclose` contract, an open that ramps and lands exactly
   on the slab, a close that starts moving on the first frame and is NOT the
@@ -716,3 +762,13 @@ honest in every claim, and independently reversible at the physics and optics
 layers without breaking exact form output.
 
 *One liquid. One system. One motivated story.*
+
+<!-- BEGIN:nextjs-agent-rules -->
+
+# This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->
