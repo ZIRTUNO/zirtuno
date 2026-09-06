@@ -27,9 +27,14 @@
  * IT IS A SEPARATE CONTEXT FROM THE LIQUID, ON PURPOSE. FieldStage's canvas is
  * the site's material, it is fill-rate bound, and it demotes itself through
  * seven rungs on sustained slow frames; the atmosphere has no business inside
- * that budget or that watchdog. The step pass here is 128 x 128 fragments -
- * 0.016 Mpx - and the draw covers a few thousand pixels of tiny quads, against
+ * that budget or that watchdog. The step pass here is 160 x 160 fragments -
+ * 0.026 Mpx - and the draw covers a few thousand pixels of tiny quads, against
  * the liquid's ~1.9 Mpx.
+ *
+ * It does READ the liquid, one way only: `packOccluders` takes the droplet
+ * buffer FieldStage publishes and hands the draw shader the largest bodies, so
+ * the vapour can take itself out of them. Nothing is written back, and a route
+ * without liquid simply has none to read.
  *
  * `startAura()` returns a stop function. Everything it owns is released there.
  */
@@ -106,6 +111,8 @@ export type AuraStats = {
   count: number;
   steps: number;
   frames: number;
+  /** Liquid droplets the vapour is currently taking itself out of. */
+  occluders: number;
   /** GL's own verdict on the last frame; 0 is NO_ERROR. */
   err: number;
   /** The drawing buffer, in device pixels. */
@@ -250,6 +257,8 @@ export function startAura(
     pxUv: gl.getUniformLocation(pDraw, "uPxUv"),
     alpha: gl.getUniformLocation(pDraw, "uAlpha"),
     field: gl.getUniformLocation(pDraw, "uField"),
+    occ: gl.getUniformLocation(pDraw, "uOcc"),
+    occN: gl.getUniformLocation(pDraw, "uOccN"),
   };
 
   let cur = 0; // the pair holding the CURRENT state
@@ -299,6 +308,7 @@ export function startAura(
     count,
     steps: 0,
     frames: 0,
+    occluders: 0,
     err: 0,
     buf: [0, 0],
     probe() {
@@ -372,6 +382,66 @@ export function startAura(
     stats.steps++;
   };
 
+  // ── THE OCCLUDERS ──────────────────────────────────────────────────────────
+  // The liquid's own droplets, so the vapour can take itself out of them. The
+  // buffer is a LIVE reference FieldStage publishes for the measurement
+  // harnesses (`window.__optics.balls`, packed x/y/r by slot, with `dens`
+  // alongside); it is read, never held, and a route with no liquid simply has
+  // no `__optics` and contributes nothing.
+  //
+  // Only the biggest OCCLUDERS of them are sent. The metaball field is
+  // dominated by the largest bodies, and the population above the authored 48
+  // is motes - small shells derived from a host, sitting inside the field that
+  // host already creates - so taking the largest is taking the ones that decide
+  // the surface. Selection is an insertion into a fixed array rather than a
+  // sort, so a 512-droplet frame costs one pass and no allocation.
+  const occ = new Float32Array(AURA.OCCLUDERS * 4);
+  const pick = new Int32Array(AURA.OCCLUDERS);
+  type Optics = { balls?: Float32Array; dens?: Float32Array; count?: number };
+  const packOccluders = (aspect: number) => {
+    const o = (window as unknown as { __optics?: Optics }).__optics;
+    const balls = o?.balls;
+    const n = Math.min(o?.count ?? 0, balls ? (balls.length / 3) | 0 : 0);
+    if (!balls || n <= 0) return 0;
+    const dens = o?.dens;
+    // The liquid works in field uv: the viewport centre is (0.5, 0.5), the unit
+    // is min(width, height) and y points up. This field's unit is the HEIGHT
+    // and its origin is the bottom-left, so one scale and one offset convert
+    // both the positions and the radii. min(width, height) / height is exactly
+    // min(aspect, 1), which is 1 on any landscape window.
+    const s = Math.min(aspect, 1);
+    const half = aspect * 0.5;
+    let k = 0;
+    for (let i = 0; i < n; i++) {
+      const r = balls[i * 3 + 2];
+      if (!(r > 0)) continue;
+      if (k < AURA.OCCLUDERS) {
+        pick[k++] = i;
+        // keep the array ordered smallest-first so the head is the drop victim
+        for (let j = k - 1; j > 0 && balls[pick[j - 1] * 3 + 2] > r; j--) {
+          const t = pick[j];
+          pick[j] = pick[j - 1];
+          pick[j - 1] = t;
+        }
+      } else if (r > balls[pick[0] * 3 + 2]) {
+        pick[0] = i;
+        for (let j = 0; j + 1 < AURA.OCCLUDERS && balls[pick[j + 1] * 3 + 2] < r; j++) {
+          const t = pick[j];
+          pick[j] = pick[j + 1];
+          pick[j + 1] = t;
+        }
+      }
+    }
+    for (let j = 0; j < k; j++) {
+      const i = pick[j];
+      occ[j * 4] = half + (balls[i * 3] - 0.5) * s;
+      occ[j * 4 + 1] = 0.5 + (balls[i * 3 + 1] - 0.5) * s;
+      occ[j * 4 + 2] = balls[i * 3 + 2] * s;
+      occ[j * 4 + 3] = dens ? dens[i] : 1;
+    }
+    return k;
+  };
+
   const draw = () => {
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
     gl.viewport(0, 0, bufW, bufH);
@@ -382,6 +452,10 @@ export function startAura(
     gl.uniform1f(uD.pxUv, pxUv);
     gl.uniform1f(uD.alpha, 1);
     gl.uniform2f(uD.field, field[0], field[1]);
+    const occN = packOccluders(field[0]);
+    stats.occluders = occN;
+    if (occN > 0) gl.uniform4fv(uD.occ, occ);
+    gl.uniform1i(uD.occN, occN);
     // Premultiplied light, accumulated. See the note in AURA_DRAW_FRAG: over an
     // ink page under `screen`, what lands here IS what the reader sees.
     gl.enable(gl.BLEND);

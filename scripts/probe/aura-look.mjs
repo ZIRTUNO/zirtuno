@@ -52,6 +52,14 @@ await page.goto(`${BASE}${ROUTE}${ROUTE.includes("?") ? "&" : "?"}fcap=1`, {
 // which is the only way to judge the population itself: the grain peaks around
 // nine levels and sits directly on top, so at anything like these amplitudes
 // the two are read together. ONLY=ground does the reverse.
+//
+// NEITHER OF THEM TOUCHES THE LIQUID CANVAS, and that is deliberate. Hiding
+// `.journey-canvas` looks like the obvious way to see the vapour on its own,
+// and it silently invalidates the measurement: display:none collapses
+// FieldStage's container, its ResizeObserver rebuilds the drawing buffer at
+// 1x1, and the droplet positions it publishes are then computed at aspect 1 -
+// so the occluders the vapour fades against land somewhere else entirely and
+// the field appears to have a huge void punched in it. It does not.
 const ONLY = process.env.ONLY || "";
 const isolate =
   ONLY === "mist"
@@ -91,7 +99,7 @@ const live = await page.evaluate(() => {
   return {
     gl: document.querySelector(".aura")?.hasAttribute("data-gl") ?? false,
     stats: a
-      ? { size: a.size, count: a.count, steps: a.steps, frames: a.frames, err: a.err, buf: a.buf }
+      ? { size: a.size, count: a.count, steps: a.steps, frames: a.frames, occluders: a.occluders, err: a.err, buf: a.buf }
       : null,
     // The readback: where the population actually is, how fast it is moving,
     // and what the frame it just drew actually put on the canvas.

@@ -443,7 +443,7 @@ above the liquid canvas at z-0 and below copy at z-10 — and both are mounted i
   is the layer doing the most work, and it is why the vapour has a brightness
   floor rather than being free to be as faint as one likes.
 
-Four rules govern the aura, and all four are load-bearing:
+Five rules govern the aura, and all five are load-bearing:
 
 1. **It is additive, never subtractive.** `mix-blend-mode: screen` is not a look,
    it is the enforcement of the owner directive that the liquid is never dimmed:
@@ -510,6 +510,33 @@ Four rules govern the aura, and all four are load-bearing:
    medium continuous, while a brighter mote eventually stops being dust and
    becomes a dot somebody can point at. Density is nearly free, since the step
    pass is one fragment per mote.
+
+5. **IT MUST NOT BE VISIBLE THROUGH THE LIQUID.** A background is behind things,
+   and `mix-blend-mode: screen` does not deliver that on its own: it attenuates
+   by (1 - backdrop), so over the liquid's mid-tone interior a mote still lands
+   at about half strength. Owner review caught it as streaks running across the
+   metaballs, and it measured worse than it looked - the vapour was moving the
+   liquid's interior by ~7.6 levels while moving the ground it exists to light
+   by 2. So the draw shader reads the liquid's own droplets (`packOccluders` in
+   `aura-gl.ts`, from the buffer FieldStage publishes) and fades each mote by
+   their summed field, exactly as the mist faded against its hosts. Measured
+   after, against the liquid's own frame-to-frame churn: excess inside the
+   liquid -1.46 levels, which is zero, while the ground still gains 1.88.
+   **The thresholds cannot be pushed low.** T is a SUM with a long per-body
+   tail, so at 0.35 the aggregate cleared a third of the viewport - a hard-edged
+   void, a worse artefact than the one being fixed. 0.75/1.15 sits just inside
+   the liquid's own iso-surface at T = 1.
+
+   **A TRAP IN MEASURING THIS, which produced two confident wrong answers.**
+   Do NOT isolate the vapour by hiding the liquid canvas: `display: none` on
+   `.journey-canvas` collapses FieldStage's container, its ResizeObserver
+   rebuilds the drawing buffer at 1x1, and the droplet positions it then
+   publishes are computed at aspect 1 - so the occluders land somewhere else
+   entirely and the vapour appears to have a huge void in it. And do not compare
+   an on/off pair without a churn control taken at the SAME interval: the liquid
+   moves ~14 levels of its own interior between two frames 500 ms apart, which
+   is larger than the effect being measured. Toggle with `visibility`, use
+   identical waits, and always sample off/off first.
 
    **A NEAR-BLACK LAYER CANNOT BE JUDGED FROM A SCREENSHOT**, and this is the
    working rule the whole layer is tuned under. The difference between "a lit
