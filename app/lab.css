@@ -287,6 +287,13 @@ body:has(.lab-solo) .side-index {
   position: relative;
   display: inline-block;
   vertical-align: baseline;
+  /* The slot is an explicit pixel width on an ATOMIC inline — nothing inside it
+     can wrap. Without a cap, a word wider than the column would not push the
+     line, it would hang out of the page and hand the whole document a
+     horizontal scrollbar. The phone stage keeps every word well inside its row
+     (see `.lab-headline-lead` below, and verify/hero-word.mjs check 6), so this
+     never engages; it is the floor under a copy change that outgrows it. */
+  max-width: 100%;
   /* The slot fits the word CURRENTLY in it, and travels between sizes.
      Holding it at the widest word in the set left "futuro" (142px) sitting in
      a 365px hole — over 110px of dead space on either side of it. The word has
@@ -318,6 +325,19 @@ body:has(.lab-solo) .side-index {
   visibility: hidden;
   pointer-events: none;
   white-space: nowrap;
+  /* ZERO FOOTPRINT HAS TO MEAN ZERO SCROLL, TOO.
+     `visibility: hidden` stops the rig being painted; it does NOT take it out
+     of the scrollable overflow region. The rig is as wide as the WIDEST word in
+     the set and it is anchored at the slot's own left edge, so on a phone —
+     where the slot sits most of the way across a 390px column — it reached
+     ~8px past the viewport and the page grew a horizontal scrollbar that
+     appeared and vanished with the word. Collapsing the rig to nothing and
+     clipping it contains that: the candidates inside are `width: max-content`,
+     so their used widths — the only thing the component ever reads — are
+     unchanged by a parent with no width. */
+  width: 0;
+  height: 0;
+  overflow: hidden;
 }
 .lab-word-sizer span {
   display: block;
@@ -1017,6 +1037,16 @@ body:has(.lab-solo) .side-index {
   }
   .lab-headline {
     letter-spacing: -0.03em;
+    /* The display tier is a FLAT 1.625rem from ~1000px all the way down — the
+       clamp's 2.6vw middle term is already under its floor by then — and below
+       360px the global scale steps it back UP to 1.75rem. So the narrowest
+       phone in the range was rendering the biggest headline in it, which is
+       backwards and is what made 300–332px the worst stage on the site: the
+       widest word plus its trailing fragment no longer fit one row there.
+       Capping against the viewport hands those phones a proportional headline
+       without touching `--text-display-m`, which a dozen other roles read.
+       7.5vw meets the tier at ~347px, so this is inert above that. */
+    font-size: min(var(--text-display-m), 7.5vw);
   }
   .lab-headline-visual {
     justify-items: start;
@@ -1024,6 +1054,27 @@ body:has(.lab-solo) .side-index {
   .lab-headline-line {
     width: auto;
     white-space: normal;
+  }
+  /* ── THE CHANGING WORD ALWAYS OPENS ITS OWN ROW ────────────────────────────
+     Desktop holds line one at `white-space: nowrap`, so the slot's travel only
+     ever re-centres a line that is already one row. A phone has to wrap, and
+     there the slot's travel was deciding WHERE the line broke: at 390px
+     "Dê forma ao seu futuro com um" fits one row and
+     "Dê forma ao seu posicionamento com um" does not, so the headline gained
+     and lost a whole row every three seconds. Everything under it moved with
+     it — and because `.lab-hero` centres its content in 100svh, everything
+     ABOVE it moved too. Measured: 13.7px at 392–512px, 14.8px at 300–332px, on
+     a loop, in both locales.
+
+     Promoting the run that precedes the word to a block puts the break where
+     the copy wants it rather than where the current word happens to force it:
+     row one is "Dê forma ao seu", always, and the word opens row two carrying
+     the fragment after it. The wrap is then fixed and the slot's travel is
+     what it is on desktop — the line making room, in place. The word still
+     shares its row, so the slot stays SNUG: no reserved hole for the short
+     words, which is the trade the desktop comment above rejects. */
+  .lab-headline-line > .lab-headline-lead {
+    display: block;
   }
   .lab-badge {
     justify-self: start;

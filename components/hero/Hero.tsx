@@ -62,7 +62,14 @@ export function Hero() {
             <span className="sr-only">{headline}</span>
             <span className="lab-headline-visual" aria-hidden="true">
               <span className="lab-headline-line">
-                <span className="lab-light">{t("headlineBefore")}</span>{" "}
+                {/* `lab-headline-lead` is load-bearing on phones: it is the run
+                    the narrow stage promotes to a block so the changing word
+                    always opens the row below it, instead of the word's own
+                    width deciding where the headline breaks. See
+                    `.lab-headline-lead` in app/lab.css. */}
+                <span className="lab-light lab-headline-lead">
+                  {t("headlineBefore")}
+                </span>{" "}
                 <WordCycle words={words} index={index} />{" "}
                 <span className="lab-light">{t("headlineMid")}</span>
               </span>
