@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
+import { createPortal } from "react-dom";
 import dynamic from "next/dynamic";
 import { useReducedMotion } from "@/lib/animation/reduced-motion";
 import { useInView } from "@/lib/animation/use-in-view";
@@ -11,7 +12,15 @@ import {
   type FieldTier,
 } from "@/lib/webgl/field-tier";
 import { clamp01, smooth01 } from "@/lib/webgl/field-drivers";
-import { makeEcosystemScore } from "@/lib/animation/ecosystem-score";
+import {
+  GATHER_N,
+  GATHER_SYSTEMS,
+  SYS_OF_NODE,
+  gatherTiming,
+  systemTiming,
+  arrivalPulse,
+  fuse as gatherFuse,
+} from "@/lib/webgl/gathering.mjs";
 import { makeConductor } from "@/lib/webgl/conductor.mjs";
 import { N } from "@/lib/webgl/phys.mjs";
 import { SDF_BALL_CAP_TILED } from "@/lib/webgl/sdf-glass-shader.mjs";
@@ -38,6 +47,8 @@ import { CinematicVeils } from "./CinematicVeils";
 const FieldStage = dynamic(() => import("@/components/field/FieldStage"), {
   ssr: false,
 });
+
+export type EcoNode = { name: string; tooltip: string };
 
 // The v3 review path lets free liquid acknowledge a deliberately small set of
 // business-critical reading surfaces. Bounds are cached outside the frame
@@ -201,13 +212,56 @@ function makeJourneyRuntime(
  * window.__liquid exposes the site scene's raw channels; window.__scenes
  * exposes all seven.
  */
-export function PageStage({ children }: { children: ReactNode }) {
+export function PageStage({
+  nodes,
+  centerLabel,
+  ecosystemLabel,
+  systems,
+  children,
+}: {
+  nodes: EcoNode[];
+  centerLabel: string;
+  ecosystemLabel: string;
+  /** the three organ-system names (identity · growth · operation) */
+  systems: string[];
+  children: ReactNode;
+}) {
   const reduced = useReducedMotion();
   const [wrapRef, inView, seen] = useInView<HTMLDivElement>("400px");
   const layerRef = useRef<HTMLDivElement>(null);
   const [tier, setTier] = useState<FieldTier | null>(null);
   const [fEco, setFEco] = useState<number | null>(null);
   const [fieldReady, setFieldReady] = useState(false);
+  const [ecoInteractive, setEcoInteractive] = useState(false);
+  const [ecoKeyboardEnabled, setEcoKeyboardEnabled] = useState(false);
+  const [openEcoNode, setOpenEcoNode] = useState<number | null>(null);
+  const [hovSlot, setHovSlot] = useState(-1);
+  // The most recently arrived capability keeps the explanatory note useful
+  // before a visitor chooses to hover or focus a name.
+  const [landedSlot, setLandedSlot] = useState(-1);
+  const [ecoHost, setEcoHost] = useState<HTMLElement | null>(null);
+  const nodeEls = useRef<(HTMLLIElement | null)[]>([]);
+  const centerEl = useRef<HTMLSpanElement>(null);
+  const systemEls = useRef<(HTMLLIElement | null)[]>([]);
+  const fusedRef = useRef(0);
+  const landedRef = useRef(-1);
+  // THE COLUMN AS AN OBSTACLE. The type-aware flow already exists for exactly
+  // this — a small set of reading surfaces free liquid is asked to respect —
+  // but its geometry cache is document-relative, and the column lives in a
+  // STICKY layer, so its document position moves every frame while its
+  // on-screen position does not. Measured against the host instead: that
+  // offset is constant, and while the chapter is pinned the host IS the
+  // viewport, so one measurement holds for the whole runway.
+  const ecoObstacle = useRef<{
+    l: number;
+    t: number;
+    w: number;
+    h: number;
+  } | null>(null);
+  const ecoObstacleOn = useRef(false);
+  const ecoLayerEl = useRef<HTMLDivElement | null>(null);
+  const ecoInteractiveRef = useRef(false);
+
   // Client components are also rendered on the server. Build an SSR-safe
   // default bundle, then replace it from the real browser query before the
   // tier probe can mount the canvas. This keeps hydration deterministic while
@@ -236,6 +290,23 @@ export function PageStage({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  // Keep the focusable organism controls in Chapter Ecosystem's DOM order
+  // while PageStage retains their shared choreography and geometry.
+  useEffect(() => {
+    setEcoHost(document.getElementById("ecosystem-interactions-host"));
+  }, []);
+
+  // Keep the desktop orbit in the document's keyboard order for the whole
+  // live experience. Its visual/pointer envelope may follow the choreography,
+  // but focus must never disappear merely because focusing caused a scroll.
+  useEffect(() => {
+    const desktop = window.matchMedia("(min-width: 1024px)");
+    const sync = () => setEcoKeyboardEnabled(enabled && desktop.matches);
+    sync();
+    desktop.addEventListener("change", sync);
+    return () => desktop.removeEventListener("change", sync);
+  }, [enabled]);
+
   // QA visibility: the live raw channels + the merged light score (read-only
   // diagnostics for the cinematic and renderer harnesses).
   useEffect(() => {
@@ -254,17 +325,205 @@ export function PageStage({ children }: { children: ReactNode }) {
     w.__flow = conductor.input;
   }, [site, conductor]);
 
+  // THE GATHERING's type no longer has a geometry problem to solve.
+  //
+  // Everything below used to place the chapter's type in JS: three blocks
+  // positioned at their lobes' pixel heights, de-overlapped against each other
+  // by a 1-D relaxation pass, clamped off the chapter-index rail, and joined to
+  // their masses by ten leader lines redrawn every frame. That is a great deal
+  // of machinery whose entire purpose was to stop composed type from colliding
+  // with a moving body — and it still read as loose, because type that is
+  // placed by a solver has no relationship to the page's own grid.
+  //
+  // The column is CSS. It sits in the page gutter, it does not move, and the
+  // liquid has its own field beside it (gathering.mjs owns that split), so
+  // there is nothing to dodge and nothing to draw a line across. All that is
+  // left for JS is handing each row the timing of the mass it names — which is
+  // the one thing that genuinely has to come from the liquid's own clock.
+  useEffect(() => {
+    const layer = layerRef.current;
+    if (!layer) return;
+    const layout = () => {
+      const r = layer.getBoundingClientRect();
+      if (r.width < 2 || r.height < 2) return;
+      const h = r.height;
+      // THE CLOCK, handed to the type. Each block and each row carries the
+      // envelope of the SYSTEM or MASS it names, so a name ignites at the
+      // instant its liquid lands rather than on a timer of its own. This is the
+      // whole of the type's relationship to the liquid now — no placement, no
+      // leaders, no collision pass. Position is the column's job and the column
+      // is CSS.
+      GATHER_SYSTEMS.forEach((_sys, si) => {
+        const el = systemEls.current[si];
+        if (!el) return;
+        const t = systemTiming(si);
+        el.style.setProperty("--d", String(t.d));
+        el.style.setProperty("--w", String(t.w));
+      });
+      nodeEls.current.forEach((el, s) => {
+        if (!el) return;
+        const t = gatherTiming(s);
+        el.style.setProperty("--d", String(t.d));
+        el.style.setProperty("--w", String(t.w));
+      });
+      // the column's footprint inside the sticky host — one measurement, held
+      // for the runway. The height is the FULL extension, not the current one:
+      // an obstacle that grew with the column would push liquid around as the
+      // chapter advanced, which is a force with no cause on screen.
+      const host = ecoHost;
+      const col = host?.querySelector<HTMLElement>(".gather-col");
+      if (host && col && getComputedStyle(col).display !== "none") {
+        const hb = host.getBoundingClientRect();
+        const cb = col.getBoundingClientRect();
+        // A standoff on the right edge, so liquid is turned before it reaches
+        // the words rather than after it has already landed on one.
+        //
+        // And the box runs OFF-STAGE to the left. The core ejects a droplet
+        // through its nearest edge, so a box that merely wrapped the column
+        // pushed anything left of the column's own centreline further left —
+        // a 130px traverse straight across the words to escape, against a
+        // target pulling it back the other way. Droplets settled mid-word
+        // exactly there. With the left edge past the viewport there is no
+        // "nearest left edge" to leave by: everything is ejected right, back
+        // into the field, which is also where the composition wants it.
+        const STANDOFF = 44;
+        const OFFSTAGE = Math.max(hb.width * 0.6, 560);
+        ecoObstacle.current = {
+          l: cb.left - hb.left - OFFSTAGE,
+          t: cb.top - hb.top,
+          w: cb.width + STANDOFF + OFFSTAGE,
+          h: Math.max(cb.height, h * 0.72),
+        };
+      } else {
+        ecoObstacle.current = null;
+      }
+      // The founding-pillar labels used to be positioned here, floated at fixed
+      // anchors "beside the mark's lobes" and clamped into the stage. Removed:
+      // photographed at the beat they annotate, the three landed as debris —
+      // SOCIAL alone at the left margin, HEALTH in the top right, FINANCE
+      // orphaned near the bottom, none of them touching the mark. They are a
+      // composed triptych in ChapterName now, which is both the composition the
+      // beat wanted and one fewer imperative layout pass per resize.
+    };
+    layout();
+    // label widths shift when the mono face lands — re-run the edge safety
+    let alive = true;
+    document.fonts?.ready.then(() => alive && layout());
+    const ro = new ResizeObserver(layout);
+    ro.observe(layer);
+    return () => {
+      alive = false;
+      ro.disconnect();
+    };
+  }, [nodes.length, ecoHost, enabled]);
+
+  // The system response: touching one capability answers through its SYSTEM
+  // first and the rest of the body after. There is no graph to walk any more —
+  // membership is the relationship the chapter is arguing for, so distance is
+  // "same lobe / other lobe", and the delay makes that structure audible.
+  //
+  // TOUCH, not readout: this is the slot the reader is pointing at, and it must
+  // stay -1 when they are pointing at nothing, because it drives the liquid's
+  // rack focus. The column's readout falls back to the last ARRIVED capability
+  // separately, so an idle stage still reads as instrumented.
+  const activeSlot = hovSlot >= 0 ? hovSlot : (openEcoNode ?? -1);
+  const readoutSlot = activeSlot >= 0 ? activeSlot : landedSlot;
+  useEffect(() => {
+    site.hov = activeSlot;
+    const root = ecoLayerEl.current;
+    if (!root) return;
+    if (activeSlot < 0) {
+      root.removeAttribute("data-pulse");
+      return;
+    }
+    const HOP = 110; // ms per step outward — a readable travel, not a blink
+    const activeSys = SYS_OF_NODE[activeSlot]?.si ?? -1;
+    nodeEls.current.forEach((el, s) => {
+      if (!el) return;
+      const d = s === activeSlot ? 0 : SYS_OF_NODE[s]?.si === activeSys ? 1 : 2;
+      el.style.setProperty("--pd", `${d * HOP}ms`);
+    });
+    systemEls.current.forEach((el, si) => {
+      if (!el) return;
+      el.style.setProperty("--pd", `${(si === activeSys ? 0 : 2) * HOP}ms`);
+    });
+    root.setAttribute("data-pulse", "true");
+  }, [activeSlot, site]);
+
   // ── the ONE measurement loop (all scenes' channels + DOM choreography) ─────
   useEffect(() => {
     if (tier === null) return; // wait for the tier probe (static path included)
     const wrap = wrapRef.current;
     if (!wrap) return;
 
-    const ecosystemScore = makeEcosystemScore(
-      wrap.querySelector<HTMLElement>(".eco-runway"), enabled,
-      (slot) => { site.hov = slot; },
-    );
-    const applyEcoLabels = (grow: number) => ecosystemScore.sample(grow);
+    const ecoDesktop = window.matchMedia("(min-width: 1024px)");
+    let lastG = -1;
+    let lastS = -1;
+    let lastEcoDesktop = ecoDesktop.matches;
+    let lastEcoInteractive = ecoInteractiveRef.current;
+    const applyEcoLabels = (grow: number, svcPos: number) => {
+      const desktop = ecoDesktop.matches;
+      if (
+        Math.abs(grow - lastG) < 0.002 &&
+        Math.abs(svcPos - lastS) < 0.002 &&
+        desktop === lastEcoDesktop
+      )
+        return;
+      lastG = grow;
+      lastS = svcPos;
+      lastEcoDesktop = desktop;
+      const fade = 1 - smooth01(svcPos);
+      // The column answers as soon as it has rows to answer with. This used to
+      // wait for grow >= 0.8 — the body being whole — which meant the first two
+      // systems were on screen and inert for most of the runway, and the rack
+      // focus (the chapter's one real interaction) was only reachable in its
+      // last beat. A row is touchable once its own mass has landed; the CSS
+      // envelope is what stops an unarrived row from being under the cursor.
+      const interactive = enabled && desktop && grow >= 0.2 && fade >= 0.55;
+      // the column only displaces liquid while it is actually on screen
+      ecoObstacleOn.current = desktop && grow > 0.01 && grow < 0.999 && fade > 0.05;
+      if (interactive !== lastEcoInteractive) {
+        lastEcoInteractive = interactive;
+        ecoInteractiveRef.current = interactive;
+        if (
+          !interactive &&
+          !ecoLayerEl.current?.contains(document.activeElement)
+        )
+          setOpenEcoNode(null);
+        setEcoInteractive(interactive);
+      }
+      // THREE vars drive the whole gathering — each label derives its own
+      // envelope from --eco-grow via its inline --d/--w (one write point, the
+      // same gathering.mjs timing the liquid masses use), and --eco-fuse lets
+      // the names recede as the body closes: once it is one thing, naming the
+      // parts is the wrong emphasis.
+      const root = ecoLayerEl.current;
+      if (root) {
+        root.style.setProperty("--eco-grow", grow.toFixed(4));
+        root.style.setProperty("--eco-fade", fade.toFixed(3));
+        root.style.setProperty("--eco-fuse", gatherFuse(grow).toFixed(3));
+      }
+      fusedRef.current = gatherFuse(grow);
+      // Per-label arrival: the pulse peaks exactly as its mass lands, so the
+      // name ignites on the arrival rather than on a timer of its own.
+      nodeEls.current.forEach((el, s) => {
+        if (!el) return;
+        el.style.setProperty("--pulse", arrivalPulse(s, grow).toFixed(3));
+      });
+      // Keep the note aligned with the most recent arrival. This changes only
+      // ten times across the runway, not on every rendered frame.
+      let last = -1;
+      for (let s = 0; s < GATHER_N; s++) {
+        const t = gatherTiming(s);
+        if (grow >= t.d + t.w * 0.6) {
+          if (last < 0 || gatherTiming(last).d < t.d) last = s;
+        }
+      }
+      if (last !== landedRef.current) {
+        landedRef.current = last;
+        setLandedSlot(last);
+      }
+    };
     // WHERE a custom property is written is a performance decision, not a
     // stylistic one. Every var below used to be set on `wrap` — the element
     // that contains the entire page — and a custom property written on an
@@ -329,14 +588,14 @@ export function PageStage({ children }: { children: ReactNode }) {
       site.pairM = 0;
       site.exit = 0;
       conductor.input.vel = 0;
-      applyEcoLabels(site.gather);
+      applyEcoLabels(site.gather, 0);
       // static thread reads full (scoped to its own consumer, as above)
       methodRunway.style.setProperty("--method-flow", "1");
       // NOTE: --origin-scrub is deliberately NOT raised here. This branch never
       // reaches the per-frame loop, so leaving the switch at its registered 0
       // is what gives the deterministic surfaces plain readable S7 copy on pure
       // ink — no partially driven mask.
-      return () => ecosystemScore.dispose();
+      return;
     }
 
     // The live runway owns S7's clock from here down. Raising the switch after
@@ -464,6 +723,29 @@ export function PageStage({ children }: { children: ReactNode }) {
         out[dst + 2] = (width * 0.5 + padding) / md;
         out[dst + 3] = (height * 0.5 + padding) / md;
         out[dst + 4] = obstacleDoc[src + 4];
+        count++;
+      }
+      // THE COLUMN. Viewport-fixed while the chapter is pinned, so it is
+      // appended directly rather than translated out of document space. This
+      // is what finally keeps beads off the type: the field edge decides where
+      // liquid is PULLED, and free physics was still carrying a few droplets
+      // across the gap. Now the type displaces them, which is also the better
+      // effect — the words push the liquid aside instead of being under it.
+      const eco = ecoObstacle.current;
+      if (eco && ecoObstacleOn.current && count < FLUID_OBSTACLE_MAX) {
+        const dst = count * FLUID_OBSTACLE_STRIDE;
+        out[dst] = 0.5 + (eco.l + eco.w * 0.5 - vw * 0.5) / md;
+        out[dst + 1] = 0.5 - (eco.t + eco.h * 0.5 - vh * 0.5) / md;
+        out[dst + 2] = (eco.w * 0.5 + padding) / md;
+        out[dst + 3] = (eco.h * 0.5 + padding) / md;
+        // Weight is a multiplier on the avoidance acceleration, and this
+        // surface needs more of it than a headline does. The others are single
+        // lines that free liquid crosses in under a second; this is a
+        // full-height column that liquid would otherwise SETTLE on, and at
+        // weight 1 the push lost to curl and repulsion often enough to leave a
+        // bead sitting on a word. Raising it here rather than raising
+        // FLUID.OBSTACLE_A keeps every other chapter's flow untouched.
+        out[dst + 4] = 2.6;
         count++;
       }
       conductor.input.obstacleCount = count;
@@ -646,7 +928,7 @@ export function PageStage({ children }: { children: ReactNode }) {
       const originControl = originScore.sample(clamp01(conductor.raw.origin.p));
       Object.assign(conductor.raw.origin, originControl);
       conductor.raw.origin.scored = 1;
-      applyEcoLabels(site.gather);
+      applyEcoLabels(site.gather, site.svcPos);
       applyMethodFlow(clamp01(conductor.raw.method.u / methodPhases));
       applyOriginProgress(clamp01(conductor.raw.origin.p));
       applyScore();
@@ -654,7 +936,6 @@ export function PageStage({ children }: { children: ReactNode }) {
     update();
     return () => {
       if (raf) cancelAnimationFrame(raf);
-      ecosystemScore.dispose();
       originScore.dispose();
       originJourney?.removeAttribute("data-origin-live");
       originJourney?.style.removeProperty("--origin-scrub");
@@ -715,7 +996,6 @@ export function PageStage({ children }: { children: ReactNode }) {
             <div className="journey-canvas" aria-hidden="true">
               <FieldStage
                 driver={conductor.driver}
-                glossGain={() => 0.72 * smooth01(site.travel) * (1 - smooth01((site.cross ?? 0) / 0.35))}
                 play={inView}
                 tier={tier === "lite" ? "lite" : "full"}
                 onReady={() => setFieldReady(true)}
@@ -730,6 +1010,110 @@ export function PageStage({ children }: { children: ReactNode }) {
             would trap them under the z-10 copy). Live path only: never under
             reduced motion, static tiers, deterministic QA holds, or
             ?fcine=0. */}
+        {/* THE CIRCULATION's controls sit above chapter copy while the canvas
+            stays below it. Only visible controls opt back into hit testing.
+            Live path only — static tiers read the semantic eco-stack. */}
+        {ecoHost &&
+          enabled &&
+          createPortal(
+            <div
+              className="journey-interactions"
+              ref={ecoLayerEl}
+              data-interactive={ecoInteractive ? "true" : "false"}
+              aria-hidden={!ecoKeyboardEnabled}
+              onBlur={(event) => {
+                if (!event.currentTarget.contains(event.relatedTarget as Node))
+                  setOpenEcoNode(null);
+              }}
+            >
+              {/* One quiet editorial column beside the liquid field. The
+                  systems arrive as human-readable groups: no counter, index,
+                  progress meter, spine, or simulated interface chrome. */}
+              <div className="gather-col">
+                {/* Each group takes up room only as its liquid family arrives,
+                    so the reading accumulates instead of starting as a dimmed
+                    checklist. */}
+                <ul className="gather-plate" aria-label={ecosystemLabel}>
+                {GATHER_SYSTEMS.map((sys, si) => (
+                  <li
+                    key={sys.id}
+                    className="gather-block"
+                    data-sys={sys.id}
+                    ref={(el) => {
+                      systemEls.current[si] = el;
+                    }}
+                  >
+                    <p className="gather-block-title">
+                      <span className="gather-block-name">
+                        {systems[si] ?? sys.id}
+                      </span>
+                    </p>
+                    <ul className="gather-rows">
+                      {sys.nodes.map((slot) => {
+                        const n = nodes[slot];
+                        if (!n) return null;
+                        const descriptionId = `ecosystem-node-${slot}-description`;
+                        const open = openEcoNode === slot;
+                        return (
+                          <li
+                            key={n.name}
+                            className="gather-row"
+                            data-open={open ? "true" : "false"}
+                            ref={(el) => {
+                              nodeEls.current[slot] = el;
+                            }}
+                          >
+                            <button
+                              type="button"
+                              className="gather-row-trigger"
+                              data-slot={slot}
+                              tabIndex={ecoKeyboardEnabled ? 0 : -1}
+                              aria-expanded={open}
+                              aria-controls={descriptionId}
+                              aria-describedby={descriptionId}
+                              onClick={() => setOpenEcoNode(open ? null : slot)}
+                              onPointerEnter={() => setHovSlot(slot)}
+                              onPointerLeave={() => setHovSlot(-1)}
+                              onFocus={() => setHovSlot(slot)}
+                              onBlur={() => setHovSlot(-1)}
+                            >
+                              <span className="gather-row-dot" aria-hidden="true" />
+                              <span className="gather-row-name">{n.name}</span>
+                            </button>
+                            {/* Read by AT via aria-describedby; sighted users
+                                receive the same copy in the note below. */}
+                            <span id={descriptionId} className="gather-row-cap">
+                              {n.tooltip}
+                            </span>
+                          </li>
+                        );
+                      })}
+                      </ul>
+                    </li>
+                  ))}
+                </ul>
+                {/* The business label arrives only when the bodies have fused. */}
+                <p className="gather-col-sum" aria-hidden="true">
+                  <span className="organism-center" ref={centerEl}>
+                    {centerLabel}
+                  </span>
+                </p>
+                <div className="gather-note" aria-hidden="true">
+                  {readoutSlot >= 0 && nodes[readoutSlot] ? (
+                    <>
+                      <span className="gather-note-name">
+                        {nodes[readoutSlot].name}
+                      </span>
+                      <span className="gather-note-copy">
+                        {nodes[readoutSlot].tooltip}
+                      </span>
+                    </>
+                  ) : null}
+                </div>
+              </div>
+            </div>,
+            ecoHost,
+          )}
         {/* Score-driven light stays above both story layers and below chrome. */}
         {enabled && cine && fEco === null && <CinematicVeils />}
         <div className="journey-content">{children}</div>

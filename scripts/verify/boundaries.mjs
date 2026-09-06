@@ -57,7 +57,7 @@ const browser = await chromium.launch({
   ],
 });
 const ctx = await browser.newContext({
-  viewport: { width: 900, height: 620 },
+  viewport: { width: 900, height: 760 },
   reducedMotion: "no-preference",
 });
 
@@ -187,16 +187,23 @@ const frames = await page.evaluate(() => {
 // screen. Screenshots, not canvas readback: the GL context has no
 // preserveDrawingBuffer, so drawImage() off it returns an empty buffer and
 // would report zero for a perfectly healthy render.
-const inkAt = async (label, ticks) => {
+const inkAt = async (label, selector, progress) => {
   await page.goto(`${BASE}/pt?ftier=full`, { waitUntil: "domcontentloaded" });
   await page.addStyleTag({
     content: ".cursor-ring,.cursor-dot{display:none!important}",
   });
   await page.mouse.move(450, 310);
   await page.waitForTimeout(1300);
-  for (let i = 0; i < ticks; i++) {
-    await page.mouse.wheel(0, 150);
-    await page.waitForTimeout(45);
+  // Sample named geometry, not a historical number of wheel ticks. Chapter
+  // length is authored content and changed in the S3 rebuild.
+  const y = await page.evaluate(({selector, progress}) => {
+    const el = document.querySelector(selector), r = el.getBoundingClientRect();
+    return r.top + scrollY + Math.max(0, r.height - innerHeight) * progress;
+  }, {selector, progress});
+  for (let attempt = 0; attempt < 12; attempt++) {
+    await page.mouse.wheel(0, y - await page.evaluate(() => scrollY));
+    await page.waitForTimeout(650);
+    if (Math.abs(y - await page.evaluate(() => scrollY)) < 3) break;
   }
   await page.waitForTimeout(1800);
   const shot = await page.screenshot();
@@ -229,9 +236,9 @@ const inkAt = async (label, ticks) => {
 };
 
 const ink = [];
-ink.push(await inkAt("problem (fracture)", 13));
-ink.push(await inkAt("ecosystem (gathering)", 26));
-ink.push(await inkAt("services (a form)", 44));
+ink.push(await inkAt("problem (fracture)", "#problem", 0.7));
+ink.push(await inkAt("ecosystem (connections)", ".eco-runway", 0.6));
+ink.push(await inkAt("services (a form)", ".svc-forms", 0.2));
 
 await browser.close();
 

@@ -93,6 +93,155 @@
   }
 }
 
+/* ───────────────────────────────────────────────────────────────────────────
+   THE COMPANION — the droplet that watches you fill the form in.
+   `components/contact/Companion.tsx` owns its behaviour,
+   `lib/motion/companion.mjs` owns its geometry. This owns where it sits and
+   what it is made of, and nothing else.
+
+   WHERE IT SITS. In the statement column, on the label's line, at the far end
+   of it — so it is directly above the display type and reads as belonging to
+   the sentence the visitor is answering rather than to the instrument they are
+   answering it with. Two consequences that are the reason for that choice:
+
+     · it inherits `.contact-aside`'s sticky, so from 1024 up on a tall enough
+       screen it stays in view for the whole write without a second position:
+       fixed layer, a scroll listener, or any knowledge of the page at all.
+     · it is never over the form. `app/contact.css`'s own opening argument is
+       that this is the one page where the reader is TYPING; a face on top of
+       the field they are typing into is exactly the noise that argument
+       refuses. Across the gutter it is a companion at the side of the desk.
+
+   WHAT IT IS MADE OF. `.fl-edge`'s material, verbatim: a cyan hairline over a
+   fill at 0.012, `vector-effect: non-scaling-stroke` so a sub-pixel resize can
+   never thicken the brand's hairline. The pupils are the only solid thing on
+   it, which is what makes the gaze the thing your eye locks onto.
+
+   IT FOLLOWS THE READER. Once the layer is live the CARRIER detaches to
+   `position: fixed` and springs between two targets: docked in this slot, and
+   parked at a fixed height in the viewport once the slot has scrolled away.
+   The SLOT stays in the flow at full size, so detaching never shifts the
+   layout by a pixel — and `left/top` stay at 0 with everything written into a
+   `translate3d`, so travelling is a compositor job and never a reflow.
+
+   ONLY THE SILHOUETTE TAKES THE POINTER. `.cp-body` is the one element with
+   `pointer-events`, so hovering and clicking answer the droplet's SHAPE rather
+   than its box, and the layer still cannot come between a reader and a
+   control. Everything above it stays `none`.
+
+   THERE IS NO REVEAL. The rest pose ships in the server HTML (the kernel is
+   deterministic, so the module-scope pose is byte-identical on both sides of
+   hydration) and this file animates no opacity anywhere. With JavaScript off,
+   under reduced motion, or if the kernel fails to evaluate, the still droplet
+   IS the feature: it simply stays in the flow, in its slot, because
+   `[data-companion]` — which gates BOTH the detachment and the live colour —
+   is never set.
+   ─────────────────────────────────────────────────────────────────────────── */
+.contact-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.companion {
+  /* 0 -> --color-cyan, 1 -> --color-cyan-deep. The kernel writes it; this is
+     the pre-hydration value and the reduced-motion one. */
+  --cp-chill: 0;
+  display: block;
+  flex: none;
+  /* The BOX is larger than the droplet: the viewBox carries headroom for the
+     widest state the kernel can reach — including the membrane's bulge under a
+     hand — so only about 60% of this is ink. Sized against the display type
+     beside it rather than against the label it shares a line with: at the
+     equivalent of 76px it read as timid under a 64px headline. These numbers
+     track `COMP.VIEW`; if that grows again, grow these in the same ratio or the
+     droplet silently shrinks. */
+  --cp-size: clamp(74px, 8.6vw, 108px);
+  inline-size: var(--cp-size);
+  block-size: var(--cp-size);
+  /* The layer blocks nothing. Only `.cp-body` below opts back in, so the
+     droplet answers a pointer on its own outline and nowhere else; it is
+     `aria-hidden` in the markup for the same reason. */
+  pointer-events: none;
+  /* The droplet leans and swells inside its own viewBox; the box is sized for
+     the widest state the kernel can reach, so nothing here may clip it. */
+  overflow: visible;
+}
+
+/* Pre-hydration and under reduced motion the carrier is simply in the flow,
+   filling its slot — which is why there is nothing to reveal. */
+.cp-carrier {
+  display: block;
+  inline-size: 100%;
+  block-size: 100%;
+}
+
+/* THE DETACHMENT. Gated on `[data-companion]`, so it happens only once a live
+   frame has been drawn and a transform has been written — a fixed element with
+   no coordinates yet would sit in the top-left corner for one frame, which is
+   exactly the flash this contract exists to prevent. */
+.companion[data-companion] .cp-carrier {
+  position: fixed;
+  left: 0;
+  top: 0;
+  inline-size: var(--cp-size);
+  block-size: var(--cp-size);
+  /* Its own layer: the droplet redraws every frame and travels on a transform,
+     and neither should cost the page a repaint. */
+  will-change: transform;
+  z-index: 5;
+}
+
+.cp-svg {
+  display: block;
+  inline-size: 100%;
+  block-size: 100%;
+  overflow: visible;
+  /* The whole layer's colour, mixed once and inherited by both paths — so the
+     body's hairline and the pupils can never disagree about the mood mid
+     transition, which reads as a blink with no fade in it. */
+  color: color-mix(
+    in oklab,
+    var(--color-cyan) calc((1 - var(--cp-chill)) * 100%),
+    var(--color-cyan-deep)
+  );
+}
+
+.cp-body {
+  fill: var(--color-cyan);
+  fill-opacity: 0.012;
+  stroke: currentColor;
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+
+/* THE ONE THING THAT ANSWERS A HAND. `visiblePainted` hit-tests the fill, and
+   the fill is painted (at 0.012) rather than `none`, so the target is the
+   droplet's whole disc and not just its hairline — a 1px stroke is not
+   something anybody can reliably hover. */
+.companion[data-companion] .cp-body {
+  pointer-events: visiblePainted;
+  cursor: none;
+}
+
+/* The apertures. Solid, so the gaze is the one thing on the droplet with
+   weight — an outlined eye inside an outlined body reads as two rings. */
+.cp-eye {
+  fill: currentColor;
+  fill-opacity: 0.9;
+  stroke: none;
+}
+
+/* Below the split the column is a single vertical read and the droplet sits on
+   the label's line just the same, a size down: at phone widths the statement is
+   the top of the page and a 76px droplet beside a 12px label is a mascot. */
+@media (max-width: 1023px) {
+  .companion {
+    --cp-size: 68px;
+  }
+}
+
 /* ── the statement ───────────────────────────────────────────────────────── */
 .contact-title {
   /* The column governs the measure here, not a character count: inside the

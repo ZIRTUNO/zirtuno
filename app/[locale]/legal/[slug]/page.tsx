@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { setRequestLocale, getTranslations } from "next-intl/server";
 import { routing } from "@/lib/i18n/config";
 import { Footer } from "@/components/chrome/Footer";
+import DocReveal from "@/components/motion/DocReveal";
 import {
   LEGAL_DOCS,
   LEGAL_COPY_APPROVED,
@@ -56,9 +57,25 @@ export async function generateMetadata({
 }
 
 /**
- * The legal documents the footer links to (S11). Deliberately the plainest
- * page on the site: no liquid, no PageStage, no chapter choreography — the
- * reader is here to read terms, and the field would be noise over them.
+ * The legal documents the footer links to (S11). Still the plainest page on
+ * the site — no liquid, no PageStage, no chapter choreography — but the
+ * composition and the one gesture it does have are now a port of
+ * upsunday.co/terms.html, which is the owner's model for this experience.
+ *
+ * The structure that port asks for, and which the old markup did not have:
+ *
+ *   · a HEAD BLOCK closed by a hairline rule, so the eyebrow/title/lede/date
+ *     read as a masthead instead of as the document's first four paragraphs;
+ *   · a NUMBERED body, counted in CSS so the i18n copy stays free of ordinals
+ *     (they would have to be renumbered by hand in two locales otherwise);
+ *   · one reveal per section and none on the head — the title is simply there
+ *     when you land. `DocReveal` owns it, on GSAP + ScrollTrigger, the same
+ *     way the reference's own bundle does.
+ *
+ * Neither data attribute is decoration. `data-reveal` is what the layout's
+ * <noscript> block keys off to unhide everything when JS is off;
+ * `data-doc-armed` is the pre-hydration resting state, which `DocReveal`
+ * removes the moment its tweens exist.
  */
 export default async function LegalPage({
   params,
@@ -75,37 +92,43 @@ export default async function LegalPage({
 
   return (
     <>
-      <main
-        id="content"
-        className="page-x min-h-svh pb-[var(--space-section)] pt-[calc(var(--topbar-h)+3rem)]"
-      >
-        <div className="legal-doc">
-          <p className="chapter-label">{t("chapterLabel")}</p>
-          <h1 className="type-page-title mt-[var(--type-space-label-title)] text-paper">
-            {t(`docs.${doc.key}.title`)}
-          </h1>
-          <p className="type-lead-copy mt-[var(--type-space-title-lead)]">
-            {t(`docs.${doc.key}.summary`)}
-          </p>
-          <p className="legal-updated">
-            {t("updated", { date: t(`docs.${doc.key}.updated`) })}
-          </p>
-
-          {!LEGAL_COPY_APPROVED && (
-            <p className="legal-notice" role="note">
-              {t("draftNotice")}
+      {/* No `.page-x`: the reference's `.legal` centres its own fixed column
+          against the viewport, so `.legal-doc` owns the width and the gutters
+          and a shell inset on top of it would double them. */}
+      <main id="content" className="legal-page min-h-svh">
+        <div className="legal-doc" data-doc-armed="">
+          <header className="legal-head">
+            <p className="chapter-label">{t("chapterLabel")}</p>
+            <h1 className="legal-title">{t(`docs.${doc.key}.title`)}</h1>
+            <p className="legal-lede">{t(`docs.${doc.key}.summary`)}</p>
+            <p className="legal-updated">
+              {t("updated", { date: t(`docs.${doc.key}.updated`) })}
             </p>
-          )}
 
-          {sections.map((section) => (
-            <section key={section.heading} className="legal-section">
-              <h2 className="legal-heading">{section.heading}</h2>
-              <p className="legal-body">{section.body}</p>
-            </section>
-          ))}
+            {!LEGAL_COPY_APPROVED && (
+              <p className="legal-notice" role="note">
+                {t("draftNotice")}
+              </p>
+            )}
+          </header>
+
+          <div className="legal-body-sections">
+            {sections.map((section) => (
+              <section
+                key={section.heading}
+                className="legal-section"
+                data-reveal=""
+                data-doc-reveal=""
+              >
+                <h2 className="legal-heading">{section.heading}</h2>
+                <p className="legal-body">{section.body}</p>
+              </section>
+            ))}
+          </div>
 
           <p className="legal-contact">{t("contactLine")}</p>
         </div>
+        <DocReveal />
       </main>
       <Footer />
     </>

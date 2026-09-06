@@ -1545,11 +1545,7 @@ body:has(.liquid-journey) .aura {
   pointer-events: none;
   overflow: hidden;
 }
-.journey-interactions {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-}
+
 @supports (height: 100svh) {
   .journey-layer {
     height: 100svh;
@@ -1649,9 +1645,6 @@ body:has(.liquid-journey) .aura {
     .name-word,
     .name-word-text,
     .manifesto-line,
-    .eco-stack-name,
-    .eco-stack-cap,
-    .eco-stack-center,
     .founding-pillar
   ),
 .side-index-num {
@@ -1859,11 +1852,7 @@ body:has(.liquid-journey) .aura {
     max-width: 100%;
   }
 
-  /* the stack's cyan spine would be cut by the per-item apertures — it moves
-     in front of them so the ecosystem still reads as ONE connected list */
-  .liquid-journey #ecosystem .eco-stack::before {
-    z-index: 1;
-  }
+
 }
 
 /* ===========================================================================
@@ -1902,172 +1891,6 @@ body:has(.liquid-journey) .aura {
   );
   opacity: var(--cine-vig, 0);
 }
-/* S4's converge runway — the scroll distance the liquid choreography is
-   scrubbed across (no pins; the sticky layer holds the stage).
-   R5-E shortened it: at 230vh the reader crossed a full desktop viewport, and
-   several narrow ones, that carried liquid and no ecosystem explanation. The
-   choreography is scrubbed, so it is unchanged in shape — only in duration. */
-/* ── S3 THE GATHERING · AN EDITORIAL BREATH ─────────────────────────────────
-   No card, equation, chapter numeral, or decorative register. The section
-   opens with one concrete relationship and enough empty space for it to land;
-   the liquid carries the visual explanation in the runway below. */
-.gather-intro {
-  position: relative;
-  z-index: 1;
-  overflow: clip;
-  padding-top: clamp(7rem, 16vh, 10rem);
-  padding-bottom: clamp(4rem, 10vh, 7rem);
-}
-.gather-intro-composition {
-  position: relative;
-  display: grid;
-  grid-template-columns: repeat(12, minmax(0, 1fr));
-  gap: clamp(1rem, 2vw, 2rem);
-  min-height: min(46rem, 78svh);
-  grid-template-rows: auto 1fr auto;
-}
-.gather-eyebrow {
-  position: relative;
-  z-index: 1;
-  grid-column: 1 / 5;
-  grid-row: 1;
-}
-.gather-intro-copy {
-  position: relative;
-  z-index: 1;
-  grid-column: 1 / 11;
-  grid-row: 2;
-  align-self: end;
-  padding-top: clamp(5rem, 14vh, 9rem);
-}
-.gather-claim {
-  max-width: 16ch;
-  color: var(--color-paper);
-  text-wrap: balance;
-}
-.gather-intro-lead-wrap {
-  position: relative;
-  z-index: 1;
-  grid-column: 8 / -1;
-  grid-row: 3;
-  margin-top: clamp(3rem, 8vh, 5.5rem);
-}
-.gather-intro-lead {
-  max-width: 31rem;
-  color: var(--color-paper-lead);
-  text-wrap: pretty;
-}
-.gather-outro {
-  position: relative;
-  z-index: 1;
-  padding-top: clamp(5rem, 13vh, 9rem);
-  padding-bottom: clamp(6rem, 16vh, 11rem);
-}
-.gather-resolution {
-  margin-left: 8.333%;
-}
-.gather-resolution-line {
-  max-width: 27ch;
-  font-family: var(--font-sans);
-  font-size: var(--text-display-m);
-  font-weight: 500;
-  line-height: var(--text-display-m--line-height);
-  letter-spacing: var(--text-display-m--letter-spacing);
-  color: var(--color-paper);
-  text-wrap: balance;
-}
-.gather-outro .eco-stack {
-  margin-top: clamp(4rem, 10vh, 6.5rem);
-}
-.gather-actions {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 1rem 2rem;
-  margin-top: clamp(2.5rem, 7vh, 4.5rem);
-}
-@media (max-width: 767px) {
-  .gather-intro {
-    padding-top: clamp(6rem, 14vh, 8rem);
-  }
-  .gather-intro-composition {
-    grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: auto;
-    min-height: auto;
-  }
-  .gather-eyebrow,
-  .gather-intro-copy,
-  .gather-intro-lead-wrap {
-    grid-column: 1;
-    grid-row: auto;
-  }
-  .gather-intro-copy {
-    padding-top: clamp(4.5rem, 13vh, 7rem);
-  }
-  .gather-claim {
-    max-width: 15ch;
-  }
-  .gather-intro-lead-wrap {
-    margin-top: clamp(2.5rem, 8vh, 4rem);
-  }
-  .gather-resolution {
-    margin-left: 0;
-  }
-}
-
-.eco-runway {
-  position: relative;
-  /* The gather clock is (-top / (height - vh)), so this height IS the pacing.
-     The circuit assembled in 65vh of travel because drawing lines is quick;
-     ten masses crossing the dark in three beats is not, and at that distance
-     the whole convergence flashed past inside a single trackpad flick. ~3.5
-     viewports gives each system beat roughly a screen of its own. */
-  height: 320vh;
-}
-@media (max-width: 767px) {
-  .eco-runway {
-    height: 130vh;
-  }
-}
-.ecosystem-interactions-host {
-  position: sticky;
-  top: 0;
-  z-index: 12;
-  height: 100vh;
-  overflow: hidden;
-  pointer-events: none;
-}
-@supports (height: 100svh) {
-  .ecosystem-interactions-host {
-    height: 100svh;
-  }
-}
-.eco-runway .organism-fallback {
-  position: sticky;
-  top: 25vh;
-  width: 36vmin;
-  height: 50vh;
-  margin-inline: auto;
-  display: grid;
-  place-items: center;
-}
-.liquid-journey[data-liquid="static"] .eco-runway {
-  height: auto;
-  padding-block: clamp(3rem, 10vw, 6rem);
-}
-.liquid-journey[data-liquid="static"] .ecosystem-interactions-host {
-  display: none;
-}
-.liquid-journey[data-liquid="static"] .eco-runway .organism-fallback {
-  position: relative;
-  top: auto;
-  width: clamp(12rem, 36vmin, 22rem);
-  height: auto;
-  /* THE CONFLUENCE is authored in cloud space, which is square — the old ratio
-     was the Zirtuno mark's own artboard. */
-  aspect-ratio: 1;
-}
-
 /* R6 — each symptom is a STATEMENT, not a list row.
    Every shard already owns 13–18vh of scroll (one notch of the fracture), so
    it was being given the space of a moment and the typography of a bullet.
@@ -2132,301 +1955,7 @@ body:has(.liquid-journey) .aura {
   text-wrap: pretty;
 }
 
-/* ===========================================================================
-   S3 · THE GATHERING — QUIET TYPE, LIVING FIELD.
 
-   The liquid owns the right-hand field. The type sits in the left gutter as
-   three plain-language groups, with no register, meter, frame, or numerical
-   notation. --eco-grow still gives the liquid and its words the same arrival
-   clock; --eco-fuse lets the names step back when the body becomes whole.
-   =========================================================================== */
-.gather-col {
-  --gc-row: max(34px, 3vh);
-  position: absolute;
-  left: var(--page-padding, 3rem);
-  top: clamp(5rem, 11vh, 6.5rem);
-  width: clamp(18rem, 25vw, 25rem);
-  display: none;
-  opacity: var(--eco-fade, 1);
-  transition: opacity 320ms var(--ease-arrive);
-}
-/* the gathering needs real room — below lg the eco-stack carries the
-   capabilities instead (in-app browsers and tablets included) */
-@media (min-width: 1024px) {
-  .gather-col {
-    display: block;
-  }
-}
-.gather-plate {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-/* Groups take up room only as their corresponding liquid families arrive. */
-.gather-block {
-  --e: clamp(0, (var(--eco-grow, 0) - var(--d, 0)) / var(--w, 1), 1);
-  overflow: hidden;
-  max-height: calc(clamp(0, var(--e) * 1.35, 1) * 24rem);
-  margin-bottom: calc(var(--e) * clamp(1.15rem, 2.8vh, 1.9rem));
-  opacity: calc(var(--e) * (1 - 0.42 * var(--eco-fuse, 0)));
-  transition: opacity 320ms var(--ease-arrive);
-}
-.journey-interactions[data-pulse="true"] .gather-block {
-  transition-delay: var(--pd, 0ms);
-}
-
-.gather-block-title {
-  --r: clamp(0, (var(--eco-grow, 0) - var(--d, 0)) / (var(--w, 1) * 0.34), 1);
-  display: block;
-  overflow: hidden;
-  margin: 0 0 0.45rem;
-}
-.gather-block-name {
-  display: block;
-  font-family: var(--font-sans);
-  font-size: var(--text-body-l);
-  font-weight: 550;
-  line-height: var(--text-body-l--line-height);
-  letter-spacing: var(--text-body-l--letter-spacing);
-  color: var(--color-paper);
-  transform: translateY(calc((1 - var(--r, 1)) * 105%));
-}
-
-.gather-rows {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-.gather-row {
-  --e: clamp(0, (var(--eco-grow, 0) - var(--d, 0)) / var(--w, 1), 1);
-  position: relative;
-  opacity: var(--e);
-  transform: translateY(calc((1 - var(--e)) * 0.55rem));
-  transition:
-    opacity 300ms var(--ease-arrive),
-    transform 300ms var(--ease-arrive);
-}
-.journey-interactions[data-interactive="true"] .gather-row {
-  pointer-events: auto;
-}
-.journey-interactions[data-pulse="true"] .gather-row {
-  transition-delay: var(--pd, 0ms);
-}
-.gather-row:focus-within {
-  opacity: 1 !important;
-}
-
-.gather-row-trigger {
-  position: relative;
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  width: 100%;
-  min-height: var(--gc-row);
-  padding: 0.28rem 0;
-  border: 0;
-  background: none;
-  color: inherit;
-  text-align: left;
-  cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
-}
-.gather-row-trigger:focus-visible {
-  outline-offset: 3px;
-}
-.gather-row-dot {
-  flex: none;
-  width: 0.34rem;
-  height: 0.34rem;
-  border-radius: 50%;
-  background: var(--color-cyan);
-  opacity: 0.28;
-  transform: scale(0.62);
-  transition:
-    opacity 220ms var(--ease-arrive),
-    transform 220ms var(--ease-arrive);
-}
-.gather-row-name {
-  font-family: var(--font-sans);
-  font-size: var(--text-body);
-  font-weight: 450;
-  line-height: var(--text-body--line-height);
-  letter-spacing: var(--text-body--letter-spacing);
-  color: var(--color-paper-mute);
-  transition: color 220ms var(--ease-arrive);
-}
-.gather-row:hover .gather-row-name,
-.gather-row:focus-within .gather-row-name,
-.gather-row[data-open="true"] .gather-row-name {
-  color: var(--color-paper);
-}
-.gather-row:hover .gather-row-dot,
-.gather-row:focus-within .gather-row-dot,
-.gather-row[data-open="true"] .gather-row-dot {
-  opacity: 1;
-  transform: scale(1);
-}
-.journey-interactions[data-pulse="true"] .gather-row-name {
-  color: var(--color-paper);
-  transition-delay: var(--pd, 0ms);
-}
-/* the capability line reaches AT through aria-describedby; sighted users
-   read the same words in the column's readout */
-.gather-row-cap {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip-path: inset(50%);
-  white-space: nowrap;
-}
-
-.gather-col-sum {
-  margin: 0.15rem 0 0;
-  overflow: hidden;
-  max-height: calc(var(--eco-fuse, 0) * 4rem);
-}
-.organism-center {
-  display: block;
-  font-family: var(--font-mono);
-  font-size: var(--text-mono-sm);
-  font-weight: 500;
-  line-height: var(--text-mono-sm--line-height);
-  letter-spacing: var(--text-mono-sm--letter-spacing);
-  color: var(--color-cyan);
-  transform: translateY(calc((1 - var(--eco-fuse, 0)) * 105%));
-}
-
-/* A quiet editorial note, never an instrument panel. */
-.gather-note {
-  display: flex;
-  flex-direction: column;
-  gap: 0.2rem;
-  margin-top: clamp(0.9rem, 2.2vh, 1.4rem);
-  min-height: 3rem;
-  max-width: 22rem;
-  opacity: calc(
-    clamp(0, (var(--eco-grow, 0) - 0.1) / 0.18, 1) * var(--eco-fade, 1)
-  );
-  pointer-events: none;
-}
-.gather-note-name {
-  font-family: var(--font-sans);
-  font-size: var(--text-body-s);
-  font-weight: 600;
-  line-height: var(--text-body-s--line-height);
-  letter-spacing: var(--text-body-s--letter-spacing);
-  color: var(--color-paper);
-}
-.gather-note-copy {
-  font-family: var(--font-sans);
-  font-size: var(--text-body-s);
-  line-height: var(--text-body-s--line-height);
-  letter-spacing: var(--text-body-s--letter-spacing);
-  color: var(--color-paper-mute);
-  text-wrap: pretty;
-}
-
-/* Compact stages preserve the same reading order and pointer target floor. */
-@media (min-width: 1024px) and (max-height: 880px) {
-  .gather-col {
-    --gc-row: max(26px, 2.4vh);
-  }
-  .gather-block-title {
-    margin-bottom: 0.35rem;
-  }
-  .gather-note {
-    min-height: 2.4rem;
-  }
-}
-@media (min-width: 1024px) and (max-height: 800px) {
-  .gather-col {
-    --gc-row: max(24px, 2.2vh);
-  }
-  .gather-row-trigger {
-    padding-block: 0.18rem;
-  }
-  .gather-block {
-    margin-bottom: calc(var(--e) * 0.6rem);
-  }
-  .gather-block-title {
-    margin-bottom: 0.25rem;
-  }
-  .gather-note {
-    margin-top: 0.6rem;
-    min-height: 1.9rem;
-  }
-}
-
-
-/* Narrow and static tiers read as an authored document, grouped by meaning. */
-.eco-stack {
-  display: grid;
-  gap: clamp(2.5rem, 7vw, 4rem);
-  max-width: 46rem;
-}
-@media (min-width: 1024px) {
-  [data-liquid="live"] .eco-stack {
-    display: none;
-  }
-}
-.eco-stack-group {
-  display: grid;
-  gap: 1.25rem;
-}
-.eco-stack-system {
-  margin: 0;
-  font-family: var(--font-sans);
-  font-size: var(--text-title);
-  font-weight: 600;
-  line-height: var(--text-title--line-height);
-  letter-spacing: var(--text-title--letter-spacing);
-  color: var(--color-paper);
-}
-.eco-stack-items {
-  display: grid;
-  gap: 1.15rem;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-.eco-stack-center {
-  margin: 0;
-  font-family: var(--font-sans);
-  font-size: var(--text-title);
-  font-weight: 600;
-  line-height: var(--text-title--line-height);
-  letter-spacing: var(--text-title--letter-spacing);
-  color: var(--color-cyan);
-}
-.eco-stack-item {
-  display: flex;
-  flex-direction: column;
-  gap: 0.2rem;
-}
-.eco-stack-name {
-  font-size: var(--text-body-l);
-  font-weight: 550;
-  line-height: var(--text-body-l--line-height);
-  letter-spacing: var(--text-body-l--letter-spacing);
-  color: var(--color-paper);
-}
-.eco-stack-cap {
-  font-size: var(--text-body);
-  line-height: var(--text-body--line-height);
-  letter-spacing: var(--text-body--letter-spacing);
-  color: var(--color-paper-mute);
-}
-@media (min-width: 640px) and (max-width: 1023px) {
-  .eco-stack-group {
-    grid-template-columns: minmax(10rem, 0.75fr) minmax(0, 1.5fr);
-    align-items: start;
-  }
-  .eco-stack-center {
-    margin-left: calc(33.333% + 0.85rem);
-  }
-}
 
 /* ===========================================================================
    The Services — pillar entries (S5)
@@ -5385,30 +4914,121 @@ html[data-nav-open] .nav-sheet-cta {
 }
 
 /* ===========================================================================
-   LEGAL DOCUMENTS (S11) — the plainest pages on the site
+   LEGAL DOCUMENTS (S11) — a literal port of upsunday.co/terms.html
    ---------------------------------------------------------------------------
-   No liquid, no chapter choreography, no display type. A reader here is
-   reading terms, and every device this site uses to make the homepage feel
-   alive would be noise over them. One measure, generous leading, and the
-   mono/cyan label voice kept only for structure.
+   Every length below is the reference's own declaration, not an approximation
+   of it. Verified against the live page at 1280/1440/1920/768/390 with
+   `scratchpad/ref-measure.mjs`; the assertions in `scripts/verify/legal.mjs`
+   re-check them, so a drift here fails rather than merely looks different.
+
+   THE ONE THING THAT IS COUNTER-INTUITIVE, AND LOAD-BEARING
+
+   This page is NOT fluid the way the rest of the reference (and the rest of
+   R7) is. Measured across the desktop band:
+
+     width    column     title      lede      h2        body     chars/line
+      1280    1070px     76.8px    19.2px    18.5px    16.5px       130
+      1440    1070px     86.4px    21.6px    18.5px    16.5px       130
+      1920    1070px    115.2px    28.8px    18.5px    16.5px       130
+
+   The column is a FIXED 1070px and the reading tiers are FIXED px. Only the
+   title (6vw) and the lede (1.5vw) scale. That is the whole mechanism: the
+   measure is constant at 130 characters at every desktop width because the
+   column and the text are frozen together, and the page stays composed because
+   the two display tiers keep growing into the whitespace either side.
+
+   So the column and the 16.5px body are ONE decision, not two. Taking the site
+   shell (75.24vw) with the same fixed body would run 175 characters at 1920;
+   taking the shell with vw-scaled body — which is what the first pass did —
+   coincides with the reference at 1440 and diverges everywhere else. Both are
+   worse than taking the pair. `--legal-column` is the single dial if this ever
+   needs to go back to the shell; move the body tier with it if you do.
+
+   This is the one place on the site with a content width that is not
+   `--shell-w`, which is a deliberate exception to the shell rule (R7) and the
+   reason it is spelled out here.
+
+   WHAT STAYS ZIRTUNO
+
+   Colour and face only. The reference is near-black on a white-to-peach wash
+   with a sage eyebrow and a rounded display face; this is paper on ink with
+   the cyan accent, Bricolage for display and Geist for reading. Its body sits
+   at 74% black — on ink that opacity would reproduce exactly the "grey small
+   text" R6 was written to remove, so the reading tiers take their nearest
+   Zirtuno rung (`--color-paper-lead`) rather than the reference's alpha.
+   Every metric — size, leading, tracking, spacing, measure — is the
+   reference's.
    =========================================================================== */
+
+/* `max(120px, 8.42vw) 0 max(80px, 6.32vw)` on the reference, whose nav clears
+   at 85px on a 1440. Zirtuno's bar is taller (--topbar-h ≈ 103px there), so the
+   top takes whichever is larger: the reference's own figure, or the bar plus
+   the ~28px of air the reference leaves under its own nav. Below ~1500 that is
+   the bar term; above it, the reference's. */
+.legal-page {
+  padding-top: max(calc(var(--topbar-h) + 1.75rem), 8.42vw);
+  padding-bottom: max(80px, 6.32vw);
+}
+
 .legal-doc {
-  max-width: var(--measure-reading);
+  /* min(1070px, 100% - 2*max(24px, 4.5vw)) — the reference verbatim. `100%` is
+     the viewport here, which is why `main` does NOT wear `.page-x`: the column
+     centres itself exactly as `.legal` does inside the reference's body. */
+  --legal-column: min(1070px, 100% - 2 * max(24px, 4.5vw));
+  width: var(--legal-column);
+  margin-inline: auto;
+}
+
+/* ── HEAD ──────────────────────────────────────────────────────────────── */
+.legal-head {
+  border-bottom: 1px solid var(--color-paper-faint);
+  padding-bottom: max(28px, 2.11vw);
+  margin-bottom: max(32px, 2.63vw);
+}
+/* The reference's eyebrow is 14px / .08em / uppercase / 14px above the title,
+   in its accent. `.chapter-label` is Zirtuno's eyebrow and already carries the
+   .08em and the uppercase; only the size is restated. */
+.legal-doc .chapter-label {
+  font-size: 14px;
+  letter-spacing: 0.08em;
+}
+.legal-title {
+  margin-top: 14px;
+  font-family: var(--font-grotesk);
+  font-size: max(40px, 6vw);
+  font-weight: 600;
+  line-height: 1.02;
+  letter-spacing: -0.03em;
+  color: var(--color-paper);
+  text-wrap: balance;
+}
+/* Full width and uncapped: on the reference the lede runs the whole column and
+   only SIZE separates it from the body. `.type-lead-copy` would cap it at
+   `--measure-lead`, which made it narrower than the paragraphs under it. */
+.legal-lede {
+  margin-top: 24px;
+  font-family: var(--font-sans);
+  font-size: max(17px, 1.5vw);
+  line-height: 1.6;
+  letter-spacing: var(--text-lead--letter-spacing);
+  color: var(--color-paper-lead);
+  text-wrap: pretty;
 }
 .legal-updated {
-  margin-top: 1.5rem;
+  margin-top: 14px;
   font-family: var(--font-mono);
-  font-size: var(--text-mono-sm);
+  font-size: 15px;
   font-weight: 500;
-  line-height: var(--text-mono-sm--line-height);
+  line-height: 1.4;
   letter-spacing: var(--tracking-label);
   text-transform: uppercase;
   color: var(--color-paper-soft);
 }
-/* Reads as a standing caveat, not an error: cyan rail, no warn red. The copy
-   is honest scaffolding, and dressing it as a fault would overstate it. */
+/* Zirtuno-only: the standing caveat while the copy is unreviewed. Cyan rail,
+   no warn red — the text is honest scaffolding and dressing it as a fault
+   would overstate it. Sized to the reading tier so it sits in the document. */
 .legal-notice {
-  margin-top: 2rem;
+  margin-top: 20px;
   border-left: 2px solid var(--color-cyan);
   padding: 0.875rem 0 0.875rem 1.25rem;
   background: linear-gradient(
@@ -5416,37 +5036,158 @@ html[data-nav-open] .nav-sheet-cta {
     rgba(0, 227, 254, 0.07),
     rgba(0, 227, 254, 0) 70%
   );
-  font-size: var(--text-body-s);
-  line-height: var(--text-body-s--line-height);
+  font-size: 16.5px;
+  line-height: 1.7;
   color: var(--color-paper-lead);
 }
+
+/* ── BODY ──────────────────────────────────────────────────────────────── */
+.legal-body-sections {
+  counter-reset: legal-section;
+}
+/* margin-BOTTOM, as the reference has it: the first section then sits exactly
+   `.legal-head`'s margin-bottom below the rule (38px at 1440) by collapsing,
+   and consecutive sections sit 30px apart. Giving `.legal-body-sections` a
+   padding, border or `overflow` would open a block formatting context, stop
+   that collapse and silently add 30px under the rule. */
 .legal-section {
-  margin-top: clamp(2.25rem, 4vw, 3rem);
+  counter-increment: legal-section;
+  margin-bottom: max(28px, 2.11vw);
 }
 .legal-heading {
-  font-family: var(--font-mono);
-  font-size: var(--text-mono);
-  font-weight: 500;
-  line-height: var(--text-mono--line-height);
-  letter-spacing: var(--tracking-label);
-  text-transform: uppercase;
+  margin-bottom: 12px;
+  font-family: var(--font-grotesk);
+  font-size: 18.5px;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  text-transform: none;
+  color: var(--color-paper);
+}
+/* The reference numbers its sections in the heading itself ("1. Acceptance of
+   Terms"). Counted in CSS so the i18n copy carries no ordinals — they would
+   otherwise have to be renumbered by hand in two locales. The numeral is the
+   one place the accent belongs in the body: structural, echoing the chapter
+   label's cyan rule, and it keeps the prose monochrome. */
+.legal-heading::before {
+  content: counter(legal-section) ".";
+  margin-right: 0.45ch;
   color: var(--color-cyan);
+  font-variant-numeric: tabular-nums lining-nums;
 }
 .legal-body {
-  margin-top: 0.875rem;
-  font-size: var(--text-body);
-  line-height: var(--text-body--line-height);
-  letter-spacing: var(--text-body--letter-spacing);
+  font-size: 16.5px;
+  line-height: 1.7;
   color: var(--color-paper-lead);
+  text-wrap: pretty;
 }
+.legal-body + .legal-body {
+  margin-top: 14px;
+}
+.legal-body a {
+  color: var(--color-paper);
+  text-decoration: underline;
+  text-decoration-thickness: from-font;
+  text-underline-offset: 2px;
+  transition: opacity 0.2s;
+}
+.legal-body a:hover {
+  opacity: 0.65;
+}
+/* Zirtuno-only closing line. The reference ends on its last numbered section. */
 .legal-contact {
-  margin-top: clamp(3rem, 6vw, 4.5rem);
+  margin-top: max(28px, 2.11vw);
   border-top: 1px solid var(--color-paper-faint);
-  padding-top: 1.75rem;
-  font-size: var(--text-body-s);
-  line-height: var(--text-body-s--line-height);
+  padding-top: max(28px, 2.11vw);
+  font-size: 15px;
+  line-height: 1.7;
   color: var(--color-paper-soft);
 }
+
+/* ── ENTRANCE ──────────────────────────────────────────────────────────────
+   GSAP owns the motion (see `components/motion/DocReveal.tsx`) — this is only
+   the pre-hydration resting state, so the sections do not flash in before the
+   tweens are built. `DocReveal` drops `data-doc-armed` the instant it has
+   created them, after which GSAP's inline styles hold the hidden state and
+   these rules are inert; `clearProps` at the end of each tween then leaves the
+   section with no inline styles at all.
+
+   Not a CSS transition, deliberately. The reference eases on `power3.out`,
+   which is GSAP's QUART out — 1−(1−t)⁴ — and the cubic-bezier commonly quoted
+   for it, (.165,.84,.44,1), is wrong by up to 4.4% with the error concentrated
+   in the first 200ms: at t=0.10 it reads 0.388 against the true 0.344. That is
+   the part of the gesture you actually watch, so the ease is taken from GSAP
+   itself rather than approximated. `scratchpad/ease-check.mjs` has the table.
+
+   Degrades twice over: `[data-reveal]` in the layout's <noscript> block unhides
+   everything with JS off, and the reduced-motion query below unhides it with
+   JS on. Content is never behind motion (S1.14). */
+[data-doc-armed] [data-doc-reveal] {
+  opacity: 0;
+  transform: translateY(30px);
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-doc-armed] [data-doc-reveal] {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (width <= 768px) {
+  /* The reference re-breaks onto vw at 768 and Zirtuno's shell re-breaks at the
+     same width, where `--page-padding` computes to 2.995vw — the reference's
+     own `--side-pad` — so the mobile column is the same 94.01vw on both. */
+  .legal-page {
+    padding-top: max(calc(var(--topbar-h) + 1.75rem), 25.2vw);
+    padding-bottom: 2.6vw;
+  }
+  .legal-doc {
+    --legal-column: calc(100% - 2 * var(--page-padding));
+  }
+  .legal-doc .chapter-label {
+    font-size: 3.256vw;
+  }
+  .legal-head {
+    padding-bottom: 7.9vw;
+    margin-bottom: 9.77vw;
+  }
+  .legal-title {
+    margin-top: 3.256vw;
+    font-size: 9.302vw;
+  }
+  .legal-lede {
+    margin-top: 5.581vw;
+    font-size: 3.953vw;
+  }
+  .legal-updated {
+    margin-top: 3.256vw;
+    font-size: 3.488vw;
+  }
+  .legal-notice {
+    margin-top: 4.65vw;
+    font-size: 3.837vw;
+  }
+  .legal-section {
+    margin-bottom: 7.9vw;
+  }
+  .legal-heading {
+    margin-bottom: 2.79vw;
+    font-size: 4.302vw;
+  }
+  .legal-body {
+    font-size: 3.837vw;
+  }
+  .legal-body + .legal-body {
+    margin-top: 3.256vw;
+  }
+  .legal-contact {
+    margin-top: 7.9vw;
+    padding-top: 7.9vw;
+    font-size: 3.488vw;
+  }
+}
+
+
 
 /* ===========================================================================
    CAREERS (S11) — Trabalhe Conosco / Work with us

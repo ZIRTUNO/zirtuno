@@ -85,7 +85,7 @@ const browser = await chromium.launch(LAUNCH);
   await page.waitForFunction(
     () =>
       document.querySelector(".liquid-journey")?.dataset.liquid === "live" &&
-      document.querySelector(".gather-row-trigger")?.tabIndex === 0,
+      document.querySelector("[data-eco-live]") !== null,
     { timeout: 40000 },
   );
   // Element-agnostic on purpose: an intent CTA renders as `<a>` when it has
@@ -97,33 +97,28 @@ const browser = await chromium.launch(LAUNCH);
   await page.keyboard.press("Tab");
   await page.waitForTimeout(1000);
   const first = await page.evaluate(() => ({
-    trigger: document.activeElement?.classList.contains(
-      "gather-row-trigger",
-    ),
+    trigger: document.activeElement?.matches(".eco-capability summary, [data-eco-step]"),
     label: document.activeElement?.textContent?.trim(),
     visible:
       document.activeElement instanceof HTMLElement &&
-      Number(
-        getComputedStyle(document.activeElement.closest(".gather-row"))
-          .opacity,
-      ) > 0.9,
+      !document.activeElement.closest("[inert]") &&
+      document.activeElement.getBoundingClientRect().top >= 0 &&
+      document.activeElement.getBoundingClientRect().bottom <= innerHeight,
   }));
   check(
     first.trigger && first.visible,
-    "Tab from Problem reaches a visible orbit control and retains focus",
+    "Tab from Problem reaches a visible Ecosystem control and retains focus",
     JSON.stringify(first),
   );
   await page.keyboard.press("Tab");
   await page.waitForTimeout(600);
   const second = await page.evaluate(() => ({
-    trigger: document.activeElement?.classList.contains(
-      "gather-row-trigger",
-    ),
+    trigger: document.activeElement?.matches(".eco-capability summary, [data-eco-step]"),
     label: document.activeElement?.textContent?.trim(),
   }));
   check(
     second.trigger && second.label !== first.label,
-    "orbit controls remain sequential after focus-driven scrolling",
+    "Ecosystem controls remain sequential after focus-driven scrolling",
     JSON.stringify(second),
   );
   await ctx.close();

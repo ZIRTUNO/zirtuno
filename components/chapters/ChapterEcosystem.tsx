@@ -1,131 +1,70 @@
 import { useTranslations } from "next-intl";
-import { Reveal } from "@/components/ui/Reveal";
 import { WetType } from "@/components/ui/WetType";
 import { ConfluenceMark } from "@/components/chapters/ConfluenceMark";
 import { CtaStructure } from "@/components/chrome/CtaButton";
 import { GATHER_SYSTEMS } from "@/lib/webgl/gathering.mjs";
 
-type Node = { name: string; tooltip: string };
-
-/**
- * S3 · THE GATHERING — the ecosystem as a convergence in depth.
- *
- * The Problem leaves the liquid fractured and scattered. This chapter is the
- * answer, and it is told by the liquid rather than beside it: the same
- * fragments are drawn forward out of the dark, arrive in their three systems,
- * and fuse into one body. Nothing is drawn between them — the claim is that
- * they stop being separate, and a diagram of boxes and lines would quietly
- * argue the opposite.
- *
- * The chapter contributes: the opening claim, the RUNWAY (the scroll distance
- * the gathering is scrubbed across — no pins), a closing line that only makes
- * sense once the body is whole, and the semantic capability stack for narrow
- * viewports, assistive tech and static tiers. Copy is server-rendered (RSC).
- *
- * What the gathering RESOLVES INTO is THE CONFLUENCE (lib/webgl/confluence.mjs)
- * — three arms of liquid running in from the three systems and merging into one
- * core, made of the same 48 droplets that carried them. It is not the Zirtuno
- * mark and there is no vector behind it; the static fallback below draws the
- * same stations rather than a different symbol.
- *
- * The live capability names and system markers are portalled into the sticky
- * layer by PageStage, so they can ride the liquid masses in its pixel space.
- */
+/** S3: a continuous, scroll-composed story. Every word and disclosure is RSC.
+ * PageStage enhances this document with one sampled GSAP score; the existing
+ * field renders the currents. No mounted second canvas or mobile text substitute. */
 export function ChapterEcosystem() {
   const t = useTranslations("ecosystem");
-  const nodes = t.raw("nodes") as Node[];
-  const systems = t.raw("systems") as Record<string, string>;
-
+  const nodes = t.raw("nodes") as { name: string; tooltip: string }[];
+  const chapters = t.raw("chapters") as { title: string; copy: string }[];
   return (
-    <section id="ecosystem" data-chapter className="relative">
-      {/* A plain-language opening. The business relationship comes first; the
-          runway then lets the liquid demonstrate it without a diagram or an
-          invented layer of system notation. */}
-      <div className="page-x gather-intro">
-        <div className="gather-intro-composition">
-          <Reveal inView as="p" className="chapter-label gather-eyebrow">
-            {t("chapterLabel")}
-          </Reveal>
-
-          {/* Bricolage display type is liquid GLASS at 768px and up — the
-              glyphs are cut out of --liquid-glass-fill by this block's own
-              background-clip:text. paint="glass" is what lets the front travel
-              THROUGH that fill instead of painting over it: the word veils the
-              slab and clears to nothing on arrival, so the resting headline is
-              exactly the one that shipped before. */}
-          <div className="gather-intro-copy">
-            <WetType
-              as="h2"
-              paint="glass"
-              className="type-section-title gather-claim"
-            >
-              {t("headline")}
-            </WetType>
-          </div>
-
-          <div className="gather-intro-lead-wrap">
-            <WetType as="p" className="type-lead-copy gather-intro-lead">
-              {t("lead")}
-            </WetType>
-          </div>
-        </div>
-      </div>
-
-      {/* The runway — the scroll distance the gathering plays across. The
-          sticky liquid layer owns everything visible here; static tiers get
-          the resolved mark instead. */}
+    <section id="ecosystem" data-chapter aria-label={t("headline")}>
+      <header className="eco-intro page-x">
+        <p className="chapter-label">{t("chapterLabel")}</p>
+        <WetType as="h2" paint="glass" className="type-section-title eco-headline">
+          {t("headline")}
+        </WetType>
+        <WetType as="p" className="type-lead-copy eco-lead">{t("lead")}</WetType>
+      </header>
       <div className="eco-runway" data-organism>
-        {/* PageStage portals the live capability names and system markers
-            here so their keyboard order remains Problem → capabilities →
-            Ecosystem CTAs. */}
-        <div
-          id="ecosystem-interactions-host"
-          className="ecosystem-interactions-host"
-        />
-        {/* Static / reduced-motion / no-WebGL: the same symbol the liquid
-            resolves into, drawn from the same station table. */}
-        <div className="journey-static organism-fallback">
-          <ConfluenceMark ariaLabel={t("centerLabel")} />
+        <div className="eco-stage page-x" data-eco-beat="0">
+          <div className="eco-stage-eyeline" aria-hidden="true">
+            <span className="eco-eyeline-dot" />{t("eyeline")}
+          </div>
+          <div className="eco-visual-fallback" aria-hidden="true">
+            <ConfluenceMark ariaLabel={t("centerLabel")} />
+          </div>
+          <div className="eco-panels">
+            {GATHER_SYSTEMS.map((system, i) => (
+              <article className="eco-panel" id={`eco-${system.id}`} key={system.id}>
+                <p className="eco-panel-label"><span>0{i + 1}</span>{t(`systems.${system.id}`)}</p>
+                <h3 className="eco-statement">{chapters[i].title}</h3>
+                <p className="eco-description">{chapters[i].copy}</p>
+                <div className="eco-capabilities">
+                  {system.nodes.map((slot) => (
+                    <details className="eco-capability" key={slot}>
+                      <summary data-eco-node={slot}>{nodes[slot].name}<span aria-hidden="true" className="eco-plus" /></summary>
+                      <p>{nodes[slot].tooltip}</p>
+                    </details>
+                  ))}
+                </div>
+              </article>
+            ))}
+            <article className="eco-panel eco-panel-whole">
+              <p className="eco-panel-label">{t("centerLabel")}</p>
+              <h3 className="eco-statement">{t("together")}</h3>
+              <p className="eco-description">{t("togetherLead")}</p>
+              <CtaStructure placement="ecosystem" />
+            </article>
+          </div>
+          <div className="eco-navigation" role="group" aria-label={t("journeyLabel")}>
+            {GATHER_SYSTEMS.map((system, i) => (
+              <button key={system.id} type="button" data-eco-step={i} aria-pressed={i === 0} aria-controls={`eco-${system.id}`}>
+                <span className="eco-nav-number">0{i + 1}</span>
+                <span>{t(`systems.${system.id}`)}</span>
+                <span className="eco-nav-track" aria-hidden="true" />
+              </button>
+            ))}
+          </div>
+          <span className="eco-core-label" aria-hidden="true">{t("centerLabel")}</span>
         </div>
       </div>
-
-      {/* The liquid has done the joining. Close with the operational result,
-          then the primary conversion route. */}
-      <div className="page-x gather-outro">
-        <Reveal inView className="gather-resolution">
-          <p className="gather-resolution-line">{t("resolution")}</p>
-        </Reveal>
-
-        {/* Narrow and static tiers keep the same authored groupings as the
-            live gathering, in a readable document rather than a faux circuit. */}
-        <div className="eco-stack" aria-label={t("headline")}>
-          {GATHER_SYSTEMS.map((system) => (
-            <section className="eco-stack-group" key={system.id}>
-              <h3 className="eco-stack-system">
-                {systems[system.id] ?? system.id}
-              </h3>
-              <ul className="eco-stack-items">
-                {system.nodes.map((slot) => {
-                  const node = nodes[slot];
-                  return node ? (
-                    <li key={node.name} className="eco-stack-item">
-                      <span className="eco-stack-name">{node.name}</span>
-                      <span className="eco-stack-cap">{node.tooltip}</span>
-                    </li>
-                  ) : null;
-                })}
-              </ul>
-            </section>
-          ))}
-          <p className="eco-stack-center">{t("centerLabel")}</p>
-        </div>
-
-        <Reveal
-          inView
-          className="gather-actions"
-        >
-          <CtaStructure placement="ecosystem" />
-        </Reveal>
+      <div className="eco-outro page-x">
+        <WetType as="p" className="eco-outro-line">{t("resolution")}</WetType>
       </div>
     </section>
   );

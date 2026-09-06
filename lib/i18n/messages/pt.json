@@ -89,9 +89,9 @@
   },
   "ecosystem": {
     "chapterLabel": "O Ecossistema",
-    "headline": "A marca não termina no site. O site não termina no lead.",
-    "lead": "Marca, presença, aquisição e operação precisam trocar contexto. Projetamos essa continuidade do primeiro contato ao trabalho que acontece depois.",
-    "resolution": "O que o cliente vê e o que a equipe opera passam a fazer parte da mesma estrutura.",
+    "headline": "Tudo conectado. Tudo ganha força.",
+    "lead": "Uma marca que atrai. Uma presença que converte. Uma operação que acompanha. Projetamos o que conecta tudo isso.",
+    "resolution": "Da primeira impressão ao próximo passo. Um só ecossistema.",
     "centerLabel": "Seu negócio",
     "systems": {
       "identity": "Identidade",
@@ -138,6 +138,24 @@
       {
         "name": "Conteúdo",
         "tooltip": "A voz que mantém a marca presente."
+      }
+    ],
+    "eyeline": "Conexões que movem o negócio",
+    "together": "Um só ecossistema.",
+    "togetherLead": "Cada parte leva a próxima adiante. O contexto circula, o trabalho flui e o negócio ganha continuidade.",
+    "journeyLabel": "Explore as conexões",
+    "chapters": [
+      {
+        "title": "Uma presença que faz sentido.",
+        "copy": "Marca, conteúdo e site falam a mesma língua. O que você é se torna o que as pessoas reconhecem."
+      },
+      {
+        "title": "Toda conexão abre caminho.",
+        "copy": "Da descoberta ao relacionamento. Tráfego, atendimento e CRM fazem cada oportunidade chegar ao próximo passo."
+      },
+      {
+        "title": "O que vem depois também importa.",
+        "copy": "IA, automação e sistemas conectam a operação. Os dados voltam como clareza para a próxima decisão."
       }
     ]
   },

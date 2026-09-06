@@ -249,6 +249,16 @@ The site is in R5, “One Continuous Liquid.”
     and labels, values, validation, the error summary and the focus outline stay
     exactly where they were. Reduced motion, no-JS and any mount failure fall
     through to the bordered form, complete and usable.
+    THE COMPANION (`docs/specs/contact-companion-spec.md`) is additive on
+    stricter terms still: `ContactForm.tsx` carries no edit for it at all. It
+    reads the DOM the form already publishes for accessibility — `aria-invalid`,
+    `aria-busy`, the error summary TAKING FOCUS, the outcome nodes — so a
+    refactor of the form can at worst stop the droplet reacting, never stop the
+    form submitting. It is `aria-hidden`, takes no pointer, holds nothing
+    focusable, carries no copy, and its rest pose ships in the server HTML so
+    there is no reveal to fade. Anger is spent on GEOMETRY: the kernel contains
+    no colour literal, and `chill` runs cyan -> cyan-deep only. Do not give it
+    `--color-warn`; that token belongs to the form's error copy.
 11. **CTA hierarchy and intent are load-bearing.** Keep the placement map in
     `docs/specs/build-spec.md §7.2`. Every contact CTA carries its entry-intent tag.
     Homepage CTAs use Lenis smooth-scroll plus `history.replaceState`; cross-page
@@ -530,6 +540,28 @@ Ask before adding any dependency or substituting any layer.
   strand the page. Geometry is GENERATED from the mark
   (`scripts/tools/generate-intro-trace.mjs` → `lib/animation/intro-trace.data.mjs`);
   do not hand-author paths for it.
+- `lib/motion/companion.mjs` owns the contact companion's geometry, its SURFACE
+  and every expression. The surface is not an imitation of the CTAs': it calls
+  `makeMembrane` on the droplet's own ring, and `Companion.tsx` registers with
+  `membrane-runtime` as a `Driven`, so the hand-well, the travelling strike, the
+  proximity wake and the autonomous tide are the same kernel on the same
+  scheduler every button runs. Registering also removed that component's own rAF
+  loop, IntersectionObserver and visibilitychange handler. The droplet FOLLOWS
+  the reader: the slot holds the layout open while the carrier detaches to
+  `position: fixed` and springs between docked and a park in the shell gutter,
+  driven by `Driven.travel()` — the runtime's own scroll geometry, so there is
+  no second scroll listener and no knowledge of Lenis. Only `.cp-body` takes the
+  pointer, so hovering and clicking answer the SHAPE and never put a rectangle
+  over the page.
+- `components/contact/Companion.tsx` owns only what the kernel
+  cannot know — what the visitor is doing, where, and when to stop drawing. The
+  kernel is DOM-free and deterministic, so its rest pose can be computed at
+  module scope and rendered into the server HTML identically on both sides of
+  hydration, which is what lets the droplet arrive with no reveal. It is SVG and
+  not a canvas on purpose: this page has no WebGL stage (see `app/contact.css`),
+  and `verify/canvas-count.mjs` must keep finding exactly one liquid canvas, on
+  the homepage. Expressions are named presets over ONE parameter vector — adding
+  a state means adding a preset, never a new code path.
 - `lib/motion/coalesce.mjs` is the merge kernel: the drop that rides S10's form,
   the wetted foot it sits in, and the filament it is pulled off on. Crisp
   geometry, never a `feGaussianBlur` goo filter — a blurred hairline is a glow,
@@ -800,6 +832,30 @@ Additional stop-the-line gates:
   chunk and asserts the form survives it — the merge kernel is imported
   dynamically inside the effect precisely so a bad module cannot take the
   contact form down with it, and that guard is only meaningful on a real page.
+- Companion change (`companion.mjs`, `Companion.tsx`, the `.companion` block):
+  `npm run companion` — path validity, determinism, 60/120 Hz cadence
+  agreement, PUPIL CONTAINMENT across every expression x 24 gaze angles under a
+  strike, VIEWBOX containment and its remaining margin, anger's crown flatness
+  and surface tautness, the absence of any colour literal in the kernel,
+  reachability and interruptibility of every expression pair, blink/breath/sleep
+  and allocation discipline — plus that the membrane is REAL (a hand deforms the
+  contour, the wake rises and falls, a strike charges and drains), that the two
+  eyes can disagree, and that the idle wander runs and yields to an aim.
+  CONTAINMENT IS MEASURED AGAINST THE DRAWN CONTOUR: once the membrane could
+  dent the body by up to `maxN`, an analytic radius stopped being the truth
+  about where the edge is. `npm run companion:sheet` is the geometry review at
+  4x — READ THAT BEFORE the page stills, for the reason the merge sheet exists:
+  a brow that scowls at 4x can be a smudge at 1x, and an expression that reads
+  as SAD rather than ANGRY is invisible in a page still.
+  `BASE_URL=http://localhost:3000 npm run companion:page` is the third gate and
+  the one that matters most: it drives the shipped page and stubs `/api/contact`
+  with `page.route` so no mail is ever sent. Both of the bugs this feature
+  shipped past its geometry sheet were wiring, invisible to the sheet and to a
+  page still: the rejection edge counted the error summary APPEARING, which
+  fires once because the node stays mounted across further refusals, so the
+  companion never escalated; and the forgiveness read `aria-invalid` inside the
+  `input` handler, a frame before React clears it, so it went on scowling at
+  somebody who had already fixed their email. Both are asserted there now.
 - Route-transition change (`veil.mjs`, `PageVeil.tsx`, `transition-context.tsx`,
   the `.page-veil` block): `npm run veil` — the tempo against the site's own
   duration ladder, the reference's construction re-derived from the emitted
@@ -937,19 +993,15 @@ Additional stop-the-line gates:
 - Copy/semantics/locale/chrome change: `node scripts/verify/a11y.mjs`
   (landmarks, one h1, labels, skip link, keyboard menu, focus visibility,
   effective-background contrast, pt/en key parity, reduced-motion story).
-- Ecosystem gathering change (`gathering.mjs`, the S3 scene block, the
-  capability names, system markers, or the column): `node
-  scripts/verify/ecosystem.mjs` — ten names and three system markers drawn,
-  clear of the chapter-index rail and of each other, **all type on ONE vertical
-  axis**, the column fits the stage at full extension and visibly accumulates
-  between beats, no leaders or plate frame remain, hover AND keyboard raise the
-  same system-staggered pulse plus the liquid's rack focus (`hov` channel), the
-  readout follows, and reduced motion keeps the eco-stack story.
-  S3 is a two-part composition: the liquid owns a FIELD and the type owns a
-  COLUMN in the page gutter. `FIELD_MIN_W` in `gathering.mjs` and the
-  `min-width: 1024px` guard on `.gather-col` are the SAME breakpoint — if one
-  moves, move the other, or the liquid composes itself for a column that is not
-  there (or centres itself under one that is).
+- S3 Connections changes (`ecosystem-flow.mjs`, `ecosystem-score.ts`, the S3
+  scene, chapter, CSS or copy): `node scripts/verify/ecosystem.mjs` checks the
+  finite field and exact Services source, forward/reverse panel navigation,
+  viewport containment, native touch/keyboard disclosures, canvas persistence,
+  context-loss fallback and complete reduced-motion/no-JS/no-WebGL/short-height
+  reading paths. `node scripts/capture/ecosystem.mjs` produces desktop and phone
+  filmstrips in both locales. `docs/specs/ecosystem-flow-spec.md` owns the
+  owner-authorized September 2026 redesign; the former accumulating column and
+  mobile text stack are retired under `Dead Code/s3-gathering/`.
 - Emulation is the regression floor, not the sign-off: iOS URL-bar collapse,
   real GPU probes, and thermal behavior still require the owner's hardware.
 
