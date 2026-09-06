@@ -111,8 +111,12 @@ export type AuraStats = {
   count: number;
   steps: number;
   frames: number;
-  /** Liquid droplets the vapour is currently taking itself out of. */
-  occluders: number;
+  /** 1 while the liquid's canvas is being sampled as an occlusion mask. */
+  mask: number;
+  /** Rolling cost of that upload, ms. */
+  maskMs: number;
+  /** Motes actually drawn: the population scaled to the viewport's area. */
+  drawn: number;
   /** GL's own verdict on the last frame; 0 is NO_ERROR. */
   err: number;
   /** The drawing buffer, in device pixels. */
@@ -136,6 +140,8 @@ export type AuraStats = {
     peak: number;
     /** Share of the canvas carrying any light at all. */
     covered: number;
+    /** Brightest pixel in the uploaded liquid mask; 0 means it came back blank. */
+    maskPeak: number;
   };
 };
 
@@ -224,12 +230,20 @@ export function startAura(
   // A VAO is required in WebGL2 even to draw from gl_VertexID alone. Neither
   // program has an attribute, so one empty VAO serves both.
   const vao = gl.createVertexArray();
+  // Declared here rather than beside the mask block below, because release()
+  // runs on an incomplete framebuffer - which happens before that block - and a
+  // const in the temporal dead zone would throw instead of cleaning up.
+  // Declared here rather than beside the blocks that build them, because
+  // release() runs on an incomplete framebuffer - before those blocks - and a
+  // const in the temporal dead zone would throw instead of cleaning up.
+  let maskTex: WebGLTexture | null = null;
 
   const release = () => {
     gl.deleteProgram(pStep);
     gl.deleteProgram(pDraw);
     for (const t of tex) gl.deleteTexture(t);
     for (const f of fbo) gl.deleteFramebuffer(f);
+    if (maskTex) gl.deleteTexture(maskTex);
     gl.deleteVertexArray(vao);
   };
   if (!complete) {
@@ -253,12 +267,12 @@ export function startAura(
   gl.uniform1i(gl.getUniformLocation(pDraw, "uState"), 0);
   gl.uniform1i(gl.getUniformLocation(pDraw, "uSize"), size);
   gl.uniform1f(gl.getUniformLocation(pDraw, "uMargin"), AURA.MARGIN);
+  gl.uniform1i(gl.getUniformLocation(pDraw, "uMask"), 1);
   const uD = {
     pxUv: gl.getUniformLocation(pDraw, "uPxUv"),
     alpha: gl.getUniformLocation(pDraw, "uAlpha"),
     field: gl.getUniformLocation(pDraw, "uField"),
-    occ: gl.getUniformLocation(pDraw, "uOcc"),
-    occN: gl.getUniformLocation(pDraw, "uOccN"),
+    maskOn: gl.getUniformLocation(pDraw, "uMaskOn"),
   };
 
   let cur = 0; // the pair holding the CURRENT state
@@ -266,6 +280,7 @@ export function startAura(
   let bufH = 0;
   let field: [number, number] = [1.6, 1];
   let pxUv = 1 / 900;
+  let share = 1;
 
   const resize = () => {
     const r = canvas.getBoundingClientRect();
@@ -289,6 +304,10 @@ export function startAura(
     // weather is never stretched by the shape of the window.
     field = [cssW / cssH, 1];
     pxUv = 1 / cssH;
+    // Constant SPACING, not a constant count: see AURA.REF_PX. The motes are
+    // hash-scattered, so drawing a prefix of them is a uniform random subset
+    // and thinning costs nothing but a smaller instance count.
+    share = Math.min(1, Math.max(AURA.MIN_SHARE, (cssW * cssH) / AURA.REF_PX));
   };
 
   const bindState = (k: number) => {
@@ -308,7 +327,9 @@ export function startAura(
     count,
     steps: 0,
     frames: 0,
-    occluders: 0,
+    mask: 0,
+    maskMs: 0,
+    drawn: 0,
     err: 0,
     buf: [0, 0],
     probe() {
@@ -333,7 +354,7 @@ export function startAura(
       // Redraw into the current buffer and read it straight back, so what is
       // measured is this call's own frame rather than whatever the compositor
       // has already discarded.
-      draw();
+        draw();
       const w = Math.min(bufW, 900);
       const h = Math.min(bufH, 600);
       if (!readPix || readPix.length < w * h * 4) readPix = new Uint8Array(w * h * 4);
@@ -345,7 +366,34 @@ export function startAura(
         if (v > peak) peak = v;
         if (v > 0) covered++;
       }
+      // Is the mask carrying the liquid? A blank upload is how the first two
+      // attempts failed, and both failed SILENTLY: a canvas whose context lacks
+      // preserveDrawingBuffer uploads black without erroring.
+      let maskPeak = 0;
+      if (maskTex) {
+        const mfb = gl.createFramebuffer();
+        gl.bindFramebuffer(gl.FRAMEBUFFER, mfb);
+        gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, maskTex, 0);
+        if (gl.checkFramebufferStatus(gl.FRAMEBUFFER) === gl.FRAMEBUFFER_COMPLETE) {
+          // THE WHOLE TEXTURE, not a corner of it. Reading a 640x400 window
+          // reported maskPeak 0 on a frame whose liquid was simply outside that
+          // window, which reads exactly like the blank-upload failure this
+          // check exists to catch. A diagnostic that can cry wolf is worse than
+          // none. It is a 5 MB readback and no render path calls it.
+          const mw = bufW;
+          const mh = bufH;
+          const px = new Uint8Array(mw * mh * 4);
+          gl.readPixels(0, 0, mw, mh, gl.RGBA, gl.UNSIGNED_BYTE, px);
+          for (let i = 0; i < mw * mh; i++) {
+            const v = Math.max(px[i * 4 + 1], px[i * 4 + 2]);
+            if (v > maskPeak) maskPeak = v;
+          }
+        }
+        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+        gl.deleteFramebuffer(mfb);
+      }
       return {
+        maskPeak,
         meanX: sx / count,
         meanY: sy / count,
         minX,
@@ -382,64 +430,59 @@ export function startAura(
     stats.steps++;
   };
 
-  // ── THE OCCLUDERS ──────────────────────────────────────────────────────────
-  // The liquid's own droplets, so the vapour can take itself out of them. The
-  // buffer is a LIVE reference FieldStage publishes for the measurement
-  // harnesses (`window.__optics.balls`, packed x/y/r by slot, with `dens`
-  // alongside); it is read, never held, and a route with no liquid simply has
-  // no `__optics` and contributes nothing.
+  // ── THE LIQUID, SAMPLED ────────────────────────────────────────────────────
+  // FieldStage's canvas, uploaded here every frame and read once per mote in
+  // the draw shader. It is the liquid ITSELF rather than a model of it: exact
+  // for droplets, motes, forms and melts alike, where a rebuild from the
+  // published droplet buffer covered none of the forms and only part of the
+  // droplets. It requires `preserveDrawingBuffer` on that context, which is set
+  // in `sdf-gl.ts` beside the measurement of what it cost.
   //
-  // Only the biggest OCCLUDERS of them are sent. The metaball field is
-  // dominated by the largest bodies, and the population above the authored 48
-  // is motes - small shells derived from a host, sitting inside the field that
-  // host already creates - so taking the largest is taking the ones that decide
-  // the surface. Selection is an insertion into a fixed array rather than a
-  // sort, so a 512-droplet frame costs one pass and no allocation.
-  const occ = new Float32Array(AURA.OCCLUDERS * 4);
-  const pick = new Int32Array(AURA.OCCLUDERS);
-  type Optics = { balls?: Float32Array; dens?: Float32Array; count?: number };
-  const packOccluders = (aspect: number) => {
-    const o = (window as unknown as { __optics?: Optics }).__optics;
-    const balls = o?.balls;
-    const n = Math.min(o?.count ?? 0, balls ? (balls.length / 3) | 0 : 0);
-    if (!balls || n <= 0) return 0;
-    const dens = o?.dens;
-    // The liquid works in field uv: the viewport centre is (0.5, 0.5), the unit
-    // is min(width, height) and y points up. This field's unit is the HEIGHT
-    // and its origin is the bottom-left, so one scale and one offset convert
-    // both the positions and the radii. min(width, height) / height is exactly
-    // min(aspect, 1), which is 1 on any landscape window.
-    const s = Math.min(aspect, 1);
-    const half = aspect * 0.5;
-    let k = 0;
-    for (let i = 0; i < n; i++) {
-      const r = balls[i * 3 + 2];
-      if (!(r > 0)) continue;
-      if (k < AURA.OCCLUDERS) {
-        pick[k++] = i;
-        // keep the array ordered smallest-first so the head is the drop victim
-        for (let j = k - 1; j > 0 && balls[pick[j - 1] * 3 + 2] > r; j--) {
-          const t = pick[j];
-          pick[j] = pick[j - 1];
-          pick[j - 1] = t;
-        }
-      } else if (r > balls[pick[0] * 3 + 2]) {
-        pick[0] = i;
-        for (let j = 0; j + 1 < AURA.OCCLUDERS && balls[pick[j + 1] * 3 + 2] < r; j++) {
-          const t = pick[j];
-          pick[j] = pick[j + 1];
-          pick[j + 1] = t;
-        }
-      }
+  // UNPACK_FLIP_Y so the canvas's top row lands at v = 1, which is this field's
+  // own orientation - the sample then needs no flip and no offset.
+  maskTex = gl.createTexture();
+  gl.activeTexture(gl.TEXTURE1);
+  gl.bindTexture(gl.TEXTURE_2D, maskTex);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+
+  // The liquid canvas is looked up lazily and re-looked-up while missing: this
+  // layer mounts in the locale layout and FieldStage is lazy and client-only,
+  // so on the homepage it is simply not there for the first frames, and on
+  // every other route it never will be.
+  let liquid: HTMLCanvasElement | null = null;
+  let liquidTries = 0;
+  const findLiquid = () => {
+    if (liquid && liquid.isConnected) return liquid;
+    liquid = null;
+    if (liquidTries > 900) return null; // a route with no liquid stops asking
+    liquidTries++;
+    liquid = document.querySelector<HTMLCanvasElement>(".journey-canvas canvas");
+    return liquid;
+  };
+
+  const uploadMask = () => {
+    const src = findLiquid();
+    if (!src || src.width < 2 || src.height < 2) return 0;
+    const t0 = performance.now();
+    gl.activeTexture(gl.TEXTURE1);
+    gl.bindTexture(gl.TEXTURE_2D, maskTex);
+    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+    try {
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, src);
+    } catch {
+      // A source canvas can refuse an upload while it is being resized or after
+      // its own context is lost. Losing the mask for a frame is a mote or two
+      // in the wrong place; throwing here would take the whole layer down.
+      gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
+      return 0;
     }
-    for (let j = 0; j < k; j++) {
-      const i = pick[j];
-      occ[j * 4] = half + (balls[i * 3] - 0.5) * s;
-      occ[j * 4 + 1] = 0.5 + (balls[i * 3 + 1] - 0.5) * s;
-      occ[j * 4 + 2] = balls[i * 3 + 2] * s;
-      occ[j * 4 + 3] = dens ? dens[i] : 1;
-    }
-    return k;
+    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
+    stats.maskMs = stats.maskMs * 0.9 + (performance.now() - t0) * 0.1;
+    return 1;
   };
 
   const draw = () => {
@@ -452,15 +495,16 @@ export function startAura(
     gl.uniform1f(uD.pxUv, pxUv);
     gl.uniform1f(uD.alpha, 1);
     gl.uniform2f(uD.field, field[0], field[1]);
-    const occN = packOccluders(field[0]);
-    stats.occluders = occN;
-    if (occN > 0) gl.uniform4fv(uD.occ, occ);
-    gl.uniform1i(uD.occN, occN);
+    stats.mask = uploadMask();
+    gl.uniform1f(uD.maskOn, stats.mask);
+    bindState(cur); // the upload left unit 1 bound; the state lives on unit 0
     // Premultiplied light, accumulated. See the note in AURA_DRAW_FRAG: over an
     // ink page under `screen`, what lands here IS what the reader sees.
     gl.enable(gl.BLEND);
     gl.blendFunc(gl.ONE, gl.ONE);
-    gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, count);
+    const drawn = Math.max(1, Math.round(count * share));
+    stats.drawn = drawn;
+    gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, drawn);
     stats.frames++;
     // getError() is a synchronous round trip, so it is sampled only over the
     // opening frames - long enough to catch a setup fault, short enough not to

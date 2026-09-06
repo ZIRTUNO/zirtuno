@@ -511,32 +511,50 @@ Five rules govern the aura, and all five are load-bearing:
    becomes a dot somebody can point at. Density is nearly free, since the step
    pass is one fragment per mote.
 
-5. **IT MUST NOT BE VISIBLE THROUGH THE LIQUID.** A background is behind things,
-   and `mix-blend-mode: screen` does not deliver that on its own: it attenuates
-   by (1 - backdrop), so over the liquid's mid-tone interior a mote still lands
-   at about half strength. Owner review caught it as streaks running across the
-   metaballs, and it measured worse than it looked - the vapour was moving the
-   liquid's interior by ~7.6 levels while moving the ground it exists to light
-   by 2. So the draw shader reads the liquid's own droplets (`packOccluders` in
-   `aura-gl.ts`, from the buffer FieldStage publishes) and fades each mote by
-   their summed field, exactly as the mist faded against its hosts. Measured
-   after, against the liquid's own frame-to-frame churn: excess inside the
-   liquid -1.46 levels, which is zero, while the ground still gains 1.88.
-   **The thresholds cannot be pushed low.** T is a SUM with a long per-body
-   tail, so at 0.35 the aggregate cleared a third of the viewport - a hard-edged
-   void, a worse artefact than the one being fixed. 0.75/1.15 sits just inside
-   the liquid's own iso-surface at T = 1.
+5. **IT MUST NOT BE VISIBLE THROUGH THE LIQUID.** A background is behind
+   things, and `mix-blend-mode: screen` does not deliver that on its own: it
+   attenuates by (1 - backdrop), so over the liquid's mid-tone interior a mote
+   still lands at about half strength. Owner review caught it as dashes lying
+   across the metaballs, and it measured worse than it looked - the vapour was
+   moving the liquid's interior by ~7.6 levels while moving the ground it exists
+   to light by 2.
 
-   **A TRAP IN MEASURING THIS, which produced two confident wrong answers.**
-   Do NOT isolate the vapour by hiding the liquid canvas: `display: none` on
-   `.journey-canvas` collapses FieldStage's container, its ResizeObserver
-   rebuilds the drawing buffer at 1x1, and the droplet positions it then
-   publishes are computed at aspect 1 - so the occluders land somewhere else
-   entirely and the vapour appears to have a huge void in it. And do not compare
-   an on/off pair without a churn control taken at the SAME interval: the liquid
-   moves ~14 levels of its own interior between two frames 500 ms apart, which
-   is larger than the effect being measured. Toggle with `visibility`, use
-   identical waits, and always sample off/off first.
+   **THE MASK IS FIELDSTAGE'S CANVAS, SAMPLED.** The draw shader reads what that
+   canvas actually painted at each mote's position and fades the mote by it. It
+   is the liquid itself rather than a model of it, which is the entire point,
+   because the obvious alternative was tried and cannot work. Rebuilding the
+   metaball field inside the aura from the droplet buffer FieldStage publishes
+   fails twice: the liquid draws from up to 512 bodies and a uniform array
+   cannot hold them (at the 48 largest, 22% of the body's area got no fade at
+   all and another 20% only a partial one); and it covers **none of the service
+   FORMS**, which at rest are an SDF with `count: 0` - literally zero droplets
+   to rebuild from, over 60 000 to 90 000 pixels of solid liquid per frame
+   across the whole Services chapter. Building a second renderer of the liquid
+   to fix that is what rule 15 exists to prevent.
+
+   **THIS IS WHY `sdf-gl.ts` SETS `preserveDrawingBuffer`, and it is the one
+   place the atmosphere touches the liquid's context.** Without it a WebGL
+   canvas is write-only from outside: `texImage2D` from it succeeds, costs
+   0.03 ms and uploads BLACK, so the occlusion silently does nothing. The cost
+   is that the buffer is not discarded after compositing; measured on
+   FieldStage's OWN frame counter, 3 s at 800x600, it was 99 frames without and
+   100 with. **Re-measure that on real hardware before trusting it** - the
+   number that matters is the liquid's cadence, not the page's.
+
+   **THREE MEASUREMENT TRAPS, all of which produced confident wrong answers.**
+   - *Do not hide the liquid canvas to isolate the vapour.* `display: none` on
+     `.journey-canvas` collapses FieldStage's container, its ResizeObserver
+     rebuilds the buffer at 1x1, and everything it publishes is then computed at
+     aspect 1. The vapour appears to have a huge void punched in it; it does
+     not.
+   - *Do not compare an on/off pair without a churn control at the SAME
+     interval.* The liquid moves ~14 levels of its own interior between two
+     frames 500 ms apart, which is larger than the effect being measured. Toggle
+     with `visibility`, use identical waits, sample off/off first.
+   - *Do not read a corner of a texture and call it the texture.* The mask
+     readback sampled 640x400 of a 1440x900 upload and reported "blank" on a
+     frame whose liquid was simply elsewhere - which reads exactly like the real
+     failure it exists to catch.
 
    **A NEAR-BLACK LAYER CANNOT BE JUDGED FROM A SCREENSHOT**, and this is the
    working rule the whole layer is tuned under. The difference between "a lit

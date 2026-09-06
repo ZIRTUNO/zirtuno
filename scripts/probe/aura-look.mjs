@@ -99,7 +99,7 @@ const live = await page.evaluate(() => {
   return {
     gl: document.querySelector(".aura")?.hasAttribute("data-gl") ?? false,
     stats: a
-      ? { size: a.size, count: a.count, steps: a.steps, frames: a.frames, occluders: a.occluders, err: a.err, buf: a.buf }
+      ? { size: a.size, count: a.count, steps: a.steps, frames: a.frames, balls: a.balls, err: a.err, buf: a.buf }
       : null,
     // The readback: where the population actually is, how fast it is moving,
     // and what the frame it just drew actually put on the canvas.
