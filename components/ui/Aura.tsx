@@ -3,17 +3,14 @@
 import { useEffect, useRef } from "react";
 import { clamp01, smooth01 } from "@/lib/webgl/phys.mjs";
 import { startAura } from "@/lib/webgl/aura-gl";
-import { AURA } from "@/lib/webgl/aura-shaders.mjs";
+import { detectFieldTier } from "@/lib/webgl/field-tier";
 import { prefersReducedMotion } from "@/lib/animation/reduced-motion";
 
 /**
- * The aura (R8) — the page's atmosphere: a lit cyan volume and a drift of
+ * The aura (R8) — the page's atmosphere: a lit volume and a drift of suspended
  * vapour over the ink, so the ground reads as depth rather than as an unlit
- * panel. Adapted from the reference the owner brought (utopia513.com), which
- * solves the same flat-ground problem with a bloom and grain over dark navy.
- *
- * The composition, the amplitude and the reasons this is not a shader all live
- * with the CSS — see THE AURA in `globals.css`.
+ * panel. The composition and the amplitudes live with the CSS; see THE AURA in
+ * `globals.css`, and `lib/webgl/aura-shaders.mjs` for what the vapour is.
  *
  * Two things are load-bearing about WHERE this is rendered:
  *
@@ -26,7 +23,9 @@ import { prefersReducedMotion } from "@/lib/animation/reduced-motion";
  *   orders them, and the film grain has to composite ON TOP of the vapour.
  *   Grain is a property of the camera, not of the air: underneath, it would be
  *   a texture the atmosphere is laid over, which reads as two flat sheets
- *   rather than one photographed volume.
+ *   rather than one photographed volume. It is also, with the reference's
+ *   stack in mind, the layer doing the most work — utopia513.com carries its
+ *   whole material quality in grain over a smooth ground.
  *
  * ── THE HERO IS BLACK (owner directive) ──────────────────────────────────────
  *
@@ -56,29 +55,38 @@ export function Aura() {
   const ref = useRef<HTMLDivElement>(null);
   const vapour = useRef<HTMLCanvasElement>(null);
 
-  // ── the live field ──────────────────────────────────────────────────────────
-  // The canvas carries the CSS turbulence as its own background-image, so the
-  // static vapour is not a separate fallback element that has to be kept in
-  // sync — it is simply what is behind the canvas until something paints over
-  // it. `data-gl` is set only once a context actually compiled and linked, and
-  // the CSS drops the image on that signal. WebGL2 refused, shader rejected,
-  // context lost at startup: all land on the same tuned static field.
+  // ── the vapour ──────────────────────────────────────────────────────────────
+  // `data-gl` is set only once a context compiled, linked and produced a
+  // complete float target. Without it the CSS ground stands alone, which is a
+  // deliberate and complete background rather than a broken one: there is no
+  // second texture to fall back to, because the fog-like SVG turbulence that
+  // used to sit under this canvas was the very thing the particle field
+  // replaced.
   useEffect(() => {
     const canvas = vapour.current;
     const aura = ref.current;
-    // AURA.LIVE false is the owner choosing the calm ground: the static CSS
-    // turbulence under the canvas is then the whole vapour, which is the same
-    // path a refused context takes. Nothing else needs to know.
-    if (!canvas || !aura || !AURA.LIVE) return;
-    const handle = startAura(canvas, prefersReducedMotion());
+    if (!canvas || !aura) return;
+    // The probe, not a GPU-name guess (AGENTS.md §7). It is cached per session,
+    // and on the homepage PageStage has usually asked for it already.
+    const tier = detectFieldTier();
+    if (tier === "none") return;
+    const handle = startAura(
+      canvas,
+      prefersReducedMotion(),
+      tier === "lite" ? "lite" : "full",
+    );
     if (!handle) return;
     aura.dataset.gl = "1";
+    const w = window as unknown as { __aura?: typeof handle.stats };
+    w.__aura = handle.stats;
     return () => {
       handle.stop();
       delete aura.dataset.gl;
+      if (w.__aura === handle.stats) delete w.__aura;
     };
   }, []);
 
+  // ── the hero gate ───────────────────────────────────────────────────────────
   useEffect(() => {
     const aura = ref.current;
     const hero = document.getElementById("hero");

@@ -56,6 +56,25 @@ export function makeLayer(
     // the integrated adapter, which is precisely the class of GPU this shader
     // is fill-bound on.
     powerPreference: "high-performance",
+    // READABLE FROM OUTSIDE, so the atmosphere can hide behind the liquid.
+    //
+    // Without this a WebGL canvas is write-only to everything but itself: the
+    // drawing buffer is undefined once the frame is composited, and a
+    // `texImage2D` from it succeeds, costs nothing and uploads BLACK. The aura
+    // (components/ui/Aura.tsx) samples this canvas to know where the liquid is,
+    // so that a background mote is not drawn over the thing standing in front
+    // of it - and the alternative was rebuilding this renderer's field inside
+    // that one, which fails on the SERVICE FORMS outright: at rest a form is an
+    // SDF with zero droplets behind it, so there is nothing to rebuild it from.
+    // A second renderer of the liquid is also the thing AGENTS.md rule 15
+    // exists to prevent.
+    //
+    // The cost is that the buffer is not discarded after compositing. Measured
+    // on FieldStage's OWN frame counter, 3 s at 800x600: 99 frames without,
+    // 100 with. That is the check to repeat on real hardware if this is ever
+    // suspected - the number that matters is the LIQUID's cadence, not the
+    // page's.
+    preserveDrawingBuffer: true,
   });
   if (!gl) return null;
   const floatLinear = !!gl.getExtension("OES_texture_float_linear");

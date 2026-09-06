@@ -1295,55 +1295,70 @@ section[id],
    emissive panel is not "dark", it is ABSENT: the backlight is off and the pixel
    is the same nothing whether the page is loading, broken or finished. Every
    route that is not the homepage is that nothing edge to edge, and even the
-   homepage is flat ink everywhere the liquid is not. The reference the owner
-   brought (utopia513.com) fixes the same problem the same way: one soft chromatic
-   bloom and a great deal of grain over a dark ground, on a fixed full-viewport
-   layer behind everything. What that buys is DEPTH — the black stops being a
-   switched-off screen and becomes a volume the content sits inside.
+   homepage is flat ink everywhere the liquid is not. What atmosphere buys is
+   DEPTH — the black stops being a switched-off screen and becomes a volume the
+   content sits inside.
 
-   WHAT IS ADAPTED, AND WHAT IS NOT. The reference is deep navy (#08173E) lit by
-   a royal-blue bloom at genuinely high amplitude. Neither travels here. The
-   palette is LOCKED (AGENTS.md §6) to ink, the cyan family and paper, so the
-   bloom is `--color-cyan-deep` — the darkest, least neon member of that family
-   and the only one that can carry a large area without reading as a light
-   source. The amplitude does not travel either: the reference is a navy site
-   whose bloom is its loudest element, and this is a black site whose loudest
-   element is a live cyan liquid. A bloom competing with that would be a second
-   subject. `--aura-key` is therefore the whole layer's gain, and it is small.
+   ── WHAT THE REFERENCE ACTUALLY DOES ────────────────────────────────────────
 
-   WHY IT IS ADDITIVE, AND WHY THAT IS NOT A DETAIL. The layer sits at z-1 —
-   ABOVE the liquid canvas, because that canvas is opaque (the post chain writes
-   alpha 1, so nothing behind it is ever seen) and BELOW copy at z-10. Sitting
-   above the liquid means a normal-alpha wash would DARKEN every droplet it
-   crossed, and the owner directive recorded by THE PAGE FLUID below is explicit
-   that the liquid is never dimmed, faded or desaturated. `mix-blend-mode: screen`
-   removes that possibility rather than managing it: screen can only ever raise a
-   channel, so the aura adds light to bare ink and is mathematically incapable of
-   taking any off the material. It is the operator the breath layer already uses.
+   utopia513.com, which the owner brought, is worth reading precisely rather
+   than impressionistically, because the obvious lesson from it is the wrong
+   one. Its ground is a Three.js plane whose colour is computed PER VERTEX on a
+   200x200 mesh and interpolated across the faces: one octave of Perlin noise
+   mixing between two navies. Two consequences follow, and they are the whole
+   technique:
 
-   WHY THIS IS CSS AND NOT A SECOND SHADER. The obvious build is the reference's:
-   a full-viewport fragment shader. It is the wrong build HERE. FieldStage is
-   fill-rate bound and runs an FPS watchdog that demotes the liquid through seven
-   rungs when frames go long — so a second full-viewport per-pixel pass does not
-   cost "some GPU", it risks spending the site's signature material to buy a
-   background. Two composited layers on transform-only animations cost bandwidth
-   and no repaint, which is the right price for something nobody should notice.
+     IT CANNOT CARRY FINE STRUCTURE. Colour lives on the vertices, so the
+     smallest feature the field can hold is a mesh cell. It is a slow, smooth,
+     shapeless luminance gradient by CONSTRUCTION, not by tuning.
+     ALL OF ITS TEXTURE IS GRAIN. A separate, very strong per-pixel film grain
+     on top is what gives that smooth ramp its material quality.
 
-   THE TWO LAYERS.
-     .aura-lights  three ellipses of cyan-deep — key, fill and a broad top wash —
-                   on ONE element and ONE drift, because at this amplitude three
-                   independent drifts are indistinguishable from one and would
-                   cost three full-viewport composited layers instead of one.
-     .aura-vapour  fractal turbulence thresholded IN ITS ALPHA CHANNEL, which is
-                   what makes it read as vapour rather than haze: a flat noise
-                   field is fog, but clipping the low end off leaves only the
-                   crests, and disconnected crests are wisps. It is also what
-                   kills banding — large low-alpha ramps on a near-black ground
-                   band badly on 8-bit panels, and noise is the standard dither.
+   So the reference is not "a bloom". It is a DIVISION OF LABOUR: a shapeless
+   gradient for depth, a fine uniform population for texture, and nothing in
+   between. That division is what this layer adopts. What does not travel is the
+   amplitude or the palette — that is a navy site whose ground is its loudest
+   element, and this is a black site whose loudest element is a live cyan liquid.
 
-   Both loops close (0% and 100% identical), so the global reduced-motion rule —
-   which collapses every animation to 0.001ms and lands it on its last keyframe —
-   leaves the authored composition standing rather than a random frame of it.
+   ── THE THREE LAYERS ────────────────────────────────────────────────────────
+
+     .aura-lights   the shapeless gradient. Depth, and a direction for the
+                    light, with no feature small enough to be looked at.
+     .aura-vapour   the fine population: THE MIST, the same vapour written for
+                    the S7 convergence, drifting on the site's own curl current
+                    at background amplitude. See `lib/webgl/aura-shaders.mjs`.
+     .breath-layer  the grain, mounted after this one so it composites on top.
+
+   WHY THE MIDDLE LAYER IS PARTICLES AND NOT A NOISE FIELD. The first build of
+   this made the vapour a full-viewport fbm wash, and it failed in the exact way
+   the reference's construction avoids: a remapped fbm field is a field of
+   LOBES, so the ground carried cloud masses a third of a screen across. Widening
+   the remap dims them but cannot remove them — the lobes are the field's
+   content. Measured, it also took the ground to rgb(4,12,13), a petrol
+   green-blue the eye reads as the page's colour, which is a direct cost to the
+   liquid: cyan droplets earn their punch from being cyan on BLACK, and against a
+   ground already two thirds of the way to their hue they read as dull teal.
+   A population of 2-3 px motes has no shape at any amplitude, because its
+   structure sits below the scale the eye groups at. It is also the site's own
+   material at its finest scale, which is the argument the whole page is making.
+
+   ── WHY IT IS ADDITIVE, AND WHY THAT IS NOT A DETAIL ────────────────────────
+
+   The layer sits at z-1 — ABOVE the liquid canvas, because that canvas is opaque
+   (the post chain writes alpha 1, so nothing behind it is ever seen) and BELOW
+   copy at z-10. Sitting above the liquid means a normal-alpha wash would DARKEN
+   every droplet it crossed, and the owner directive recorded by THE PAGE FLUID
+   below is explicit that the liquid is never dimmed, faded or desaturated.
+   `mix-blend-mode: screen` removes that possibility rather than managing it:
+   screen can only ever raise a channel, so the aura adds light to bare ink and
+   is mathematically incapable of taking any off the material. It is also what
+   makes the vapour's premultiplied output exact — screen over black resolves to
+   the premultiplied value, so what the shader accumulates is what is seen.
+
+   The gradient loop closes (0% and 100% identical), so the global reduced-motion
+   rule — which collapses every animation to 0.001ms and lands it on its last
+   keyframe — leaves the authored composition standing rather than a random
+   frame of it.
    =========================================================================== */
 .aura {
   position: fixed;
@@ -1354,32 +1369,52 @@ section[id],
      liquid from being dimmed by its own atmosphere. */
   mix-blend-mode: screen;
   overflow: hidden;
-  /* ONE number owns the layer's presence. Everything below is a fraction of it,
-     so the whole atmosphere is tuned — or switched off — from here.
 
-     0.25 IS A MEASURED NUMBER, not a taste guess. `scripts/probe/aura.mjs`
-     sweeps this and reports what the ground actually becomes, on the routes
-     where the aura is the only thing on it (careers · contact · work):
+  /* TWO GAINS, because the two halves do different jobs and must be judgeable
+     apart. `scripts/probe/aura.mjs` reports what each does to the ground in
+     real pixels; `KEY=<n>` and `MIST=<n>` sweep them without editing this file.
 
-       key    ground median   bloom peak      paper : peak
-       0      rgb(3,3,3)      rgb(13,14,14)   17.0:1   ← bare ink, for reference
-       0.15   rgb(3,8,9)      rgb(12,19,20)   16.5:1
-       0.25   rgb(3,12,12)    rgb(12,24,25)   15.9:1   ← here
-       0.35   rgb(3,15,16)    rgb(12,28,30)   15.4:1
-       1.00   rgb(3,38,40)    —                        ← reads as a TEAL PAGE
+     --aura-key is the GRADIENT: depth. Measured on the routes where the aura is
+     the only thing on the ground (careers · contact · work):
 
-     The ceiling is not legibility: paper holds 15.9:1 against the brightest
-     ground at 0.25, and still 13.6:1 at 0.35, so every one of these rows passes
-     AA and AAA by a distance. The ceiling is that the layer has to keep reading
-     as ABSENCE with depth rather than as a colour someone chose — and by 1.0 it
-     is plainly a teal page. 0.25 lifts the ink about nine levels out of 255:
-     enough that the black has a volume, little enough that naming its colour
-     takes an effort. Raise it toward 0.35 for a warmer, more present room; drop
-     toward 0.15 for near-subliminal. */
-  --aura-key: 0.25;
+       key    ground          cast   paper : peak
+       0      rgb(4,4,4)      1.00   15.1:1   ← the gradient off
+       0.45   rgb(9,11,11)    1.22   14.1:1
+       0.85   rgb(14,17,17)   1.21   13.1:1   ← here
+       1.30   rgb(16,24,25)   1.50   11.8:1
+
+     THE CEILING IS THE CAST, NOT THE BRIGHTNESS. Legibility is nowhere near it
+     — paper holds better than 11:1 against the brightest ground at every row,
+     so all of them pass AA and AAA by a distance — and brightness on its own is
+     a taste call the owner makes. What is not a taste call is the ratio in the
+     `cast` column, blue over red: it says whether the ground is LIT BLACK or a
+     colour. The achromatic floor keeps pace with the cyan up to about 0.85 and
+     the ratio holds at 1.21; by 1.3 the cyan has outrun it and the ground is
+     visibly turning. Raise the gain if the room should be brighter, but raise
+     the LUMEN stop with it, or this is what gives way.
+
+     For scale: the fbm wash this replaced sat at rgb(4,12,13) — a cast of 3.0.
+     That is a petrol page, and a liquid that has to be cyan against something
+     already most of the way to its own hue. The build here is three times
+     brighter than that one and half as coloured.
+
+     --aura-mist is the VAPOUR: texture. IT ONLY DIMS. It drives the canvas's
+     `opacity`, and opacity clamps at 1, so a value above 1 does nothing at all
+     — the vapour's authored amplitude is `ALPHA` in `aura-shaders.mjs`, and
+     density (`SIZE_FULL`) is the better dial of the two for presence anyway.
+     Zero is a legitimate setting here and leaves a clean, calm gradient ground.
+
+     THE VAPOUR HAS A FLOOR IT MUST CLEAR, and it is not a matter of taste.
+     `.breath-layer`'s film grain sits directly on top of this layer and peaks
+     around nine levels out of 255. Below that the motes do not read as
+     particles, they read as more grain — measured, at half this amplitude the
+     brightest mote reached level 10 and the population was indistinguishable
+     from the noise it was lying under. */
+  --aura-key: 0.85;
+  --aura-mist: 1;
 
   /* THE HERO GATE (owner directive: the homepage opens on black). A multiplier
-     on the gain, scrubbed 0 → 1 across the hero's exit by `Aura.tsx`, so the
+     on both gains, scrubbed 0 → 1 across the hero's exit by `Aura.tsx`, so the
      atmosphere begins below the ribbon rather than behind it. Open by default:
      every route but the homepage wants the layer from the first pixel. */
   --aura-hero: 1;
@@ -1396,97 +1431,96 @@ body:has(.liquid-journey) .aura {
   --aura-hero: 0;
 }
 
-/* What the two layers below actually read: the authored amplitude times the
-   hero gate. Declared once so neither the gain nor the gate can be applied to
-   one layer and forgotten on the other. */
+/* What the two layers below actually read. Declared once so neither gain nor
+   the gate can be applied to one layer and forgotten on the other. */
 .aura {
   --aura-gain: calc(var(--aura-key) * var(--aura-hero));
+  --aura-mist-gain: calc(var(--aura-mist) * var(--aura-hero));
 }
 
-/* The lit volume. Three ellipses and no filter: a radial-gradient is already a
-   smooth falloff, and a blur() across the full viewport would cost more than the
-   entire rest of this layer. */
+/* THE GRADIENT — depth, and a direction for the light.
+ *
+ * EVERY CENTRE IS OFF SCREEN, and that is the whole construction. A radial
+ * gradient centred inside the viewport has a visible bright core, and a bright
+ * core is a SHAPE: the eye finds it, names it a glow, and the background has
+ * become an object. Pushed outside the frame, only the gradient's tail is on
+ * screen — a smooth ramp with no feature in it, which is the same thing the
+ * reference gets from interpolating colour across a coarse mesh.
+ *
+ * THE NEUTRAL LIFT IS DOING MORE THAN IT LOOKS. Cyan alone, however faint,
+ * pushes the ground toward petrol — the failure the header describes. A whisper
+ * of `--color-paper` under it raises all three channels together, so the black
+ * reads as LIT rather than as coloured, and the cyan on top becomes a cast
+ * across that grey rather than the ground's own hue. Both tokens are from the
+ * locked palette (AGENTS.md §6); nothing here is a new colour.
+ *
+ * No filter: a radial-gradient is already a smooth falloff, and a blur() across
+ * the full viewport would cost more than the entire rest of this layer. */
 .aura-lights {
   position: absolute;
   /* Oversized so the drift never walks an edge into frame. */
   inset: -18%;
   background:
-    /* KEY — the volume itself, high and right of centre, clear of the copy
-       column so the brightest ground is never behind the smallest type. */
+    /* SKY — the source, above the frame. Its centre sits off the top edge, so
+       what is on screen is a ramp that simply grows brighter toward the top: it
+       lifts the band the floating top bar sits on, giving the bar something to
+       be glass AGAINST, and it never resolves into a lamp. */
     radial-gradient(
-      52% 46% at 66% 30%,
-      rgb(0 182 204 / calc(0.1 * var(--aura-gain))) 0%,
-      rgb(0 182 204 / calc(0.042 * var(--aura-gain))) 42%,
-      rgb(0 182 204 / 0) 72%
+      150% 58% at 50% -14%,
+      rgb(0 182 204 / calc(0.24 * var(--aura-gain))) 0%,
+      rgb(0 182 204 / calc(0.1 * var(--aura-gain))) 45%,
+      rgb(0 182 204 / 0) 78%
     ),
-    /* FILL — a counter-light low and left, so the volume has a direction rather
-       than being a single lamp in the middle of the screen. */
+    /* COUNTER — a second, weaker source at the opposite corner, also outside
+       the frame. Two lights are what give a volume a direction; one alone reads
+       as a flashlight pointed at the page. */
       radial-gradient(
-        58% 50% at 22% 82%,
-        rgb(0 182 204 / calc(0.055 * var(--aura-gain))) 0%,
-        rgb(0 182 204 / 0) 68%
+        95% 75% at 92% 100%,
+        rgb(0 182 204 / calc(0.14 * var(--aura-gain))) 0%,
+        rgb(0 182 204 / 0) 72%
       ),
-    /* WASH — very wide, very faint, along the top edge. This is the one that
-       reads as "sky": it lifts the band the floating top bar sits on, so the
-       bar finally has something to be glass AGAINST. */
-      radial-gradient(
-        120% 38% at 50% -8%,
-        rgb(0 182 204 / calc(0.045 * var(--aura-gain))) 0%,
-        rgb(0 182 204 / 0) 74%
+    /* LUMEN — the achromatic floor, and the one gradient here that is LINEAR.
+       A radial always has a centre, so it always has a potential shape; at x8
+       amplification the radial this replaced resolved into a plain oval across
+       the middle of the page. A linear ramp has no centre and no contour at
+       all — it can only ever be "brighter up here than down there", which is
+       exactly what a floor should be. Paper rather than cyan: this is the
+       difference between a dark room and a teal page. */
+      linear-gradient(
+        to bottom,
+        rgb(242 240 235 / calc(0.09 * var(--aura-gain))) 0%,
+        rgb(242 240 235 / calc(0.045 * var(--aura-gain))) 62%,
+        rgb(242 240 235 / calc(0.028 * var(--aura-gain))) 100%
       );
   animation: aura-drift 71s var(--ease-breath) infinite;
 }
 
-/* THE VAPOUR — a live field, with a static one underneath it.
+/* THE VAPOUR — the mist, suspended in the viewport.
  *
- * The element is a <canvas> that `lib/webgl/aura-gl.ts` draws the site's own
- * curl-noise weather into, and the SVG turbulence below is what shows when it
- * cannot: WebGL2 refused, the shader rejected, the context lost. That is why
- * the fallback is a BACKGROUND-IMAGE ON THE CANVAS ITSELF rather than a second
- * element — there is nothing to keep in sync and nothing to hide, because until
- * something paints over it, it is simply what is there.
+ * The element is a <canvas> that `lib/webgl/aura-gl.ts` draws a population of
+ * drifting micro-droplets into: state in a ping-ponged float texture, one
+ * instanced velocity-aligned capsule per mote, on the same curl current the
+ * droplets ride. `lib/webgl/aura-shaders.mjs` carries the reasoning and every
+ * constant.
  *
- * WHY A SHADER AT ALL, when the static one was cheaper. Because it was a
- * scrubbed animation: a fixed texture translated on a 97s loop, which holds up
- * exactly until a reader stops scrolling and watches it. The live field is
- * `potential` — the octave ladder's own drifting fbm — sheared through
- * `curlAt`, and the ladder's octaves drift at mutually irrational velocities,
- * so it never returns to a state it has been in. That is the whole of the
- * difference between alive and moving.
- *
- * The canvas is stretched from a quarter-scale buffer, which costs a sixteenth
- * of the fill and loses nothing: there is no edge in a vapour field sharp
- * enough to miss. */
+ * THERE IS NO STATIC FALLBACK UNDER IT, AND THAT IS DELIBERATE. There used to
+ * be — an SVG turbulence tile — and it was the same fbm wash the live field
+ * replaced, so keeping it would have meant shipping the rejected look to every
+ * machine that could not run the good one. Without a float-renderable context
+ * the vapour simply does not exist and the gradient stands alone, which is a
+ * calm and complete background rather than a broken one. `data-gl` says which
+ * of the two a given render is. */
 .aura-vapour {
   position: absolute;
-  inset: -30%;
-  width: 160%;
-  height: 160%;
-  opacity: calc(0.5 * var(--aura-gain));
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='600' height='600'%3E%3Cfilter id='v'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.0055' numOctaves='4' seed='11' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0 0 0 0 0 0.71 0 0 0 0 0.8 1.1 0.5 0 0 -0.62'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23v)'/%3E%3C/svg%3E");
-  background-size: 168% 168%;
-  background-position: 50% 50%;
-  animation: aura-vapour-drift 97s linear infinite;
-}
-/* A context compiled and linked: the live field owns the layer now.
-   Three things go at once, and the last is not cosmetic:
-     - the fallback image, which the shader is now painting over;
-     - the drift animation, because the shader has its own clock and translating
-       a live field would be the very thing this replaced;
-     - THE OVERSIZE. -30% inset existed only so the drift never walked an edge
-       into frame. With no transform there is no edge to hide, and 160% square is
-       2.56x the pixels the viewport can actually show. */
-.aura[data-gl] .aura-vapour {
-  background-image: none;
-  animation: none;
   inset: 0;
   width: 100%;
   height: 100%;
+  opacity: var(--aura-mist-gain);
 }
 
-/* Long, closed, and deliberately co-prime with each other (71 : 97), so the two
-   never come back into phase inside a session and the field never reads as a
-   loop the way a single period would. */
+/* Long and closed, so the ground is never quite still and never a visible loop.
+   The gradient's centres are off screen, so this moves a ramp rather than a
+   shape — at this amplitude it is a change of weather, not a slide. */
 @keyframes aura-drift {
   0%,
   100% {
@@ -1494,18 +1528,6 @@ body:has(.liquid-journey) .aura {
   }
   50% {
     transform: translate3d(-2.4%, 1.8%, 0) scale(1.06);
-  }
-}
-@keyframes aura-vapour-drift {
-  0%,
-  100% {
-    transform: translate3d(0, 0, 0) scale(1);
-  }
-  33% {
-    transform: translate3d(3.2%, -2.2%, 0) scale(1.09);
-  }
-  66% {
-    transform: translate3d(-2.6%, 2.6%, 0) scale(1.04);
   }
 }
 
