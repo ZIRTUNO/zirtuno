@@ -654,42 +654,30 @@ turn “disconnected” into random confetti.
 
 ### 6.3 Chapter 03 — The Ecosystem
 
-**Business job:** prove “ecosystems, not loose pieces.”
+**Business job:** explain how identity, growth and operations strengthen one another.
 
-**Content:** a plain-language editorial opening names the real handoff: brand
-does not stop at the website, and the website does not stop at the lead. The
-lead connects presence, acquisition and operation without turning the chapter
-into a diagram or a piece of system notation. The closing line describes the
-operational result only after the body is whole.
+The owner-authorized September 2026 rebuild is specified in
+`docs/specs/ecosystem-flow-spec.md`. A large editorial opening leads into three
+scroll-composed statements and a final unified ecosystem. The same 48 authored
+droplets develop from open currents into connected loops, then resolve to the
+existing Confluence source for the Services bridge. No canvas is added.
 
-**Liquid:** the Problem fragments first recede into depth, then return as ten
-capability families across three overlapping system beats. They move forward
-and inward together before fusing into the exact unified mark and regaining
-vivid cyan. Nothing is drawn between them: connection is proved by the bodies
-becoming one, not by a diagram placed on top.
-
-**Composition:**
-
-- spacious editorial opening with one concrete business relationship;
-- one liquid field beside one fixed type column at desktop widths;
-- ten semantic controls grouped naturally under three system names on one
-  vertical axis, accumulating on the same clock as their liquid families;
-- hover and focus pulse the selected capability’s system first, raise the
-  liquid rack-focus channel, and update a quiet authored explanation;
-- exact mark/unified core with small “Seu negócio / Your business” resolution;
-- mobile, reduced-motion, and static tiers use the same three authored groups
-  as a readable document while preserving the convergence story;
-- a resolved commercial statement and the two mapped CTAs close the chapter.
+Desktop pairs large copy with the sculpture. Phones keep the live sculpture
+above the copy, with the same sequence and native capability disclosures.
+Three labeled chapter controls navigate the score through Lenis. The resolved
+statement carries `cta.structure` and its existing contact intent.
 
 **Acceptance:**
 
-- the Problem → Ecosystem continuity is unmistakable;
-- all nodes and explanations are accessible without hover;
-- it reads as an assembled organism, not a list around a logo or a circuit
-  drawn after the fact;
-- no counters, equation, progress register, pseudo-HUD, or dashboard chrome;
-- no literal separate canvas/core swap;
-- end CTA: `cta.structure`.
+- reversible, complementary type masks with one accessible active panel;
+- ten authored capability explanations reachable by pointer, touch and keyboard;
+- active copy and explanations fit above the chapter controls at supported sizes;
+- reduced motion, no JavaScript and no WebGL retain all four statements and
+  ten disclosures in normal document flow;
+- short viewports use the complete illustrated reading path;
+- context loss exposes the static sculpture while the story remains usable;
+- Problem and Services share the same liquid; the S4 source endpoint is exact;
+- no new dependency, separate animation engine or invented commercial proof.
 
 ### 6.4 Chapter 04 — The Services
 

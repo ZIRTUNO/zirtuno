@@ -1,0 +1,467 @@
+/* S4's converge runway — the scroll distance the liquid choreography is
+   scrubbed across (no pins; the sticky layer holds the stage).
+   R5-E shortened it: at 230vh the reader crossed a full desktop viewport, and
+   several narrow ones, that carried liquid and no ecosystem explanation. The
+   choreography is scrubbed, so it is unchanged in shape — only in duration. */
+/* ── S3 THE GATHERING · AN EDITORIAL BREATH ─────────────────────────────────
+   No card, equation, chapter numeral, or decorative register. The section
+   opens with one concrete relationship and enough empty space for it to land;
+   the liquid carries the visual explanation in the runway below. */
+.gather-intro {
+  position: relative;
+  z-index: 1;
+  overflow: clip;
+  padding-top: clamp(7rem, 16vh, 10rem);
+  padding-bottom: clamp(4rem, 10vh, 7rem);
+}
+.gather-intro-composition {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: clamp(1rem, 2vw, 2rem);
+  min-height: min(46rem, 78svh);
+  grid-template-rows: auto 1fr auto;
+}
+.gather-eyebrow {
+  position: relative;
+  z-index: 1;
+  grid-column: 1 / 5;
+  grid-row: 1;
+}
+.gather-intro-copy {
+  position: relative;
+  z-index: 1;
+  grid-column: 1 / 11;
+  grid-row: 2;
+  align-self: end;
+  padding-top: clamp(5rem, 14vh, 9rem);
+}
+.gather-claim {
+  max-width: 16ch;
+  color: var(--color-paper);
+  text-wrap: balance;
+}
+.gather-intro-lead-wrap {
+  position: relative;
+  z-index: 1;
+  grid-column: 8 / -1;
+  grid-row: 3;
+  margin-top: clamp(3rem, 8vh, 5.5rem);
+}
+.gather-intro-lead {
+  max-width: 31rem;
+  color: var(--color-paper-lead);
+  text-wrap: pretty;
+}
+.gather-outro {
+  position: relative;
+  z-index: 1;
+  padding-top: clamp(5rem, 13vh, 9rem);
+  padding-bottom: clamp(6rem, 16vh, 11rem);
+}
+.gather-resolution {
+  margin-left: 8.333%;
+}
+.gather-resolution-line {
+  max-width: 27ch;
+  font-family: var(--font-sans);
+  font-size: var(--text-display-m);
+  font-weight: 500;
+  line-height: var(--text-display-m--line-height);
+  letter-spacing: var(--text-display-m--letter-spacing);
+  color: var(--color-paper);
+  text-wrap: balance;
+}
+.gather-outro .eco-stack {
+  margin-top: clamp(4rem, 10vh, 6.5rem);
+}
+.gather-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem 2rem;
+  margin-top: clamp(2.5rem, 7vh, 4.5rem);
+}
+@media (max-width: 767px) {
+  .gather-intro {
+    padding-top: clamp(6rem, 14vh, 8rem);
+  }
+  .gather-intro-composition {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto;
+    min-height: auto;
+  }
+  .gather-eyebrow,
+  .gather-intro-copy,
+  .gather-intro-lead-wrap {
+    grid-column: 1;
+    grid-row: auto;
+  }
+  .gather-intro-copy {
+    padding-top: clamp(4.5rem, 13vh, 7rem);
+  }
+  .gather-claim {
+    max-width: 15ch;
+  }
+  .gather-intro-lead-wrap {
+    margin-top: clamp(2.5rem, 8vh, 4rem);
+  }
+  .gather-resolution {
+    margin-left: 0;
+  }
+}
+
+.eco-runway {
+  position: relative;
+  /* The gather clock is (-top / (height - vh)), so this height IS the pacing.
+     The circuit assembled in 65vh of travel because drawing lines is quick;
+     ten masses crossing the dark in three beats is not, and at that distance
+     the whole convergence flashed past inside a single trackpad flick. ~3.5
+     viewports gives each system beat roughly a screen of its own. */
+  height: 320vh;
+}
+@media (max-width: 767px) {
+  .eco-runway {
+    height: 130vh;
+  }
+}
+.ecosystem-interactions-host {
+  position: sticky;
+  top: 0;
+  z-index: 12;
+  height: 100vh;
+  overflow: hidden;
+  pointer-events: none;
+}
+@supports (height: 100svh) {
+  .ecosystem-interactions-host {
+    height: 100svh;
+  }
+}
+.eco-runway .organism-fallback {
+  position: sticky;
+  top: 25vh;
+  width: 36vmin;
+  height: 50vh;
+  margin-inline: auto;
+  display: grid;
+  place-items: center;
+}
+.liquid-journey[data-liquid="static"] .eco-runway {
+  height: auto;
+  padding-block: clamp(3rem, 10vw, 6rem);
+}
+.liquid-journey[data-liquid="static"] .ecosystem-interactions-host {
+  display: none;
+}
+.liquid-journey[data-liquid="static"] .eco-runway .organism-fallback {
+  position: relative;
+  top: auto;
+  width: clamp(12rem, 36vmin, 22rem);
+  height: auto;
+  /* THE CONFLUENCE is authored in cloud space, which is square — the old ratio
+     was the Zirtuno mark's own artboard. */
+  aspect-ratio: 1;
+}
+
+
+/* ===========================================================================
+   S3 · THE GATHERING — QUIET TYPE, LIVING FIELD.
+
+   The liquid owns the right-hand field. The type sits in the left gutter as
+   three plain-language groups, with no register, meter, frame, or numerical
+   notation. --eco-grow still gives the liquid and its words the same arrival
+   clock; --eco-fuse lets the names step back when the body becomes whole.
+   =========================================================================== */
+.gather-col {
+  --gc-row: max(34px, 3vh);
+  position: absolute;
+  left: var(--page-padding, 3rem);
+  top: clamp(5rem, 11vh, 6.5rem);
+  width: clamp(18rem, 25vw, 25rem);
+  display: none;
+  opacity: var(--eco-fade, 1);
+  transition: opacity 320ms var(--ease-arrive);
+}
+/* the gathering needs real room — below lg the eco-stack carries the
+   capabilities instead (in-app browsers and tablets included) */
+@media (min-width: 1024px) {
+  .gather-col {
+    display: block;
+  }
+}
+.gather-plate {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* Groups take up room only as their corresponding liquid families arrive. */
+.gather-block {
+  --e: clamp(0, (var(--eco-grow, 0) - var(--d, 0)) / var(--w, 1), 1);
+  overflow: hidden;
+  max-height: calc(clamp(0, var(--e) * 1.35, 1) * 24rem);
+  margin-bottom: calc(var(--e) * clamp(1.15rem, 2.8vh, 1.9rem));
+  opacity: calc(var(--e) * (1 - 0.42 * var(--eco-fuse, 0)));
+  transition: opacity 320ms var(--ease-arrive);
+}
+.journey-interactions[data-pulse="true"] .gather-block {
+  transition-delay: var(--pd, 0ms);
+}
+
+.gather-block-title {
+  --r: clamp(0, (var(--eco-grow, 0) - var(--d, 0)) / (var(--w, 1) * 0.34), 1);
+  display: block;
+  overflow: hidden;
+  margin: 0 0 0.45rem;
+}
+.gather-block-name {
+  display: block;
+  font-family: var(--font-sans);
+  font-size: var(--text-body-l);
+  font-weight: 550;
+  line-height: var(--text-body-l--line-height);
+  letter-spacing: var(--text-body-l--letter-spacing);
+  color: var(--color-paper);
+  transform: translateY(calc((1 - var(--r, 1)) * 105%));
+}
+
+.gather-rows {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.gather-row {
+  --e: clamp(0, (var(--eco-grow, 0) - var(--d, 0)) / var(--w, 1), 1);
+  position: relative;
+  opacity: var(--e);
+  transform: translateY(calc((1 - var(--e)) * 0.55rem));
+  transition:
+    opacity 300ms var(--ease-arrive),
+    transform 300ms var(--ease-arrive);
+}
+.journey-interactions[data-interactive="true"] .gather-row {
+  pointer-events: auto;
+}
+.journey-interactions[data-pulse="true"] .gather-row {
+  transition-delay: var(--pd, 0ms);
+}
+.gather-row:focus-within {
+  opacity: 1 !important;
+}
+
+.gather-row-trigger {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  min-height: var(--gc-row);
+  padding: 0.28rem 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.gather-row-trigger:focus-visible {
+  outline-offset: 3px;
+}
+.gather-row-dot {
+  flex: none;
+  width: 0.34rem;
+  height: 0.34rem;
+  border-radius: 50%;
+  background: var(--color-cyan);
+  opacity: 0.28;
+  transform: scale(0.62);
+  transition:
+    opacity 220ms var(--ease-arrive),
+    transform 220ms var(--ease-arrive);
+}
+.gather-row-name {
+  font-family: var(--font-sans);
+  font-size: var(--text-body);
+  font-weight: 450;
+  line-height: var(--text-body--line-height);
+  letter-spacing: var(--text-body--letter-spacing);
+  color: var(--color-paper-mute);
+  transition: color 220ms var(--ease-arrive);
+}
+.gather-row:hover .gather-row-name,
+.gather-row:focus-within .gather-row-name,
+.gather-row[data-open="true"] .gather-row-name {
+  color: var(--color-paper);
+}
+.gather-row:hover .gather-row-dot,
+.gather-row:focus-within .gather-row-dot,
+.gather-row[data-open="true"] .gather-row-dot {
+  opacity: 1;
+  transform: scale(1);
+}
+.journey-interactions[data-pulse="true"] .gather-row-name {
+  color: var(--color-paper);
+  transition-delay: var(--pd, 0ms);
+}
+/* the capability line reaches AT through aria-describedby; sighted users
+   read the same words in the column's readout */
+.gather-row-cap {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.gather-col-sum {
+  margin: 0.15rem 0 0;
+  overflow: hidden;
+  max-height: calc(var(--eco-fuse, 0) * 4rem);
+}
+.organism-center {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: var(--text-mono-sm);
+  font-weight: 500;
+  line-height: var(--text-mono-sm--line-height);
+  letter-spacing: var(--text-mono-sm--letter-spacing);
+  color: var(--color-cyan);
+  transform: translateY(calc((1 - var(--eco-fuse, 0)) * 105%));
+}
+
+/* A quiet editorial note, never an instrument panel. */
+.gather-note {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  margin-top: clamp(0.9rem, 2.2vh, 1.4rem);
+  min-height: 3rem;
+  max-width: 22rem;
+  opacity: calc(
+    clamp(0, (var(--eco-grow, 0) - 0.1) / 0.18, 1) * var(--eco-fade, 1)
+  );
+  pointer-events: none;
+}
+.gather-note-name {
+  font-family: var(--font-sans);
+  font-size: var(--text-body-s);
+  font-weight: 600;
+  line-height: var(--text-body-s--line-height);
+  letter-spacing: var(--text-body-s--letter-spacing);
+  color: var(--color-paper);
+}
+.gather-note-copy {
+  font-family: var(--font-sans);
+  font-size: var(--text-body-s);
+  line-height: var(--text-body-s--line-height);
+  letter-spacing: var(--text-body-s--letter-spacing);
+  color: var(--color-paper-mute);
+  text-wrap: pretty;
+}
+
+/* Compact stages preserve the same reading order and pointer target floor. */
+@media (min-width: 1024px) and (max-height: 880px) {
+  .gather-col {
+    --gc-row: max(26px, 2.4vh);
+  }
+  .gather-block-title {
+    margin-bottom: 0.35rem;
+  }
+  .gather-note {
+    min-height: 2.4rem;
+  }
+}
+@media (min-width: 1024px) and (max-height: 800px) {
+  .gather-col {
+    --gc-row: max(24px, 2.2vh);
+  }
+  .gather-row-trigger {
+    padding-block: 0.18rem;
+  }
+  .gather-block {
+    margin-bottom: calc(var(--e) * 0.6rem);
+  }
+  .gather-block-title {
+    margin-bottom: 0.25rem;
+  }
+  .gather-note {
+    margin-top: 0.6rem;
+    min-height: 1.9rem;
+  }
+}
+
+
+/* Narrow and static tiers read as an authored document, grouped by meaning. */
+.eco-stack {
+  display: grid;
+  gap: clamp(2.5rem, 7vw, 4rem);
+  max-width: 46rem;
+}
+@media (min-width: 1024px) {
+  [data-liquid="live"] .eco-stack {
+    display: none;
+  }
+}
+.eco-stack-group {
+  display: grid;
+  gap: 1.25rem;
+}
+.eco-stack-system {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: var(--text-title);
+  font-weight: 600;
+  line-height: var(--text-title--line-height);
+  letter-spacing: var(--text-title--letter-spacing);
+  color: var(--color-paper);
+}
+.eco-stack-items {
+  display: grid;
+  gap: 1.15rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.eco-stack-center {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: var(--text-title);
+  font-weight: 600;
+  line-height: var(--text-title--line-height);
+  letter-spacing: var(--text-title--letter-spacing);
+  color: var(--color-cyan);
+}
+.eco-stack-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+.eco-stack-name {
+  font-size: var(--text-body-l);
+  font-weight: 550;
+  line-height: var(--text-body-l--line-height);
+  letter-spacing: var(--text-body-l--letter-spacing);
+  color: var(--color-paper);
+}
+.eco-stack-cap {
+  font-size: var(--text-body);
+  line-height: var(--text-body--line-height);
+  letter-spacing: var(--text-body--letter-spacing);
+  color: var(--color-paper-mute);
+}
+@media (min-width: 640px) and (max-width: 1023px) {
+  .eco-stack-group {
+    grid-template-columns: minmax(10rem, 0.75fr) minmax(0, 1.5fr);
+    align-items: start;
+  }
+  .eco-stack-center {
+    margin-left: calc(33.333% + 0.85rem);
+  }
+}
+.journey-interactions {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}

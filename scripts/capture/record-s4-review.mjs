@@ -81,7 +81,7 @@ await page.addStyleTag({
   content: `
     html, body { background: #000 !important; }
     .journey-content,
-    .journey-interactions,
+    .eco-navigation,
     .origin-pillar-labels,
     .cine-veils,
     .topbar,

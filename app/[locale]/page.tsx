@@ -1,6 +1,6 @@
-import { getTranslations, setRequestLocale } from "next-intl/server";
+import { setRequestLocale } from "next-intl/server";
 import { Hero } from "@/components/hero/Hero";
-import { PageStage, type EcoNode } from "@/components/field/PageStage";
+import { PageStage } from "@/components/field/PageStage";
 import { Footer } from "@/components/chrome/Footer";
 import { ChapterProblem } from "@/components/chapters/ChapterProblem";
 import { ChapterEcosystem } from "@/components/chapters/ChapterEcosystem";
@@ -22,8 +22,6 @@ export default async function HomePage({
 }) {
   const { locale } = await params;
   setRequestLocale(locale);
-  const tEco = await getTranslations("ecosystem");
-  const ecoNodes = tEco.raw("nodes") as EcoNode[];
   // One truth for the whole page: while nothing is published, no chapter offers
   // a portfolio link that lands on an empty index (Z-AUD-001's user-facing
   // consequence). Reads the cached catalogue — no extra CMS round trip.
@@ -38,16 +36,7 @@ export default async function HomePage({
           fracture, the organism, the service melts, the method rehearsal, the
           origin beats and the studio echoes are ONE continuous fluid — the same
           48 droplets end to end, down to the footer edge. */}
-      <PageStage
-        nodes={ecoNodes}
-        centerLabel={tEco("centerLabel")}
-        ecosystemLabel={tEco("headline")}
-        systems={[
-          tEco("systems.identity"),
-          tEco("systems.growth"),
-          tEco("systems.operation"),
-        ]}
-      >
+      <PageStage>
         <Hero />
         <ChapterProblem />
         <ChapterEcosystem />

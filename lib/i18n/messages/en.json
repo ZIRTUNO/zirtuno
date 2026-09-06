@@ -89,9 +89,9 @@
   },
   "ecosystem": {
     "chapterLabel": "The Ecosystem",
-    "headline": "The brand does not end at the website. The website does not end at the lead.",
-    "lead": "Brand, presence, acquisition, and operations need to share context. We design that continuity from the first contact to the work that follows.",
-    "resolution": "What the client sees and what the team operates become part of the same structure.",
+    "headline": "Connected, everything goes further.",
+    "lead": "A brand that attracts. A presence that converts. An operation that keeps up. We build what connects them.",
+    "resolution": "From the first impression to the next step. One ecosystem.",
     "centerLabel": "Your business",
     "systems": {
       "identity": "Identity",
@@ -138,6 +138,24 @@
       {
         "name": "Content",
         "tooltip": "The voice that keeps the brand present."
+      }
+    ],
+    "eyeline": "Connections that move business forward",
+    "together": "One ecosystem.",
+    "togetherLead": "Each part moves the next one forward. Context travels, work flows, and the business keeps moving.",
+    "journeyLabel": "Explore the connections",
+    "chapters": [
+      {
+        "title": "A presence that makes sense.",
+        "copy": "Brand, content, and website speak the same language. Who you are becomes what people recognise."
+      },
+      {
+        "title": "Every connection opens a path.",
+        "copy": "From discovery to relationship. Traffic, service, and CRM carry every opportunity into its next step."
+      },
+      {
+        "title": "What happens next matters too.",
+        "copy": "AI, automation, and systems connect the operation. Data comes back as clarity for the next decision."
       }
     ]
   },

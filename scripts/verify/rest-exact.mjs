@@ -52,6 +52,16 @@ for (let i = 0; i < STATES; i++) {
   });
   const stage = page.locator("[data-hero-metaball]");
   await stage.waitFor({ state: "visible", timeout: 15000 });
+  // A visible shell can settle as two identical EMPTY frames while its SDF
+  // loads. The renderer sets backing dimensions only inside its first draw,
+  // after both textures exist. Wait for that draw before testing stability.
+  await page.waitForFunction(() => {
+    const canvas = document.querySelector("[data-hero-metaball] canvas");
+    if (!canvas) return false;
+    const dpr = Math.min(devicePixelRatio, 2);
+    return canvas.width === Math.round(canvas.parentElement.clientWidth * dpr)
+      && canvas.height === Math.round(canvas.parentElement.clientHeight * dpr);
+  }, { timeout: 30000 });
   await page.waitForTimeout(900);
   let prev = null;
   let shot = null;

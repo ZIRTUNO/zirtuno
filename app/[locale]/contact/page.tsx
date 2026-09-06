@@ -3,6 +3,7 @@ import { setRequestLocale, getTranslations } from "next-intl/server";
 import { Footer } from "@/components/chrome/Footer";
 import { ContactForm } from "@/components/contact/ContactForm";
 import { ContactChannels } from "@/components/contact/ContactChannels";
+import { Companion } from "@/components/contact/Companion";
 import { resolveContactIntent } from "@/lib/forms/contact";
 import { routing } from "@/lib/i18n/config";
 import { ogImage } from "@/lib/seo/og-image";
@@ -126,7 +127,17 @@ export default async function ContactPage({
               the visitor is answering stays in front of them while they write
               the answer. */}
           <div className="contact-aside">
-            <p className="chapter-label">{t("chapterLabel")}</p>
+            {/* THE COMPANION rides the label's line, at the far end of the
+                statement column and directly above the display type. It is
+                decorative and `aria-hidden`: it carries nothing a reader
+                depends on, it takes no pointer, and with JavaScript off it is
+                a still droplet in the server HTML rather than an empty box.
+                See the block in `app/contact.css` for why it is here and not
+                over the form. */}
+            <div className="contact-label-row">
+              <p className="chapter-label">{t("chapterLabel")}</p>
+              <Companion />
+            </div>
 
             <h1 className="type-page-title liquid-glass contact-title">
               {t("title")}

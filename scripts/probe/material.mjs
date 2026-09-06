@@ -65,7 +65,7 @@ const state = await page.evaluate(() => {
   const s = window.__scenes?.site;
   return {
     optics: o ? { tier: o.tier, glass: o.glass, gloss: o.gloss, post: o.post, shadow: o.shadow } : "NOT EXPOSED",
-    grow: document.querySelector(".journey-interactions")?.style.getPropertyValue("--eco-grow"),
+    grow: document.querySelector(".eco-stage")?.style.getPropertyValue("--eco-p"),
     gather: s ? +s.gather.toFixed(3) : null,
   };
 });

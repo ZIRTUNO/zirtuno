@@ -259,3 +259,13 @@ and helper modules with incoming imports remain active.
 3. Remove or update its entry above.
 4. Run `npx tsc --noEmit`, `npm run lint`, `npm run build`, and every mapped
    feature gate before treating the code as active again.
+
+## 2026-09-06 — S3 Connections rebuild
+
+`Dead Code/s3-gathering/` preserves the former ChapterEcosystem, PageStage
+label portal, site scene, gathering styles, verification and capture harness.
+They were superseded by the owner-authorized full S3 rebuild: one GSAP score
+sampled by PageStage, three continuous liquid currents, native disclosures and
+a live phone composition. The active gate is `scripts/verify/ecosystem.mjs`;
+the active capture is `scripts/capture/ecosystem.mjs`. Shared Confluence geometry
+and the Services bridge remain active and are not quarantined.

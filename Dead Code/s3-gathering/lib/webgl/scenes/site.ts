@@ -28,8 +28,21 @@ import {
   clusterTargets,
   ORGANISM_SCALE,
 } from "../phys.mjs";
-import { gatherLeftEdge, FIELD_MIN_W, fuse as gatherFuse, NODE_OF } from "../gathering.mjs";
-import { ecosystemFlow } from "../ecosystem-flow.mjs";
+import {
+  gatherAnchor,
+  gatherTiming,
+  gatherDepth,
+  gatherRadius,
+  gatherOffsetX,
+  gatherLeftEdge,
+  FIELD_MIN_W,
+  recede as gatherRecede,
+  arrivalPulse,
+  familyOffset,
+  fuse as gatherFuse,
+  env as gatherEnv,
+  NODE_OF,
+} from "../gathering.mjs";
 import type { ScatterTarget } from "../phys.mjs";
 import {
   permFor,
@@ -277,8 +290,7 @@ export function makeSiteScene(): SceneModule {
   let svcOy = 0;
   let svcScale = ORGANISM_SCALE;
   let ecoOx = 0; // uv x of THE GATHERING's field centre (type owns the column)
-  let stageW = 0;
-  let stageH = 0;
+  let stageW = 0; // viewport width — decides whether the column exists at all
   let cachedWide = -1;
   let cachedServicesWide = -1;
 
@@ -289,7 +301,6 @@ export function makeSiteScene(): SceneModule {
   // THE CIRCULATION's scratch: [dx, dy, radius multiplier], written in place by
   // confluence.mjs so target() stays allocation-free like every other scene.
   const circ = new Float32Array(3);
-  const ecoDrop = new Float32Array(5);
   let circW = 0; // its amplitude this frame — a scene clock, not a droplet one
   // THE SPIN's accumulated angle, and this frame's applied rotation. Kept in
   // (-pi, pi] while it is still turning: rotation is 2*pi-periodic, so wrapping
@@ -445,7 +456,6 @@ export function makeSiteScene(): SceneModule {
     read(g: SceneGeom, out: SceneChannels) {
       const vh = g.vh;
       stageW = g.vw; // read runs before tick; the field split needs real px
-      stageH = g.vh;
       const cy = vh * 0.5;
       const hr = g.rect("hero");
       if (hr) out.heroPhase = clamp01(-hr.top / (hr.height * 0.72));
@@ -562,8 +572,15 @@ export function makeSiteScene(): SceneModule {
         const virtual = Math.max(
           centers[0] - (crossSpan > 0 ? crossSpan * SVC_RUNWAY : vh * 0.85),
           rw ? rw.bottom : -Infinity,
-          // On narrow stages the outro is full-width copy. Keep the Services
-          // melt beyond it; the live S3 sculpture remains above the reading zone.
+          // …and, on narrow stages, no earlier than Services itself. Below
+          // FIELD_MIN_W the eco-stack is RENDERED (globals.css hides it on that
+          // same breakpoint, which is why this reads the same constant rather
+          // than inventing a second one), and it is full-width body copy — ten
+          // capabilities with their descriptions. A melt running through that
+          // puts 48 droplets on type that has to be read, which is the one
+          // thing the S3 field/column split exists to prevent. Wide stages give
+          // the copy the left column and the form the right, so there the two
+          // never meet and the melt is free to run through the outro.
           g.vw < FIELD_MIN_W && sr ? sr.top : -Infinity,
         );
         const uu = coordAt(cy, [virtual, ...centers]) - 1; // ∈ [-1, n-1]
@@ -628,7 +645,7 @@ export function makeSiteScene(): SceneModule {
         // of why the names read as dropped on top of something — they were.
         // The tighter spread also makes the constellation a composition rather
         // than confetti: the eye can see three groups in it.
-        ecoOx = stageW >= FIELD_MIN_W ? 0.235 * aspect : 0;
+        ecoOx = gatherOffsetX(aspect, stageW);
         Teco = wideScatter(aspect, 0.5 + ecoOx, 0.5, 0.74);
         // …and hold every target inside the field. wideScatter's own clamp is
         // measured from the stage centre, which keeps liquid in FRAME but says
@@ -772,18 +789,8 @@ export function makeSiteScene(): SceneModule {
       // CROSSING's recoil ring on the way in, THE SWELL on the way out. They
       // are one chapter apart and can never overlap, so a single signed sum is
       // exact rather than a convenience.
-      // Size against the actual reading aperture, not phone width alone.
-      // A short phone and a portrait tablet need very different UV scales.
-      const visualTop = Math.max(150, stageH * 0.17);
-      const visualBottom = stageH * (stageH < 740 ? 0.44 : 0.47);
-      const ecoScale = stageW < FIELD_MIN_W
-        ? Math.min(0.74, Math.max(0.2, (visualBottom - visualTop) / (Math.min(stageW, stageH) * 0.98)))
-        : 0.70;
-      const ecoLift = stageW < FIELD_MIN_W
-        ? (stageH * 0.5 - (visualTop + visualBottom) * 0.5) / Math.min(stageW, stageH)
-        : 0.04;
       jScale =
-        (ecoScale + (svcScale - ecoScale) * TRV) *
+        (ORGANISM_SCALE + (svcScale - ORGANISM_SCALE) * TRV) *
         (1 + settle + exSwell);
       // The body fuses inside THE GATHERING's field and then travels to the
       // Services column. Both are right of centre, so the handoff is a short
@@ -799,13 +806,13 @@ export function makeSiteScene(): SceneModule {
       // the same move spread over its first third is under the per-frame
       // threshold at every scroll speed, and it lands long before the fuse
       // makes the mark's position matter.
-      const ecoIn = smooth01(clamp01(TR * 0.78 + gather * 2));
+      const ecoIn = smooth01(clamp01(gather / 0.34));
       jOx = ecoOx * ecoIn * (1 - TRV) + svcOx * TRV;
       // The form's own offset, the droplets' home footprint and the §3.3 bridge
       // all read jOy, so the body and its liquid share one position — which is
       // what lets the release surface the droplets exactly inside the
       // silhouette they came out of, with no offset of their own to explain.
-      jOy = svcOy * TRV + ecoLift * (1 - smooth01(CX / 0.5)) * (1 - TRV);
+      jOy = svcOy * TRV;
       const inServices = pa !== pb || pa > 0;
       // The bridge owns the Services droplets for the WHOLE pillar range, not
       // only while a melt is strictly in flight. Gating it to the open interval
@@ -990,7 +997,7 @@ export function makeSiteScene(): SceneModule {
       // Services composition. The traverse is finished before the melt opens,
       // so the stage is clear of atmosphere by the time it does.
       ambW =
-        (1 - smooth01(TR) * (1 - TRV)) *
+        (1 - 0.5 * smooth01(gather) * (1 - TRV)) *
         (1 - TRV) *
         EXW *
         smooth01((hp - 0.66) / 0.3);
@@ -1051,6 +1058,7 @@ export function makeSiteScene(): SceneModule {
 
     target(i: number, ctx: SceneCtx, out: DropletOut) {
       const t = ctx.t;
+      const aspect = ctx.aspect;
       const bb = base[i];
       // hero-side target
       let hx: number;
@@ -1071,46 +1079,178 @@ export function makeSiteScene(): SceneModule {
       hy = 0.5 + (hy - 0.5) * 0.5;
       hr *= 0.5;
 
-      // S3 / CONNECTIONS. The scatter becomes three substantial currents.
-      // This is still the canonical population; only its authored targets change.
-      let bindJ = 0;
-      let clusJ = -1;
-      let densJ = 1;
-      const clu = Tclu[i], dis = Tdis[i], eco = Teco[i];
+      // ── journey-side target: fracture → dispersed → THE GATHERING ───────────
+      //
+      // The dispersed field is not a waypoint on the way to the mark any more:
+      // it is the STATE the chapter begins in, and every droplet leaves it on
+      // its own capability's schedule. Nothing "converges" as a block.
+      let bindJ = 0; // journey-side bind (exactness of the current regime)
+      let clusJ = -1; // cohesion group
+      let densJ = 1; // journey-side field presence (1 = solid liquid)
+      const clu = Tclu[i],
+        dis = Tdis[i],
+        eco = Teco[i];
       let tx = clu.tx + (dis.tx - clu.tx) * F;
       let ty = clu.ty + (dis.ty - clu.ty) * F;
-      const entrance = smooth01(TR);
-      tx += (eco.tx - tx) * entrance;
-      ty += (eco.ty - ty) * entrance;
+      // BOUNDARY: Problem → Ecosystem. Only a PARTIAL re-centring. Carrying the
+      // whole field from the Problem's off-centre scatter to a centred one made
+      // the liquid slide sideways as a block before the chapter began — a move
+      // with no cause, which reads as a scene change. The fracture's dispersed
+      // field IS the gathering's starting state; travel only eases it into the
+      // runway's frame, and each capability makes the rest of the journey
+      // itself, on its own schedule, as part of arriving.
+      // …and then the GATHER clock finishes it. 0.42 alone was right when the
+      // eco scatter was centred on the stage: the destination was barely a move,
+      // so a partial one was enough. Now the field is a real place — it is the
+      // half of the stage the type does not own — and stopping at 42% of the way
+      // there left loose liquid drifting across the column for the whole
+      // chapter, which is the same "type with blobs on it" the composition
+      // exists to end. The connective liquid is being drawn in too; letting the
+      // clock carry it home is both the fix and the more honest physics.
+      const ecoPull = Math.max(TR * 0.42, smooth01((gather - 0.04) / 0.5));
+      tx += (eco.tx - tx) * ecoPull;
+      ty += (eco.ty - ty) * ecoPull;
+
+      // THE CONFLUENCE's own station — where this droplet ends up once fused.
+      //
+      // This used to be the mark's footprint, `bb`, which is CLOUDS[0]: the
+      // gathering's ten families converged onto the Zirtuno logo's own metaball
+      // decomposition, were then absorbed (`densJ = 1 - fused`), and the SDF of
+      // the logo was drawn in their place. The chapter's argument is that these
+      // fragments STOP BEING SEPARATE, and a vector mark faded up over the
+      // liquid that had just done the work is the one thing on the page that
+      // contradicts it.
+      //
+      // So the destination is a symbol the droplets ARE: three arms running in
+      // from the three systems' own bearings, merged into one core
+      // (confluence.mjs). Droplet i's seat is fixed and addressable, which is
+      // what lets a capability arrive at ITS OWN place on ITS OWN system's arm
+      // rather than anywhere in a cloud — the fuse is legible for the first
+      // time, because you can see which mass went where.
       const st = CONFLUENCE[i];
+      // …and the resolved body BREATHES, on its own clock. A form that holds
+      // still reads as an image being scrolled past; SVC_CHURN answers that for
+      // the pillars by warping the FORM sample, and this symbol has no form, so
+      // it takes the droplet-side equivalent: a slow wave running down each arm
+      // into the core. Faded in by the fuse and out again by the crossing melt,
+      // so both endpoints are the exact station table.
       if (circW > 0.002) circulate(circ, i, t, circW);
-      else { circ[0] = 0; circ[1] = 0; circ[2] = 1; }
-      ecosystemFlow(ecoDrop, i, gather, t, st);
-      const closing = smooth01((gather - 0.8) / 0.2);
-      const narrow = stageW < FIELD_MIN_W;
-      // Wide: liquid occupies the right half. Phone: a compact sculpture above
-      // the reading, centred at 34vh. It never needs a desktop label overlay.
-      const scaleGain = narrow ? 1 : 1.10;
-      const flowScale = jScale * (scaleGain + (1 - scaleGain) * closing);
-      const sx = ecoDrop[0] - 0.5 + circ[0] * closing;
-      const sy = ecoDrop[1] - 0.5 + circ[1] * closing;
-      const rot = closing;
-      const ex = sx * (1 + (spinCos - 1) * rot) - sy * spinSin * rot;
-      const ey = sy * (1 + (spinCos - 1) * rot) + sx * spinSin * rot;
-      const targetX = 0.5 + jOx + ex * flowScale;
-      const targetY = 0.5 + jOy + ey * flowScale;
-      // Claim the composition before the first beat, through the approach.
-      const e = smooth01(entrance * 0.78 + gather * 2.0);
-      let jx = tx + (targetX - tx) * e;
-      let jy = ty + (targetY - ty) * e;
-      let jr = st[2] * jScale * VARY[i] * (1 - e) + ecoDrop[2] * flowScale * circ[2] * e;
-      let depth = ecoDrop[3] * e;
+      else {
+        circ[0] = 0;
+        circ[1] = 0;
+        circ[2] = 1;
+      }
+      // …and THE SPIN turns the whole station table about the body's own centre
+      // before it is staged. A rotation of the cloud, not of the canvas: every
+      // droplet keeps its identity, its radius and its capability, so the rack
+      // focus, the melt correspondence and the fuse all go on addressing the
+      // same seats.
+      const sx = st[0] + circ[0] - 0.5;
+      const sy = st[1] + circ[1] - 0.5;
+      const mx = 0.5 + jOx + (sx * spinCos - sy * spinSin) * jScale;
+      const my = 0.5 + jOy + (sx * spinSin + sy * spinCos) * jScale;
+
       const node = NODE_OF(i);
+      let e = 0; // this droplet's arrival (0 = still out in the dark)
+      let depth = 1; // 1 = far, 0 = near
+      let gx = mx;
+      let gy = my;
+      let gr = st[2] * circ[2] * jScale;
+
+      if (node >= 0) {
+        // one of the ten capabilities: it has a lobe to arrive at, a depth to
+        // come forward through, and two family members it holds on to
+        const fam = familyOffset(i);
+        const tm = gatherTiming(node);
+        // family members lead each other slightly, so a capability arrives as a
+        // small stream rather than three dots moving in lockstep
+        e = gatherEnv(gather, { d: tm.d + fam.lead * 0.03, w: tm.w });
+        depth = gatherDepth(node, gather);
+        const pulse = arrivalPulse(node, gather);
+        const anchor = gatherAnchor(node, aspect, stageW);
+        const ax = anchor.x + fam.x;
+        const ay = anchor.y + fam.y;
+        // arrive at the lobe, then be drawn into the body by the fuse
+        gx = ax + (mx - ax) * fused;
+        gy = ay + (my - ay) * fused;
+        gr = gatherRadius(i, depth, pulse);
+        // Gathered mass keeps its cluster id so cohesion holds each capability
+        // together in flight — this is what makes ten families read as ten
+        // BODIES crossing the dark rather than thirty independent beads.
+        if (e > 0.12 && fused < 0.6) clusJ = node % 16;
+      } else {
+        // the connective liquid: no lobe of its own, it simply comes forward
+        // and becomes the body the capabilities arrive into
+        e = gatherEnv(gather, { d: 0.5 + 0.22 * hash(i, 71), w: 0.3 });
+        depth = 1 - e;
+        gr = st[2] * circ[2] * jScale * (0.5 + 0.5 * e);
+      }
+
+      // Where the droplet actually is: out in the dispersed dark, or gathered.
+      // The blend IS the travel — there is no separate "converge" transform.
+      let jx = tx + (gx - tx) * e;
+      let jy = ty + (gy - ty) * e;
+      // THE RECEDE. The un-gathered half of this blend used to hold the mark's
+      // own footprint radius, which is a constant: a droplet that had not been
+      // called yet was the same size and the same brightness at the start of
+      // the runway as it was two viewports later. That is why the middle of the
+      // chapter had no motion in it to follow — the only thing the clock
+      // actually changed was position, and a scatter shuffling inside its own
+      // bounds does not read as change. Falling back into the dark first gives
+      // the arrival something to arrive FROM.
+      const rec = gatherRecede(TR);
+      let jr = st[2] * jScale * VARY[i] * rec * (1 - e) + gr * e;
+      // …and the same for light: depth is the chapter's argument, so unarrived
+      // liquid has to actually be far, not merely elsewhere.
+      depth = Math.min(1, depth + (1 - rec) * (1 - e));
+      // NO HANDOFF. This is the passage that used to delete the liquid:
+      //
+      //     jr *= 1 - 0.35 * fused;
+      //     densJ = 1 - fused;
+      //
+      // …because the droplets that carried the gathering would otherwise pile
+      // onto the mark's footprint and inflate its silhouette into a blob. That
+      // was the correct fix for a resolution made of vector geometry, and it is
+      // exactly what has to go now that the resolution is made of the droplets
+      // themselves. There is nothing underneath them to protect: THE CONFLUENCE
+      // is 48 stations and this is the liquid standing on them, so it keeps
+      // full density and its authored radius all the way through the fuse.
+      //
+      // The Services pillars are unaffected — the §3.3 branch below still takes
+      // these droplets over for the whole pillar range and still absorbs them
+      // under each form, which is where a silhouette IS the subject.
+
+      // loose liquid drags with the scroll; gathered liquid has been claimed
       jy += stirY * (1 - e);
-      // Smooth connected contours need claimed targets; the existing render-time
-      // hand and strike still deform them at full bind. Curl lives in the lead-in.
-      bindJ = e;
-      if (TR < 0.6 && F < 0.85) clusJ = Math.min((hash(i, 11) * 4) | 0, 3);
+      // The fluid core owns free-liquid micro-motion. Preserve the authored
+      // drift only for the exact ?fphys=0 rollback, where no curl field exists.
+      if (!ctx.physics) {
+        const drift = PHYS.DRIFT * (1 - e);
+        jx += drift * Math.sin(t * dis.f1 + i * 1.7);
+        jy += drift * Math.cos(t * dis.f2 + i * 2.3);
+      }
+      // Free while crossing, exact once fused under the mark. The middle is
+      // deliberately loose: that is where the merging is visible.
+      //
+      // THE CLAIM is the third term. At bind ≈ 0 a droplet barely tracks its
+      // authored target at all — it is advected by curl, repulsion and
+      // cohesion — so "the scatter lives in the field" was true of the targets
+      // and not of the liquid: droplets drifted out of the field and settled
+      // on the column, which the obstacle could only partly push back.
+      //
+      // This is not a bind bypass dressed up as composition. The chapter's
+      // claim is that this liquid is being CLAIMED — drawn out of a dispersed
+      // state into one body — so the degree to which the authored composition
+      // governs it should rise with the gather clock by construction. It is
+      // still a minority term: the field goes on merging, drifting and
+      // answering the cursor, it simply stops wandering out of frame. Zero at
+      // the fracture (The Problem is untouched) and superseded by `fused`.
+      const claimed = 0.3 * smooth01(gather) * (1 - SP);
+      bindJ = Math.max(e * 0.35, fused, claimed);
+      if (fused > 0.7) clusJ = -1;
+      // the fracture's unstable chunks still cohere before the gathering starts
+      if (TR < 0.6 && F < 0.85 && e < 0.1)
+        clusJ = Math.min((hash(i, 11) * 4) | 0, 3);
       if (svcBridge) {
         // the §3.3 services bridge is the journey target across the pillar
         //

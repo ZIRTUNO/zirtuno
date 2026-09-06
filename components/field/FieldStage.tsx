@@ -155,6 +155,8 @@ const RUNG_SCALE: Record<LiveTier, number | "max"> = {
 
 type FieldStageProps = {
   driver: FieldDriver;
+  /** Scene-scored share of the existing glass material; identity elsewhere. */
+  glossGain?: () => number;
   play?: boolean;
   tier?: "full" | "lite";
   onReady?: () => void;
@@ -165,6 +167,7 @@ type FieldStageProps = {
 
 export default function FieldStage({
   driver,
+  glossGain,
   play = true,
   tier = "full",
   onReady = () => {},
@@ -176,6 +179,9 @@ export default function FieldStage({
   useEffect(() => {
     cb.current = { onReady, onContextLost, onTierChange };
   }, [onReady, onContextLost, onTierChange]);
+
+  const glossGainRef = useRef(glossGain);
+  useEffect(() => { glossGainRef.current = glossGain; }, [glossGain]);
 
   const driverRef = useRef(driver);
   useEffect(() => {
@@ -736,9 +742,11 @@ export default function FieldStage({
         diag.touch = touchTierActive ? 1 : 0;
       }
       gl.uniform1f(layer.U("iGlass"), glass ? 1 : 0);
-      gl.uniform1f(layer.U("iGloss"), glass && glossRequested ? 1 : 0);
+      const sceneGloss = Math.max(0, Math.min(1, glossGainRef.current?.() ?? 0));
+      const gloss = glass ? (glossRequested ? 1 : sceneGloss) : 0;
+      gl.uniform1f(layer.U("iGloss"), gloss);
       diag.glass = glass ? 1 : 0;
-      diag.gloss = glass && glossRequested ? 1 : 0;
+      diag.gloss = gloss;
       gl.uniform1i(layer.U("iBallCount"), f.count);
       diag.count = f.count;
       diag.motes = f.motes ?? 0;
