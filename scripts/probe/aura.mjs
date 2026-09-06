@@ -234,11 +234,12 @@ const ctx = await browser.newContext({
 });
 const page = await ctx.newPage();
 
-// NOGL=1 renders the STATIC fallback instead of the live field, by refusing the
-// aura canvas a context before any app code runs. That makes "static vs live" a
-// reproducible A/B on one build rather than a comparison between two checkouts
-// - which matters, because which of the two reads better is a taste call and
-// the taste call needs the two shots to differ in nothing else.
+// NOGL=1 refuses the aura canvas a context before any app code runs, which is
+// exactly the path a machine without renderable float textures takes: no
+// vapour, and the CSS gradient standing alone. There is no static vapour to
+// fall back to any more - the SVG turbulence that used to sit under this canvas
+// WAS the fbm wash the particles replaced - so this shoots the real degraded
+// render rather than an alternative one.
 if (process.env.NOGL) {
   await ctx.addInitScript(() => {
     const real = HTMLCanvasElement.prototype.getContext;

@@ -341,46 +341,81 @@ without giving it a colour. Both are fixed, pointer-transparent, at **z-1** —
 above the liquid canvas at z-0 and below copy at z-10 — and both are mounted in
 `app/[locale]/layout.tsx`, in this order, because DOM order is what stacks them:
 
-- **THE AURA** (`components/ui/Aura.tsx`, `.aura` in `globals.css`) — a lit cyan
-  volume in CSS (three ellipses of `--color-cyan-deep`: key, fill, top wash) and
-  a LIVE VAPOUR FIELD in WebGL (`lib/webgl/aura-gl.ts`). Adapted from the
-  reference the owner brought, **utopia513.com**, which solves the same
-  flat-ground problem with a bloom and heavy grain over dark navy. What did NOT
-  come across is the amplitude: that is a navy site whose bloom is its loudest
-  element, and this is a black site whose loudest element is the liquid.
-  **`AURA.LIVE` PICKS BETWEEN TWO GROUNDS, AND IT IS A TASTE CALL.** `true`
-  (current) runs the shader; `false` leaves the static CSS turbulence under the
-  canvas to be the whole vapour. Both paths must keep working whatever the
-  switch says, because a refused WebGL context lands on the static one anyway.
-  `NOGL=1 npm run aura` shoots the static path on a live build, so the two can
-  be compared without swapping checkouts.
-  **THE LIVE FIELD IS TUNED TO THE STATIC ONE, ON PURPOSE.** The first live
-  build was rejected on sight and the reason is worth keeping: a narrow
-  threshold plus a squared falloff is a contrast booster, and it broke the field
-  into cloud MASSES about a third of the screen across with voids between them.
-  A background with shapes is something you look at. The remap is wide and
-  unsquared now, and the tuning target was the static ground's own measurements
-  - careers ground rgb(3,12,12), which the live field matches at rgb(3,11,12).
-  Same calm, same brightness; the only difference is that it moves. If a future
-  retune makes the field more legible as SHAPES, it has gone wrong, whatever it
-  scores.
-  **THE SHADER EXISTS BECAUSE A LOOP IS NOT ATMOSPHERE.** Its first build
-  translated an SVG turbulence tile on a 97s cycle, and it read as dead — for
-  the reason the mist's own commit states: a scrubbed animation stops convincing
-  the moment a reader stops scrolling and simply watches it. The field now runs
-  on `lib/webgl/noise-glsl.mjs` — the octave ladder from `noise.mjs`, ported to
-  GLSL, lifted from the vapour Fable wrote for the S7 convergence
-  (`feat/s7-convergence`, reverted from main at a22a0df). Two consequences worth
-  knowing: the atmosphere rides **the same eddies as the droplets**, because the
-  lattice hash is bit-identical to the CPU one; and it never repeats, because
-  `OCT`'s octaves drift at mutually irrational velocities. Measured with
-  `MOTION=1 npm run aura`, the frame keeps diverging (t0→t12 exceeds t0→t4)
-  rather than returning — which is the difference between weather and a loop.
-  It renders into a quarter-scale buffer at 30fps (~0.08 Mpx against the
-  liquid's ~1.9) in its own context, so it cannot enter FieldStage's budget or
-  trip its watchdog; if the context is refused, the CSS turbulence it replaced
-  is still underneath the canvas and simply shows.
-  **TWO TRAPS, BOTH OF WHICH PRESENT AS "the shader is broken" AND ARE NOT:**
+- **THE AURA** (`components/ui/Aura.tsx`, `.aura` in `globals.css`) — a
+  shapeless gradient in CSS and a live VAPOUR of suspended particles in WebGL
+  (`lib/webgl/aura-gl.ts`, `lib/webgl/aura-shaders.mjs`).
+
+  **WHAT THE REFERENCE ACTUALLY DOES.** utopia513.com, which the owner brought,
+  is worth reading precisely, because the obvious lesson from it is the wrong
+  one. Its ground is a Three.js plane whose colour is computed **per vertex** on
+  a 200x200 mesh and interpolated across the faces — one octave of Perlin noise
+  mixing two navies. So the field *cannot* carry structure finer than a mesh
+  cell: it is a slow, smooth, shapeless luminance ramp by CONSTRUCTION rather
+  than by tuning. All of its texture comes from a separate and very strong
+  per-pixel film grain on top. The reference is not "a bloom"; it is a
+  **division of labour** — a shapeless gradient for depth, a fine uniform
+  population for texture, and nothing in between. That division is what this
+  layer adopts. The amplitude and the palette do not travel: that is a navy site
+  whose ground is its loudest element, and this is a black site whose loudest
+  element is the liquid.
+
+  **THE VAPOUR IS PARTICLES, AND THAT IS THE WHOLE DESIGN.** The build this
+  replaced made it a full-viewport fbm wash — `potential` sheared by `curlAt`,
+  remapped, tinted cyan. It failed twice over, and both failures are worth
+  keeping:
+  - *It had shapes.* A remapped fbm field is a field of LOBES, because that is
+    what fbm is. The ground carried cloud masses a third of a screen across.
+    Widening the remap dims them; it cannot remove them, because the lobes are
+    the field's content. A background with shapes is something a reader looks
+    at, and once they look at it, it is not a background.
+  - *It was a colour.* A cyan wash on every pixel does not lift ink, it replaces
+    it: the ground measured rgb(4,12,13), a petrol green-blue read as the page's
+    own colour. That is a direct cost to the liquid, which earns its punch from
+    being cyan on BLACK — against a ground already two thirds of the way to its
+    hue, the droplets read as dull teal.
+
+  A population of 1.5-3 px motes has no shape at any amplitude, because its
+  structure sits below the scale the eye groups at. It is also the site's own
+  material at its finest scale, which is the argument the whole page is making.
+  The population is **THE MIST** — the vapour Fable wrote for the S7 convergence
+  (`lib/webgl/mist.mjs` on `feat/s7-convergence`, reverted from main at a22a0df)
+  — with everything belonging to that chapter's choreography removed: no
+  attractors, no condensation onto hosts, no skin, no spelling. What is left is
+  the part that was always atmosphere. State is one ping-ponged RGBA32F texel
+  per mote (position, velocity), stepped at a fixed 20 ms, drawn as instanced
+  velocity-aligned capsules on the curl current from `lib/webgl/noise-glsl.mjs`
+  — the octave ladder from `noise.mjs`, whose lattice hash is bit-identical to
+  the CPU one, so **the atmosphere rides the same eddies as the droplets** and
+  never repeats.
+
+  **ITS CONSTANTS ARE DERIVED, NOT CHOSEN, AND THE MIST'S DO NOT TRANSFER.** The
+  mist ran at 0.27 uv/s because a chapter was being told with it; a background at
+  that speed is a distraction. Terminal speed here was solved backwards from how
+  long a mote should take to cross the screen (~46 s; measured 0.0198 units/s),
+  and `STREAK_T` was then re-derived from that speed — at the mist's own 0.045 s
+  a background mote draws a 0.8 px streak, which is a dot, and the capsule is
+  what makes a drifting population read as AIR rather than as stars. Two figures
+  bound the brightness and neither is taste: the film grain above peaks around
+  nine levels, so a fainter mote reads as more grain; and motes are drawn
+  additively, so at the first tuning overlaps reached level 77 — a bright dot on
+  a black page, not dust.
+  **IF A FUTURE RETUNE MAKES EITHER HALF LEGIBLE AS SHAPES, IT HAS GONE WRONG,
+  whatever it scores** — the vapour included: at `STREAK_T` 0.25 the motes
+  aligned into visible combed striations across the viewport, a wind map, which
+  is a shape and a large one.
+
+  **THREE TRAPS, ALL OF WHICH PRESENT AS "the shader is broken" AND NONE OF
+  WHICH IS:**
+  - *Blend state leaking into the GPGPU pass.* Blend state is global and
+    survives both the program switch and the framebuffer switch, so the ONE/ONE
+    the draw pass leaves enabled turns the state pass into an ACCUMULATOR: every
+    substep adds the new state to the old instead of replacing it. The symptom
+    is a **physics** one — positions leave the box, speeds sail past a cap that
+    is right there in the shader — so it costs hours if you debug the physics.
+    What settles it in one step is a canary: have the shader write a compiled
+    CONSTANT into the state and read it back. A constant that returns wrong
+    cannot be a physics bug, and that single fact rules out the whole class.
+    `runStep` disables blending for this reason, as `mist-gl.ts` does in `step()`.
   - *Non-ASCII in GLSL.* GLSL ES restricts its source character set and ANGLE
     enforces it INSIDE COMMENTS. One typographic dash fails the compile and
     `getShaderInfoLog` returns **null**, so there is no error to read. Shader
@@ -390,21 +425,38 @@ above the liquid canvas at z-0 and below copy at z-10 — and both are mounted i
     in development, so losing the context on unmount hands the remount a dead
     one, and every compile then fails with `CONTEXT_LOST_WEBGL` and a null log.
     Never force-lose a context owned by a component that can remount.
+
+  **HALF FLOAT IS NOT ENOUGH, so there is no static fallback.** Positions live
+  around 1.0, where half float carries about 1e-3 of absolute precision — a
+  whole pixel on a 900 px viewport, against a mote that moves 0.66 px per frame.
+  Quantised to that, the field stalls and jumps. `EXT_color_buffer_float` is
+  therefore a hard requirement, and a context without it gets **no vapour**: the
+  gradient stands alone, which is a calm and complete background. The SVG
+  turbulence that used to sit under the canvas is gone deliberately — it was the
+  same fbm wash the particles replaced, so keeping it would have shipped the
+  rejected look to every machine that could not run the good one. `data-gl` says
+  which of the two a given render is.
 - **THE BREATH LAYER** (S1.7) — the film grain, ON TOP of the aura, because grain
-  is a property of the camera and not of the air.
+  is a property of the camera and not of the air. In the reference's stack this
+  is the layer doing the most work, and it is why the vapour has a brightness
+  floor rather than being free to be as faint as one likes.
 
 Four rules govern the aura, and all four are load-bearing:
 
 1. **It is additive, never subtractive.** `mix-blend-mode: screen` is not a look,
    it is the enforcement of the owner directive that the liquid is never dimmed:
    the layer sits ABOVE an opaque canvas, so a normal-alpha wash would darken
-   every droplet it crossed. Screen can only raise a channel. Measured, the
-   liquid's peak goes from rgb(16,110,126) to rgb(15,115,130) — it gains a hair
-   and loses nothing.
-2. **It is CSS, not a shader.** FieldStage is fill-rate bound and demotes the
-   liquid through seven rungs on sustained slow frames, so a second full-viewport
-   per-pixel pass risks spending the site's material to buy a background. Two
-   composited layers on transform-only animations cost no repaint.
+   every droplet it crossed. Screen can only raise a channel. It is also what
+   makes the vapour's premultiplied output exact — screen over black resolves to
+   the premultiplied value, so what the shader accumulates is what is seen.
+   Measured, the liquid's peak goes rgb(16,110,126) → rgb(18,111,126): it gains
+   a hair on the achromatic lift and loses nothing.
+2. **It stays out of FieldStage's budget.** The liquid is fill-rate bound and
+   demotes itself through seven rungs on sustained slow frames, so the
+   atmosphere runs in its OWN context and is sized so it cannot compete: the
+   state pass is 128x128 fragments (0.016 Mpx) and the draw covers a few
+   thousand pixels of tiny quads, against the liquid's ~1.9 Mpx. Its predecessor
+   was a full-viewport per-pixel noise pass, so this is cheaper as well as calmer.
 3. **THE HOMEPAGE OPENS ON BLACK.** Owner directive: the hero is ink and the
    ribbon, nothing else, and the atmosphere begins BELOW the wave.
    `--aura-hero` is that gate — a second multiplier on the gain, scrubbed 0 → 1
@@ -425,14 +477,26 @@ Four rules govern the aura, and all four are load-bearing:
      every other route — it never runs at all. Deliberately not a scroll
      listener: Lenis owns scrolling here and native scroll events arrive about
      twice per 900px and hundreds of pixels stale, which the gate would show.
-4. **`--aura-key` is the whole layer's gain, and it is measured.** Run
-   `npm run aura` (`scripts/probe/aura.mjs`) — it reports the ground median, the
-   bloom peak and paper's contrast against that peak, and `KEY=<n>` sweeps the
-   gain without editing CSS. At the authored 0.25 the ground is rgb(3,12,13) and
-   paper holds 15.9:1; by 1.0 it is rgb(3,38,40) and reads as a teal page. The
-   ceiling is not legibility — every value in that range passes AA and AAA by a
-   distance — it is that the ground must keep reading as absence with depth
-   rather than as a colour somebody picked.
+4. **TWO GAINS, BOTH MEASURED.** The halves do different jobs and have to be
+   judgeable apart: `--aura-key` is the gradient (depth) and `--aura-mist` is
+   the vapour (texture). `npm run aura` (`scripts/probe/aura.mjs`) reports the
+   ground median, the peak and paper's contrast against that peak per route;
+   `node scripts/probe/aura-look.mjs <tag>` is the companion for judging a
+   near-black layer at all — it writes the raw frame, the same frame amplified
+   (where any surviving SHAPE becomes obvious), and a 1:1 crop for the motes,
+   and it reads back where the population actually is and what it painted.
+   `KEY=`/`MIST=` sweep the gains and `ONLY=mist|ground` isolates a half.
+   At the authored `--aura-key: 0.25` the ground is rgb(7,8,8) — one level of
+   cyan cast — and paper holds 15.9:1; by 0.7 it is rgb(12,15,15) and reads as a
+   colour. The ceiling is not legibility (every value in that range passes AA
+   and AAA by a distance), it is that the ground must keep reading as absence
+   with depth rather than as a colour somebody picked.
+
+   **A NEAR-BLACK LAYER CANNOT BE JUDGED FROM A SCREENSHOT**, and this is the
+   working rule the whole layer is tuned under. The difference between "a lit
+   volume with dust in it" and "a flat panel" is a handful of levels; the eye
+   adapts to it within a second, and `captures/` carries a ~1% churn noise floor
+   besides. Amplify, or measure, or both — never eyeball it at 1:1 alone.
 
 ### Type roles
 

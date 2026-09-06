@@ -19,6 +19,7 @@
     "liquid:form": "node scripts/verify/coalesce.mjs",
     "contact:sheet": "node scripts/probe/contact.mjs",
     "aura": "node scripts/probe/aura.mjs",
+    "aura:look": "node scripts/probe/aura-look.mjs",
     "work": "node scripts/verify/work-gallery.mjs",
     "work:previews": "node scripts/capture/project-previews.mjs",
     "confluence": "node scripts/verify/confluence.mjs",
