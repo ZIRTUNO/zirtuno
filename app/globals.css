@@ -1338,7 +1338,7 @@ section[id],
    green-blue the eye reads as the page's colour, which is a direct cost to the
    liquid: cyan droplets earn their punch from being cyan on BLACK, and against a
    ground already two thirds of the way to their hue they read as dull teal.
-   A population of 1.5 px motes has no shape at any amplitude, because its
+   A population of 2-3 px motes has no shape at any amplitude, because its
    structure sits below the scale the eye groups at. It is also the site's own
    material at its finest scale, which is the argument the whole page is making.
 
@@ -1377,37 +1377,40 @@ section[id],
      --aura-key is the GRADIENT: depth. Measured on the routes where the aura is
      the only thing on the ground (careers · contact · work):
 
-       key    ground         peak            paper : peak
-       0      rgb(4,4,4)     rgb(13,19,19)   16.5:1   ← the gradient off
-       0.15   rgb(5,6,6)     rgb(14,21,22)   16.2:1
-       0.25   rgb(7,8,8)     rgb(15,23,24)   15.9:1   ← here
-       0.40   rgb(9,10,10)   rgb(16,26,27)   15.6:1
-       0.70   rgb(12,15,15)  rgb(18,33,34)   14.6:1   ← reads as a COLOUR
+       key    ground          cast   paper : peak
+       0      rgb(4,4,4)      1.00   15.1:1   ← the gradient off
+       0.45   rgb(9,11,11)    1.22   14.1:1
+       0.85   rgb(14,17,17)   1.21   13.1:1   ← here
+       1.30   rgb(16,24,25)   1.50   11.8:1
 
-     Two things to read out of that table. The ceiling is NOT legibility: paper
-     holds better than 14:1 against the brightest ground at every row, so all of
-     them pass AA and AAA by a distance. The ceiling is that the ground must
-     keep reading as absence-with-depth rather than as a colour somebody picked,
-     and by 0.7 it plainly does not.
+     THE CEILING IS THE CAST, NOT THE BRIGHTNESS. Legibility is nowhere near it
+     — paper holds better than 11:1 against the brightest ground at every row,
+     so all of them pass AA and AAA by a distance — and brightness on its own is
+     a taste call the owner makes. What is not a taste call is the ratio in the
+     `cast` column, blue over red: it says whether the ground is LIT BLACK or a
+     colour. The achromatic floor keeps pace with the cyan up to about 0.85 and
+     the ratio holds at 1.21; by 1.3 the cyan has outrun it and the ground is
+     visibly turning. Raise the gain if the room should be brighter, but raise
+     the LUMEN stop with it, or this is what gives way.
 
-     And the ground stays NEUTRAL as it rises — rgb(7,8,8) at the authored gain
-     is a single level of cyan cast. That is the measurement that separates this
-     build from the one it replaced, which sat at rgb(4,12,13): eight levels of
-     cast, a petrol ground, and a liquid that had to be cyan against something
-     already most of the way to its own hue.
+     For scale: the fbm wash this replaced sat at rgb(4,12,13) — a cast of 3.0.
+     That is a petrol page, and a liquid that has to be cyan against something
+     already most of the way to its own hue. The build here is three times
+     brighter than that one and half as coloured.
 
-     --aura-mist is the VAPOUR: texture. It is the one to move if the air feels
-     empty or busy. Zero is a legitimate setting and leaves a clean, calm
-     gradient ground.
+     --aura-mist is the VAPOUR: texture. IT ONLY DIMS. It drives the canvas's
+     `opacity`, and opacity clamps at 1, so a value above 1 does nothing at all
+     — the vapour's authored amplitude is `ALPHA` in `aura-shaders.mjs`, and
+     density (`SIZE_FULL`) is the better dial of the two for presence anyway.
+     Zero is a legitimate setting here and leaves a clean, calm gradient ground.
 
      THE VAPOUR HAS A FLOOR IT MUST CLEAR, and it is not a matter of taste.
      `.breath-layer`'s film grain sits directly on top of this layer and peaks
      around nine levels out of 255. Below that the motes do not read as
-     particles, they read as more grain — measured, at 0.5 the brightest mote
-     reached level 10 and the population was indistinguishable from the noise
-     it was lying under. At 1.0 the brightest reach the low twenties, which is
-     clear of the grain while still being a whisper on a black page. */
-  --aura-key: 0.25;
+     particles, they read as more grain — measured, at half this amplitude the
+     brightest mote reached level 10 and the population was indistinguishable
+     from the noise it was lying under. */
+  --aura-key: 0.85;
   --aura-mist: 1;
 
   /* THE HERO GATE (owner directive: the homepage opens on black). A multiplier

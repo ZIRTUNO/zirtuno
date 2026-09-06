@@ -374,7 +374,7 @@ above the liquid canvas at z-0 and below copy at z-10 — and both are mounted i
     being cyan on BLACK — against a ground already two thirds of the way to its
     hue, the droplets read as dull teal.
 
-  A population of 1.5-3 px motes has no shape at any amplitude, because its
+  A population of 2-3 px motes has no shape at any amplitude, because its
   structure sits below the scale the eye groups at. It is also the site's own
   material at its finest scale, which is the argument the whole page is making.
   The population is **THE MIST** — the vapour Fable wrote for the S7 convergence
@@ -394,11 +394,13 @@ above the liquid canvas at z-0 and below copy at z-10 — and both are mounted i
   long a mote should take to cross the screen (~46 s; measured 0.0198 units/s),
   and `STREAK_T` was then re-derived from that speed — at the mist's own 0.045 s
   a background mote draws a 0.8 px streak, which is a dot, and the capsule is
-  what makes a drifting population read as AIR rather than as stars. Two figures
-  bound the brightness and neither is taste: the film grain above peaks around
-  nine levels, so a fainter mote reads as more grain; and motes are drawn
-  additively, so at the first tuning overlaps reached level 77 — a bright dot on
-  a black page, not dust.
+  what makes a drifting population read as AIR rather than as stars. The
+  brightness is bounded at both ends and neither end is taste: the film grain
+  above peaks around nine levels, so a fainter mote reads as more grain rather
+  than as a particle; and motes draw ADDITIVELY, so overlaps sum and a mote
+  bright enough to be pointed at has stopped being dust. What decides that is
+  the RATIO to the ground it sits on, not the absolute — the same peak near 75
+  that was too hot against a rgb(7,8,8) ground is right against rgb(14,17,17).
   **IF A FUTURE RETUNE MAKES EITHER HALF LEGIBLE AS SHAPES, IT HAS GONE WRONG,
   whatever it scores** — the vapour included: at `STREAK_T` 0.25 the motes
   aligned into visible combed striations across the viewport, a wind map, which
@@ -449,14 +451,18 @@ Four rules govern the aura, and all four are load-bearing:
    every droplet it crossed. Screen can only raise a channel. It is also what
    makes the vapour's premultiplied output exact — screen over black resolves to
    the premultiplied value, so what the shader accumulates is what is seen.
-   Measured, the liquid's peak goes rgb(16,110,126) → rgb(18,111,126): it gains
-   a hair on the achromatic lift and loses nothing.
+   Measured over the liquid on the homepage, aura off against aura on: its PEAK
+   is unchanged at G 227 / B 254 and its mean rises 98.9 → 107.1. The material
+   gains light at the bottom of its range and loses none at the top, which is
+   what `screen` guarantees rather than what a tuning achieved.
 2. **It stays out of FieldStage's budget.** The liquid is fill-rate bound and
    demotes itself through seven rungs on sustained slow frames, so the
    atmosphere runs in its OWN context and is sized so it cannot compete: the
-   state pass is 128x128 fragments (0.016 Mpx) and the draw covers a few
-   thousand pixels of tiny quads, against the liquid's ~1.9 Mpx. Its predecessor
-   was a full-viewport per-pixel noise pass, so this is cheaper as well as calmer.
+   state pass is 160x160 fragments (0.026 Mpx) and the draw covers a few
+   thousand pixels of tiny quads, against the liquid's ~1.9 Mpx. Measured with
+   `PERF=1 npm run aura`, frame time is 6.1 ms median with the layer on and with
+   it off, on a liquid route and a bare one alike. Its predecessor was a
+   full-viewport per-pixel noise pass, so this is cheaper as well as calmer.
 3. **THE HOMEPAGE OPENS ON BLACK.** Owner directive: the hero is ink and the
    ribbon, nothing else, and the atmosphere begins BELOW the wave.
    `--aura-hero` is that gate — a second multiplier on the gain, scrubbed 0 → 1
@@ -486,11 +492,24 @@ Four rules govern the aura, and all four are load-bearing:
    (where any surviving SHAPE becomes obvious), and a 1:1 crop for the motes,
    and it reads back where the population actually is and what it painted.
    `KEY=`/`MIST=` sweep the gains and `ONLY=mist|ground` isolates a half.
-   At the authored `--aura-key: 0.25` the ground is rgb(7,8,8) — one level of
-   cyan cast — and paper holds 15.9:1; by 0.7 it is rgb(12,15,15) and reads as a
-   colour. The ceiling is not legibility (every value in that range passes AA
-   and AAA by a distance), it is that the ground must keep reading as absence
-   with depth rather than as a colour somebody picked.
+
+   **THE CEILING IS THE CAST, NOT THE BRIGHTNESS.** How bright the room is, is
+   a taste call and the owner's to make; what is not is the ratio of blue to red
+   in the ground, which says whether it is LIT BLACK or a colour. At the
+   authored `--aura-key: 0.85` the ground is rgb(14,17,17), a cast of 1.21, and
+   paper holds 13.1:1. The achromatic LUMEN stop keeps pace with the cyan up to
+   about there; by 1.3 the ground is rgb(16,24,25), a cast of 1.50, and visibly
+   turning. **Raise the gain if the room should be brighter, but raise LUMEN
+   with it, or the cast is what gives way.** For scale, the fbm wash this
+   replaced sat at rgb(4,12,13) — a cast of 3.0.
+
+   **`--aura-mist` ONLY DIMS.** It drives the canvas `opacity`, which clamps at
+   1, so a value above 1 does nothing. The vapour's authored amplitude is
+   `ALPHA` in `aura-shaders.mjs` — and for PRESENCE reach for `SIZE_FULL`
+   (density) before `ALPHA` (brightness): more motes at one brightness make the
+   medium continuous, while a brighter mote eventually stops being dust and
+   becomes a dot somebody can point at. Density is nearly free, since the step
+   pass is one fragment per mote.
 
    **A NEAR-BLACK LAYER CANNOT BE JUDGED FROM A SCREENSHOT**, and this is the
    working rule the whole layer is tuned under. The difference between "a lit
