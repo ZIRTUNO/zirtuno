@@ -78,9 +78,22 @@ const state = () =>
     const host = document.querySelector(".companion");
     const body = host?.querySelector(".cp-body")?.getAttribute("d") ?? "";
     const left = host?.querySelector(".cp-eye-l")?.getAttribute("d") ?? "";
+    const car = host?.querySelector(".cp-carrier");
     return {
       live: host?.getAttribute("data-companion") ?? null,
       chill: host?.style.getPropertyValue("--cp-chill") ?? "",
+      // The other two light channels, and the attribute that gates the halo.
+      // `chill` alone stopped being the whole colour story once the mood could
+      // be BRIGHT as well as cold.
+      glow: host?.style.getPropertyValue("--cp-glow") ?? "",
+      lumen: host?.style.getPropertyValue("--cp-lumen") ?? "",
+      lit: host?.hasAttribute("data-glow") ?? false,
+      // The bounce rides on the travel spring's own transform, so this is
+      // where a `hop` is observable from outside the kernel.
+      y: Number(
+        /translate3d\([^,]+,\s*(-?[\d.]+)px/.exec(car?.style.transform ?? "")?.[1] ??
+          NaN,
+      ),
       bodyLen: body.length,
       bodyHead: body.slice(0, 40),
       leftHead: left.slice(0, 40),
@@ -322,6 +335,109 @@ console.log("\n7c. hover and click");
   }
   await page.mouse.move(cx + 420, cy + 260);
   await page.waitForTimeout(900);
+}
+
+// ── 7d. being poked, repeatedly ─────────────────────────────────────────────
+//
+// THE HEADLINE NEW BEHAVIOUR, and one only a real page can check: the kernel
+// knows how to be `playful` and `laughing`, but whether the SHELL escalates
+// into them is wiring, and wiring is exactly what this file exists to catch.
+// It runs on a fresh page because `.contact-success` from section 7 outranks
+// every reaction — a droplet that has just delivered something is not
+// available to be played with.
+console.log("\n7d. the poke escalation");
+{
+  await page.goto(URL, { waitUntil: "domcontentloaded" });
+  await page.waitForTimeout(900);
+  const box = await (await page.$(".cp-carrier")).boundingBox();
+  const cx = box.x + box.width / 2;
+  const cy = box.y + box.height / 2;
+
+  await page.mouse.move(cx, cy);
+  await page.waitForTimeout(400);
+
+  const seen = [];
+  let bounced = false;
+  const docked = (await state()).y;
+  for (let i = 1; i <= 3; i++) {
+    await page.mouse.down();
+    // Sampled twice: once inside the bounce's first swing, once after the
+    // expression spring has arrived. One sample cannot see both.
+    await page.waitForTimeout(90);
+    const mid = await state();
+    if (Number.isFinite(mid.y) && Math.abs(mid.y - docked) > 1.5) bounced = true;
+    await page.mouse.up();
+    await page.waitForTimeout(230);
+    seen.push(await state());
+  }
+  await shot("13-poked-thrice");
+
+  const glow = seen.map((s) => Number(s.glow || 0));
+  const lumen = seen.map((s) => Number(s.lumen || 0));
+  if (glow[2] > glow[1] && glow[1] > glow[0]) {
+    good(
+      `it escalates: glow ${glow[0].toFixed(2)} -> ${glow[1].toFixed(2)} -> ${glow[2].toFixed(2)} across three pokes`,
+    );
+  } else {
+    note(`no escalation across three pokes (glow ${glow.join(" -> ")})`);
+  }
+  if (lumen[2] > lumen[0]) {
+    good(`and brightens with it (lumen ${lumen[0].toFixed(2)} -> ${lumen[2].toFixed(2)})`);
+  } else {
+    note(`lumen did not rise (${lumen.join(" -> ")})`);
+  }
+  if (seen[2].lit) {
+    good("data-glow is set once the halo is worth paying for");
+  } else {
+    note("data-glow never appeared — the halo is gated off");
+  }
+  if (bounced) good("and the poke bounces the droplet on its own transform");
+  else note("the bounce never reached the carrier's transform");
+
+  // Nothing here may reach the brand's warm token, whatever the mood.
+  const warm = await page.evaluate(() => {
+    const svg = document.querySelector(".cp-svg");
+    return svg ? getComputedStyle(svg).color : "";
+  });
+  if (warm && !/rgb\(2[0-9][0-9],\s*\d+,\s*\d+\)/.test(warm)) {
+    good(`the lit droplet is still a cyan (${warm})`);
+  } else {
+    note(`the lit droplet resolved to something warm: ${warm}`);
+  }
+}
+
+// ── 7e. left alone ──────────────────────────────────────────────────────────
+//
+// The life cycle, at its first rung. `bored` is 15 s, which is a real cost to
+// pay in a gate and is paid deliberately: the ladder is built from timestamps
+// compared inside the draw callback, so it cannot be fast-forwarded, and an
+// untested idle behaviour is one that silently stops the day someone adds a
+// stray `stir()`. The deeper rungs (`drowsy` at 32 s, `sleeping` at 58 s) are
+// covered by the kernel gate's monotonic-dimming assertion and by the contact
+// sheet; waiting a minute here would not earn its place.
+console.log("\n7e. the idle ladder");
+{
+  await page.mouse.move(40, 900);
+  const awake = await state();
+  await page.waitForTimeout(16500);
+  const idle = await state();
+  await shot("14-bored");
+  const before = Number(awake.lumen || 1);
+  const after = Number(idle.lumen || 1);
+  if (after < before - 0.05) {
+    good(`left alone for 16 s it dims (lumen ${before.toFixed(2)} -> ${after.toFixed(2)})`);
+  } else {
+    note(`it never got bored (lumen ${before.toFixed(2)} -> ${after.toFixed(2)})`);
+  }
+
+  await page.mouse.move(700, 500);
+  await page.waitForTimeout(700);
+  const back = Number((await state()).lumen || 1);
+  if (back > after + 0.05) {
+    good(`and comes back when the pointer does (lumen ${back.toFixed(2)})`);
+  } else {
+    note(`it stayed dim after the pointer returned (lumen ${back.toFixed(2)})`);
+  }
 }
 
 // ── 8. the form is still the form ───────────────────────────────────────────
