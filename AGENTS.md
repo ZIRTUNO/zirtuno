@@ -256,9 +256,16 @@ The site is in R5, “One Continuous Liquid.”
     refactor of the form can at worst stop the droplet reacting, never stop the
     form submitting. It is `aria-hidden`, takes no pointer, holds nothing
     focusable, carries no copy, and its rest pose ships in the server HTML so
-    there is no reveal to fade. Anger is spent on GEOMETRY: the kernel contains
-    no colour literal, and `chill` runs cyan -> cyan-deep only. Do not give it
-    `--color-warn`; that token belongs to the form's error copy.
+    there is no reveal to fade. Anger is spent on GEOMETRY: every mood must be
+    legible in a black-and-white screenshot, and colour may only ever AGREE with
+    a change the shape has already made. The kernel contains NO COLOUR LITERAL —
+    it emits numbers, `app/contact.css` owns the tokens, and `verify/companion`
+    asserts the absence against the kernel's own source text. Its three light
+    channels are all in §6's palette and none of them is warm: `chill` runs
+    cyan -> cyan-deep, `glow` runs cyan -> cyan-glow, and `lumen` is not a hue at
+    all but how much of itself the droplet is spending (sleep recedes, the
+    confirmed send burns). Do not give it `--color-warn` and do not add a fourth
+    channel; that token belongs to the form's error copy.
 11. **CTA hierarchy and intent are load-bearing.** Keep the placement map in
     `docs/specs/build-spec.md §7.2`. Every contact CTA carries its entry-intent tag.
     Homepage CTAs use Lenis smooth-scroll plus `history.replaceState`; cross-page
@@ -680,7 +687,15 @@ Ask before adding any dependency or substituting any layer.
   driven by `Driven.travel()` — the runtime's own scroll geometry, so there is
   no second scroll listener and no knowledge of Lenis. Only `.cp-body` takes the
   pointer, so hovering and clicking answer the SHAPE and never put a rectangle
-  over the page.
+  over the page. EXPRESSIONS AND GESTURES ARE DIFFERENT THINGS: a pose is a
+  point in the parameter vector, a gesture (`shake`, `hop`, `laugh`, `wink`) is
+  a decaying impulse on top of wherever that vector currently is. Gestures
+  compose with every pose, survive a change of pose mid-flight, top up rather
+  than restart when re-triggered, and decay to exactly zero. `hop` is exposed as
+  `offset` for the CALLER to add to its transform and never enters the ring —
+  `COMP.VIEW` is sized for the widest SHAPE the kernel can reach, and spending
+  that margin on a translation is how a liquid gets a straight edge cut across
+  it.
 - `components/contact/Companion.tsx` owns only what the kernel
   cannot know — what the visitor is doing, where, and when to stop drawing. The
   kernel is DOM-free and deterministic, so its rest pose can be computed at
@@ -689,7 +704,15 @@ Ask before adding any dependency or substituting any layer.
   not a canvas on purpose: this page has no WebGL stage (see `app/contact.css`),
   and `verify/canvas-count.mjs` must keep finding exactly one liquid canvas, on
   the homepage. Expressions are named presets over ONE parameter vector — adding
-  a state means adding a preset, never a new code path.
+  a state means adding a preset, never a new code path. That includes the EYE
+  STYLE: `wide`, `iris`, `slant` and `lift` are channels, not drawings, so a
+  round eye, a bar, a flat dash and a tilted slash are points in one continuous
+  space. IT ALSO OWNS A LIFE CYCLE, not only reactions — left alone it goes
+  bored -> drowsy -> sleeping and wakes on any activity — and that ladder is
+  built from TIMESTAMPS compared inside the draw callback. This component may
+  never regrow the `setTimeout`, IntersectionObserver or visibilitychange
+  handler it gave up when it registered: a droplet dozing on a timer keeps
+  dozing in a tab nobody is looking at.
 - `lib/motion/coalesce.mjs` is the merge kernel: the drop that rides S10's form,
   the wetted foot it sits in, and the filament it is pulled off on. Crisp
   geometry, never a `feGaussianBlur` goo filter — a blurred hairline is a glow,
@@ -968,7 +991,19 @@ Additional stop-the-line gates:
   reachability and interruptibility of every expression pair, blink/breath/sleep
   and allocation discipline — plus that the membrane is REAL (a hand deforms the
   contour, the wake rises and falls, a strike charges and drains), that the two
-  eyes can disagree, and that the idle wander runs and yields to an aim.
+  eyes can disagree, and that the idle wander runs and yields to an aim. It also
+  pins THE EYE STYLES (each of `wide`, `iris`, `slant`, `lift` moves the
+  aperture measurably, and `slant` MIRRORS between the eyes), THE LIGHT (both
+  hue channels inside 0..1, no pose spending hard on both ends of the axis, the
+  sleep ladder dimming monotonically), THE GESTURES (a wink closes one eye and
+  leaves the other byte-identical, a bounce leaves the RING untouched, a shake
+  decays back to byte-identical with a twin that never shook, a gesture survives
+  a change of pose), THE BREATH's rate as distinct from its depth, THE WHOLE
+  REFERENCE VOCABULARY (every one of the lab's expressions resolves, by preset
+  or alias, and all 33 presets draw a DISTINCT pose), and CONTAINMENT
+  MID-TRANSITION — the expression spring is deliberately underdamped, so the
+  widest aperture the droplet ever draws appears in no preset and cannot be
+  found by sweeping the presets alone.
   CONTAINMENT IS MEASURED AGAINST THE DRAWN CONTOUR: once the membrane could
   dent the body by up to `maxN`, an analytic radius stopped being the truth
   about where the edge is. `npm run companion:sheet` is the geometry review at
@@ -984,6 +1019,12 @@ Additional stop-the-line gates:
   companion never escalated; and the forgiveness read `aria-invalid` inside the
   `input` handler, a frame before React clears it, so it went on scowling at
   somebody who had already fixed their email. Both are asserted there now.
+  THE SHEET IS STILL THE ONLY THING THAT CATCHES A CONFUSABLE POSE: the gate's
+  distinctness check compares path strings, and two poses a reader cannot tell
+  apart are byte-different. Three were caught that way and retuned — `proud`
+  read as `drowsy` (a low aperture over a wide one is the recipe for sleep),
+  `waking` read as `bored`, and `sad` read as `fail`. Read the sheet after any
+  preset change, not only after a geometry one.
 - Route-transition change (`veil.mjs`, `PageVeil.tsx`, `transition-context.tsx`,
   the `.page-veil` block): `npm run veil` — the tempo against the site's own
   duration ladder, the reference's construction re-derived from the emitted

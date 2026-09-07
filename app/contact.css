@@ -145,9 +145,24 @@
 }
 
 .companion {
-  /* 0 -> --color-cyan, 1 -> --color-cyan-deep. The kernel writes it; this is
-     the pre-hydration value and the reduced-motion one. */
+  /* THE LIGHT, in three channels, and all of them inside the brand's own
+     cyans. The kernel writes them; these are the pre-hydration values and the
+     reduced-motion ones, and they describe a droplet at rest.
+
+       --cp-chill  0 -> --color-cyan, 1 -> --color-cyan-deep.  Colder.
+       --cp-glow   0 -> --color-cyan, 1 -> --color-cyan-glow.  Brighter.
+       --cp-lumen  how much of itself it is spending. 1 is rest; below it the
+                   droplet recedes (sleep, boredom, sorrow), above it burns
+                   (the confirmed send). It is NOT a reveal — see the note at
+                   the top of this block. Nothing here fades in.
+
+     AGENTS.md 4.8 is why there is no fourth: every token named here is in the
+     palette in 6, `--color-warn` belongs to the form's error copy, and the
+     kernel contains no colour literal at all so a tuning pass cannot introduce
+     one without `verify/companion.mjs` saying so. */
   --cp-chill: 0;
+  --cp-glow: 0;
+  --cp-lumen: 1;
   display: block;
   flex: none;
   /* The BOX is larger than the droplet: the viewBox carries headroom for the
@@ -200,19 +215,56 @@
   overflow: visible;
   /* The whole layer's colour, mixed once and inherited by both paths — so the
      body's hairline and the pupils can never disagree about the mood mid
-     transition, which reads as a blink with no fade in it. */
+     transition, which reads as a blink with no fade in it.
+
+     TWO MIXES, IN THAT ORDER. The inner one carries the mood down toward
+     cyan-deep; the outer one carries it up toward cyan-glow. Nesting rather
+     than adding a second `color` declaration is what keeps it ONE value: the
+     two ends of the axis are never both applied to different properties, so
+     `chill` and `glow` can be live at the same time — a proud droplet is
+     slightly cold AND slightly bright — without either one winning outright. */
   color: color-mix(
     in oklab,
-    var(--color-cyan) calc((1 - var(--cp-chill)) * 100%),
-    var(--color-cyan-deep)
+    color-mix(
+        in oklab,
+        var(--color-cyan) calc((1 - var(--cp-chill)) * 100%),
+        var(--color-cyan-deep)
+      )
+      calc((1 - var(--cp-glow)) * 100%),
+    var(--color-cyan-glow)
   );
+}
+
+/* THE HALO, and the reason it is gated on an attribute rather than on the
+   number. `drop-shadow()` at radius zero is still a filter: the element keeps
+   its own compositing pass for a blur nobody can see, on a surface that
+   redraws every frame. `Companion.tsx` sets `data-glow` at a threshold, so the
+   page pays for this only while something is actually lit — which is the
+   confirmed send, laughter and the two or three brightest moods, and nothing
+   else in a normal visit.
+
+   `currentColor` and nothing else: the halo is the droplet's own light, so it
+   cannot introduce a colour the mix above has not already agreed to. */
+.companion[data-glow] .cp-svg {
+  filter: drop-shadow(0 0 calc(var(--cp-glow) * 12px) currentColor);
 }
 
 .cp-body {
   fill: var(--color-cyan);
-  fill-opacity: 0.012;
+  /* The fill rises a little with the mood, from the sliver that exists to make
+     the silhouette hoverable up to something just visible when it is lit. It
+     is capped far below the hairline: the outline is the drawing, and a filled
+     droplet is a blob. */
+  fill-opacity: calc(0.012 + 0.03 * max(0, var(--cp-lumen) - 1));
   stroke: currentColor;
   stroke-width: 1;
+  /* THE HAIRLINE'S WEIGHT IS THE MOOD'S VOLUME. A sleeping droplet is not a
+     smaller droplet, it is a fainter one — which is the one way this layer can
+     recede without moving or resizing anything. Clamped at both ends: it never
+     disappears (the shape must stay readable at every state) and never thickens
+     past solid, because `stroke-width` is the brand's hairline and this may
+     only ever change how much of it is there. */
+  stroke-opacity: clamp(0.34, var(--cp-lumen), 1);
   vector-effect: non-scaling-stroke;
 }
 
@@ -229,7 +281,10 @@
    weight — an outlined eye inside an outlined body reads as two rings. */
 .cp-eye {
   fill: currentColor;
-  fill-opacity: 0.9;
+  /* The apertures dim with the body but never as far: the gaze is the thing a
+     reader locks onto, and a sleeping droplet whose eyes have faded to the
+     weight of its outline has no face left. */
+  fill-opacity: clamp(0.42, calc(0.9 * var(--cp-lumen)), 1);
   stroke: none;
 }
 
