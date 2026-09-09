@@ -72,6 +72,7 @@ const READ = () => {
 
   return {
     word,
+    candidates: Object.fromEntries([...sizer.children].map(c=>[(c.textContent||'').trim(),used(c)])),
     slot: +used(slot).toFixed(2),
     natural: candidate ? +used(candidate).toFixed(2) : null,
     // scrollWidth vs clientWidth is an independent witness: it is layout's own
@@ -170,9 +171,9 @@ for (const [w, h] of [
     const sameWord =
       midFlight && cold && midFlight.word === settled.word ? midFlight : null;
     check(
-      settled && cold && Math.abs(settled.natural - cold.natural) < 1,
+      settled && cold && Math.abs(settled.natural - cold.candidates[settled.word]) < 1,
       `${w} back from ${route} · word measures the same as on a cold load`,
-      `${settled?.natural} vs ${cold?.natural}`,
+      `${settled?.natural} vs ${cold?.candidates[settled?.word]}`,
     );
     check(
       !sameWord || Math.abs(sameWord.slot - settled.slot) < 1,

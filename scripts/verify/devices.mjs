@@ -123,11 +123,14 @@ const newPage = async (opts) => {
     await page.waitForTimeout(700);
   }
   const pointer = await page.evaluate(() => ({
-    heroCursorOn: window.__scenes?.site?.heroCursorOn,
+    // The retired hero cursor channel no longer exists. Input now belongs to
+    // the shared field, whose actual hover and press state must stay released.
+    pointerOn: window.__flow?.pon,
+    pressing: window.__flow?.press,
     workHov: window.__scenes?.work?.hov,
   }));
   check(
-    pointer.heroCursorOn === 0 && pointer.workHov === -1,
+    pointer.pointerOn === 0 && pointer.pressing === 0 && pointer.workHov === -1,
     "no-hover paths never armed by touch traversal",
     JSON.stringify(pointer),
   );

@@ -94,7 +94,7 @@ await page.addStyleTag({
       top: 34px;
       left: ${CROP.x + 42}px;
       color: rgba(242, 240, 235, 0.78);
-      font: 600 15px/1.2 "JetBrains Mono", ui-monospace, monospace;
+      font: 600 15px/1.2 ui-monospace, "SFMono-Regular", monospace;
       letter-spacing: 0.12em;
       pointer-events: none;
     }

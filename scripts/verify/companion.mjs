@@ -41,10 +41,13 @@ import {
   COMP,
   EXPRESSIONS,
   EXPRESSION_NAMES,
+  EYE_POSE_NAMES, MOOD_NAMES, MOOD_SCORES, BASE_EYE_POSE_NAMES, BASE_MOOD_NAMES, SPECIAL_MOOD_NAMES,
   PARAM,
   bodyLobe,
   makeCompanion,
 } from "../../lib/motion/companion.mjs";
+import { makeCompanionBehavior } from "../../lib/motion/companion-behavior.mjs";
+const GEOMETRY_NAMES = [...EXPRESSION_NAMES, ...EYE_POSE_NAMES];
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const KERNEL = join(HERE, "..", "..", "lib", "motion", "companion.mjs");
@@ -209,7 +212,7 @@ section("3. the pupils never leave the body");
   let worstWhere = "";
   let escapes = 0;
 
-  for (const name of EXPRESSION_NAMES) {
+  for (const name of GEOMETRY_NAMES) {
     for (let k = 0; k < ANGLES; k++) {
       const a = (k / ANGLES) * Math.PI * 2;
       const c = makeCompanion(1 + (k % 5));
@@ -263,7 +266,7 @@ section("3. the pupils never leave the body");
   assert(
     escapes === 0,
     escapes === 0
-      ? `no pupil vertex escaped the body across ${EXPRESSION_NAMES.length} expressions x ${ANGLES} gaze angles, struck`
+      ? `no pupil vertex escaped the body across ${GEOMETRY_NAMES.length} expressions and eye presets x ${ANGLES} gaze angles, struck`
       : `${escapes} pupil vertices escaped the body (first: ${worstWhere})`,
   );
   assert(
@@ -277,7 +280,7 @@ section("3b. the silhouette stays inside its own viewBox");
 {
   let worst = 0;
   let where = "";
-  for (const name of EXPRESSION_NAMES) {
+  for (const name of GEOMETRY_NAMES) {
     for (let k = 0; k < 16; k++) {
       const a = (k / 16) * Math.PI * 2;
       const c = makeCompanion(1 + (k % 5));
@@ -606,4 +609,87 @@ section("7. allocation");
 console.log(
   `\n${failed === 0 ? "PASS" : "FAIL"} — ${checks - failed}/${checks} checks`,
 );
+section("8. complete vocabulary and animated containment");
+assert(BASE_EYE_POSE_NAMES.length === 27, "all 27 reference eye presets are preserved");
+assert(EYE_POSE_NAMES.length === 40, "13 special eye styles extend the collection to 40");
+assert(BASE_MOOD_NAMES.length === 23, "all 23 reference lifecycle and reaction moods are preserved");
+assert(MOOD_NAMES.length === 41 && SPECIAL_MOOD_NAMES.length === 18, "18 new moods extend the vocabulary to 41");
+const used = new Set(Object.values(MOOD_SCORES).flatMap(s => s.steps.map(([p]) => p)));
+assert(EYE_POSE_NAMES.every(p => used.has(p)), "every eye preset is used by a live mood score");
+let escaped = 0, restarted = 0;
+for (const mood of MOOD_NAMES) {
+  const c = makeCompanion(2);
+  c.step(0); c.play(mood); c.aim(.65, -.4);
+  const poses = new Set();
+  const end = MOOD_SCORES[mood].steps.reduce((ms, step) => ms + step[1], 0) + 200;
+  for (let t = 0; t < end; t += 1000 / 60) {
+    c.play(mood); // the shell may ask repeatedly; this must NOT restart.
+    c.step(t); poses.add(c.pose);
+    if (Math.round(t) % 7 === 0) {
+      const body = samplePath(c.bodyPath(), 4);
+      for (const side of [-1, 1]) {
+        const pupil = samplePath(c.pupilPath(side), 4);
+        if (pupil?.some(([x, y]) => !inside(body, x, y))) escaped++;
+      }
+    }
+  }
+  if (poses.size < 2) restarted++;
+}
+assert(escaped === 0, "eyes remain contained through the animated scores, including morphs and bobbing");
+assert(restarted === 0, "repeated play requests preserve every mood's sequence clock");
+
+section("9. behavior priorities and complete reachability");
+const input = {status:"idle",focused:false,typing:false,longText:false,invalid:false,crowded:false,moving:false};
+const reached = new Set();
+const read = (b, t, override = {}) => { const mood = b.read(t, {...input,...override}); reached.add(mood); return mood; };
+let b = makeCompanionBehavior(0);
+for (const t of [0, 2000, 11000, 20000, 32000, 46000]) read(b, t);
+b.activity(47000);
+assert(read(b, 47001) === "waking", "sleep interrupts immediately when the reader returns");
+for (const override of [{focused:true}, {typing:true}, {typing:true,longText:true}, {typing:true,invalid:true}, {focused:true,invalid:true}, {crowded:true,moving:true}, {moving:true}]) read(b, 49000, override);
+for (const kind of ["choice", "advance", "back", "correct"]) {
+  b = makeCompanionBehavior(0); b.event(kind, 2000); read(b, 2200);
+}
+b = makeCompanionBehavior(0);
+b.event("reject", 2000); assert(read(b,2200)==="confused", "first rejection is mild confusion");
+b.event("reject", 2500); assert(read(b,2600)==="angry", "repeated rejection escalates");
+b.event("correct", 2650); assert(read(b,2700)==="relieved", "one correction immediately forgives anger");
+read(b, 3800);
+for (const status of ["busy","pending","success","error"]) {
+  b = makeCompanionBehavior(0);
+  read(b,2000,{status}); read(b,5600,{status}); read(b,9000,{status});
+}
+b = makeCompanionBehavior(0);
+b.touch(true,2000); assert(read(b,2050)==="surprised", "a tap starts with surprise");
+b.touch(false,2100); read(b,2900);
+b.touch(true,3000); assert(read(b,3100)==="playful", "a second tap starts play");
+b.touch(false,3200); b.touch(true,3400); assert(read(b,3450)==="laughing", "a third tap starts laughter");
+assert(read(b,4500)==="scared", "a held touch tightens into fear");
+b.cancel(); assert(read(b,8000)!=="scared", "pointer cancellation clears held-touch state");
+b.hover(true,10000); for (const t of [10100,12100,14600,16100]) read(b,t);
+assert(read(b,17000,{status:"busy"})==="working", "a real send outranks direct play");
+assert(read(b,19000,{status:"pending"})!=="celebrate", "pending never announces delivery");
+for (const t of [40000,72000]) read(makeCompanionBehavior(0),t);
+b=makeCompanionBehavior(0); b.hover(true,2000); read(b,15500);
+for (const kind of ["return","milestone"]) {
+  b=makeCompanionBehavior(0); b.event(kind,2000); read(b,2200); read(b,4200);
+}
+b=makeCompanionBehavior(0); b.event("type",2000);
+for(let t=2100;t<9400;t+=100){b.event("type",t);read(b,t,{typing:true});}
+b=makeCompanionBehavior(0);
+for(let i=0;i<6;i++){
+  const t=2000+i*300;b.touch(true,t);read(b,t+30);b.touch(false,t+50);
+}
+read(b,5300);
+b=makeCompanionBehavior(0);b.touch(true,2000);read(b,3650);b.touch(false,4000);read(b,4050);
+b=makeCompanionBehavior(0);b.hover(true,2000);
+for(let i=0;i<6;i++)b.stroke(24,200,true,2100+i*100);
+assert(read(b,2700)==="affectionate", "gentle petting earns heart eyes");
+assert(read(b,4500)==="smitten", "affection settles into a heart wink");
+b=makeCompanionBehavior(0);b.touch(true,2000);b.touch(false,2050);b.touch(true,2300);b.touch(false,2350);
+assert(read(b,3500)==="wink", "a playful double tap resolves to a wink");
+b=makeCompanionBehavior(0);read(b,1000,{status:"pending"});
+assert(read(b,12000,{status:"pending"})==="patient", "long unconfirmed delivery stays patient, never celebratory");
+assert(MOOD_NAMES.every(n=>reached.has(n)), `all 41 moods are reachable through real events (${reached.size}; missing ${MOOD_NAMES.filter(n=>!reached.has(n)).join(',') || 'none'})`);
+console.log(`\n${failed ? "FAIL" : "PASS"} — ${checks - failed}/${checks} checks including full vocabulary and behavior`);
 process.exit(failed === 0 ? 0 : 1);

@@ -32,9 +32,11 @@ const browser = await chromium.launch({
   ],
 });
 
+// The topbar CTA is hidden on touch widths. Exercise the visible Problem CTA
+// throughout so geometry, scrolling and taps describe an actual usable link.
 /** Peak distance the drawn outline reaches outside its rest box. */
 const DEFORM = `(() => {
-  const el = document.querySelectorAll(".cta-primary")[0];
+  const el = document.querySelectorAll("#problem .cta-primary")[0];
   const d = el.querySelector(".mem-edge")?.getAttribute("d") || "";
   const r = el.getBoundingClientRect();
   const n = d.match(/-?\\d+(?:\\.\\d+)?/g)?.map(Number) ?? [];
@@ -63,14 +65,14 @@ for (const name of ["Pixel 7", "iPad (gen 7)"]) {
   check(
     "enters autonomous mode",
     (await page.evaluate(() =>
-      document.querySelector(".cta-primary")?.getAttribute("data-membrane"),
+      document.querySelector("#problem .cta-primary")?.getAttribute("data-membrane"),
     )) === "auto",
     "the device did not resolve to `auto` — a hover-driven button on a device that cannot hover is a dead button",
   );
 
   // Park a CTA on screen WITHOUT touching it, then watch it move on its own.
   await page.evaluate(async () => {
-    const el = document.querySelectorAll(".cta-primary")[0];
+    const el = document.querySelectorAll("#problem .cta-primary")[0];
     const y =
       el.getBoundingClientRect().top + window.scrollY - window.innerHeight / 2;
     for (let i = 0; i < 60; i++) {
@@ -102,7 +104,7 @@ for (const name of ["Pixel 7", "iPad (gen 7)"]) {
   // surface as a dead one.
   const edgeAt = () =>
     page.evaluate(() => {
-      const el = document.querySelectorAll(".cta-primary")[0];
+      const el = document.querySelectorAll("#problem .cta-primary")[0];
       const d = el.querySelector(".mem-edge")?.getAttribute("d") || "";
       const r = el.getBoundingClientRect();
       const n = d.match(/-?\d+(?:\.\d+)?/g)?.map(Number) ?? [];
@@ -128,7 +130,7 @@ for (const name of ["Pixel 7", "iPad (gen 7)"]) {
       await page.evaluate(() =>
         (
           document
-            .querySelectorAll(".cta-primary")[0]
+            .querySelectorAll("#problem .cta-primary")[0]
             .querySelector(".mem-edge")
             ?.getAttribute("d") || ""
         ).slice(0, 200),
@@ -158,7 +160,7 @@ for (const name of ["Pixel 7", "iPad (gen 7)"]) {
   const wash = await page.evaluate(() =>
     parseFloat(
       document
-        .querySelectorAll(".cta-primary")[0]
+        .querySelectorAll("#problem .cta-primary")[0]
         .querySelector(".mem-skin")
         ?.getAttribute("fill-opacity") ?? "0",
     ),
@@ -172,21 +174,31 @@ for (const name of ["Pixel 7", "iPad (gen 7)"]) {
 
   // Real scroll must reach the tide.
   const before = await page.evaluate(DEFORM);
-  await page.mouse.wheel(0, 700);
-  await page.waitForTimeout(120);
-  const during = await page.evaluate(DEFORM);
+  const scrollBefore = await page.evaluate(() => scrollY);
+  await page.mouse.wheel(0, -180);
+  // A travelling crest can have the same peak at one arbitrary sample. Watch
+  // its response across the wheel's settling window and keep the CTA visible.
+  const responses = [];
+  for (let i = 0; i < 6; i++) {
+    await page.waitForTimeout(100);
+    responses.push(await page.evaluate(DEFORM));
+  }
+  const during = responses.reduce((a, b) => Math.abs(b-before)>Math.abs(a-before)?b:a, before);
+  const scrolled = await page.evaluate(() => scrollY);
   check(
     "scroll stirs the surface",
-    during > 0 && Math.abs(during - before) > 0.15,
+    Math.abs(scrolled-scrollBefore)>20 && during > 0 && Math.abs(during - before) > 0.15,
     `${before} px → ${during} px — scroll is not reaching the membranes`,
     `${before} px → ${during} px`,
   );
 
   // A tap still fires the real strike, and the surface still lets go after.
   await page.evaluate(() =>
-    document.querySelectorAll(".cta-primary")[0].addEventListener(
+    // Stop before the document's capture-phase route transition handler.
+    window.addEventListener(
       "click",
       (e) => {
+        if (!e.target.closest?.("#problem .cta-primary")) return;
         e.preventDefault();
         e.stopImmediatePropagation();
       },
@@ -198,7 +210,7 @@ for (const name of ["Pixel 7", "iPad (gen 7)"]) {
   // tap misses the button entirely — which reads as "the press does nothing".
   await page.waitForTimeout(1100);
   const box = await page.evaluate(() => {
-    const r = document.querySelectorAll(".cta-primary")[0].getBoundingClientRect();
+    const r = document.querySelectorAll("#problem .cta-primary")[0].getBoundingClientRect();
     return {
       x: r.x + r.width * 0.3,
       y: r.y + r.height / 2,
@@ -213,7 +225,7 @@ for (const name of ["Pixel 7", "iPad (gen 7)"]) {
     // roughly half the time. The flood is recorded in the same pass, because
     // it expires after 1.44 s and a check made after the wait finds nothing.
     await page.evaluate(() => {
-      const el = document.querySelectorAll(".cta-primary")[0];
+      const el = document.querySelectorAll("#problem .cta-primary")[0];
       const path = el.querySelector(".mem-edge");
       const flood = el.querySelector(".mem-flood");
       const r = el.getBoundingClientRect();
@@ -282,7 +294,7 @@ for (const name of ["Pixel 7", "iPad (gen 7)"]) {
       await new Promise((r) => setTimeout(r, 90));
       if (window.scrollY < 8) break;
     }
-    const r = document.querySelectorAll(".cta-primary")[0].getBoundingClientRect();
+    const r = document.querySelectorAll("#problem .cta-primary")[0].getBoundingClientRect();
     return { y: Math.round(r.top), off: r.top > window.innerHeight + 240 };
   });
   await page.waitForTimeout(3200);
@@ -313,7 +325,7 @@ for (const name of ["Pixel 7", "iPad (gen 7)"]) {
   await page.goto(`${BASE}/en?ftier=none&fcine=0`, { waitUntil: "load" });
   await page.waitForTimeout(2200);
   const st = await page.evaluate(() => {
-    const el = document.querySelectorAll(".cta-primary")[0];
+    const el = document.querySelectorAll("#problem .cta-primary")[0];
     return {
       mode: el.getAttribute("data-membrane"),
       edge: !!el.querySelector(".mem-edge")?.getAttribute("d"),
@@ -336,3 +348,4 @@ console.log(
 );
 await browser.close();
 process.exit(failed === 0 ? 0 : 1);
+

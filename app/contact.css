@@ -15,30 +15,44 @@
    fallbacks — so the page gets the signature material without an edit to a
    forty-line selector list that also binds five other chapters.
 
-   THE LIQUID HERE IS THE FORM ITSELF.
+   THE LIQUID HERE IS THE CONTROLS THEMSELVES.
    No WebGL stage, and that is authored rather than conceded. A reader on this
    page is TYPING; a full-page fluid behind the one screen where they have to
    compose a sentence is the noise `.legal-doc` and `.careers-doc` already
-   refuse. So the liquid goes exactly where the attention already is: the
-   controls take the membrane material and the bead travels between them
-   (`components/contact/FieldLiquid.tsx`), and everything a reader reads sits
-   on still ground.
+   refuse. So the liquid goes exactly where the attention already is: every
+   control is a laminated glass surface — real backdrop transmission, a rolled
+   refracting rim, internal edge light (`ContactGlass.tsx`) — and everything a
+   reader reads sits on still ground.
+
+   IT USED TO BE A VECTOR OUTLINE AS WELL. `FieldLiquid` drew each control's
+   border as a live Bézier contour with a drop that travelled between them.
+   Both were retired on owner instruction in September 2026: a spline through
+   ring vertices cannot sit exactly on a CSS rounded rectangle, so the contour
+   and the glass rim drew two edges a pixel apart and every control came out
+   doubled and seamed — and an outline that wobbles toward a pointer while the
+   FILLED shape inside it stays rigid reads as the outline coming loose. The
+   membrane belongs on the CTAs, where the whole button is the membrane.
    =========================================================================== */
 
-/* THE BLEED HAS TO BE CLIPPED SOMEWHERE.
-   `.fl-svg` is inset by -96px on every side (PAD in FieldLiquid.tsx) so the
-   liquid can run past the form it belongs to. Unclipped, that grows the
-   document — and the fixed top bar, sized `calc(100% - 2 * 2.995vw)`, inflates
-   with it and carries the burger off the visual viewport where it cannot be
-   tapped at all. `body { overflow-x: hidden }` does not help: with `html` at
-   `overflow: visible` the body's value propagates to the VIEWPORT, so the clip
-   happens after the document has already grown.
+/* NOTHING MAY GROW THE DOCUMENT SIDEWAYS.
+   The fixed top bar is sized `calc(100% - 2 * 2.995vw)`, so it inflates with
+   the document — and a document a few pixels too wide carries the burger off
+   the visual viewport where it cannot be tapped at all. `body { overflow-x:
+   hidden }` does not help: with `html` at `overflow: visible` the body's value
+   propagates to the VIEWPORT, so the clip happens after the document has
+   already grown.
 
-   `clip` on the x axis alone. It adds no scroll container, does not become a
-   containing block for the fixed layers, and the liquid still bleeds
-   vertically — just no longer past the page's own edges. */
+   `clip` on the x axis alone. It adds no scroll container and does not become
+   a containing block for the fixed layers. */
 .contact-page {
   overflow-x: clip;
+}
+
+/* The writing room keeps the site's atmosphere at a reading-level amplitude.
+   Scoped to this route; the environment remains visible through the lenses. */
+body:has(.contact-page) .aura {
+  --aura-mist: 0.14;
+  --aura-key: 0.6;
 }
 
 /* ───────────────────────────────────────────────────────────────────────────
@@ -112,9 +126,10 @@
        the field they are typing into is exactly the noise that argument
        refuses. Across the gutter it is a companion at the side of the desk.
 
-   WHAT IT IS MADE OF. `.fl-edge`'s material, verbatim: a cyan hairline over a
-   fill at 0.012, `vector-effect: non-scaling-stroke` so a sub-pixel resize can
-   never thicken the brand's hairline. The pupils are the only solid thing on
+   WHAT IT IS MADE OF. A cyan hairline over a fill at 0.012, with
+   `vector-effect: non-scaling-stroke` so a sub-pixel resize can never thicken
+   the brand's hairline — the material the form's own controls wore when their
+   borders were vectors too. The pupils are the only solid thing on
    it, which is what makes the gaze the thing your eye locks onto.
 
    IT FOLLOWS THE READER. Once the layer is live the CARRIER detaches to
@@ -148,6 +163,11 @@
   /* 0 -> --color-cyan, 1 -> --color-cyan-deep. The kernel writes it; this is
      the pre-hydration value and the reduced-motion one. */
   --cp-chill: 0;
+  --cp-cool: 0;
+  --cp-warm: 0;
+  --cp-gold: 0;
+  --cp-blush: 0;
+  --cp-glow: 0;
   display: block;
   flex: none;
   /* The BOX is larger than the droplet: the viewBox carries headroom for the
@@ -157,7 +177,7 @@
      equivalent of 76px it read as timid under a 64px headline. These numbers
      track `COMP.VIEW`; if that grows again, grow these in the same ratio or the
      droplet silently shrinks. */
-  --cp-size: clamp(74px, 8.6vw, 108px);
+  --cp-size: clamp(88px, 9.8vw, 124px);
   inline-size: var(--cp-size);
   block-size: var(--cp-size);
   /* The layer blocks nothing. Only `.cp-body` below opts back in, so the
@@ -181,7 +201,7 @@
    frame has been drawn and a transform has been written — a fixed element with
    no coordinates yet would sit in the top-left corner for one frame, which is
    exactly the flash this contract exists to prevent. */
-.companion[data-companion] .cp-carrier {
+.companion[data-companion][data-follow="gutter"] .cp-carrier {
   position: fixed;
   left: 0;
   top: 0;
@@ -201,18 +221,26 @@
   /* The whole layer's colour, mixed once and inherited by both paths — so the
      body's hairline and the pupils can never disagree about the mood mid
      transition, which reads as a blink with no fade in it. */
-  color: color-mix(
+  /* Owner-authorized emotion palette, local to the avatar. Independent
+     spring weights blend directly between moods without a rainbow hue sweep.
+     The form's error token remains exclusively the form's. */
+  --cp-base: color-mix(
     in oklab,
     var(--color-cyan) calc((1 - var(--cp-chill)) * 100%),
     var(--color-cyan-deep)
   );
+  --cp-ice: color-mix(in oklab, var(--cp-base), #91b8ff calc(var(--cp-cool) * 100%));
+  --cp-coral: color-mix(in oklab, var(--cp-ice), #ff806f calc(var(--cp-warm) * 100%));
+  --cp-honey: color-mix(in oklab, var(--cp-coral), #ffd38a calc(var(--cp-gold) * 100%));
+  --cp-rose: color-mix(in oklab, var(--cp-honey), #ffacc7 calc(var(--cp-blush) * 100%));
+  color: color-mix(in oklab, var(--cp-rose), var(--color-paper) calc(var(--cp-glow) * 45%));
 }
 
 .cp-body {
-  fill: var(--color-cyan);
-  fill-opacity: 0.012;
+  fill: currentColor;
+  fill-opacity: 0.065;
   stroke: currentColor;
-  stroke-width: 1;
+  stroke-width: 1.15;
   vector-effect: non-scaling-stroke;
 }
 
@@ -238,7 +266,7 @@
    the top of the page and a 76px droplet beside a 12px label is a mascot. */
 @media (max-width: 1023px) {
   .companion {
-    --cp-size: 68px;
+    --cp-size: 82px;
   }
 }
 
@@ -265,6 +293,38 @@
    Two facts a visitor weighs BEFORE they spend five minutes writing, so they
    are stated before the form rather than under it. A definition list, because
    that is what it is. */
+/* THE OTHER DOOR. The reference sets its phone number in body copy with the
+   number itself underlined, so it reads as a sentence offering an alternative
+   rather than as a second call to action competing with the form. */
+.contact-talk {
+  margin-top: var(--space-group);
+  color: var(--color-paper-mute);
+  font-size: var(--text-body);
+  line-height: 1.55;
+}
+.contact-talk a {
+  color: var(--color-paper);
+  text-decoration: underline;
+  text-underline-offset: 5px;
+  text-decoration-thickness: 1px;
+  text-decoration-color: var(--color-paper-dim);
+  transition: color 200ms var(--ease-arrive);
+}
+.contact-talk a:hover {
+  color: var(--color-cyan);
+  text-decoration-color: var(--color-cyan);
+}
+/* Where the reference runs a strip of client logos, this runs the sentence
+   those logos would have to stand for. The studio does not have a wall of
+   recognisable marks to show yet, and a thin row of placeholder logotypes
+   would say less than one honest line about what it connects. */
+.contact-clients {
+  margin-top: var(--space-group);
+  max-width: 42ch;
+  color: var(--color-paper-soft);
+  font-size: var(--text-body-s);
+  line-height: 1.55;
+}
 .contact-meta {
   display: grid;
   grid-template-columns: auto 1fr;
@@ -358,364 +418,737 @@
   outline-offset: 3px;
 }
 
-/* ───────────────────────────────────────────────────────────────────────────
-   THE PANEL — the form as a raised object.
-   Same glass family as `.footer-panel`: a hairline edge, a top-lit wash that
-   transmits into cyan at the foot, and the chrome's own radius. It is the one
-   surface on the page meant to read as an INSTRUMENT rather than as page,
-   which is what the reference cards do and why they work.
-   ─────────────────────────────────────────────────────────────────────────── */
+/* ===========================================================================
+   THE CARD — the reference contact panel, in this site's material.
+   ---------------------------------------------------------------------------
+   The composition is the reference page's, kept gesture for gesture: a
+   segmented switch on a recessed bar with one travelling pill, a window
+   underneath holding a track of full-width panels, and a full-width action at
+   the bottom of whichever panel is showing.
+
+   TWO TRANSITIONS, ONE DURATION, NO FADE.
+     · `.contact-track` translates by exactly one panel width, and
+     · `.contact-track-view` animates its height to the incoming panel's.
+   Both on `--contact-slide` / `--ease-card`, which is the reference's own
+   `500ms cubic-bezier(.4, 0, .2, 1)`. There is no opacity anywhere in the
+   switch, which is what lets this composition live on a site whose house rule
+   is that a reveal is never a fade.
+
+   WHAT IS NOT COPIED is the reference's white ground. The card is a lit
+   surface over ink here — the same laminate `ContactGlass` already lays under
+   every control — because a white panel on this page would be the brightest
+   thing on the site and the headline beside it would stop being the subject.
+   =========================================================================== */
 .contact-panel {
   position: relative;
+  min-width: 0;
+  padding-top: 1.5rem;
+}
+
+.contact-card {
+  --contact-slide: 500ms;
+  --ease-card: cubic-bezier(0.4, 0, 0.2, 1);
+  --tab-pad: 6px;
+  /* CLIP ROOM, and it is sized off the widest thing that draws outside its own
+     box rather than guessed. The submit's membrane insets its SVG by 17px on
+     every side to give the contour somewhere to deform into, and a focus ring
+     is 2px of outline at 5px of offset. At 12px the submit came out with its
+     top and bottom edges drawn and both verticals clipped away. */
+  --slot-pad: 20px;
+
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(1rem, 1.5vw, 1.5rem);
+  padding: clamp(1.05rem, 1.85vw, 2rem);
   border: 1px solid var(--color-paper-faint);
-  border-radius: var(--topbar-radius);
-  padding: clamp(1.5rem, 3vw, 2.75rem);
+  border-radius: 22px;
   background:
     linear-gradient(
-      180deg,
-      rgba(242, 240, 235, 0.055) 0%,
-      rgba(242, 240, 235, 0.018) 46%,
-      rgba(0, 227, 254, 0.025) 100%
-    ),
-    rgba(10, 10, 12, 0.72);
+      168deg,
+      rgba(242, 240, 235, 0.05),
+      rgba(242, 240, 235, 0.012) 46%,
+      rgba(0, 227, 254, 0.022)
+    );
+  box-shadow:
+    inset 0 1px 0 rgba(242, 240, 235, 0.08),
+    0 34px 80px -46px rgba(0, 0, 0, 0.95);
 }
 
-/* ── the intent chooser ──────────────────────────────────────────────────
-   THE HANDSHAKE, MADE VISIBLE. Nine CTAs across the site carry an `?intent=`
-   tag (build-spec S1.15); until now the tag arrived in a hidden field and the
-   visitor never learned that the door they came through had been remembered.
-   Here it arrives PRE-SELECTED, and a visitor who came in cold picks one —
-   the same segmentation both reference pages do with a dropdown, done as chips
-   so all four options are readable at a glance.
-
-   Deliberately NOT wrapped in `.field`: FieldLiquid draws a contour around
-   every `.field input` it finds, and a contour around a visually-hidden radio
-   is a contour around a 1px box. */
-.contact-choice {
-  border: 0;
-  padding: 0;
-  margin: 0;
-}
-.contact-choice-legend {
-  padding: 0;
-  font-family: var(--font-mono);
-  font-size: var(--text-mono);
-  font-weight: 500;
-  line-height: var(--text-mono--line-height);
-  letter-spacing: var(--text-mono--letter-spacing);
-  text-transform: uppercase;
-  color: var(--color-paper);
-}
-.contact-choice-hint {
-  margin-top: 0.45rem;
-  font-size: var(--text-body-s);
-  line-height: var(--text-body-s--line-height);
-  color: var(--color-paper-soft);
-}
-.contact-choice-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  margin-top: var(--space-group);
-}
-.contact-choice-option {
+/* ─── the switch ─────────────────────────────────────────────────────────── */
+/* A real radio group, not `role="tab"`. The slide, the pill and which panel is
+   reachable are all CSS reading `:checked`, so the card is complete before
+   hydration and stays complete with JavaScript off. */
+.contact-tabbar {
   position: relative;
-  display: inline-flex;
+  display: flex;
+  min-inline-size: 0;
+  margin: 0;
+  padding: var(--tab-pad);
+  border: 1px solid rgba(242, 240, 235, 0.07);
+  border-radius: 12px;
+  /* A WELL, so the pill can sit above it. The reference reads the same way
+     with the values the other way up — a grey trough under a white pill —
+     because what carries "this one is selected" is not the hue, it is which
+     of the two surfaces is nearer the light. Inverting that on a dark page
+     means the trough goes DARKER than the card and the pill goes lighter. */
+  background: rgba(0, 0, 0, 0.3);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.55);
 }
-/* Visually hidden, never `display: none` — the radio must stay focusable and
-   must stay in the accessibility tree, because it IS the control. */
-.contact-choice-option input {
+.contact-tab {
+  position: relative;
+  z-index: 1;
+  flex: 1 1 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  min-height: 46px;
+  padding: 0.55rem 0.5rem;
+  border-radius: 8px;
+  text-align: center;
+  cursor: pointer;
+  color: var(--color-paper-soft);
+  font:
+    500 max(0.8125rem, var(--text-body-s)) / 1.25 var(--font-sans);
+  letter-spacing: -0.004em;
+  /* The reference runs the label colour over the same half-second the pill
+     travels, so the word the pill is leaving dims at the rate it uncovers. */
+  transition: color var(--contact-slide) var(--ease-card);
+}
+.contact-tab input {
   position: absolute;
   width: 1px;
   height: 1px;
   margin: 0;
-  padding: 0;
-  border: 0;
   opacity: 0;
   pointer-events: none;
 }
-.contact-choice-option span {
-  display: inline-flex;
-  align-items: center;
-  min-height: 44px;
-  padding: 0.5rem 1rem;
-  border: 1px solid var(--color-paper-faint);
-  border-radius: 999px;
-  background: rgba(242, 240, 235, 0.03);
-  font-family: var(--font-mono);
-  font-size: var(--text-mono-sm);
-  line-height: var(--text-mono-sm--line-height);
-  letter-spacing: var(--tracking-label);
-  text-transform: uppercase;
-  color: var(--color-paper-mute);
-  cursor: pointer;
-  transition:
-    color var(--dur-micro) var(--ease-arrive),
-    border-color var(--dur-micro) var(--ease-arrive),
-    background-color var(--dur-micro) var(--ease-arrive);
-}
-.contact-choice-option:hover span {
+.contact-tab:hover,
+.contact-tab:has(input:checked) {
   color: var(--color-paper);
-  border-color: color-mix(in srgb, var(--color-paper) 30%, transparent);
 }
-/* The selected chip is the brightest thing in the panel until a field is
-   focused — cyan edge, cyan label, cyan wash. The checked state is carried by
-   the radio itself, so it survives the browser restoring form state on a back
-   navigation without any JavaScript having run. */
-.contact-choice-option input:checked + span {
-  color: var(--color-cyan);
-  border-color: color-mix(in srgb, var(--color-cyan) 62%, transparent);
-  background: color-mix(in srgb, var(--color-cyan) 10%, transparent);
-}
-.contact-choice-option input:focus-visible + span {
+.contact-tab:has(input:focus-visible) {
   outline: 2px solid var(--color-cyan);
-  outline-offset: 3px;
+  outline-offset: 2px;
 }
-/* FORCED COLORS: the chips carry their state in border and background alone,
-   and forced-colors modes drop both. Hand the state back to the system. */
-@media (forced-colors: active) {
-  .contact-choice-option input:checked + span {
-    border-color: Highlight;
-    border-width: 2px;
+/* One surface that MOVES. Two surfaces cross-fading would be a fade. */
+.contact-tabpill {
+  position: absolute;
+  z-index: 0;
+  top: var(--tab-pad);
+  bottom: var(--tab-pad);
+  left: var(--tab-pad);
+  width: calc((100% - 2 * var(--tab-pad)) / var(--tabs, 3));
+  translate: calc(var(--i, 0) * 100%) 0;
+  border-radius: 8px;
+  pointer-events: none;
+  background: linear-gradient(
+    168deg,
+    rgba(242, 240, 235, 0.14),
+    rgba(242, 240, 235, 0.055)
+  );
+  box-shadow:
+    inset 0 1px 0 rgba(242, 240, 235, 0.2),
+    0 8px 18px -12px rgba(0, 0, 0, 0.95);
+  transition: translate var(--contact-slide) var(--ease-card);
+}
+.contact-tabbar:has(input[value="advisory"]:checked) {
+  --i: 1;
+}
+.contact-tabbar:has(input[value="other"]:checked) {
+  --i: 2;
+}
+.contact-tabbar:has(input[value="careers"]:checked) {
+  --i: 3;
+}
+.contact-tabpill .contact-glass-transmission {
+  background: linear-gradient(
+    168deg,
+    rgba(242, 240, 235, 0.1),
+    rgba(242, 240, 235, 0.02) 46%,
+    rgba(0, 227, 254, 0.1)
+  );
+  box-shadow:
+    inset 0 1px 0 rgba(242, 240, 235, 0.26),
+    inset 0 -1px 0 rgba(0, 227, 254, 0.24);
+}
+
+/* ─── the window ─────────────────────────────────────────────────────────── */
+.contact-track-view {
+  /* CLIP, NOT HIDDEN, and the difference is a bug this had.
+     `overflow: hidden` makes a SCROLL CONTAINER that simply has no scrollbar —
+     and the browser will scroll one to bring a focused control into view.
+     Tabbing to the submit button scrolled this window 110px inside its own
+     frame, sliding the whole panel up behind the tab bar with no scrollbar and
+     no gesture that could put it back. `overflow: clip` clips without ever
+     becoming scrollable. The `hidden` above it is the fallback for a browser
+     that does not know `clip`. */
+  overflow: hidden;
+  overflow: clip;
+  /* THE WINDOW IS BIGGER THAN THE CARD'S CONTENT BOX by one slot-pad on every
+     side, and each panel pads that straight back off. That is what puts the
+     clip boundary OUTSIDE the controls rather than flush against them: a focus
+     ring is drawn 5px beyond its control, and every field was having its ring
+     sliced off down the left edge. Padding the panel alone cannot fix it — the
+     panel's padding moves the content in by exactly as much as it moves the
+     boundary out. */
+  margin: calc(-1 * var(--slot-pad));
+  /* No height until a measurement has been written. Without JavaScript this
+     stays `auto`, which is the tallest panel — correct, only not as quiet. */
+  transition: height var(--contact-slide) var(--ease-card);
+}
+.contact-track {
+  display: flex;
+  align-items: flex-start;
+  transition: translate var(--contact-slide) var(--ease-card);
+}
+.contact-slot {
+  flex: 0 0 100%;
+  min-width: 0;
+  padding: var(--slot-pad);
+  /* OFF STAGE IS HIDDEN, NOT ABSENT. `visibility` keeps the box — the window's
+     height is measured from it, and the track needs three panels to have
+     anything to slide — while taking the panel out of the tab order and out of
+     the accessibility tree, which `opacity` and `translate` alone never do.
+     The zero-duration transition DELAYED by the slide is what keeps the
+     outgoing panel on screen for the whole journey out; the active rule below
+     clears the delay so the incoming one is there from the first frame. */
+  visibility: hidden;
+  transition: visibility 0s var(--contact-slide);
+}
+.contact-card:has(input[value="project"]:checked) .contact-track {
+  translate: 0 0;
+}
+.contact-card:has(input[value="advisory"]:checked) .contact-track {
+  translate: -100% 0;
+}
+.contact-card:has(input[value="other"]:checked) .contact-track {
+  translate: -200% 0;
+}
+.contact-card:has(input[value="careers"]:checked) .contact-track {
+  translate: -300% 0;
+}
+.contact-card:has(input[value="project"]:checked)
+  .contact-slot[data-slot-track="project"],
+.contact-card:has(input[value="advisory"]:checked)
+  .contact-slot[data-slot-track="advisory"],
+.contact-card:has(input[value="other"]:checked)
+  .contact-slot[data-slot-track="other"],
+.contact-card:has(input[value="careers"]:checked)
+  .contact-slot[data-slot-track="careers"] {
+  visibility: visible;
+  transition-delay: 0s;
+}
+/* `:has()` is the whole switch. A browser without it would show every panel
+   stacked on top of one another, so the fallback is the honest one: no
+   translate, no hiding, one panel at a time is simply not available and the
+   first form is the form. */
+@supports not selector(:has(*)) {
+  .contact-track {
+    display: block;
+  }
+  .contact-slot {
+    visibility: visible;
+  }
+  .contact-slot ~ .contact-slot {
+    display: none;
+  }
+  .contact-tabbar {
+    display: none;
   }
 }
 
-/* ===========================================================================
-   Contact form (S10)
-   =========================================================================== */
+/* ─── the form inside a panel ────────────────────────────────────────────── */
 .contact-form {
+  position: relative;
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: clamp(0.85rem, 1.25vw, 1.2rem);
+  scroll-margin-top: calc(var(--topbar-h) + 1.5rem);
 }
-.contact-form-heading {
-  margin-top: var(--space-group);
-  padding-top: var(--space-group);
-  border-top: 1px solid var(--color-paper-faint);
-  font-family: var(--font-mono);
-  font-size: var(--text-mono);
-  font-weight: 500;
-  line-height: var(--text-mono--line-height);
-  letter-spacing: var(--text-mono--letter-spacing);
-  text-transform: uppercase;
-  color: var(--color-paper);
+.contact-form :is(button, input, textarea, select, a) {
+  -webkit-tap-highlight-color: transparent;
 }
-/* Name and email side by side (the reference's pairing), company and message
-   full width. Below 560 the pair stacks — two 130px inputs is not a form. */
-.contact-row {
-  display: grid;
-  gap: 1.5rem;
+.contact-form :is(button, input, textarea, select):focus-visible,
+.contact-success-return:focus-visible {
+  outline: 2px solid var(--color-cyan);
+  outline-offset: 5px;
 }
-@media (min-width: 560px) {
-  .contact-row {
-    grid-template-columns: 1fr 1fr;
-  }
+.contact-form button {
+  cursor: pointer;
+}
+.contact-form button:disabled {
+  cursor: default;
 }
 .contact-honeypot {
-  position: absolute;
+  position: absolute !important;
   left: -10000px;
   width: 1px;
   height: 1px;
   overflow: hidden;
-  opacity: 0;
   pointer-events: none;
+}
+.contact-overline {
+  font: 500 var(--text-mono-sm) / var(--text-mono-sm--line-height)
+    var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-label);
+  color: var(--color-cyan);
+}
+/* The reference's paired row: two half-width fields, and a single trailing
+   qualifier that runs full width rather than leaving a hole beside it. */
+.contact-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(0.75rem, 1.1vw, 1rem);
+}
+.contact-row[data-single] {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+/* Laminated surface: clear middle, refracting rolled edge, internal reflection.
+   The map samples the actual backdrop, while the text is a separate DOM plane. */
+.contact-glass {
+  --glass-light: 35%;
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+}
+.contact-glass-defs {
+  position: absolute;
+  pointer-events: none;
+}
+.contact-glass-transmission {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(
+    174deg,
+    rgba(242, 240, 235, 0.075),
+    rgba(242, 240, 235, 0.016) 24%,
+    rgba(0, 0, 0, 0.13) 63%,
+    rgba(0, 227, 254, 0.035)
+  );
+  backdrop-filter: blur(7px);
+  -webkit-backdrop-filter: blur(7px);
+  box-shadow:
+    inset 0 1px 0 rgba(242, 240, 235, 0.13),
+    inset 0 -1px 0 rgba(0, 227, 254, 0.12),
+    inset 1px 0 0 rgba(242, 240, 235, 0.04),
+    0 10px 24px -18px rgba(0, 0, 0, 0.7);
+}
+@supports (backdrop-filter: url(#contact-glass)) {
+  .contact-glass[data-optical] .contact-glass-transmission {
+    backdrop-filter: var(--glass-filter) blur(1px);
+  }
+}
+/* THE LIT EDGE — it has to close, and it has to be even.
+   ---------------------------------------------------------------------------
+   Two shapes of gradient were tried here and both failed in a way worth
+   recording, because the failure is a property of the gradient and not of the
+   values:
+
+   · A LINEAR gradient runs across the BOX. Each of the four edges therefore
+     gets a different slice of it, and the bright stop ENDS wherever the
+     gradient's angle puts it — on a 225x53 control at 115deg that was halfway
+     along the top edge. A light that stops in the middle of a side.
+
+   · A CONIC gradient runs AROUND the box, so it can close — but its stops are
+     spaced by ANGLE FROM THE CENTRE, and on a 4:1 control the two short ends
+     subtend about 26deg each against 154deg for each long edge. The loop shut
+     and the ends went nearly black: continuous, but nowhere near even.
+
+   So the edge is lit the way a real glass edge is, with a VERTICAL ramp. A
+   180deg linear gradient puts the whole top edge at one end of the ramp and
+   the whole bottom edge at the other, which means each edge is uniform ALONG
+   ITS LENGTH, and the two ends simply read the ramp top to bottom. Nothing is
+   angularly compressed, no stop is transparent, and there is nowhere for it to
+   stop: paper on the shoulder, cooling to cyan underneath.
+
+   THE TRAVELLING HIGHLIGHT rides on top of that and is the one conic here,
+   because a highlight moving around the perimeter is exactly what a conic is
+   for. It is emitted THREE TIMES, at the travel position and at one turn
+   either side. Only one copy is ever inside 0-100%; the other two are what let
+   the band cross the seam rather than being clipped at it — with a single copy
+   the band has to stop when it reaches the end of the stop list, which is the
+   first bug again in a new place. Written this way the stops stay in order for
+   every position, so nothing needs clamping.
+
+   `--glass-light` is written per frame by `ContactGlass` from the pointer's
+   position across the control, 0% to 100%, which here is a full turn of the
+   perimeter: a hand crossing the field sends the light round and back. */
+.contact-glass-rim {
+  /* Half the width of the travelling band, as a fraction of the perimeter. */
+  --rim-band: 16%;
+  --rim-at: var(--glass-light, 35%);
+
+  position: absolute;
+  inset: -1px;
+  border: 1px solid transparent;
+  border-radius: inherit;
+  background:
+    conic-gradient(
+        from -90deg at 50% 50%,
+        transparent calc(var(--rim-at) - 100% - var(--rim-band)),
+        rgba(242, 240, 235, 0.5) calc(var(--rim-at) - 100%),
+        transparent calc(var(--rim-at) - 100% + var(--rim-band)),
+        transparent calc(var(--rim-at) - var(--rim-band)),
+        rgba(242, 240, 235, 0.5) var(--rim-at),
+        transparent calc(var(--rim-at) + var(--rim-band)),
+        transparent calc(var(--rim-at) + 100% - var(--rim-band)),
+        rgba(242, 240, 235, 0.5) calc(var(--rim-at) + 100%),
+        transparent calc(var(--rim-at) + 100% + var(--rim-band))
+      )
+      border-box,
+    linear-gradient(
+        180deg,
+        rgba(242, 240, 235, 0.38) 0%,
+        rgba(242, 240, 235, 0.2) 46%,
+        rgba(120, 226, 244, 0.24) 78%,
+        rgba(0, 227, 254, 0.3) 100%
+      )
+      border-box;
+  mask:
+    linear-gradient(#000 0 0) padding-box,
+    linear-gradient(#000 0 0);
+  mask-composite: exclude;
+}
+
+.contact-control {
+  position: relative;
+  border: 1px solid var(--color-paper-faint);
+  border-radius: 14px;
+  background: rgba(0, 0, 0, 0.22);
+  transition: border-color 200ms var(--ease-arrive);
+}
+.contact-control:focus-within {
+  border-color: var(--color-cyan);
+}
+.contact-control:has([aria-invalid="true"]) {
+  border-color: var(--color-warn);
 }
 .field {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+  min-width: 0;
 }
+/* SENTENCE CASE, not the site's mono overline. The reference sets its labels
+   in the body face at full strength, and above a control that is right: an
+   uppercase mono label reads as a heading for a section rather than as the
+   name of the box under it. The mono voice stays where it belongs on this
+   page — the chapter label, the receipt, the numbered steps. */
 .field label {
-  font-family: var(--font-mono);
-  font-size: var(--text-mono);
-  font-weight: 500;
-  line-height: var(--text-mono--line-height);
-  letter-spacing: var(--text-mono--letter-spacing);
-  text-transform: uppercase;
-  color: var(--color-paper-mute);
+  color: var(--color-paper-lead);
+  font: 500 max(0.8125rem, var(--text-body-s)) / 1.35 var(--font-sans);
+  letter-spacing: -0.004em;
 }
-/* The required mark is decoration over a real `required` attribute — it is
-   `aria-hidden` in the markup so a screen reader hears the field's own
-   required state once, not the word "asterisk" after every label. */
+.field-optional,
 .field-required {
-  color: var(--color-cyan);
+  color: var(--color-paper-soft);
+  font-weight: 400;
 }
-.field input,
-.field textarea {
+/* THE CONTROL IS BORDERLESS, and its wrapper carries the edge. A border here
+   as well as on `.contact-control` is two hairlines a pixel apart — which is
+   exactly the doubled, seamed edge this card shipped with. */
+.field :is(input, textarea, select) {
+  display: block;
+  position: relative;
   width: 100%;
   min-width: 0;
   padding: 0.85rem 1rem;
   background: transparent;
-  border: 1px solid var(--color-paper-faint);
-  /* Soft to soft. The vector layer draws these corners as arcs (COAL.FIELD_R
-     = 10), and the CSS underneath has to agree or the no-JS and reduced-motion
-     form is a visibly different shape from the enhanced one. */
-  border-radius: 10px;
+  border: 0;
+  border-radius: inherit;
   color: var(--color-paper);
   font-family: var(--font-sans);
-  font-size: var(--text-body);
-  line-height: var(--text-body--line-height);
+  /* 16px floor: anything smaller and iOS Safari zooms the page on focus. */
+  font-size: max(1rem, var(--text-body-s));
+  line-height: 1.5;
   letter-spacing: var(--text-body--letter-spacing);
-  transition: border-color 200ms var(--ease-arrive);
+  caret-color: var(--color-cyan);
 }
 .field textarea {
   resize: vertical;
-  min-height: 7rem;
+  min-height: 148px;
+  max-height: 60vh;
 }
-.field input::placeholder,
-.field textarea::placeholder {
-  color: var(--color-paper-mute);
+.field :is(input, textarea)::selection {
+  background: var(--color-cyan);
+  color: var(--color-ink);
 }
-.field input:focus,
-.field textarea:focus {
-  outline: none;
-  border-color: var(--color-cyan);
-}
-.field input:focus-visible,
-.field textarea:focus-visible {
-  outline: 2px solid var(--color-cyan);
-  outline-offset: 2px;
-  border-radius: 10px;
-}
-.field input[aria-invalid="true"],
-.field textarea[aria-invalid="true"] {
-  border-color: var(--color-warn);
-}
-.field-error,
-.contact-error,
-.contact-pending {
-  font-family: var(--font-sans);
-  font-size: var(--text-body-s);
-  line-height: var(--text-body-s--line-height);
-  letter-spacing: var(--text-body-s--letter-spacing);
-  color: var(--color-warn);
-}
-
-/* the aggregate error announcement (R5-E) — one focused, spoken summary of the
-   complete error state. Salmon stays validation-only; the block is quiet, not
-   a klaxon, and each line is a direct route to its field. */
-.contact-error-summary {
-  padding: 1rem 1.15rem;
-  border: 1px solid color-mix(in srgb, var(--color-warn) 55%, transparent);
-  border-left-width: 2px;
-  background: color-mix(in srgb, var(--color-warn) 7%, transparent);
-}
-.contact-error-summary:focus {
-  outline: none;
-}
-.contact-error-summary:focus-visible {
-  outline: 2px solid var(--color-warn);
-  outline-offset: 3px;
-}
-.contact-error-summary-title {
-  font-family: var(--font-mono);
-  font-size: var(--text-mono-sm);
-  font-weight: 500;
-  line-height: var(--text-mono-sm--line-height);
-  letter-spacing: var(--tracking-label);
-  text-transform: uppercase;
-  color: var(--color-warn);
-}
-.contact-error-summary ul {
-  margin-top: 0.6rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.3rem;
-}
-.contact-error-summary a {
-  font-size: var(--text-body-s);
-  line-height: var(--text-body-s--line-height);
-  color: var(--color-paper);
-  text-decoration: underline;
-  text-decoration-color: color-mix(
-    in srgb,
-    var(--color-warn) 70%,
-    transparent
-  );
-  text-underline-offset: 3px;
-  transition: color 200ms var(--ease-arrive);
-}
-.contact-error-summary a:hover,
-.contact-error-summary a:focus-visible {
-  color: var(--color-warn);
-}
-.contact-pending {
-  color: var(--color-paper-mute);
-}
-.contact-form button[type="submit"] {
-  max-width: 100%;
-  align-self: flex-start;
-  margin-top: 0.25rem;
-}
-@media (max-width: 420px) {
-  .contact-form button[type="submit"] {
-    width: 100%;
-    align-self: stretch;
-    justify-content: center;
-  }
-}
-/* The privacy line sits UNDER the action, where it is read at the moment of
-   sending rather than skipped on the way in. Deliberately not a consent
-   tick-box: this form's lawful basis is answering an enquiry the visitor
-   themselves initiated, and a required checkbox in front of that is friction
-   that buys no extra consent. */
-.contact-privacy {
-  font-size: var(--text-body-s);
-  line-height: var(--text-body-s--line-height);
+.field :is(input, textarea)::placeholder {
   color: var(--color-paper-soft);
 }
-.contact-privacy a {
-  color: var(--color-paper-mute);
-  text-decoration: underline;
-  text-underline-offset: 3px;
-  text-decoration-color: var(--color-paper-faint);
-  transition: color 200ms var(--ease-arrive);
+.field :is(input, textarea, select):focus {
+  outline: none;
 }
-.contact-privacy a:hover,
-.contact-privacy a:focus-visible {
+.field:focus-within label {
+  color: var(--color-paper);
+}
+.field:focus-within .contact-glass-transmission {
+  box-shadow:
+    inset 0 1px 0 rgba(242, 240, 235, 0.24),
+    inset 0 -1px 0 rgba(0, 227, 254, 0.32),
+    inset 0 0 18px -12px var(--color-cyan);
+}
+.field input:-webkit-autofill {
+  -webkit-text-fill-color: var(--color-paper);
+  caret-color: var(--color-cyan);
+  box-shadow: 0 0 0 1000px var(--color-surface) inset;
+}
+
+/* A QUALIFIER IS A NATIVE SELECT. The reference builds a button-and-`ul`
+   combobox with a hidden input behind it, and its opened list carries no
+   animation whatsoever — so the custom control buys nothing the closed state
+   below does not already give, while costing the keyboard model, the mobile
+   picker and the no-JS POST. `color-scheme` is what makes the OS-drawn popup
+   come up dark instead of white on a dark page. */
+.contact-control[data-select] select {
+  appearance: none;
+  padding-right: 2.75rem;
+  cursor: pointer;
+  color-scheme: dark;
+}
+.contact-control[data-select] select[data-empty] {
+  color: var(--color-paper-soft);
+}
+.contact-control[data-select] select option {
+  background: var(--color-surface);
+  color: var(--color-paper);
+}
+.contact-chevron {
+  position: absolute;
+  right: 1rem;
+  top: 50%;
+  translate: 0 -50%;
+  width: 18px;
+  height: 18px;
+  pointer-events: none;
+  color: var(--color-paper-soft);
+}
+.contact-control[data-select]:focus-within .contact-chevron {
   color: var(--color-cyan);
 }
 
-/* ── the received state ──────────────────────────────────────────────────
-   A screen, not a line. On the homepage chapter this replaced a form the
-   reader could still see the rest of the site around; here it IS the panel, so
-   it restates what happens next and offers the way back out. */
-.contact-success {
-  padding: clamp(1rem, 3vw, 2rem) 0;
+.contact-field-foot {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  color: var(--color-paper-mute);
+  font-size: var(--text-body-s);
+  line-height: 1.45;
 }
-.contact-success-title {
-  font-family: var(--font-sans);
-  font-size: var(--text-title);
-  font-weight: 550;
-  line-height: var(--text-title--line-height);
-  letter-spacing: var(--text-title--letter-spacing);
-  color: var(--color-cyan);
+.contact-count {
+  flex: none;
+  margin-left: auto;
+  font: 400 var(--text-mono-sm) / 1.5 var(--font-mono);
+  color: var(--color-paper-soft);
 }
-.contact-success-body {
-  margin-top: var(--space-tight);
-  font-size: var(--text-body-l);
-  line-height: var(--text-body-l--line-height);
-  color: var(--color-paper-lead);
+
+/* ─── the action ─────────────────────────────────────────────────────────── */
+.contact-actions {
+  padding-top: 0.35rem;
 }
-.contact-success-return {
+/* Full width and centred, the way the reference closes its card. The membrane
+   and the L→R cyan flood are this site's own and stay exactly as authored. */
+.contact-submit.cta {
+  width: 100%;
+  justify-content: center;
+  gap: 0.9rem;
+  border-radius: 12px;
+  min-height: 56px;
+}
+.contact-arrow {
+  display: block;
+  flex: none;
+  width: 26px;
+  height: 14px;
+  margin-left: 0.15rem;
+}
+.contact-submit .cta-label {
   display: inline-flex;
   align-items: center;
-  min-height: 44px;
-  margin-top: var(--space-block);
-  font-family: var(--font-mono);
-  font-size: var(--text-mono-sm);
-  font-weight: 500;
-  letter-spacing: var(--tracking-label);
-  text-transform: uppercase;
+  gap: 0.7rem;
+}
+.contact-privacy {
   color: var(--color-paper-mute);
+  font-size: var(--text-body-s);
+  line-height: 1.55;
+}
+.contact-privacy a {
+  color: var(--color-paper);
   text-decoration: underline;
   text-underline-offset: 4px;
-  text-decoration-color: var(--color-paper-faint);
-  transition: color 200ms var(--ease-arrive);
+  text-decoration-color: var(--color-paper-dim);
 }
-.contact-success-return:hover,
-.contact-success-return:focus-visible {
+.contact-privacy a:hover {
   color: var(--color-cyan);
+}
+.contact-delivery:empty {
+  display: none;
+}
+.contact-error-summary {
+  padding: 1rem 1.2rem;
+  border-left: 2px solid var(--color-warn);
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--color-warn) 5%, transparent);
+}
+.contact-error-summary:focus {
+  outline: 2px solid var(--color-warn);
+  outline-offset: 4px;
+}
+.contact-error-summary-title {
+  color: var(--color-warn);
+  font: 500 var(--text-mono-sm) / 1.6 var(--font-mono);
+}
+.contact-error-summary ul {
+  margin-top: 0.5rem;
+}
+.contact-error-summary a {
+  display: inline-block;
+  padding-block: 0.3rem;
+  color: var(--color-paper);
+  font-size: var(--text-body-s);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.field-error,
+.contact-error {
+  color: var(--color-warn);
+  font-size: var(--text-body-s);
+  line-height: 1.5;
+}
+.contact-pending,
+.contact-sending {
+  color: var(--color-paper);
+  font-size: var(--text-body-s);
+  line-height: 1.6;
+}
+.contact-sending {
+  position: relative;
+  padding-top: 1.2rem;
+  overflow: hidden;
+}
+.contact-sending > span {
+  position: absolute;
+  inset: 0 auto auto 0;
+  height: 2px;
+  width: 28%;
+  background: var(--color-cyan);
+  animation: contact-flow 1.4s cubic-bezier(0.65, 0, 0.35, 1) infinite alternate;
+}
+@keyframes contact-flow {
+  to {
+    left: 72%;
+  }
+}
+.contact-form[aria-busy="true"] .contact-submit .cta-label {
+  color: var(--color-paper);
+}
+
+/* The delivered state closes the exchange with a receipt. */
+.contact-success { padding: 3rem 0; min-height: 600px; outline: none; }
+.contact-receipt-seal { width: 116px; margin-bottom: 2rem; color: var(--color-cyan); }
+.contact-receipt-seal svg { width: 100%; fill: none; stroke: currentColor; stroke-width: 1; }
+.contact-receipt-seal circle { stroke-dasharray: 289; animation: contact-seal 1.2s var(--ease-arrive) both; }
+.contact-receipt-seal path { stroke-width: 1.6; stroke-dasharray: 62; animation: contact-check .8s .25s var(--ease-arrive) both; }
+@keyframes contact-seal { from { stroke-dashoffset: 289; } to { stroke-dashoffset: 0; } }
+@keyframes contact-check { from { stroke-dashoffset: 62; } to { stroke-dashoffset: 0; } }
+.contact-success-title { margin-top: 1.1rem; font: 500 var(--text-display-l)/1.05 var(--font-grotesk); letter-spacing: -.035em; color: var(--color-paper); }
+.contact-success-body { margin-top: 1.5rem; font-size: var(--text-body-l); color: var(--color-paper); line-height: 1.5; max-width: 32ch; }
+.contact-receipt-next { margin-top: 1rem; color: var(--color-paper-mute); font-size: var(--text-body-s); line-height: 1.6; max-width: 45ch; }
+.contact-success-return { display: inline-flex; align-items: center; gap: 1.8rem; min-height: 56px; margin-top: 2.5rem; border-bottom: 1px solid var(--color-paper-dim); color: var(--color-cyan); text-decoration: none; font: 400 var(--text-mono-sm)/1.4 var(--font-mono); }
+
+/* Compact widths retain full-sized controls and keep the final action legible. */
+@media (max-width: 1023px) {
+  .contact-panel {
+    padding-top: 0;
+  }
+  .contact-card {
+    max-width: 720px;
+  }
+}
+@media (max-width: 600px) {
+  .contact-card {
+    border-radius: 18px;
+  }
+  /* Three words on one line at 320px is three clipped words. The switch wraps
+     to a column and the pill wraps with it — same one surface, travelling on
+     the other axis. */
+  .contact-tabbar {
+    flex-direction: column;
+  }
+  .contact-tab {
+    min-height: 44px;
+  }
+  .contact-tabpill {
+    right: var(--tab-pad);
+    width: auto;
+    height: calc((100% - 2 * var(--tab-pad)) / var(--tabs, 3));
+    bottom: auto;
+    translate: 0 calc(var(--i, 0) * 100%);
+  }
+  .contact-field-foot,
+  .contact-privacy {
+    font-size: max(0.875rem, var(--text-body-s));
+  }
+  .contact-field-foot {
+    flex-wrap: wrap;
+  }
+  /* Two 140px-wide inputs are two inputs nobody can read a placeholder in. */
+  .contact-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .contact-success {
+    min-height: 450px;
+    padding-top: 1rem;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .contact-card *,
+  .contact-form *,
+  .contact-success * {
+    animation: none !important;
+  }
+  /* The switch still switches — it just arrives instead of travelling. The
+     `visibility` transition is exempt on purpose: it carries no motion, and
+     removing its delay would blank the outgoing panel a frame before the
+     incoming one is in place. */
+  .contact-card :is(.contact-track, .contact-track-view, .contact-tabpill, .contact-tab) {
+    transition: none !important;
+  }
+  .contact-sending > span {
+    width: 100%;
+  }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .contact-glass-transmission {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    background: var(--color-surface);
+  }
+}
+@media (forced-colors: active) {
+  .contact-glass {
+    display: none;
+  }
+  .contact-card,
+  .contact-tabbar {
+    border: 1px solid ButtonText;
+  }
+  .contact-tabpill {
+    border: 2px solid Highlight;
+    border-radius: 8px;
+  }
+  .contact-control :is(input, textarea, select) {
+    border: 1px solid ButtonText !important;
+  }
+  .contact-tab:has(input:checked) {
+    color: Highlight;
+  }
 }
 
 /* ───────────────────────────────────────────────────────────────────────────
@@ -771,96 +1204,4 @@
   line-height: var(--text-body--line-height);
   letter-spacing: var(--text-body--letter-spacing);
   color: var(--color-paper-lead);
-}
-
-/* ===========================================================================
-   THE FORM'S LIQUID (S10) — coalescence on the contact form
-   (lib/motion/coalesce.mjs · components/contact/FieldLiquid.tsx)
-   ---------------------------------------------------------------------------
-   Same contract as THE MEMBRANE: everything above stays exactly as authored
-   and remains the whole form under reduced motion, without JS, and before
-   hydration. `FieldLiquid.tsx` sets `data-fieldliquid` on the <form> only once
-   the layer has mounted AND drawn its first frame, and every rule below is
-   gated on it. If the vector layer never arrives, none of this applies and the
-   bordered form is the form.
-
-   What it replaces, and only this:
-     · the 1 px CSS border on each control → a live Bézier contour that deforms
-       under a hand, ripples where it is clicked, and can be MERGED WITH.
-   What it deliberately does not touch: the labels, the values, the validation,
-   the error summary, the :focus-visible outline, and the submit button — which
-   keeps its own membrane and its own flood.
-   =========================================================================== */
-.fl {
-  position: absolute;
-  inset: 0;
-  display: block;
-  pointer-events: none;
-}
-.fl-svg {
-  /* Size and offset are written by FieldLiquid.tsx from the same PAD that
-     writes the viewBox — they must agree to the pixel, and a second copy here
-     is a second thing to get out of step. It has been out of step. */
-  position: absolute;
-  overflow: visible;
-  pointer-events: none;
-}
-.contact-form[data-fieldliquid] {
-  position: relative;
-}
-/* The liquid draws BEHIND the controls: the fields' backgrounds are already
-   transparent, so the interior wash reads through, and no fill can ever sit
-   over the text somebody is typing. */
-.contact-form[data-fieldliquid] > .fl {
-  z-index: 0;
-}
-.contact-form[data-fieldliquid] > *:not(.fl) {
-  position: relative;
-  z-index: 1;
-}
-/* The handover. Only the border goes — padding, colour, font and every state
-   that is not the outline stay in the rules above. */
-.contact-form[data-fieldliquid] .field input,
-.contact-form[data-fieldliquid] .field textarea {
-  border-color: transparent;
-}
-.fl-edge {
-  fill: var(--color-cyan);
-  fill-opacity: 0.012;
-  stroke: var(--color-paper-faint);
-  stroke-width: 1;
-  /* the viewBox is 1:1 with the CSS box, but a sub-pixel resize must never
-     make the brand's hairline thicken */
-  vector-effect: non-scaling-stroke;
-  transition: stroke 200ms var(--ease-arrive);
-}
-/* WET — the field currently holding the drop. It has to be lit, or the drop
-   lands on a dim grey hairline and the brightness falls off a cliff on
-   touchdown. Deep cyan rather than full: focus stays the brightest thing on
-   the form, so dim → lit → focused still reads as a hierarchy. */
-.fl-edge[data-fl="wet"] {
-  stroke: var(--color-cyan-deep);
-}
-.fl-edge[data-fl="focus"] {
-  stroke: var(--color-cyan);
-}
-.fl-edge[data-fl="invalid"] {
-  stroke: var(--color-warn);
-}
-/* The drop wears the material of the contour that absorbs it. While the bridge
-   is formed both draw the same circle; identical, the two strokes are
-   indistinguishable from one, and that is the whole reason the outline can stay
-   on through a merge without blinking.
-
-   `stroke` is written per frame by FieldLiquid, COPIED from the host contour's
-   computed value so it matches mid-transition too — mirroring the state alone
-   left a window where a rest-coloured circle sat under a wet-coloured one. The
-   value here is only the pre-mount fallback. Width and fill must stay in step
-   with `.fl-edge` above by hand. */
-.fl-bead {
-  fill: var(--color-cyan);
-  fill-opacity: 0.012;
-  stroke: var(--color-paper-faint);
-  stroke-width: 1;
-  vector-effect: non-scaling-stroke;
 }

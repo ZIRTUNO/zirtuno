@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   registerMembrane,
   membraneMode,
   type MembraneHandle,
 } from "@/lib/motion/membrane-runtime";
-import { COMP, makeCompanion } from "@/lib/motion/companion.mjs";
+import { COMP, PARAM, makeCompanion } from "@/lib/motion/companion.mjs";
+import { makeCompanionBehavior } from "@/lib/motion/companion-behavior.mjs";
 import type { CompanionExpression } from "@/lib/motion/companion.mjs";
 
 /**
@@ -31,7 +32,7 @@ import type { CompanionExpression } from "@/lib/motion/companion.mjs";
  *
  * ── IT FOLLOWS YOU ──────────────────────────────────────────────────────────
  *
- * The droplet is `position: fixed` once the layer is live, and springs between
+ * With a wide enough gutter the live droplet is fixed, and springs between
  * two targets: DOCKED in its slot on the statement's label line, and PARKED at
  * a fixed height in the viewport once that slot has scrolled away. So it rides
  * down the page beside the reader and settles back into the composition when
@@ -42,8 +43,8 @@ import type { CompanionExpression } from "@/lib/motion/companion.mjs";
  * this site and whose native scroll events arrive about twice per 900px and
  * hundreds of pixels stale.
  *
- * The slot stays in the flow at full size, so detaching never shifts the layout
- * by a pixel.
+ * The slot stays in the flow at full size. On narrow screens the carrier also
+ * stays in that slot, so it cannot park over the form's controls.
  *
  * ── WHY IT TOUCHES NOTHING ──────────────────────────────────────────────────
  *
@@ -78,42 +79,11 @@ const DODGE_R = 104;
 const TYPING_MS = 1100;
 /** How long after the last pointer move the visitor still counts as present. */
 const POINTER_MS = 2600;
-/** How long a beat of relief lasts when an invalid field becomes valid. */
-const APPROVE_MS = 620;
-/** How long a startle lasts. An event, not a mood. */
-const STARTLE_MS = 720;
 /** Where it parks, as a fraction of the viewport height, once undocked. */
 const PARK_VH = 0.62;
 /** The dock/park spring. Slower than the gaze: a body travelling, not an eye. */
 const OMEGA_POS = 7.4;
 const ZETA_POS = 0.92;
-
-/**
- * THE ANGER POLICY, and the only piece of taste in this file.
- *
- * A companion that scowls the instant anything is wrong is a nag; one that
- * never scowls is furniture. The rule shipped here:
- *
- *   · the FIRST rejected submit gets `doubt` — a raised brow, not a scowl.
- *     Everyone mistypes an email once, and being glared at for it is a worse
- *     experience than no companion at all.
- *   · the SECOND and every later rejection gets `angry`, and it escalates:
- *     each further rejection holds the scowl longer, to a ceiling.
- *   · it FORGIVES. Anger expires on its own, any correction cancels it, and a
- *     confirmed send resets the count to zero.
- *
- * `rejections` is 1-based.
- */
-function angerPolicy(rejections: number): {
-  expression: CompanionExpression;
-  holdMs: number;
-} {
-  if (rejections <= 1) return { expression: "doubt", holdMs: 2400 };
-  return {
-    expression: "angry",
-    holdMs: Math.min(2600 + (rejections - 2) * 900, 6000),
-  };
-}
 
 /**
  * The rest pose, frozen at t = 0.
@@ -141,12 +111,6 @@ type Live = {
   /** Timestamps of the last keystroke and the last pointer move. */
   typedAt: number;
   movedAt: number;
-  /** Anger, approval and startle windows. */
-  angryUntil: number;
-  angryAs: CompanionExpression;
-  approveUntil: number;
-  startleUntil: number;
-  rejections: number;
   /** Controls that were invalid on the previous pass. */
   invalid: Set<string>;
   /** The pointer is inside DODGE_R / actually on the droplet. */
@@ -156,13 +120,22 @@ type Live = {
 
 export function Companion() {
   const slot = useRef<HTMLSpanElement>(null);
+  const [motionAllowed, setMotionAllowed] = useState(false);
+
+  useEffect(() => {
+    const query = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const update = () => setMotionAllowed(!query.matches);
+    update();
+    query.addEventListener("change", update);
+    return () => query.removeEventListener("change", update);
+  }, []);
 
   useEffect(() => {
     const slotEl = slot.current;
     if (!slotEl) return;
     // The same gate the membranes use: reduced motion turns this off entirely
     // and leaves the still droplet already in the markup, in the flow.
-    if (membraneMode() === "off") return;
+    if (!motionAllowed || membraneMode() === "off") return;
 
     const carrier = slotEl.querySelector<HTMLElement>(".cp-carrier");
     const bodyEl = slotEl.querySelector<SVGPathElement>(".cp-body");
@@ -171,25 +144,25 @@ export function Companion() {
     if (!carrier || !bodyEl || !eyeL || !eyeR) return;
 
     const comp = makeCompanion(1);
+    const behavior = makeCompanionBehavior(performance.now());
     const live: Live = {
       ax: 0,
       ay: 0,
       aiming: false,
       typedAt: -1e9,
       movedAt: -1e9,
-      angryUntil: -1e9,
-      angryAs: "doubt",
-      approveUntil: -1e9,
-      startleUntil: -1e9,
-      rejections: 0,
       invalid: new Set(),
       crowded: false,
       hovered: false,
     };
 
     const panel = document.querySelector(".contact-panel");
+    // The card publishes which of its three forms is on stage. Read that
+    // identity: both tracks remain visible during a slide, and an offstage
+    // track may retain a pending outcome. No layout read is needed here.
     const form = () =>
-      document.querySelector<HTMLFormElement>("form.contact-form");
+      panel?.querySelector<HTMLFormElement>(".contact-slot[data-active] form.contact-form") ??
+      panel?.querySelector<HTMLFormElement>("form.contact-form") ?? null;
 
     // ── where the droplet is ─────────────────────────────────────────────────
     //
@@ -204,6 +177,7 @@ export function Companion() {
     let slotDocY = 0;
     let slotW = 0;
     let parkX = 0;
+    let canPark = false;
     function measureSlot() {
       const r = slotEl!.getBoundingClientRect();
       slotDocX = r.left + window.scrollX;
@@ -222,9 +196,7 @@ export function Companion() {
        * So it slides into THE SHELL'S GUTTER, which `--page-padding` keeps empty
        * at every width by construction (`zirtuno-shell-is-the-bar`): the one
        * strip of the viewport nothing is ever laid out in. If the gutter cannot
-       * hold the droplet — narrow viewports, where the shell is nearly the whole
-       * window — it keeps its column position instead, because a droplet half
-       * off the left edge is worse than one that overlaps a margin.
+       * hold the droplet, it stays in normal document flow at its original slot.
        */
       // `.contact-page` carries the gutter as PADDING, so its own box starts at
       // the viewport edge and its `left` is always 0. The gutter has to be read
@@ -232,6 +204,7 @@ export function Companion() {
       // and is present on every width.
       const content = document.querySelector(".contact-masthead");
       const gutter = content ? content.getBoundingClientRect().left : 0;
+      canPark = gutter >= slotW + 28;
       parkX =
         gutter >= slotW + 28 ? Math.max(12, (gutter - slotW) / 2) : slotDocX;
     }
@@ -251,7 +224,7 @@ export function Companion() {
       // has gone. The band is generous on purpose: a target that flipped the
       // moment the slot touched an edge would swap back and forth on any
       // scroll that hovered there.
-      const gone = dockY < -slotW * 0.6 || dockY > pageVH - slotW * 0.35;
+      const gone = canPark && (dockY < -slotW * 0.6 || dockY > pageVH - slotW * 0.35);
       return {
         x: gone ? parkX : slotDocX,
         y: gone ? pageVH * PARK_VH : dockY,
@@ -327,7 +300,9 @@ export function Companion() {
      */
     function looksWrong(el: HTMLInputElement | HTMLTextAreaElement) {
       if (el.getAttribute("aria-invalid") === "true") return true;
-      if (el.id === "contact-email") {
+      // Every track has an email field, so this is keyed on the control's type
+      // rather than on one id.
+      if (el instanceof HTMLInputElement && el.type === "email") {
         const v = el.value.trim();
         return v.length > 4 && !v.includes("@");
       }
@@ -367,58 +342,45 @@ export function Companion() {
           live.invalid.add(el.id);
         } else if (!bad && was) {
           live.invalid.delete(el.id);
-          live.approveUntil = now + APPROVE_MS;
           // RELIEF CANCELS THE SCOWL. Any correction earns it, even a partial
           // one: someone working through two errors is making progress, and a
           // companion that keeps glaring until the last is fixed is punishing
           // them for the ones they already got right.
-          live.angryUntil = -1e9;
+          behavior.event("correct", now);
         }
       }
     }
 
     /** The form's published state, in priority order. Highest wins. */
     function readState(now: number): CompanionExpression {
-      if (panel?.querySelector(".contact-success")) {
-        // A confirmed send wipes the ledger. The companion does not carry a
-        // grudge from one enquiry into the next.
-        live.rejections = 0;
-        live.angryUntil = -1e9;
-        return "delivered";
-      }
-      if (panel?.querySelector(".contact-error")) return "fail";
-      if (panel?.querySelector(".contact-pending")) return "hold";
-      if (form()?.getAttribute("aria-busy") === "true") return "effort";
-      // A startle outranks a mood: it is a direct answer to being touched, and
-      // an answer that arrives after the next mood has settled is not an answer.
-      if (now < live.startleUntil) return "startled";
-      if (now < live.angryUntil) return live.angryAs;
-      if (now < live.approveUntil) return "approve";
-      // Deliberate attention beats everything below it, including a focused
-      // field: someone who has put their cursor ON him is talking to him.
-      if (live.hovered) return "curious";
-
       const el = focusedControl();
-      if (el) {
-        if (looksWrong(el)) return "doubt";
-        if (now - live.typedAt < TYPING_MS) {
-          return el instanceof HTMLTextAreaElement && el.value.length > 90
-            ? "ponder"
-            : "read";
-        }
-        return "attend";
-      }
-      if (live.crowded) return "dodge";
-      if (now - live.movedAt < POINTER_MS) return "notice";
-      return "rest";
+      const f = form();
+      return behavior.read(now, {
+        status: panel?.querySelector(".contact-success") ? "success"
+          : f?.getAttribute("aria-busy") === "true" ? "busy"
+          : f?.querySelector(".contact-pending") ? "pending"
+          : f?.querySelector(".contact-error") ? "error" : "idle",
+        focused: !!el,
+        typing: !!el && now - live.typedAt < TYPING_MS,
+        longText: el instanceof HTMLTextAreaElement && el.value.length > 90,
+        invalid: !!el && looksWrong(el),
+        crowded: live.crowded,
+        moving: now - live.movedAt < POINTER_MS,
+      });
     }
 
     // ── listeners ────────────────────────────────────────────────────────────
 
+    let pointerX = 0, pointerY = 0, pointerAt = 0;
     const onMove = (e: PointerEvent) => {
-      live.movedAt = performance.now();
+      const now = performance.now();
+      live.movedAt = now;
       const c = centre();
       live.crowded = Math.hypot(e.clientX - c.x, e.clientY - c.y) < DODGE_R;
+      const distance = pointerAt ? Math.hypot(e.clientX - pointerX, e.clientY - pointerY) : 0;
+      const speed = distance / Math.max(16, now - pointerAt) * 1000;
+      behavior.stroke(distance, speed, live.crowded, now);
+      pointerX = e.clientX; pointerY = e.clientY; pointerAt = now;
       // While the visitor is writing, the caret outranks the pointer: a hand
       // resting on a mouse is not where the attention is.
       if (performance.now() - live.typedAt > TYPING_MS) {
@@ -427,6 +389,7 @@ export function Companion() {
     };
 
     const onDown = (e: PointerEvent) => {
+      if (e.target === bodyEl) return;
       const c = centre();
       const dx = e.clientX - c.x;
       const dy = e.clientY - c.y;
@@ -436,8 +399,10 @@ export function Companion() {
       comp.poke(dx / d, dy / d, Math.max(0.25, 1 - d / (AIM_R * 1.6)));
       aimAt(e.clientX, e.clientY);
       live.movedAt = performance.now();
+      behavior.activity(performance.now());
     };
 
+    let milestoneUsed = false;
     const onInput = (e: Event) => {
       const el = e.target;
       if (
@@ -449,6 +414,11 @@ export function Companion() {
         return;
       }
       live.typedAt = performance.now();
+      behavior.event("type", live.typedAt);
+      if (!milestoneUsed && el instanceof HTMLTextAreaElement && el.value.length > 160) {
+        milestoneUsed = true;
+        behavior.event("milestone", live.typedAt);
+      }
       comp.tick();
       const p = caretPoint(el);
       aimAt(p.x, p.y);
@@ -462,6 +432,7 @@ export function Companion() {
         !el.closest(".contact-honeypot")
       ) {
         comp.blink();
+        behavior.activity(performance.now());
         const p = caretPoint(el);
         aimAt(p.x, p.y);
       }
@@ -471,7 +442,7 @@ export function Companion() {
       // Reset the ledger optimistically: if the submit is rejected, the summary
       // focus below counts it again a moment later. A submit that GOES THROUGH
       // must not leave anger armed behind it.
-      live.angryUntil = -1e9;
+      behavior.event("submit", performance.now());
       const btn = form()?.querySelector(".cta-primary");
       if (btn) {
         const r = btn.getBoundingClientRect();
@@ -501,10 +472,7 @@ export function Companion() {
       if (!(el instanceof HTMLElement)) return;
       if (!el.closest(".contact-error-summary")) return;
 
-      live.rejections += 1;
-      const { expression, holdMs } = angerPolicy(live.rejections);
-      live.angryAs = expression;
-      live.angryUntil = performance.now() + holdMs;
+      behavior.event("reject", performance.now());
 
       const first = document.querySelector<HTMLAnchorElement>(
         ".contact-error-summary a",
@@ -533,13 +501,15 @@ export function Companion() {
 
     const onEnter = () => {
       live.hovered = true;
+      behavior.hover(true, performance.now());
       comp.blink();
     };
     const onLeave = () => {
       live.hovered = false;
+      behavior.hover(false, performance.now());
     };
     const onBodyDown = (e: PointerEvent) => {
-      live.startleUntil = performance.now() + STARTLE_MS;
+      behavior.touch(true, performance.now());
       const p = toLocal(e.clientX, e.clientY);
       // THE SAME WAVE A PRESSED CTA RUNS, from the point that was struck.
       comp.press(true);
@@ -552,11 +522,55 @@ export function Companion() {
       const d = Math.hypot(dx, dy) || 1;
       comp.poke(dx / d, dy / d, 1.4);
     };
-    const onUp = () => comp.press(false);
+    const onUp = () => {
+      comp.press(false);
+      behavior.touch(false, performance.now());
+    };
+    let awayAt = -1;
+    const onCancel = () => {
+      comp.press(false);
+      comp.hand(null);
+      behavior.cancel();
+      live.hovered = live.crowded = false;
+    };
+    const onWindowBlur = () => { awayAt = performance.now(); onCancel(); };
+    const onWindowFocus = () => {
+      if (awayAt >= 0 && performance.now() - awayAt > 1000) behavior.event("return", performance.now());
+      awayAt = -1;
+    };
+    const onChoice = (e: Event) => {
+      const el = e.target;
+      // The radios moved OUT of the form when the intent chips became the
+      // card's track switch. It is the same gesture — picking a direction —
+      // so the same reaction fires, from the same kind of control.
+      if (
+        el instanceof HTMLInputElement &&
+        el.type === "radio" &&
+        el.closest(".contact-card")
+      ) {
+        behavior.event("choice", performance.now());
+        comp.tick(.8);
+      }
+    };
+    /**
+     * WHICH TRACK IS SHOWING, where the wizard's stage number used to be.
+     * Changing track is the move the companion used to see as advancing a
+     * stage, so it still reads as one — the direction is just no longer
+     * ordered, and "advance" is the honest reading of any deliberate switch.
+     */
+    const stepOf = () =>
+      form()?.closest("[data-slot-track]")?.getAttribute("data-slot-track") ??
+      "";
+    let formStep = stepOf();
+    let trackReactionAt = 0;
 
     window.addEventListener("pointermove", onMove, { passive: true });
     window.addEventListener("pointerdown", onDown, { passive: true });
     window.addEventListener("pointerup", onUp, { passive: true });
+    window.addEventListener("pointercancel", onCancel, { passive: true });
+    window.addEventListener("blur", onWindowBlur);
+    window.addEventListener("focus", onWindowFocus);
+    document.addEventListener("change", onChoice, true);
     document.addEventListener("input", onInput, true);
     document.addEventListener("focusin", onFocusIn, true);
     document.addEventListener("focusin", onSummaryFocus, true);
@@ -578,8 +592,11 @@ export function Companion() {
     // in the write phase, which is the distinction that keeps this off the
     // forced-layout path.
 
-    let chillWas = -1;
+    const colorChannels = ["chill", "cool", "warm", "gold", "blush", "glow"] as const;
+    const colorsWere = new Float64Array(colorChannels.length).fill(-1);
+    let expressionWas = "", poseWas = "";
     let drew = false;
+    let lastDraw = 0;
 
     const driven = {
       hand(x: number | null, y = 0, vx = 0, vy = 0) {
@@ -591,9 +608,9 @@ export function Companion() {
         const k = (COMP.VIEW * 2) / r.width;
         comp.hand(x * k - COMP.VIEW, y * k - COMP.VIEW, vx * k, vy * k);
       },
-      step: (t: number) => comp.step(t),
+      step: (t: number) => handle.visible ? comp.step(t) : false,
       get asleep() {
-        return comp.asleep;
+        return !handle.visible || comp.asleep;
       },
       setTide: (on: number) => comp.setTide(on),
       scroll: (v: number) => comp.scroll(v),
@@ -612,9 +629,19 @@ export function Companion() {
 
     function draw(_m: unknown, now: number) {
       pollValidity(now);
+      const nextStep = stepOf();
+      if (nextStep && nextStep !== formStep) {
+        // Let the chosen direction read before acknowledging the new track.
+        trackReactionAt = now + 1550;
+        formStep = nextStep;
+      }
+      if (trackReactionAt && now >= trackReactionAt) {
+        behavior.event("advance", now);
+        trackReactionAt = 0;
+      }
 
       const want = readState(now);
-      if (want !== comp.expression) comp.express(want);
+      if (want !== comp.expression) comp.play(want);
 
       // Nothing has aimed it for a while and no field has focus: hand the gaze
       // back to its own wander rather than leaving it staring at a stale point.
@@ -630,14 +657,19 @@ export function Companion() {
       // THE TRAVEL. A spring, not an ease: the target changes mid-flight every
       // time the reader reverses, and an ease would have to restart.
       const target = positionTarget();
-      if (!placed) {
+      if (!placed || !canPark) {
         posX = target.x;
         posY = target.y;
         velX = 0;
         velY = 0;
         placed = true;
       } else {
-        const h = 1 / 60;
+        // The runtime runs at 30 Hz on touch and up to 120 Hz on desktop.
+        // Integrate elapsed time in bounded substeps so travel has one speed.
+        const dt = Math.min(64, Math.max(0, now - lastDraw)) / 1000;
+        const steps = Math.max(1, Math.ceil(dt * 120));
+        const h = dt / steps;
+        for (let i = 0; i < steps; i++) {
         velX +=
           (-2 * ZETA_POS * OMEGA_POS * velX -
             OMEGA_POS * OMEGA_POS * (posX - target.x)) *
@@ -648,8 +680,12 @@ export function Companion() {
           h;
         posX += velX * h;
         posY += velY * h;
+        }
       }
-      carrier!.style.transform = `translate3d(${posX.toFixed(1)}px, ${posY.toFixed(1)}px, 0)`;
+      lastDraw = now;
+      carrier!.style.transform = canPark
+        ? `translate3d(${posX.toFixed(1)}px, ${posY.toFixed(1)}px, 0)` : "";
+      slotEl!.dataset.follow = canPark ? "gutter" : "docked";
 
       bodyEl!.setAttribute("d", comp.bodyPath());
       // An empty string is the kernel saying the lid is shut. Blanking `d` is
@@ -660,11 +696,18 @@ export function Companion() {
       // The colour channel is written only when it has actually moved. A custom
       // property set every frame is a style recalculation every frame, for a
       // value that changes over hundreds of milliseconds.
-      const chill = Math.round(comp.chill * 100) / 100;
-      if (chill !== chillWas) {
-        slotEl!.style.setProperty("--cp-chill", String(chill));
-        chillWas = chill;
+      for (let i = 0; i < colorChannels.length; i++) {
+        const key = colorChannels[i];
+        const value = Math.round(Math.max(0, Math.min(1, comp.params[PARAM[key]])) * 100) / 100;
+        if (value !== colorsWere[i]) {
+          slotEl!.style.setProperty(`--cp-${key}`, String(value));
+          colorsWere[i] = value;
+        }
       }
+      if (expressionWas !== comp.expression) {
+        slotEl!.dataset.emotion = expressionWas = comp.expression;
+      }
+      if (poseWas !== comp.pose) slotEl!.dataset.eyePose = poseWas = comp.pose;
 
       if (!drew) {
         drew = true;
@@ -687,6 +730,10 @@ export function Companion() {
       window.removeEventListener("pointermove", onMove);
       window.removeEventListener("pointerdown", onDown);
       window.removeEventListener("pointerup", onUp);
+      window.removeEventListener("pointercancel", onCancel);
+      window.removeEventListener("blur", onWindowBlur);
+      window.removeEventListener("focus", onWindowFocus);
+      document.removeEventListener("change", onChoice, true);
       document.removeEventListener("input", onInput, true);
       document.removeEventListener("focusin", onFocusIn, true);
       document.removeEventListener("focusin", onSummaryFocus, true);
@@ -695,9 +742,16 @@ export function Companion() {
       bodyEl.removeEventListener("pointerleave", onLeave);
       bodyEl.removeEventListener("pointerdown", onBodyDown);
       slotEl.removeAttribute("data-companion");
+      slotEl.removeAttribute("data-emotion");
+      slotEl.removeAttribute("data-eye-pose");
+      slotEl.removeAttribute("data-follow");
+      for (const key of colorChannels) slotEl.style.removeProperty(`--cp-${key}`);
       carrier.style.transform = "";
+      bodyEl.setAttribute("d", REST.body);
+      eyeL.setAttribute("d", REST.left);
+      eyeR.setAttribute("d", REST.right);
     };
-  }, []);
+  }, [motionAllowed]);
 
   return (
     <span ref={slot} className="companion" aria-hidden="true">

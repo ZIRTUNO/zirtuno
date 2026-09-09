@@ -2,7 +2,9 @@
 
 /* ===========================================================================
    ZIRTUNO · Design tokens — build-spec S1.1–S1.4
-   Discipline: cyan on black only. sans = business/UI, serif italic = poetry.
+   Discipline: cyan on black only. Two faces: Bricolage for display, one
+   rounded stack (SF Rounded where the OS has it, Nunito elsewhere) for
+   everything else. Poetry is that same face at Light, not a serif italic.
    =========================================================================== */
 
 @theme {
@@ -36,19 +38,43 @@
   --color-paper-faint: rgba(242, 240, 235, 0.14);
   --color-warn: #ff6b5c; /* form errors only */
 
-  /* --- Fonts (S1.2 · display/text split, R4). next/font sets the family vars
-     on <html>. grotesk = Bricolage → DISPLAY headlines ONLY (hero + section
-     h2s). sans = Geist → body, UI, nav, subheads, forms (the workhorse).
-     display = Instrument Serif → poetry italic ONLY. mono = JetBrains →
-     labels, numbers, CTAs. --- */
-  --font-sans:
-    var(--font-geist), ui-sans-serif, system-ui, -apple-system, "Segoe UI",
-    sans-serif;
+  /* --- Fonts (S1.2 · display/text split, R4 · R8 TWO FACES) --------------
+     R8 collapses four faces into two. Geist, JetBrains Mono and Instrument
+     Serif are gone; what is left is Bricolage for the DISPLAY voice and one
+     rounded face for everything else.
+
+     THE ROUNDED FACE IS A STACK, NOT A FILE. The brief is SF Pro Rounded,
+     which cannot be shipped: it is not on Google Fonts, and Apple's font
+     license covers designing and testing interfaces for Apple-platform
+     software, not embedding the file on a public site. `ui-rounded` is the
+     CSS Fonts 4 generic that resolves to the genuine SF Rounded on macOS and
+     iOS, supplied by the OS, so Apple hardware gets the real face and the
+     file never leaves the user's machine. Everything else falls through to
+     self-hosted Nunito — the closest widely-licensed match to SF Rounded's
+     humanist proportions and softened terminals, and one that carries all
+     four named weights (300/400/500/700) on a variable axis.
+
+     THE FOUR ROLE TOKENS SURVIVE the collapse deliberately. ~94 call sites
+     across four stylesheets speak in roles, not families, so the roles stay
+     semantically distinct even while three of them resolve to the same stack.
+     Re-splitting any one of them later is a one-line change here, not a
+     find-and-replace through the site.
+
+     grotesk = Bricolage → DISPLAY headlines ONLY (hero + section h2s).
+     sans    = rounded   → body, UI, nav, subheads, forms (the workhorse).
+     display = rounded   → poetry (upright Light now; see .font-poetic).
+     mono    = rounded   → labels, numbers, CTAs (tracking + tabular-nums
+                           carry the instrument character the mono used to).
+     --- */
+  --font-rounded:
+    ui-rounded, "SF Pro Rounded", var(--font-nunito), -apple-system,
+    ui-sans-serif, system-ui, "Segoe UI", sans-serif;
+  --font-sans: var(--font-rounded);
   --font-grotesk:
-    var(--font-bricolage), var(--font-geist), ui-sans-serif, system-ui,
+    var(--font-bricolage), var(--font-rounded), ui-sans-serif, system-ui,
     sans-serif;
-  --font-display: var(--font-instrument), Georgia, "Times New Roman", serif;
-  --font-mono: var(--font-jetbrains), ui-monospace, "SFMono-Regular", monospace;
+  --font-display: var(--font-rounded);
+  --font-mono: var(--font-rounded);
 
   /* --- Type scale (R7 · THE CONSTANT-RATIO LADDER) ------------------------
      Ported from upsunday.co, whose composition reads as "perfectly placed" for
@@ -112,12 +138,14 @@
   --text-display-m--line-height: 1.05;
   --text-display-m--letter-spacing: -0.02em;
 
-  /* TITLE — mid headings (card/service/phase names, studio roles). Geist. */
+  /* TITLE — mid headings (card/service/phase names, studio roles). Rounded. */
   --text-title: clamp(1.125rem, 1.55vw, 2rem);
   --text-title--line-height: 1.2;
   --text-title--letter-spacing: -0.014em;
 
-  /* TEXT — Geist (serif only for --text-poetic). These now RIDE the same
+  /* TEXT — the rounded face throughout, --text-poetic included (it was the
+     serif tier before R8; the tier survives, the serif does not). These RIDE
+     the same
      viewport ratio as the display tiers rather than a flatter curve of their
      own, which is what keeps the lead↔title and body↔column relationships
      fixed. Leading tightens a touch as the sizes came up. */
@@ -141,7 +169,10 @@
   --text-body-s--line-height: 1.48;
   --text-body-s--letter-spacing: 0em;
 
-  /* LABEL — JetBrains mono (uppercase, open tracking). Both floors are the
+  /* LABEL — uppercase, open tracking. The tier keeps the "mono" name because
+     ~27 call sites speak it and the ROLE is unchanged; what carries the
+     instrument character after R8 is the tracking and the tabular-nums on
+     .type-meta, not a monospaced face. Both floors are the
      site's 12px minimum-type rule rather than a proportional one: mono-sm at
      0.94vw reaches 12.0px at 1280 exactly, so the floor is inactive across the
      whole desktop band and only holds the line on tablets. */
@@ -268,12 +299,32 @@
      in characters so PT-BR and EN retain the same visual cadence. */
   /* R7 — RETUNED, for two reasons.
 
-     One: CSS `ch` is the advance of the "0" glyph, and Geist's is 0.663em, not
-     the ~0.5em these counts were evidently picked against. `62ch` was therefore
-     rendering about EIGHTY-TWO characters to the line, not sixty-two — well
-     past the 45–75 band, and the single biggest reason body copy felt like it
-     ran on. The counts below are chosen against the measured 0.663 (probe:
-     `scripts/_probe-measure.mjs`), so they now mean roughly what they say.
+     One: CSS `ch` is the advance of the "0" glyph, and Geist's was 0.663em,
+     not the ~0.5em these counts were evidently picked against. `62ch` was
+     therefore rendering about EIGHTY-TWO characters to the line, not sixty-two
+     — well past the 45–75 band, and the single biggest reason body copy felt
+     like it ran on. The counts below are chosen against that measurement
+     (probe: `scripts/probe/measure.mjs`), so they mean roughly what they say.
+
+     R8 CHANGED THE FACE AND DELIBERATELY DID NOT CHANGE THESE COUNTS, which is
+     the whole reason they are in `ch` and not in `rem`. The rounded face is
+     narrower than Geist on BOTH terms — 0.599em digit against 0.663em, 0.432em
+     average glyph against 0.497em — and in `count x ch / avg` those two
+     narrowings very nearly cancel. Measured at 1440, EN prose:
+
+       tier                  Geist    rounded
+       measure-reading       64.0     66.6 characters
+       measure-lead          49.4     51.2
+       measure-editorial     32.0     33.3
+       measure-display       21.3     22.2
+       measure-hero          14.7     15.3
+
+     Every tier held its cadence to within 4%, and reading copy stays inside
+     the 45–75 band (PT-BR runs ~6.7% wider per character, so ~62 there).
+     What DID move is pixel width: the column is about 9.5% narrower, because
+     the face is narrower and `ch` follows the face. Re-tuning the counts to
+     pin the old pixel widths back would have put reading copy at 73.5
+     characters — back past the band R7 was written to escape. Resist it.
 
      Two: they are re-proportioned to THE SHELL rather than to a full-bleed
      page. On the references a copy block is about half its column — melrose
@@ -452,9 +503,9 @@
     );
   }
 
-  /* Headings default to the TEXT face (Geist) — clean and readable. The
-     semantic display roles below bind hero, page, and section headings to
-     Bricolage. Poetry opts into the serif via .font-poetic. */
+  /* Headings default to the TEXT face (the rounded stack) — clean and
+     readable. The semantic display roles below bind hero, page, and section
+     headings to Bricolage. Poetry opts into Light via .font-poetic. */
   h1,
   h2,
   h3,
@@ -472,13 +523,24 @@
 }
 
 @layer components {
-  /* --- The type-role mechanism, codified (S1.2 · R4) --- */
+  /* --- The type-role mechanism, codified (S1.2 · R4 · R8) --- */
   /* Bricolage = DISPLAY voice through the semantic title roles below.
-     Instrument Serif italic = poetry ONLY: */
+     POETRY IS NOW A WEIGHT, NOT A STYLE. It used to be Instrument Serif
+     italic, and removing the serif takes the italic with it: SF Rounded ships
+     upright only, so `font-style: italic` on the rounded stack would be
+     SYNTHESISED — a mechanical shear applied to a face whose whole character
+     is its softened terminals — on exactly the Apple hardware where the stack
+     is otherwise at its best, while Nunito's real italic rendered somewhere
+     else. One passage would then look like two different decisions depending
+     on the reader's machine.
+     So the distinction moves to form the site already trusts: Light against
+     the 400 body around it. `font-style: normal` is stated rather than
+     merely omitted, so the class actively cancels an inherited italic instead
+     of depending on never meeting one. */
   .font-poetic {
     font-family: var(--font-display);
-    font-style: italic;
-    font-weight: 400;
+    font-style: normal;
+    font-weight: 300;
   }
 
   /* Semantic type roles. Each class binds face, tier, measure, wrapping, and
@@ -598,8 +660,8 @@
     max-inline-size: var(--measure-display);
     font-family: var(--font-display);
     font-size: var(--text-display-l);
-    font-style: italic;
-    font-weight: 400;
+    font-style: normal;
+    font-weight: 300;
     line-height: var(--text-display-l--line-height);
     letter-spacing: var(--text-display-l--letter-spacing);
     text-wrap: balance;
@@ -809,13 +871,18 @@ button.cta {
   inset: 0;
   display: block;
   pointer-events: none;
+  /* Keep the padded SVG out of scrollable overflow on narrow pages. The
+     clip margin preserves its full deformation and focus contour as ink. */
+  overflow: clip;
+  overflow-clip-margin: 18px;
 }
 .mem-svg {
-  /* PAD in Membrane.tsx — room for the deformation to leave the border box */
+  /* The viewport is the host box. SVG ink can leave it without a padded
+     layout box enlarging the document on a small phone. */
   position: absolute;
-  inset: -18px;
-  width: calc(100% + 36px);
-  height: calc(100% + 36px);
+  inset: 0;
+  width: 100%;
+  height: 100%;
   overflow: visible;
   pointer-events: none;
 }
@@ -2631,10 +2698,16 @@ html:has(.disclose[data-disclose="live"][open]) {
   position: absolute;
   display: flex;
   flex-direction: column;
-  justify-content: flex-end;
+  /* Keep the bottom alignment when it fits; short phones must be able to
+     scroll from the category through both links, without negative overflow. */
+  justify-content: safe flex-end;
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
 }
 /* every line arrives on its own beat — the open sequence animates these to 1 */
 .zw-copy > * {
+  flex-shrink: 0;
   opacity: 0;
 }
 .zw-copy-cats {
@@ -4253,10 +4326,14 @@ html[data-nav-open] .nav-card-contact {
 .nav-sheet-link {
   display: block;
   padding: 1.432vw 0;
-  /* Geist, not the display face: the token file assigns nav to the sans, and
-     display scale does not change what a nav item IS. The reference's rounded
-     face carries more weight at 400 than Geist does, so this sits at 500 to
-     land on the same optical colour. */
+  /* The sans, not the display face: the token file assigns nav to the sans,
+     and display scale does not change what a nav item IS.
+     NOTE (R8): the 500 below was chosen to match the optical colour of the
+     reference's ROUNDED face at 400, back when the sans here was Geist. The
+     sans IS that rounded face now, so 500 is a step heavier than the original
+     intent and 400 would be the faithful value. Left at 500 because changing
+     it is a visual decision about the nav sheet, not a consequence of the
+     face swap. */
   font-family: var(--font-sans);
   font-size: 8vw;
   font-weight: 500;
@@ -4974,7 +5051,7 @@ html[data-nav-open] .nav-sheet-cta {
 
    Colour and face only. The reference is near-black on a white-to-peach wash
    with a sage eyebrow and a rounded display face; this is paper on ink with
-   the cyan accent, Bricolage for display and Geist for reading. Its body sits
+   the cyan accent, Bricolage for display and the rounded stack for reading. Its body sits
    at 74% black — on ink that opacity would reproduce exactly the "grey small
    text" R6 was written to remove, so the reading tiers take their nearest
    Zirtuno rung (`--color-paper-lead`) rather than the reference's alpha.

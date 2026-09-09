@@ -1,6 +1,12 @@
 import { NextResponse } from "next/server";
 import { Resend } from "resend";
-import { contactApiSchema } from "@/lib/forms/contact";
+import {
+  CONTACT_DETAIL_KEYS,
+  contactApiSchema,
+  detailField,
+  intentForTrack,
+  resolveContactTrack,
+} from "@/lib/forms/contact";
 import { validateContactDeliveryConfig } from "@/lib/forms/contact-config.mjs";
 import {
   readLimitedText,
@@ -255,12 +261,36 @@ export async function POST(req: Request) {
       body = JSON.parse(raw);
     } else {
       const fields = new URLSearchParams(raw);
+      // THE NO-JS POST, and it has to reconstruct exactly what the fetch path
+      // sends — a second shape here is a second thing to keep true, and the
+      // only place it would ever show up is the owner's inbox.
+      //
+      // `name` is one field on the wire and two on screen. The client joins
+      // them before it sends; a native POST arrives with the pair, so the
+      // identical join happens here rather than the schema learning a shape it
+      // does not otherwise have.
+      const first = fields.get("firstName")?.trim() ?? "";
+      const last = fields.get("lastName")?.trim() ?? "";
+      const details: Record<string, string> = {};
+      for (const key of CONTACT_DETAIL_KEYS) {
+        const value = fields.get(detailField(key))?.trim();
+        if (value) details[key] = value;
+      }
       body = {
-        name: fields.get("name") ?? "",
+        name: fields.get("name")?.trim() || `${first} ${last}`.trim(),
         email: fields.get("email") ?? "",
         company: fields.get("company") ?? "",
         message: fields.get("message") ?? "",
-        intent: fields.get("intent") ?? "general",
+        // The track carried on the action URL is the authority, so a stale
+        // hidden input can never disagree with the tab that was actually sent.
+        intent: intentForTrack(
+          resolveContactTrack(
+            new URL(req.url).searchParams.get("track") ?? fields.get("track"),
+            "other",
+          ),
+          details.focus,
+        ),
+        details: Object.keys(details).length ? details : undefined,
         website: fields.get("website") ?? "",
         submissionId: crypto.randomUUID(),
       };
@@ -290,7 +320,8 @@ export async function POST(req: Request) {
     return respond({ ok: false, delivered: false, error: "validation" }, 422);
   }
 
-  const { name, email, company, message, intent, submissionId } = parsed.data;
+  const { name, email, company, message, intent, details, submissionId } =
+    parsed.data;
   const delivery = validateContactDeliveryConfig(process.env);
   if (!delivery.ok || !delivery.config) {
     logContactEvent("error", "delivery_configuration_invalid", requestId, {
@@ -308,12 +339,19 @@ export async function POST(req: Request) {
     const { apiKey, to, from } = delivery.config;
     const resend = new Resend(apiKey);
     const subject = `Website contact · ${intent} · ${submissionId.slice(0, 8)}`;
+    // The qualifying answers go in as a labelled block, in the order the form
+    // asks them, and are omitted entirely when nobody answered any — an email
+    // carrying six "not given" lines is harder to read than one without them.
+    const qualifiers = Object.entries(details ?? {})
+      .filter(([, value]) => value)
+      .map(([key, value]) => `  ${key}: ${value}`);
     const text = [
       `Submission: ${submissionId}`,
       `Intent: ${intent}`,
       `Nome: ${name}`,
       `Email: ${email}`,
       `Empresa: ${company || "Não informado"}`,
+      ...(qualifiers.length ? ["", "Contexto:", ...qualifiers] : []),
       "",
       message,
     ].join("\n");

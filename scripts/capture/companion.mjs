@@ -27,7 +27,7 @@
 import fs from "node:fs";
 import { chromium } from "playwright";
 import { LAUNCH } from "../support/launch.mjs";
-import { COMP, EXPRESSION_NAMES, makeCompanion } from "../../lib/motion/companion.mjs";
+import { COMP, PARAM, EXPRESSION_NAMES, MOOD_NAMES, EYE_POSE_NAMES, makeCompanion } from "../../lib/motion/companion.mjs";
 
 const OUT = process.env.OUT ?? "captures/companion";
 const Z = Number(process.env.Z ?? 4);
@@ -84,6 +84,7 @@ function pose({
     left: c.pupilPath(-1),
     right: c.pupilPath(1),
     chill: c.chill,
+    colors: ["chill", "cool", "warm", "gold", "blush", "glow"].map(k => `--cp-${k}:${Math.max(0, Math.min(1, c.params[PARAM[k]]))}`).join(";"),
   };
 }
 
@@ -91,12 +92,15 @@ function pose({
 // Block A: every expression, looking straight at the reader. This is the sheet
 // that answers "are these thirteen different things".
 const panels = [];
-const names = ONLY ? EXPRESSION_NAMES.filter((n) => n === ONLY) : EXPRESSION_NAMES;
+const names = ONLY ? [...EXPRESSION_NAMES, ...EYE_POSE_NAMES].filter((n) => n === ONLY) : MOOD_NAMES;
 for (const name of names) {
   panels.push({ label: name, ...pose({ expression: name }) });
 }
 
 if (!ONLY) {
+  for (const [i, name] of EYE_POSE_NAMES.entries()) {
+    panels.push({ label: `${String(i).padStart(2, "0")} ${name}`, ...pose({ expression: name }) });
+  }
   // Block B: the gaze, on the state a visitor spends most of their time in.
   // Eight compass points, so a clamp that only fires on one axis shows up.
   const compass = [
@@ -163,15 +167,8 @@ const CELL_H = CELL + HEAD;
 // The shipped material: a cyan hairline over a fill at 0.012, with the pupils
 // solid. `chill` is mixed here the way `.cp-svg` mixes it in CSS, so the sheet
 // shows the colour the page will actually paint.
-const CYAN = [0x00, 0xe3, 0xfe];
-const DEEP = [0x00, 0xb6, 0xcc];
-const mix = (k) =>
-  "#" +
-  CYAN.map((c, i) =>
-    Math.round(c * (1 - k) + DEEP[i] * k)
-      .toString(16)
-      .padStart(2, "0"),
-  ).join("");
+const sourceCSS = fs.readFileSync("app/contact.css", "utf8");
+const palette = sourceCSS.match(/  --cp-base: [\s\S]*?\n}/)[0].slice(0, -1);
 
 let body = "";
 panels.forEach((p, i) => {
@@ -179,12 +176,11 @@ panels.forEach((p, i) => {
   const row = (i / COLS) | 0;
   const ox = col * CELL + CELL / 2;
   const oy = row * CELL_H + HEAD + CELL / 2;
-  const stroke = mix(p.chill);
   body +=
-    `<g transform="translate(${ox} ${oy}) scale(${Z})">` +
-    `<path d="${p.body}" fill="#00E3FE" fill-opacity="0.012" stroke="${stroke}" stroke-width="${1 / Z}"/>` +
-    (p.left ? `<path d="${p.left}" fill="${stroke}" fill-opacity="0.9"/>` : "") +
-    (p.right ? `<path d="${p.right}" fill="${stroke}" fill-opacity="0.9"/>` : "") +
+    `<g class="avatar" style="${p.colors}" transform="translate(${ox} ${oy}) scale(${Z})">` +
+    `<path d="${p.body}" fill="currentColor" fill-opacity="0.065" stroke="currentColor" stroke-width="${1.15 / Z}"/>` +
+    (p.left ? `<path d="${p.left}" fill="currentColor" fill-opacity="0.9"/>` : "") +
+    (p.right ? `<path d="${p.right}" fill="currentColor" fill-opacity="0.9"/>` : "") +
     `</g>` +
     `<text x="${col * CELL + 10}" y="${row * CELL_H + 17}" fill="#F2F0EB" fill-opacity="0.55"` +
     ` font-family="monospace" font-size="12">${p.label}</text>`;
@@ -194,6 +190,7 @@ const W = COLS * CELL;
 const H = rows * CELL_H;
 const svg =
   `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">` +
+  `<style>:root {--color-cyan:#00e3fe;--color-cyan-deep:#00b6cc;--color-paper:#f2f0eb}.avatar{${palette}}</style>` +
   `<rect width="100%" height="100%" fill="#000000"/>${body}</svg>`;
 
 fs.writeFileSync(`${OUT}/sheet.svg`, svg);

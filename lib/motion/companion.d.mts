@@ -2,8 +2,7 @@
 
 /**
  * The parameter vector's channel names. Every expression is a point in this
- * space; there is no channel that is not listed here, and in particular there
- * is no warm colour channel — `chill` runs cyan -> cyan-deep and nowhere else.
+ * space. Colour channels are normalized weights; CSS owns the scoped palette.
  */
 export type CompanionParam =
   | "open"
@@ -20,7 +19,20 @@ export type CompanionParam =
   | "spread"
   | "gaze"
   | "pulse"
-  | "chill";
+  | "chill"
+  | "leftW" | "leftH" | "rightW" | "rightH" | "leftAngle" | "rightAngle"
+  | "eyeX" | "eyeY" | "arch" | "float" | "rock" | "tempo"
+  | "cool" | "warm" | "gold" | "blush" | "glow"
+  | "heartL" | "heartR" | "starL" | "starR" | "diamondL" | "diamondR" | "eyeSpin" | "bodyX" | "bodyY";
+
+export type CompanionMood =
+  | "sleeping" | "waking" | "idle" | "listening" | "thinking" | "searching" | "working"
+  | "excited" | "bored" | "suspicious" | "angry" | "drowsy" | "happy" | "curious"
+  | "confused" | "surprised" | "proud" | "shy" | "sad" | "laughing" | "scared"
+  | "playful" | "celebrate"
+  | "wink" | "affectionate" | "starstruck" | "dizzy" | "mischievous" | "embarrassed"
+  | "determined" | "relieved" | "hopeful" | "patient" | "sleepy-wink" | "smitten"
+  | "eureka" | "squished" | "peekaboo" | "focused" | "dreaming" | "mesmerized";
 
 /**
  * The named expressions, one per thing a visitor can do to the contact form.
@@ -30,6 +42,7 @@ export type CompanionParam =
  * deflation rather than anger — that one is not the visitor's fault.
  */
 export type CompanionExpression =
+  | CompanionMood
   | "rest"
   | "notice"
   | "attend"
@@ -79,6 +92,8 @@ export type Companion = {
   aim(nx: number, ny: number): void;
   /** Switch expression. An unknown name falls through to `rest` rather than throwing. */
   express(next: CompanionExpression | string): void;
+  /** Play a mood's interruptible pose sequence without resetting on repeats. */
+  play(next: CompanionExpression | string): void;
   /** A press arriving from direction (nx, ny). Squashes the body along that axis. */
   poke(nx: number, ny: number, amount?: number): void;
   /** A keystroke. Adds to the nod without resetting its decay. */
@@ -91,9 +106,10 @@ export type Companion = {
   bodyPath(): string;
   /** One pupil (-1 left, +1 right), or "" once the aperture has closed. */
   pupilPath(side: -1 | 1): string;
-  /** 0 -> --color-cyan, 1 -> --color-cyan-deep. The only colour emitted. */
+  /** Normalized depth weight on the cyan base; the remaining mood weights are in params. */
   readonly chill: number;
   readonly expression: CompanionExpression;
+  readonly pose: string;
   /** Integrated milliseconds. Deterministic for a given call sequence. */
   readonly time: number;
   /** Arithmetically finished — the sleep signal for a rAF loop. */
@@ -142,6 +158,18 @@ export declare const COMP: {
 
 export declare const EXPRESSIONS: Record<CompanionExpression, Float64Array>;
 export declare const EXPRESSION_NAMES: readonly CompanionExpression[];
+export declare const EYE_POSES: Readonly<Record<string, Partial<Record<CompanionParam, number>>>>;
+export declare const EYE_POSE_NAMES: readonly string[];
+export declare const POSES: Readonly<Record<string, Float64Array>>;
+export declare const MOOD_SCORES: Readonly<Record<CompanionMood, {
+  params: Partial<Record<CompanionParam, number>>;
+  steps: readonly (readonly [string, number])[];
+}>>;
+export declare const MOOD_NAMES: readonly CompanionMood[];
+export declare const BASE_MOOD_NAMES: readonly CompanionMood[];
+export declare const SPECIAL_MOOD_NAMES: readonly CompanionMood[];
+export declare const BASE_EYE_POSE_NAMES: readonly string[];
+export declare const SPECIAL_EYE_POSE_NAMES: readonly string[];
 export declare const PARAM: Readonly<Record<CompanionParam, number>>;
 
 /** Radius multiplier at angle `a` — the lobe, smoothed by tension. */

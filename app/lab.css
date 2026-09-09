@@ -315,6 +315,11 @@ body:has(.lab-solo) .side-index {
   position: absolute;
   top: 0;
   left: 0;
+  /* Hidden candidates retain their intrinsic widths for measurement, but
+     must not extend the page while a shorter word occupies the live slot. */
+  width: 0;
+  height: 0;
+  overflow: hidden;
   visibility: hidden;
   pointer-events: none;
   white-space: nowrap;

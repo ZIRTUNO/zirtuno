@@ -1,5 +1,21 @@
 # docs/specs/field-liquid-spec.md — Coalescence on the form
 
+> **RETIRED ON THE CONTACT CARD (September 2026).** `components/contact/FieldLiquid.tsx`
+> is deleted and nothing mounts this layer any more. The kernel it drove
+> (`lib/motion/coalesce.mjs`) is unchanged and still gated by
+> `scripts/verify/coalesce.mjs`, which tests it as a module rather than through a
+> page — so everything below still describes the kernel accurately. What is gone
+> is the DOM layer that put it on a form's controls. `docs/specs/contact-form-spec.md`
+> records why: a spline through ring vertices cannot sit on a CSS rounded
+> rectangle, so the contour and the glass rim drew two edges a pixel apart; and
+> an outline that deforms toward a pointer while the filled shape inside it stays
+> rigid reads as the outline coming loose. The membrane's home is the CTAs, where
+> the whole button is the membrane.
+
+The current contact-page composition and optical enhancement are defined in
+[`contact-form-spec.md`](contact-form-spec.md). The three-stage form keeps this
+kernel and its additive outline contract; only visible controls are measured.
+
 The contact form's controls run the same vector liquid the site's buttons run
 (`docs/specs/cta-membrane-spec.md`), plus the one thing a membrane never had: a **second
 body** that can arrive at a surface, fuse with it, and be pulled off it on a

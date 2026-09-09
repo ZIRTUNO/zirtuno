@@ -6,7 +6,9 @@
 > `docs/specs/metaball-morph-spec.md` owns liquid-engine mechanics.
 > `docs/specs/cta-membrane-spec.md` owns the CTA membrane — the vector half of the same
 > liquid, and `docs/specs/field-liquid-spec.md` owns the form's half of it, where two
-> vector bodies can finally meet. `docs/specs/entry-intro-spec.md` owns S1.10, the opening
+> vector bodies can finally meet. `docs/specs/contact-form-spec.md` owns S10's card
+> — the three-track contact form that liquid is drawn on.
+> `docs/specs/entry-intro-spec.md` owns S1.10, the opening
 > sequence.
 > If detail conflicts with a rule here, this file wins.
 
@@ -227,16 +229,27 @@ The site is in R5, “One Continuous Liquid.”
    low-pass exactly for resting footprints and melts. `bind=0` allows full
    physics for pours, scatters, currents, and echoes. Do not “improve” exact
    choreography by bypassing bind.
-7. **Typography is a four-role system.** Hero headline and every section
-   `h2` use Bricolage Grotesque (`font-grotesk`). Body, UI, navigation,
-   subheads, leads, forms, and mid-titles use Geist (`font-sans`). Instrument
-   Serif italic is poetry-only. JetBrains Mono carries labels, numbers,
-   counters, and CTAs. Use the `--text-*` tiers in `globals.css`; do not
-   hardcode type sizes.
+7. **Typography is a four-role system on TWO FACES (R8).** Hero headline and
+   every section `h2` use Bricolage Grotesque (`font-grotesk`). Everything
+   else — body, UI, navigation, subheads, leads, forms, mid-titles
+   (`font-sans`), poetry (`font-display`), and labels, numbers, counters and
+   CTAs (`font-mono`) — resolves to one rounded stack. The four ROLE tokens
+   survive so the roles stay semantically distinct and any one of them can be
+   re-split in a single line; do not collapse them at the call sites. Geist,
+   JetBrains Mono and Instrument Serif are removed — do not reintroduce them.
+   Poetry is the rounded face at **Light 300, upright**, not an italic: SF
+   Rounded has no italic and would be synthetically sheared. Use the
+   `--text-*` tiers in `globals.css`; do not hardcode type sizes. Measures stay
+   in `ch` so they track the face — see the R8 note in `globals.css` before
+   touching `--measure-*`.
 8. **Color discipline is cyan on black.** No purple, green, rainbow
    iridescence, or off-brand gradients. Use only the tokens in §6. Bloom,
    exposure, and depth may change light—not the brand hue. Do not reintroduce a
    full-page white/cyan-white flash at Origin fusion.
+   The contact companion has an owner-authorized exception (2026-09-07): its
+   emotion palette in `contact.css` adds ice blue, coral, gold and blush through
+   spring-driven weights. This exception is local to the avatar, not the field,
+   other liquid surfaces, typography or form validation.
 9. **Never invent proof.** Portfolio outcomes are verified metrics, honest
    narratives, or explicitly labeled “Arquitetura selecionada / Selected
    architecture.” Prototype data is local scaffolding, not launch proof.
@@ -257,8 +270,9 @@ The site is in R5, “One Continuous Liquid.”
     form submitting. It is `aria-hidden`, takes no pointer, holds nothing
     focusable, carries no copy, and its rest pose ships in the server HTML so
     there is no reveal to fade. Anger is spent on GEOMETRY: the kernel contains
-    no colour literal, and `chill` runs cyan -> cyan-deep only. Do not give it
-    `--color-warn`; that token belongs to the form's error copy.
+    no colour literal. The owner-authorized mood weights supplement `chill`
+    with cool, warm, gold, blush and glow; CSS owns their scoped palette. Do not
+    give it `--color-warn`; that token belongs to the form's error copy.
 11. **CTA hierarchy and intent are load-bearing.** Keep the placement map in
     `docs/specs/build-spec.md §7.2`. Every contact CTA carries its entry-intent tag.
     Homepage CTAs use Lenis smooth-scroll plus `history.replaceState`; cross-page
@@ -575,14 +589,35 @@ Five rules govern the aura, and all five are load-bearing:
 ### Type roles
 
 ```css
+--font-rounded: ui-rounded, 'SF Pro Rounded', var(--font-nunito), ...;
+
 --font-grotesk:'Bricolage Grotesque'; /* display headlines */
---font-sans:'Geist';                  /* text and UI */
---font-display:'Instrument Serif';    /* poetic italic only */
---font-mono:'JetBrains Mono';         /* labels, numbers, CTAs */
+--font-sans:   var(--font-rounded);   /* text and UI */
+--font-display:var(--font-rounded);   /* poetry, Light 300 upright */
+--font-mono:   var(--font-rounded);   /* labels, numbers, CTAs */
 ```
 
 Fonts are self-hosted at build time through `next/font/google`. No runtime
 third-party font requests.
+
+**The rounded face is a stack, not a file.** The brief is SF Pro Rounded,
+which cannot be shipped: it is not on Google Fonts, and Apple's font license
+covers designing and testing interfaces for Apple-platform software, not
+embedding the file on a public site. `ui-rounded` is the CSS Fonts 4 generic
+that resolves to the genuine SF Rounded on macOS and iOS, supplied by the OS,
+so Apple hardware gets the real face and nothing is redistributed. Every other
+platform falls through to self-hosted Nunito, the closest widely-licensed
+match to SF Rounded's humanist proportions and softened terminals.
+
+Nunito is loaded **without a `weight` array** so next/font fetches the variable
+file. The stylesheets ask for `font-weight: 550` in six places, which only
+exists on a continuous axis; static instances would snap it to 500. Do not add
+a `weight` array to `lib/typography/fonts.ts`.
+
+Consequence to keep in mind: because the stack is OS-dependent, an Apple
+reader and a Windows reader get different metrics. Both are rounded, both
+carry the four named weights, and `ch`-based measures absorb the difference —
+but a pixel-exact capture is only ever true for the platform it was taken on.
 
 ### Motion language
 
@@ -690,6 +725,12 @@ Ask before adding any dependency or substituting any layer.
   and `verify/canvas-count.mjs` must keep finding exactly one liquid canvas, on
   the homepage. Expressions are named presets over ONE parameter vector — adding
   a state means adding a preset, never a new code path.
+  `companion-expressions.mjs` now owns 40 independently authored eye poses and
+  41 mood scores, including 13 special eye styles and 18 additional moods;
+  `companion-behavior.mjs` owns interruptible event priorities.
+  The shared scheduler plays the scores. On narrow screens the avatar remains
+  docked in normal flow; only a gutter wide enough to hold it permits following.
+  Reduced-motion changes restore the server pose immediately, including colour.
 - `lib/motion/coalesce.mjs` is the merge kernel: the drop that rides S10's form,
   the wetted foot it sits in, and the filament it is pulled off on. Crisp
   geometry, never a `feGaussianBlur` goo filter — a blurred hairline is a glow,

@@ -1,361 +1,232 @@
-/**
- * THE COMPANION, ON THE REAL PAGE.
- *
- * `capture/companion.mjs` proves the GEOMETRY — it drives the kernel directly
- * and can say nothing at all about whether the thing is wired up. This drives
- * the shipped contact page with a real browser, performs the seven things a
- * visitor actually does, and photographs what the companion does back. It is
- * the only artefact that can catch the failures that live between the kernel
- * and the DOM:
- *
- *   · the rest pose is in the SERVER HTML — the droplet is present and
- *     correct before a single line of JavaScript has run
- *   · `data-companion` appears only after a live frame has been drawn
- *   · the gaze actually follows the pointer, the caret and the error summary
- *   · the FIRST rejected submit gets `doubt` and the SECOND gets `angry`
- *   · fixing the field cancels the scowl instead of leaving it armed
- *   · the form still submits, still validates and still announces its errors
- *     with the companion mounted over it
- *
- * NOTHING IS EVER SENT. `/api/contact` is stubbed with `page.route`, so the
- * success / pending / failure states render from a local fixture and no
- * request leaves this machine — the delivery path is Resend, and a capture
- * script that mails the owner every time it runs is a capture script nobody
- * runs twice.
- *
- *   BASE_URL=http://localhost:3000 node scripts/capture/companion-page.mjs
- *   (npm run companion:page)
+/** The actual contact companion: real inputs and observed form outcomes.
+ * All POSTs are intercepted locally. No email is sent by this capture.
  */
+import assert from "node:assert/strict";
 import fs from "node:fs";
 import { chromium } from "playwright";
 import { LAUNCH } from "../support/launch.mjs";
-
 const BASE = process.env.BASE_URL ?? "http://localhost:3000";
 const OUT = process.env.OUT ?? "captures/companion-page";
-const LOCALE = process.env.LOCALE ?? "pt";
-// Any `?f*` param puts the site in a QA context and skips the entry veil with
-// no flash — without it the first frames are shot behind a curtain.
-const URL = `${BASE}/${LOCALE}/contact?fcap=1`;
-
 fs.mkdirSync(OUT, { recursive: true });
-
 const browser = await chromium.launch(LAUNCH);
-const page = await browser.newPage({ viewport: { width: 1440, height: 960 } });
-
-const problems = [];
-const note = (m) => {
-  problems.push(m);
-  console.log(`  ! ${m}`);
+const notes = [];
+const good = message => { notes.push(message); console.log("ok " + message); };
+const mood = (page, expected) => page.waitForFunction(
+  names => names.includes(document.querySelector(".companion")?.dataset.emotion),
+  Array.isArray(expected) ? expected : [expected], { timeout: 6000 },
+).catch(async error => {
+  console.log("Expected", expected, await page.evaluate(()=>({
+    emotion:document.querySelector('.companion')?.dataset,
+    box:document.querySelector('.cp-carrier')?.getBoundingClientRect().toJSON(),
+    active:document.activeElement?.outerHTML.slice(0,350),
+    step:document.querySelector('form')?.dataset.step,
+    busy:document.querySelector('form')?.getAttribute('aria-busy'),
+    scroll:window.scrollY,
+  })));
+  await page.screenshot({path:OUT+'/failure.png'});
+  throw error;
+});
+const color = page => page.locator(".cp-svg").evaluate(el => getComputedStyle(el).color);
+const shot = async (page, name) => {
+  await page.screenshot({ path: `${OUT}/${name}.png` });
+  if (await page.locator(".cp-carrier").isVisible()) {
+    const box = await page.locator(".cp-carrier").boundingBox();
+    if (box.y >= 0 && box.y + box.height < page.viewportSize().height)
+      await page.locator(".cp-carrier").screenshot({ path: `${OUT}/${name}-avatar.png` });
+  }
 };
-const good = (m) => console.log(`  ok ${m}`);
-
-/**
- * The companion's own box, cropped tight with a little air around it.
- *
- * The CARRIER, not the slot: once the layer is live the carrier detaches to
- * `position: fixed` and travels, while the slot stays behind in the flow
- * holding the layout open. Clipping on the slot photographs empty space the
- * moment the droplet undocks.
- */
-async function shot(name, pad = 18) {
-  const el = await page.$(".cp-carrier");
-  if (!el) return note(`${name}: no .cp-carrier in the document`);
-  const box = await el.boundingBox();
-  if (!box) return note(`${name}: .cp-carrier has no box`);
-  await page.screenshot({
-    path: `${OUT}/${name}.png`,
-    clip: {
-      x: Math.max(0, box.x - pad),
-      y: Math.max(0, box.y - pad),
-      width: box.width + pad * 2,
-      height: box.height + pad * 2,
-    },
+async function setup(options = {}, locale = "en") {
+  const ctx = await browser.newContext({ viewport: { width: 1440, height: 960 }, ...options });
+  const page = await ctx.newPage();
+  const errors = [];
+  page.on("pageerror", e => errors.push(e.message));
+  let response = { status: 200, body: { ok: true, delivered: true } }, release;
+  let posts = 0;
+  await page.route("**/api/contact**", async route => {
+    posts++;
+    if (response.hold) await new Promise(resolve => { release = resolve; });
+    await route.fulfill({ status: response.status, contentType: "application/json", body: JSON.stringify(response.body) });
   });
+  await page.goto(`${BASE}/${locale}/contact?fcap=1`, { waitUntil: "networkidle" });
+  await page.waitForSelector(".contact-card");
+  return { page, ctx, errors, posts: () => posts, reply: r => { response = r; }, release: () => release?.() };
 }
-
-const state = () =>
-  page.evaluate(() => {
-    const host = document.querySelector(".companion");
-    const body = host?.querySelector(".cp-body")?.getAttribute("d") ?? "";
-    const left = host?.querySelector(".cp-eye-l")?.getAttribute("d") ?? "";
-    return {
-      live: host?.getAttribute("data-companion") ?? null,
-      chill: host?.style.getPropertyValue("--cp-chill") ?? "",
-      bodyLen: body.length,
-      bodyHead: body.slice(0, 40),
-      leftHead: left.slice(0, 40),
-      summary: !!document.querySelector(".contact-error-summary"),
-      hidden: host?.getAttribute("aria-hidden"),
-    };
-  });
-
-// ── 1. the server HTML, before any script has run ───────────────────────────
-console.log("\n1. pre-hydration");
-{
-  await page.route("**/api/contact*", (route) =>
-    route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify({ ok: true, delivered: true, requestId: "capture" }),
-    }),
-  );
-  // JavaScript off: whatever is on screen came out of the server renderer.
-  const noJs = await browser.newPage({
-    viewport: { width: 1440, height: 960 },
-    javaScriptEnabled: false,
-  });
-  await noJs.goto(URL, { waitUntil: "domcontentloaded" });
-  const still = await noJs.evaluate(() => {
-    const host = document.querySelector(".companion");
-    const d = host?.querySelector(".cp-body")?.getAttribute("d") ?? "";
-    return { present: !!host, len: d.length, live: host?.getAttribute("data-companion") };
-  });
-  if (still.present && still.len > 200) {
-    good(`the still droplet ships in the HTML (${still.len} chars of path, no JS)`);
-  } else {
-    note(`no server-rendered droplet: ${JSON.stringify(still)}`);
-  }
-  if (still.live === null || still.live === undefined) {
-    good("data-companion is absent without JavaScript (the additive contract)");
-  } else {
-    note(`data-companion was ${still.live} with JavaScript off`);
-  }
-  await noJs.screenshot({ path: `${OUT}/00-no-js.png`, fullPage: false });
-  await noJs.close();
-}
-
-// ── 2. hydrated, at rest ────────────────────────────────────────────────────
-console.log("\n2. rest");
-await page.goto(URL, { waitUntil: "networkidle" });
-await page.waitForTimeout(900);
-{
-  const s = await state();
-  if (s.live === "live") good("data-companion=live after the first drawn frame");
-  else note(`data-companion is ${s.live} after hydration`);
-  if (s.hidden === "true") good("aria-hidden=true — it carries nothing a reader needs");
-  else note(`aria-hidden is ${s.hidden}`);
-  await shot("01-rest");
-}
-
-// ── 3. it looks where you point ─────────────────────────────────────────────
-console.log("\n3. the gaze follows the pointer");
-{
-  const box = await (await page.$(".companion")).boundingBox();
-  const cx = box.x + box.width / 2;
-  const cy = box.y + box.height / 2;
-  const seen = new Set();
-  for (const [tag, dx, dy] of [
-    ["right", 520, 0],
-    ["down", 0, 420],
-    ["left", -260, 0],
-    ["up", 0, -180],
-  ]) {
-    await page.mouse.move(cx + dx, cy + dy);
-    await page.waitForTimeout(650);
-    const s = await state();
-    seen.add(s.leftHead);
-    await shot(`02-gaze-${tag}`);
-  }
-  if (seen.size === 4) good("four pointer positions produced four distinct pupil paths");
-  else note(`the gaze only reached ${seen.size} distinct poses out of 4`);
-}
-
-// ── 4. it watches you write ─────────────────────────────────────────────────
-console.log("\n4. focus and typing");
-{
-  await page.click("#contact-name");
-  await page.waitForTimeout(500);
-  await shot("03-attend");
-  await page.type("#contact-name", "Pedro Paiva", { delay: 45 });
-  await page.waitForTimeout(180);
-  await shot("04-read");
-
-  await page.click("#contact-message");
-  await page.type("#contact-message", "Precisamos estruturar um ecossistema digital completo para a operação.", { delay: 18 });
-  await page.waitForTimeout(200);
-  await shot("05-ponder");
-  good("focus and keystrokes drove the companion without touching the form");
-}
-
-// ── 5. the wrong thing, and the scowl ───────────────────────────────────────
-console.log("\n5. rejection and escalation");
-{
-  // A bad email fails the RESOLVER, so `handleSubmit` never calls `onSubmit`
-  // and no request is made at all — this is the client-side path on purpose.
-  await page.fill("#contact-email", "pedro.exemplo");
-  await page.click("button[type=submit]");
-  await page.waitForTimeout(700);
-  const first = await state();
-  if (first.summary) good("the error summary rendered — the submit was refused");
-  else note("no error summary after an invalid submit");
-  await shot("06-first-rejection");
-
-  await page.click("button[type=submit]");
-  await page.waitForTimeout(900);
-  const second = await state();
-  await shot("07-second-rejection");
-  if (Number(second.chill) > Number(first.chill || 0)) {
-    good(`escalation: chill ${first.chill || 0} -> ${second.chill} (colder, never warmer)`);
-  } else {
-    note(`no escalation between rejections: ${first.chill} -> ${second.chill}`);
-  }
-  if (Number(second.chill) <= 1) good("chill stayed on the cyan ramp");
-  else note(`chill left the ramp at ${second.chill}`);
-}
-
-// ── 6. forgiveness ──────────────────────────────────────────────────────────
-console.log("\n6. it forgives");
-{
-  await page.fill("#contact-email", "pedro@zirtuno.com");
-  await page.waitForTimeout(700);
-  const s = await state();
-  await shot("08-approve");
-  if (Number(s.chill) < 0.2) good(`the scowl cleared when the field was fixed (chill ${s.chill})`);
-  else note(`still scowling after the fix (chill ${s.chill})`);
-}
-
-// ── 7. delivered — from the stub, nothing sent ──────────────────────────────
-console.log("\n7. delivered (stubbed route, no mail)");
-{
-  await page.click("button[type=submit]");
-  await page.waitForTimeout(1400);
-  const ok = await page.$(".contact-success");
-  if (ok) good("the success state rendered from the stub");
-  else note("the stubbed submit did not reach the success state");
-  await shot("09-delivered");
-}
-
-// ── 7b. it follows you down the page ────────────────────────────────────────
-console.log("\n7b. the travel");
-{
-  await page.goto(URL, { waitUntil: "networkidle" });
-  await page.waitForTimeout(1100);
-  const at = () =>
-    page.evaluate(() => {
-      const r = document.querySelector(".cp-carrier").getBoundingClientRect();
-      return { x: Math.round(r.x), y: Math.round(r.y) };
-    });
-  const docked = await at();
-
-  await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
-  await page.waitForTimeout(1800);
-  const parked = await at();
-  await shot("10-parked");
-
-  const vh = page.viewportSize().height;
-  if (Math.abs(parked.y - docked.y) > 80) {
-    good(`it travels: docked y=${docked.y} -> parked y=${parked.y} of ${vh}`);
-  } else {
-    note(`it did not travel (docked ${docked.y}, parked ${parked.y})`);
-  }
-  if (parked.y > 0 && parked.y < vh - 40) {
-    good("and parks inside the viewport rather than off an edge");
-  } else {
-    note(`parked outside the viewport at y=${parked.y}`);
-  }
-  // THE GUTTER. `--page-padding` keeps that strip empty at every width, which is
-  // the only place a persistent floating object can live without covering copy.
-  const gutter = await page.evaluate(
-    () => document.querySelector(".contact-masthead").getBoundingClientRect().left,
-  );
-  if (parked.x + 8 < gutter) {
-    good(`and parks in the shell gutter, clear of the copy (x=${parked.x} < ${Math.round(gutter)})`);
-  } else {
-    note(`parked over the content column (x=${parked.x}, gutter ${Math.round(gutter)})`);
-  }
-
-  await page.evaluate(() => window.scrollTo(0, 0));
-  await page.waitForTimeout(2000);
-  const back = await at();
-  if (Math.abs(back.y - docked.y) < 4 && Math.abs(back.x - docked.x) < 4) {
-    good("and re-docks exactly where it started");
-  } else {
-    note(`re-docked at ${JSON.stringify(back)}, expected ${JSON.stringify(docked)}`);
-  }
-}
-
-// ── 7c. it answers being touched ────────────────────────────────────────────
-console.log("\n7c. hover and click");
-{
-  const box = await (await page.$(".cp-carrier")).boundingBox();
-  const cx = box.x + box.width / 2;
-  const cy = box.y + box.height / 2;
-
-  // THE CORNER OF THE BOX IS NOT THE DROPLET. Only `.cp-body` takes the
-  // pointer, so a point inside the carrier's rect but outside the silhouette
-  // must NOT count as a hover — otherwise the reactive area is a rectangle and
-  // the layer is quietly a click-blocker the size of its box.
-  await page.mouse.move(box.x + 3, box.y + 3);
-  await page.waitForTimeout(500);
-  const corner = await page.evaluate(() =>
-    document.elementFromPoint(
-      document.querySelector(".cp-carrier").getBoundingClientRect().x + 3,
-      document.querySelector(".cp-carrier").getBoundingClientRect().y + 3,
-    )?.className?.baseVal ?? document.body.tagName,
-  );
-  if (!String(corner).includes("cp-")) {
-    good(`the box's corner is not a hit target (hits ${corner || "the page"})`);
-  } else {
-    note(`the carrier's corner swallowed the pointer (${corner})`);
-  }
-
-  const before = await state();
-  await page.mouse.move(cx, cy);
+/** The card shows every field of a track at once, so there is nothing to
+ *  advance through — `next` now only has to reach a control. It stays a helper
+ *  because the companion captures below are ABOUT the reader moving through the
+ *  form, and each stop is still a place the avatar is asked to react to. */
+async function focusField(page, track, field) {
+  await page.locator(`#contact-${track}-${field}`).scrollIntoViewIfNeeded();
+  await page.locator(`#contact-${track}-${field}`).focus();
   await page.waitForTimeout(650);
-  const hovered = await state();
-  await shot("11-hovered");
-  if (hovered.bodyHead !== before.bodyHead && hovered.leftHead !== before.leftHead) {
-    good("hovering the droplet itself changes its pose");
-  } else {
-    note("hovering the droplet did nothing");
-  }
-
-  await page.mouse.down();
-  await page.waitForTimeout(120);
-  await shot("12-struck");
-  const struck = await state();
-  await page.mouse.up();
-  if (struck.bodyHead !== hovered.bodyHead) {
-    good("clicking it runs a strike through the surface");
-  } else {
-    note("clicking the droplet did nothing");
-  }
-  await page.mouse.move(cx + 420, cy + 260);
-  await page.waitForTimeout(900);
 }
+try {
+  const app = await setup();
+  const p = app.page;
+  await p.waitForSelector('.companion[data-companion="live"]');
+  await p.waitForTimeout(1700);
+  const cyan = await color(p);
+  assert.equal(await p.locator(".companion").getAttribute("aria-hidden"), "true");
+  assert.equal(await p.locator(".companion button, .companion a, .companion [tabindex]").count(), 0);
+  assert.equal(await p.locator(".companion").evaluate(el => getComputedStyle(el).pointerEvents), "none");
+  await shot(p, "01-desktop-idle");
 
-// ── 8. the form is still the form ───────────────────────────────────────────
-console.log("\n8. the form survived");
-{
-  const a11y = await page.evaluate(() => {
-    const host = document.querySelector(".companion");
-    const cs = host ? getComputedStyle(host) : null;
-    const car = document.querySelector(".cp-carrier");
-    const eye = document.querySelector(".cp-eye-l");
-    return {
-      pointer: cs?.pointerEvents,
-      carrier: car ? getComputedStyle(car).pointerEvents : null,
-      eye: eye ? getComputedStyle(eye).pointerEvents : null,
-      inTabOrder: !!host?.querySelector("[tabindex]:not([tabindex='-1'])"),
-    };
-  });
-  // THE SHAPE OPTS IN; NOTHING ABOVE IT DOES. Once the droplet became
-  // deliberately clickable, the thing to guard against stopped being "can it be
-  // touched" and became "is a 108px rectangle now sitting over the page". Only
-  // `.cp-body` may carry pointer-events; the slot and the carrier must stay
-  // `none` or the layer is a click-blocker the size of its box.
-  if (a11y.pointer === "none" && a11y.carrier === "none") {
-    good("only the silhouette takes the pointer — slot and carrier stay none");
-  } else {
-    note(`pointer-events leaked: slot ${a11y.pointer}, carrier ${a11y.carrier}`);
+  const box = await p.locator(".cp-carrier").boundingBox();
+  const cx = box.x + box.width / 2, cy = box.y + box.height / 2;
+  await p.mouse.move(cx, cy);
+  await mood(p, "curious");
+  await p.mouse.down(); await mood(p, "surprised"); await p.mouse.up();
+  await p.waitForTimeout(300);
+  await shot(p,"02-surprised");
+  await p.mouse.down(); await p.mouse.up(); await mood(p,"playful");
+  await p.mouse.down(); await p.mouse.up(); await mood(p,"laughing");
+  await p.waitForTimeout(450); await shot(p,"03-laughing");
+  await p.mouse.down(); await p.mouse.up(); await mood(p,"starstruck");
+  await p.waitForTimeout(350); await shot(p,"03b-starstruck");
+  await p.mouse.down(); await p.mouse.up(); await mood(p,"dizzy");
+  await p.waitForTimeout(2000);
+  await p.mouse.down(); await p.waitForTimeout(950); await mood(p,"scared");
+  await p.waitForTimeout(650); await mood(p,"squished");
+  await shot(p,"03c-squished");
+  await p.waitForTimeout(400); await p.mouse.up(); await mood(p,"embarrassed");
+  await mood(p,"relieved");
+  // Short, gentle strokes stay inside the actual silhouette; distance and
+  // speed arrive through native pointer events rather than forcing a mood.
+  for (let i=0; i<12; i++) {
+    const body = await p.locator('.cp-carrier').boundingBox();
+    await p.mouse.move(body.x + body.width / 2 + (i % 2 ? 11 : -11), body.y + body.height / 2);
+    await p.waitForTimeout(90);
   }
-  if (!a11y.inTabOrder) good("nothing inside it is focusable");
-  else note("something inside the companion is in the tab order");
-}
+  await mood(p,"affectionate");
+  await p.waitForTimeout(350); await shot(p,"03d-affectionate");
+  await mood(p,"smitten");
+  await p.evaluate(() => window.dispatchEvent(new PointerEvent("pointercancel")));
+  await p.mouse.move(1350,900);
+  good("hover, five-tap sequence, stars, dizziness, held squash, release, heart eyes and pointer cancellation");
 
-await browser.close();
+  // CHOOSING A DIRECTION is the track switch now, and it is still a radio
+  // group, so the keyboard gesture is unchanged: focus a tab, press an arrow.
+  // The companion answers a choice with `proud` and a change of track with
+  // `excited`, exactly as it answered the intent chips and the stage advance.
+  await p.locator('.contact-tab input[value="project"]').focus();
+  await p.keyboard.press("ArrowRight");
+  await mood(p,"proud"); await p.waitForTimeout(450);
+  assert.notEqual(await color(p),cyan);
+  await shot(p,"04-proud-keyboard");
+  await mood(p,"excited");
+  await shot(p,"04b-excited-switch");
+  // Back to Projetos, because every capture below is of that track's fields.
+  await p.locator('.contact-tab:has(input[value="project"])').click();
+  await p.waitForTimeout(900);
+  await focusField(p,"project","message");
+  await p.waitForTimeout(1900);
+  await p.locator("#contact-project-message").fill("We want to connect our website, customer journeys, and internal operations into one coherent digital system, with clear measurement.");
+  await mood(p,"thinking");
+  await shot(p,"05-thinking");
+  await p.locator("#contact-project-message").fill("We want to connect our website, customer journeys, and internal operations into one coherent digital system, with clear measurement. We also want clear ownership for each part of the customer experience.");
+  await mood(p,"eureka");
+  await shot(p,"05b-eureka");
+  await focusField(p,"project","firstName");
+  await p.locator("#contact-project-firstName").fill("Avatar");
+  await p.locator("#contact-project-lastName").fill("Review");
+  await p.locator("#contact-project-email").fill("invalid.example");
+  // This form validates on blur. Let the inline errors finish moving the
+  // submit button before pressing it, so this exercises an actual submit.
+  await p.locator("#contact-project-email").press("Tab");
+  await p.waitForTimeout(450);
+  await p.locator("form[data-track='project'] .contact-submit").click(); await mood(p,"confused");
+  await p.waitForTimeout(350); await shot(p,"06-confused");
+  await p.locator("form[data-track='project'] .contact-submit").click(); await mood(p,"angry");
+  await p.waitForTimeout(600); await shot(p,"07-angry");
+  assert.ok(Number(await p.locator(".companion").evaluate(el=>el.style.getPropertyValue("--cp-warm"))) > .7);
+  assert.equal(app.posts(),0);
+  await p.locator("#contact-project-email").fill("avatar-review@example.com");
+  await mood(p,"happy"); await shot(p,"08-forgiven");
+  good("keyboard choices, step reactions, typing, repeated refusals and immediate forgiveness");
 
-console.log(
-  `\n${problems.length === 0 ? "PASS" : `${problems.length} PROBLEM(S)`} — stills in ${OUT}/`,
-);
-process.exit(problems.length === 0 ? 0 : 1);
+  app.reply({status:500,body:{ok:false,error:"delivery"},hold:true});
+  await p.locator("form[data-track='project'] .contact-submit").click(); await mood(p,"working");
+  assert.ok(await p.locator("form[data-track='project'] .contact-submit").isDisabled());
+  await shot(p,"09-working");
+  app.release(); await mood(p,"sad");
+  await p.waitForTimeout(400); await shot(p,"10-sad");
+  app.reply({status:200,body:{ok:true,delivered:true}});
+  await p.locator("form[data-track='project'] .contact-submit").click(); await mood(p,"celebrate");
+  await p.waitForTimeout(450); await shot(p,"11-celebrate");
+  await mood(p,"proud"); await mood(p,"happy");
+  good("busy outranks play; failure, retry and confirmed success drive distinct sequences");
+  assert.deepEqual(app.errors,[]);
+  await app.ctx.close();
+
+  const idle = await setup();
+  await idle.page.clock.install();
+  await idle.page.clock.fastForward(46000);
+  await idle.page.clock.runFor(700);
+  await mood(idle.page,"sleeping");
+  await shot(idle.page,"12-sleeping");
+  await idle.page.mouse.move(1300,500);
+  await idle.page.clock.runFor(200); await mood(idle.page,"waking");
+  await idle.page.clock.resume();
+  // The live OS preference must park and restore this layer, not just work on
+  // initial load. Cleanup restores the identical server-rendered contours.
+  await idle.page.emulateMedia({reducedMotion:"reduce"});
+  await idle.page.waitForFunction(()=>!document.querySelector(".companion").hasAttribute("data-companion"));
+  const rest = await idle.page.locator(".cp-body").getAttribute("d");
+  await idle.page.waitForTimeout(500);
+  assert.equal(await idle.page.locator(".cp-body").getAttribute("d"),rest);
+  await idle.page.emulateMedia({reducedMotion:"no-preference"});
+  await idle.page.waitForSelector(".companion[data-companion]");
+  good("idle sleep and wake; reduced-motion toggles restore the still pose and resume cleanly");
+  await idle.ctx.close();
+
+  for (const [width,height,locale] of [[390,844,"pt"],[320,740,"en"],[768,1024,"pt"]]) {
+    const mobile = await setup({viewport:{width,height},hasTouch:true,isMobile:width<500},locale);
+    const page = mobile.page;
+    await page.waitForSelector(".companion[data-companion]");
+    assert.equal(await page.locator(".companion").getAttribute("data-follow"),"docked");
+    await page.locator(".cp-body").tap(); await mood(page,"surprised");
+    await page.waitForTimeout(150); await shot(page,`mobile-${width}`);
+    await focusField(page,"project","message");
+    await page.locator("#contact-project-message").fill("This is a local test of the companion and the contact journey.");
+    await focusField(page,"project","firstName");
+    await page.locator("#contact-project-firstName").fill("Mobile");
+    await page.locator("#contact-project-lastName").fill("Review");
+    await page.locator("#contact-project-email").fill("mobile-review@example.com");
+    mobile.reply({status:202,body:{ok:true,accepted:true,delivered:false,pending:true}});
+    await page.locator("form[data-track='project'] .contact-submit").click();
+    await page.waitForSelector(".contact-pending");
+    await page.locator(".companion").scrollIntoViewIfNeeded();
+    await page.waitForTimeout(650);
+    await mood(page,["searching","hopeful","patient"]);
+    assert.equal(await page.locator(".contact-success").count(),0);
+    if (width === 390) {
+      // A hidden track retains its response. It must not make a different
+      // track's active form look like it is still waiting for delivery.
+      await page.locator('.contact-tab:has(input[value="advisory"])').click();
+      await page.locator(".companion").scrollIntoViewIfNeeded();
+      await mood(page,"proud");
+      await mood(page,"excited");
+      assert.equal(await page.locator('.contact-slot[data-active] .contact-pending').count(),0);
+      assert.equal(await page.locator('.contact-pending').count(),1);
+      good("a hidden track's pending state does not override the selected track");
+    }
+    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1),false);
+    assert.deepEqual(mobile.errors,[]);
+    await mobile.ctx.close();
+    good(`${width}px ${locale}: touch, full form, pending truth, scroll return and no overflow`);
+  }
+  for (const options of [{javaScriptEnabled:false},{reducedMotion:"reduce"}]) {
+    const ctx = await browser.newContext({viewport:{width:390,height:844},...options});
+    const page = await ctx.newPage();
+    await page.goto(`${BASE}/pt/contact?fcap=1`);
+    await page.waitForTimeout(650);
+    assert.ok((await page.locator(".cp-body").getAttribute("d")).length>200);
+    assert.equal(await page.locator(".companion[data-companion]").count(),0);
+    assert.equal(await page.locator(".cp-carrier").evaluate(el=>getComputedStyle(el).position),"static");
+    await shot(page, options.javaScriptEnabled===false ? "no-js" : "reduced-motion");
+    await ctx.close();
+  }
+  good("no-JS and reduced motion retain the complete decorative rest pose");
+  fs.writeFileSync(`${OUT}/report.json`,JSON.stringify({result:"pass",checks:notes},null,2));
+  console.log("COMPANION PAGE: all checks passed");
+} finally { await browser.close(); }
