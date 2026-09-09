@@ -216,12 +216,17 @@ permanent outer neon halo around every form.
 
 ### 4.2 Typography
 
-| Role    | Family/utility                           | Required use                                                 |
-| ------- | ---------------------------------------- | ------------------------------------------------------------ |
-| Display | Bricolage Grotesque / `font-grotesk`     | hero headline and every chapter `h2`                         |
-| Text    | Geist / `font-sans`                      | body, UI, nav, leads, subheads, forms, card and phase titles |
-| Poetry  | Instrument Serif italic / `font-display` | approved poetic accents only                                 |
-| System  | JetBrains Mono / `font-mono`             | labels, counters, numbers, CTA text, metadata                |
+Two faces, four roles (R8). The rounded stack is
+`ui-rounded, 'SF Pro Rounded', Nunito` — the OS supplies the real SF Rounded on
+macOS and iOS, self-hosted Nunito covers everywhere else. See AGENTS.md
+"Type roles" for why the file itself is not shipped.
+
+| Role    | Family/utility                       | Required use                                                 |
+| ------- | ------------------------------------ | ------------------------------------------------------------ |
+| Display | Bricolage Grotesque / `font-grotesk` | hero headline and every chapter `h2`                         |
+| Text    | rounded stack / `font-sans`          | body, UI, nav, leads, subheads, forms, card and phase titles |
+| Poetry  | rounded stack Light 300 / `font-display` | approved poetic accents only; upright, never italic      |
+| System  | rounded stack / `font-mono`          | labels, counters, numbers, CTA text, metadata                |
 
 Use the fluid `--text-*` tiers in `globals.css`:
 
@@ -234,7 +239,7 @@ The executable system also binds those tiers into semantic roles:
 
 - `type-hero-title`: the commercial hero statement, Bricolage 600;
 - `type-section-title` / `type-page-title`: chapter and route-level display;
-- `type-feature-title`: high-emphasis Geist statements and phase/service names;
+- `type-feature-title`: high-emphasis text-face statements and phase/service names;
 - `type-card-title`: constrained card and next-project titles;
 - `type-lead-copy`: the shared lead measure and reading rhythm;
 - `type-poetic-title`: the narrow exception for genuinely poetic titles.
@@ -245,8 +250,11 @@ Hero, display, editorial, lead, and reading measures are character-based tokens,
 not arbitrary per-component widths. Card titles never inherit the feature tier,
 and scene/chrome labels remain on the compact mono tiers.
 
-Business headlines never use the serif. Bricolage is not body or mid-title text.
-Instrument Serif is not a general “premium” decoration.
+Bricolage is not body or mid-title text. Poetry is a WEIGHT (Light 300), not a
+style: there is no serif and no italic left in the system, and `font-style:
+italic` on the rounded stack would be synthetically sheared. The `font-mono`
+role is no longer a monospaced face; what carries its instrument character is
+uppercase, open tracking and `tabular-nums`, so keep those when using it.
 
 ### 4.3 Layout
 
@@ -612,7 +620,7 @@ offer one clear next action.
 1. chapter label;
 2. poetic eyebrow;
 3. Bricolage positioning headline;
-4. Geist subline naming connected disciplines and growth value;
+4. text-face subline naming connected disciplines and growth value;
 5. `cta.analysis`;
 6. living mark and seven-form indicator.
 
@@ -686,8 +694,8 @@ statement carries `cta.structure` and its existing contact intent.
 Each pillar includes:
 
 - index;
-- poetic descriptor as a small Instrument Serif accent;
-- Geist service name/mid-title;
+- poetic descriptor as a small Light 300 accent;
+- text-face service name/mid-title;
 - “O que é / What it is”;
 - “O que resolve / What it solves”;
 - “O que gera / What it creates”;

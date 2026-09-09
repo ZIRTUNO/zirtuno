@@ -1,526 +1,196 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useLocale, useTranslations } from "next-intl";
-import {
-  contactSchema,
-  type ContactInput,
-  type ContactIntent,
-} from "@/lib/forms/contact";
-import { trackEvent } from "@/lib/analytics/client";
+import { useEffect, useId, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
+import { CONTACT_TRACKS, type ContactTrackId } from "@/lib/forms/contact";
 import { Link } from "@/lib/i18n/config";
-import { Membrane } from "@/components/chrome/Membrane";
-import { FieldLiquid } from "./FieldLiquid";
+import { ContactGlass } from "./ContactGlass";
+import { ContactTrackForm } from "./ContactTrackForm";
 
-function isConfirmedDelivery(value: unknown): boolean {
-  if (!value || typeof value !== "object") return false;
-  const response = value as Record<string, unknown>;
-  return response.ok === true && response.delivered === true;
-}
+/* ───────────────────────────────────────────────────────────────────────────
+   THE CARD — one instrument, three faces.
+   ---------------------------------------------------------------------------
+   The reference page's contact card does two things at once when a tab is
+   picked, and doing BOTH is what makes it read as one object reshaping rather
+   than as content being swapped:
 
-function isPendingDelivery(value: unknown): boolean {
-  if (!value || typeof value !== "object") return false;
-  const response = value as Record<string, unknown>;
-  return (
-    response.ok === true &&
-    response.accepted === true &&
-    response.delivered === false &&
-    response.pending === true
-  );
-}
+     · a track of full-width panels slides by exactly one panel width, and
+     · the window they sit in animates its HEIGHT to the incoming panel's,
 
-const ERROR_IDS = {
-  name: "contact-name-error",
-  email: "contact-email-error",
-  message: "contact-message-error",
-} as const;
+   on the same 500 ms `cubic-bezier(.4, 0, .2, 1)`. Nothing fades. That last
+   part is the reason this composition suits this site at all — the house rule
+   is that a reveal is never an opacity ramp, and there is not one in here.
 
-// The summary lists errors in the form's own reading order, never in the order
-// the resolver happened to report them.
-const FIELD_ORDER = ["name", "email", "message"] as const;
+   ── Why radios and not `role="tab"` ──────────────────────────────────────
+   The reference uses buttons with `role="tab"` driven by React state, so with
+   JavaScript off it is a card showing one hard-coded panel and two tabs that
+   do nothing. Here the switch is a real radio group: the slide, the pill and
+   which panel is reachable are all CSS reading `:checked`, so the whole card
+   works before hydration and without JavaScript at all. It is also the more
+   truthful control — these are three DIFFERENT forms, not three views of one,
+   and a radio group is what "pick one of these" means natively.
 
-/**
- * The intents a visitor can pick for themselves.
- *
- * `careers` is deliberately absent: applications come from `/careers`, which
- * routes here with `?intent=careers` already set, and offering "work with us"
- * as a fifth chip on a commercial enquiry page invites the wrong traffic into
- * the wrong queue. An arriving careers tag is honoured and shown (see
- * `chosenIntents` below) — it just is not on the menu.
- */
-const CHOOSABLE_INTENTS = [
-  "analysis",
-  "structure",
-  "talk",
-  "general",
-] as const satisfies readonly ContactIntent[];
-
-type SubmissionAttempt = {
-  id: string;
-  fingerprint: string;
-};
+   JavaScript adds exactly one thing on top: the animated height. Without it
+   the window is `auto`, which is the tallest panel — correct, just not as
+   quiet. The `data-measured` flag is what hands the height over, and it is set
+   only once a measurement has actually been written.
+   ─────────────────────────────────────────────────────────────────────────── */
 
 type ContactStatus = "idle" | "success" | "pending" | "error";
 
 function resolveFallbackStatus(value: string | null): ContactStatus {
   if (value === "success" || value === "pending") return value;
-  if (value === "error" || value === "rate_limit") return "error";
-  return "idle";
+  return value === "error" || value === "rate_limit" ? "error" : "idle";
 }
 
-/**
- * S10 — the contact form, as the instrument on its own page.
- *
- * Carried over from the quarantined homepage chapter with its delivery
- * contract intact: react-hook-form + the shared Zod schema, the honeypot, the
- * aggregate error summary, the confirmed / pending / failed states, the
- * native `action` + `method` that make it work with no JavaScript at all, and
- * the conversion tagging on every outcome. None of that was rebuilt, because a
- * conversion path rebuilt from scratch is a conversion path that has to be
- * re-verified from scratch.
- *
- * TWO THINGS ARE NEW, and both come from the page rather than the chapter.
- *
- * THE INTENT IS VISIBLE. Nine CTAs across the site carry an `?intent=` tag
- * (build-spec S1.15). In the chapter that tag landed in a hidden input and the
- * visitor never learned it had been remembered; here it arrives PRE-SELECTED
- * in a real radio group, so someone who pressed "Solicitar análise inicial"
- * sees the page agree with them, and someone who arrived cold segments
- * themselves. Same field, same enum, same email — it just stopped being a
- * secret.
- *
- * THE EXHALE IS GONE. The chapter dispatched `zirtuno:exhale` on confirmed
- * delivery and `PageStage` drove the S10 liquid scene from it. This page has
- * no `PageStage` and no WebGL stage at all (see the header of
- * `app/contact.css` for why), so the dispatch had no receiver. An event fired
- * into nothing is not a feature kept warm, it is a lie about what happens on
- * success — the received state below is the whole gesture now.
- */
+function Arrow() {
+  return (
+    <svg viewBox="0 0 32 16" aria-hidden="true" className="contact-arrow">
+      <path
+        d="M1 8h28M22 1l7 7-7 7"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.4"
+      />
+    </svg>
+  );
+}
+
 export function ContactForm({
-  initialIntent,
+  initialTrack,
   initialStatus,
 }: {
-  initialIntent: ContactIntent;
+  initialTrack: ContactTrackId;
   initialStatus?: string | null;
 }) {
   const t = useTranslations("contact");
-  const locale = useLocale();
-  const fallbackStatus = initialStatus ?? null;
+  const group = `contact-track-${useId().replace(/:/g, "")}`;
+  const arrival = initialTrack;
+
+  /**
+   * A careers arrival adds its own track, and only then. Someone who came to
+   * hire the studio is not offered a job application as a fourth tab; someone
+   * who came from /careers still gets the three commercial ones, because the
+   * link that brought them may simply have been the nearest way to reach a
+   * form.
+   */
+  const tracks: readonly ContactTrackId[] =
+    arrival === "careers" ? [...CONTACT_TRACKS, "careers"] : CONTACT_TRACKS;
+
+  const [active, setActive] = useState<ContactTrackId>(arrival);
   const [status, setStatus] = useState<ContactStatus>(() =>
-    resolveFallbackStatus(fallbackStatus),
+    resolveFallbackStatus(initialStatus ?? null),
   );
-  const [errorKind, setErrorKind] = useState<"generic" | "rate_limit">(
-    fallbackStatus === "rate_limit" ? "rate_limit" : "generic",
-  );
-  // DID THE FIELDS SURVIVE? The error and rate-limit copy promises "your
-  // details were kept", which is true on the enhanced path — React still holds
-  // every value and the visitor only has to press the button again — and FALSE
-  // on the native one, where the route answers with a 303 and the browser
-  // arrives at an empty form. Same status, opposite advice, and the visitor who
-  // gets the wrong version is the one with no JavaScript to recover with.
-  //
-  // A status that came from the URL is by definition the redirect path. Any
-  // client submit clears this, because from then on React owns the values.
-  const [statusFromRedirect, setStatusFromRedirect] = useState(
-    () => resolveFallbackStatus(fallbackStatus) !== "idle",
-  );
-  const [website, setWebsite] = useState("");
-  const [submissionAttempt, setSubmissionAttempt] =
-    useState<SubmissionAttempt | null>(null);
-  const started = useRef(false);
-  const formRef = useRef<HTMLFormElement>(null);
-  const summaryRef = useRef<HTMLDivElement>(null);
+  const viewRef = useRef<HTMLDivElement>(null);
+  const outcomeRef = useRef<HTMLDivElement>(null);
 
-  const {
-    register,
-    handleSubmit,
-    setValue,
-    getValues,
-    reset,
-    formState: { errors, isSubmitting, submitCount },
-  } = useForm<ContactInput>({
-    resolver: zodResolver(contactSchema),
-    // The aggregate summary — not the first offending input — is what receives
-    // focus, so a screen reader hears the COMPLETE error state as one event
-    // instead of a single field's message.
-    shouldFocusError: false,
-    defaultValues: {
-      name: "",
-      email: "",
-      company: "",
-      message: "",
-      intent: initialIntent,
-    },
-  });
-
-  // NO `watch("intent")` HERE, and nothing is lost by that.
-  //
-  // The selected chip is styled by `.contact-choice-option input:checked + span`
-  // — pure CSS off the radio's own state — so the render does not need to know
-  // which intent is current, and the two places that DO need it are both event
-  // handlers that can read it at the moment they fire. React Hook Form's
-  // `watch()` returns a function the React Compiler cannot memoize, so a render
-  // -time subscription would opt this whole component out of compilation to
-  // buy a value only handlers use.
-  //
-  // An arriving `careers` tag gets a chip of its own so the group can show the
-  // state it is actually in. Without this the radio group would render with
-  // nothing checked while a hidden value said otherwise, which is the one
-  // failure mode a visible chooser exists to prevent.
-  const chosenIntents: readonly ContactIntent[] =
-    initialIntent === "careers"
-      ? (["careers", ...CHOOSABLE_INTENTS] as const)
-      : CHOOSABLE_INTENTS;
-
-  const invalidFields = FIELD_ORDER.filter((field) => errors[field]);
-  const invalidCount = invalidFields.length;
-
-  // Every rejected submit moves the reader to the summary, so the complete
-  // error state is announced as ONE event. Driven by submitCount rather than by
-  // the resolver callback: a second attempt with the same failures must
-  // re-announce, and the summary has to exist in the DOM before it is focused.
   useEffect(() => {
-    if (submitCount > 0 && invalidCount > 0) summaryRef.current?.focus();
-  }, [submitCount, invalidCount]);
+    if (status === "success") outcomeRef.current?.focus();
+  }, [status]);
 
-  // THE CHOOSER HAS TO FOLLOW THE URL, and `defaultValues` alone cannot make
-  // it. On `/contact` the intent CTAs are same-route navigations — the top
-  // bar's chip from `/contact?intent=analysis` goes to `/contact?intent=talk`
-  // — and Next re-renders the server component without remounting this one, so
-  // a new `initialIntent` would arrive as a prop while the form still showed
-  // the chip it mounted with. Keying on the prop rather than listening for
-  // `popstate` covers back/forward too: the App Router handles popstate itself
-  // and re-renders the page, which is the same signal arriving the same way.
-  //
-  // The dependency is the VALUE, so a re-render for any other reason does not
-  // fire this and cannot overwrite a chip the visitor picked by hand.
+  /**
+   * THE WINDOW'S HEIGHT — measured, never guessed.
+   *
+   * `ResizeObserver` on the active panel rather than a one-off read, because
+   * the panel grows on its own: a validation message appears, the textarea is
+   * dragged taller, a font swaps. Each of those has to move the card's bottom
+   * edge with it or the panel is clipped by the very `overflow: hidden` that
+   * makes the slide possible.
+   */
   useEffect(() => {
-    setValue("intent", initialIntent);
-  }, [initialIntent, setValue]);
-
-  // Native constraints protect the no-JS form. Once enhanced, React/Zod own
-  // localized validation and error announcements instead of browser bubbles.
-  useEffect(() => {
-    if (formRef.current) formRef.current.noValidate = true;
-  }, []);
-
-  async function onSubmit(values: ContactInput) {
-    setStatus("idle");
-    setErrorKind("generic");
-    setStatusFromRedirect(false);
-    trackEvent("contact_submit", { intent: values.intent, outcome: "attempt" });
-    const fingerprint = JSON.stringify(values);
-    const attempt =
-      submissionAttempt?.fingerprint === fingerprint
-        ? submissionAttempt
-        : { id: crypto.randomUUID(), fingerprint };
-    setSubmissionAttempt(attempt);
-    const submissionId = attempt.id;
-    try {
-      const res = await fetch("/api/contact", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...values, website, submissionId }),
-      });
-      const json: unknown = await res.json();
-      if (res.ok && isConfirmedDelivery(json)) {
-        trackEvent("contact_submit", {
-          intent: values.intent,
-          outcome: "delivered",
-        });
-        setSubmissionAttempt(null);
-        reset();
-        setStatus("success");
-      } else if (res.status === 202 && isPendingDelivery(json)) {
-        trackEvent("contact_submit", {
-          intent: values.intent,
-          outcome: "pending",
-        });
-        setStatus("pending");
-      } else {
-        const reason =
-          json && typeof json === "object" && "error" in json
-            ? String((json as { error: unknown }).error)
-            : `http_${res.status}`;
-        trackEvent("contact_submit", {
-          intent: values.intent,
-          outcome: "failed",
-          reason,
-        });
-        setErrorKind(reason === "rate_limit" ? "rate_limit" : "generic");
-        setStatus("error");
-      }
-    } catch {
-      trackEvent("contact_submit", {
-        intent: values.intent,
-        outcome: "failed",
-        reason: "network",
-      });
-      setStatus("error");
-    }
-  }
+    const view = viewRef.current;
+    const slot = view?.querySelector<HTMLElement>(
+      `[data-slot-track="${active}"]`,
+    );
+    if (!view || !slot) return;
+    const apply = () => {
+      view.style.height = `${slot.offsetHeight}px`;
+      view.dataset.measured = "";
+    };
+    apply();
+    const ro = new ResizeObserver(apply);
+    ro.observe(slot);
+    return () => ro.disconnect();
+  }, [active]);
 
   if (status === "success") {
     return (
-      <div className="contact-success" role="status">
-        <p className="contact-success-title">{t("successTitle")}</p>
+      <div
+        className="contact-success"
+        role="status"
+        tabIndex={-1}
+        ref={outcomeRef}
+      >
+        <div className="contact-receipt-seal" aria-hidden="true">
+          <svg viewBox="0 0 120 120">
+            <circle cx="60" cy="60" r="46" />
+            <path d="M39 61l14 14 29-31" />
+          </svg>
+        </div>
+        <p className="contact-overline">{t("receipt")}</p>
+        <h2 className="contact-success-title">{t("successTitle")}</h2>
         <p className="contact-success-body">{t("successBody")}</p>
+        <p className="contact-receipt-next">{t("receiptNext")}</p>
         <Link href="/" className="contact-success-return" data-cursor="hover">
-          {t("successReturn")}
+          {t("successReturn")} <Arrow />
         </Link>
       </div>
     );
   }
 
   return (
-    <form
-      ref={formRef}
-      action={`/api/contact?locale=${locale}`}
-      method="post"
-      onSubmit={handleSubmit(onSubmit, (fieldErrors) => {
-        trackEvent("contact_validation_failed", {
-          fields: Object.keys(fieldErrors).sort().join(","),
-          intent: getValues("intent"),
-        });
-      })}
-      onFocusCapture={() => {
-        if (started.current) return;
-        started.current = true;
-        trackEvent("contact_start", { intent: getValues("intent") });
-      }}
-      className="contact-form"
-      aria-busy={isSubmitting}
-    >
-      {/* The vector liquid over the controls (S10). Purely additive: it draws
-          outlines, sets `data-fieldliquid` only once it has drawn, and every
-          rule that changes a field is gated on that — so the bordered form
-          below survives reduced motion, no-JS and any mount failure intact. */}
-      <FieldLiquid />
-
-      <div className="contact-honeypot" aria-hidden="true">
-        <label htmlFor="contact-website">{t("fields.websiteTrap")}</label>
-        <input
-          id="contact-website"
-          name="website"
-          type="text"
-          tabIndex={-1}
-          autoComplete="off"
-          value={website}
-          onChange={(event) => setWebsite(event.currentTarget.value)}
-        />
-      </div>
-
-      {/* THE CHOOSER. A real `<fieldset>` with a real `<legend>` and real
-          radios, so the group announces as a group, arrow keys move through it,
-          and the browser restores the selection on a back navigation with no
-          JavaScript involved. */}
-      <fieldset className="contact-choice">
-        <legend className="contact-choice-legend">{t("intentHeading")}</legend>
-        <p className="contact-choice-hint">{t("intentHint")}</p>
-        <div className="contact-choice-list">
-          {chosenIntents.map((option) => (
-            <label key={option} className="contact-choice-option">
-              {/* `defaultChecked` puts the selection in the SERVER HTML.
-                  Without it the only thing choosing a chip is react-hook-form's
-                  `defaultValues`, which cannot run until hydration — so the
-                  markup shipped with no radio checked at all. Two real
-                  consequences, not just a flash of unselected chips: the no-JS
-                  native POST would have submitted no `intent` and the tag would
-                  have been silently downgraded to "general" by the route's
-                  fallback, and the `?intent=` handshake the whole CTA system
-                  spends would have been invisible to anything reading the
-                  document before hydration. RHF still owns the value after it
-                  mounts; this only makes the first paint agree with it. */}
-              <input
-                type="radio"
-                value={option}
-                defaultChecked={option === initialIntent}
-                data-cursor="hover"
-                {...register("intent")}
-              />
-              <span>{t(`intents.${option}`)}</span>
-            </label>
-          ))}
-        </div>
+    <div className="contact-card" style={{ ["--tabs" as string]: tracks.length }}>
+      <fieldset className="contact-tabbar">
+        <legend className="sr-only">{t("tabsLabel")}</legend>
+        {/* The travelling pill. It is one element that moves, not a background
+            that lights up per tab — the same reason the old chip group used a
+            single lens: two surfaces cross-fading is a fade, and one surface
+            moving is a machine. */}
+        <span className="contact-tabpill" aria-hidden="true">
+          <ContactGlass />
+        </span>
+        {tracks.map((track) => (
+          <label className="contact-tab" key={track} data-cursor="hover">
+            <input
+              type="radio"
+              name={group}
+              value={track}
+              checked={active === track}
+              onChange={() => setActive(track)}
+            />
+            <span>{t(`tracks.${track}`)}</span>
+          </label>
+        ))}
       </fieldset>
 
-      <p className="contact-form-heading">{t("formHeading")}</p>
-
-      {/* The aggregate error announcement (R5-E). Per-field `aria-describedby`
-          messages stay exactly where they are — this adds the ONE event that
-          was missing: the complete error state, announced and focused, with a
-          direct route to each offending field. */}
-      {invalidCount > 0 && (
-        <div
-          ref={summaryRef}
-          role="alert"
-          tabIndex={-1}
-          className="contact-error-summary"
-        >
-          <p className="contact-error-summary-title">
-            {t("errorSummaryTitle", { count: invalidCount })}
-          </p>
-          <ul>
-            {invalidFields.map((field) => (
-              <li key={field}>
-                <a
-                  href={`#contact-${field}`}
-                  onClick={(event) => {
-                    event.preventDefault();
-                    document.getElementById(`contact-${field}`)?.focus();
-                  }}
-                >
-                  {t(`validation.${field}`)}
-                </a>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-
-      {/* Name and email paired, the reference's own grouping. The asterisk is
-          `aria-hidden` over a real `required` — a screen reader should hear the
-          field's required state once, from the field, not the word "asterisk"
-          after every label. */}
-      <div className="contact-row">
-        <div className="field">
-          <label htmlFor="contact-name">
-            {t("fields.name")}
-            <span className="field-required" aria-hidden="true">
-              *
-            </span>
-          </label>
-          <input
-            id="contact-name"
-            autoComplete="name"
-            placeholder={t("fields.namePlaceholder")}
-            aria-invalid={!!errors.name}
-            aria-describedby={errors.name ? ERROR_IDS.name : undefined}
-            required
-            minLength={2}
-            maxLength={120}
-            {...register("name")}
-          />
-          {errors.name && (
-            <span id={ERROR_IDS.name} className="field-error">
-              {t("validation.name")}
-            </span>
-          )}
-        </div>
-
-        <div className="field">
-          <label htmlFor="contact-email">
-            {t("fields.email")}
-            <span className="field-required" aria-hidden="true">
-              *
-            </span>
-          </label>
-          <input
-            id="contact-email"
-            type="email"
-            autoComplete="email"
-            placeholder={t("fields.emailPlaceholder")}
-            aria-invalid={!!errors.email}
-            aria-describedby={errors.email ? ERROR_IDS.email : undefined}
-            required
-            maxLength={254}
-            {...register("email")}
-          />
-          {errors.email && (
-            <span id={ERROR_IDS.email} className="field-error">
-              {t("validation.email")}
-            </span>
-          )}
+      <div className="contact-track-view" ref={viewRef}>
+        <div className="contact-track">
+          {tracks.map((track) => (
+            <div
+              className="contact-slot"
+              data-slot-track={track}
+              // THE COMPANION READS THIS to know which of the three forms the
+              // visitor is actually in — see `Companion.tsx`, which resolves
+              // `.contact-slot[data-active] form`. It is not what makes a panel
+              // visible: the hiding is CSS on `:checked`, so the no-JS path
+              // never depended on an attribute React writes.
+              data-active={active === track ? "" : undefined}
+              key={track}
+            >
+              <ContactTrackForm
+                track={track}
+                initialStatus={
+                  // A no-JS POST redirects back with `?contact=` and no way to
+                  // say which form sent it. The arrival track is the only
+                  // honest guess, and it is the one the visitor was looking at.
+                  track === arrival ? resolveFallbackStatus(initialStatus ?? null) : "idle"
+                }
+                onDelivered={() => setStatus("success")}
+              />
+            </div>
+          ))}
         </div>
       </div>
-
-      <div className="field">
-        <label htmlFor="contact-company">{t("fields.company")}</label>
-        <input
-          id="contact-company"
-          autoComplete="organization"
-          placeholder={t("fields.companyPlaceholder")}
-          maxLength={160}
-          {...register("company")}
-        />
-      </div>
-
-      <div className="field">
-        <label htmlFor="contact-message">
-          {t("fields.message")}
-          <span className="field-required" aria-hidden="true">
-            *
-          </span>
-        </label>
-        <textarea
-          id="contact-message"
-          rows={5}
-          placeholder={t("fields.messagePlaceholder")}
-          aria-invalid={!!errors.message}
-          aria-describedby={errors.message ? ERROR_IDS.message : undefined}
-          required
-          minLength={10}
-          maxLength={4000}
-          {...register("message")}
-        />
-        {errors.message && (
-          <span id={ERROR_IDS.message} className="field-error">
-            {t("validation.message")}
-          </span>
-        )}
-      </div>
-
-      <button
-        type="submit"
-        className="cta cta-primary"
-        disabled={isSubmitting || status === "pending"}
-        data-cursor="hover"
-      >
-        <span className="cta-fill" aria-hidden="true" />
-        <Membrane filled />
-        <span className="cta-label cta-label-ink" aria-hidden="true">
-          {isSubmitting
-            ? t("sending")
-            : status === "pending"
-              ? t("receivedPending")
-              : t("submit")}
-        </span>
-        <span className="cta-label">
-          {isSubmitting
-            ? t("sending")
-            : status === "pending"
-              ? t("receivedPending")
-              : t("submit")}
-        </span>
-      </button>
-
-      <p className="contact-privacy">
-        {t("privacyNote")}{" "}
-        <Link href="/legal/privacy" data-cursor="hover">
-          {t("privacyLink")}
-        </Link>
-      </p>
-
-      {status === "error" && (
-        <p className="contact-error" role="alert">
-          {t(
-            errorKind === "rate_limit"
-              ? statusFromRedirect
-                ? "rateLimitBodyLost"
-                : "rateLimitBody"
-              : statusFromRedirect
-                ? "errorBodyLost"
-                : "errorBody",
-          )}
-        </p>
-      )}
-      {status === "pending" && (
-        <p className="contact-pending" role="status">
-          {t("pendingBody")}
-        </p>
-      )}
-    </form>
+    </div>
   );
 }

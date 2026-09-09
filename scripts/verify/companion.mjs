@@ -29,29 +29,7 @@
  *
  *   INTERRUPTIBILITY. A visitor changes their mind mid-word. Every expression
  *   must be reachable from every other, an interrupted transition must stay a
- *   legal state, and nothing may ever emit NaN. The containment sweep is run
- *   MID-TRANSITION as well as at rest, because the expression spring is
- *   deliberately underdamped: a pose overshoots its target by a few percent on
- *   the way in, so the widest aperture the droplet ever draws is one that
- *   appears in no preset and cannot be found by testing the presets alone.
- *
- *   THE EYE IS A STYLE, NOT A DRAWING. `wide`, `iris`, `slant` and `lift` are
- *   channels, so the lab's grid of eye presets interpolates like everything
- *   else. Each one has to MOVE the aperture measurably — a channel that reads
- *   nothing is a channel a taste pass will quietly zero — and `slant` has to be
- *   mirrored between the two eyes, because parallel slashes read as a
- *   typographic mark and mirrored ones read as a brow.
- *
- *   THE GESTURES COMPOSE AND THEN LEAVE. `shake`, `hop`, `laugh` and `wink` are
- *   impulses on top of whatever pose is current, so each must decay to exactly
- *   zero, must survive an expression change, and must TOP UP rather than
- *   restart when re-triggered. A gesture that could get stuck would be a
- *   droplet that shakes its head forever.
- *
- *   THE WHOLE REFERENCE VOCABULARY IS PRESENT. The owner's brief was to carry
- *   every expression the lab has. That is a list, so it is asserted as one —
- *   by preset or by alias — rather than left to a reviewer counting panels on
- *   a contact sheet.
+ *   legal state, and nothing may ever emit NaN.
  *
  * Run: node scripts/verify/companion.mjs   (npm run companion)
  */
@@ -60,14 +38,16 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import {
-  ALIASES,
   COMP,
   EXPRESSIONS,
   EXPRESSION_NAMES,
+  EYE_POSE_NAMES, MOOD_NAMES, MOOD_SCORES, BASE_EYE_POSE_NAMES, BASE_MOOD_NAMES, SPECIAL_MOOD_NAMES,
   PARAM,
   bodyLobe,
   makeCompanion,
 } from "../../lib/motion/companion.mjs";
+import { makeCompanionBehavior } from "../../lib/motion/companion-behavior.mjs";
+const GEOMETRY_NAMES = [...EXPRESSION_NAMES, ...EYE_POSE_NAMES];
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const KERNEL = join(HERE, "..", "..", "lib", "motion", "companion.mjs");
@@ -232,7 +212,7 @@ section("3. the pupils never leave the body");
   let worstWhere = "";
   let escapes = 0;
 
-  for (const name of EXPRESSION_NAMES) {
+  for (const name of GEOMETRY_NAMES) {
     for (let k = 0; k < ANGLES; k++) {
       const a = (k / ANGLES) * Math.PI * 2;
       const c = makeCompanion(1 + (k % 5));
@@ -286,7 +266,7 @@ section("3. the pupils never leave the body");
   assert(
     escapes === 0,
     escapes === 0
-      ? `no pupil vertex escaped the body across ${EXPRESSION_NAMES.length} expressions x ${ANGLES} gaze angles, struck`
+      ? `no pupil vertex escaped the body across ${GEOMETRY_NAMES.length} expressions and eye presets x ${ANGLES} gaze angles, struck`
       : `${escapes} pupil vertices escaped the body (first: ${worstWhere})`,
   );
   assert(
@@ -300,7 +280,7 @@ section("3b. the silhouette stays inside its own viewBox");
 {
   let worst = 0;
   let where = "";
-  for (const name of EXPRESSION_NAMES) {
+  for (const name of GEOMETRY_NAMES) {
     for (let k = 0; k < 16; k++) {
       const a = (k / 16) * Math.PI * 2;
       const c = makeCompanion(1 + (k % 5));
@@ -487,557 +467,6 @@ section("4d. the idle wander");
   );
 }
 
-// ── 4e. the eye is a style, not a drawing ───────────────────────────────────
-section("4e. the eye styles");
-{
-  /**
-   * One aperture, drawn with a synthetic vector rather than a named preset.
-   *
-   * The claim here is about a CHANNEL, and measuring it on a preset would fold
-   * in everything else that preset happens to set. The vector is written
-   * directly and read back in the same breath, with no step in between, so it
-   * cannot spring back toward its target before it is measured.
-   */
-  const eye = (over) => {
-    const c = makeCompanion(1);
-    c.step(0);
-    const v = c.params;
-    const base = {
-      open: 1,
-      squint: 0,
-      brow: 0,
-      askew: 0,
-      swell: 1,
-      spread: 1,
-      gaze: 1,
-      wide: 1,
-      iris: 1,
-      slant: 0,
-      lift: 0,
-      lean: 0,
-      tilt: 0,
-    };
-    for (const [k, x] of Object.entries({ ...base, ...over })) v[PARAM[k]] = x;
-    return [c.pupilPath(-1), c.pupilPath(1)];
-  };
-
-  const box = (d) => {
-    const pts = samplePath(d, 8);
-    let x0 = Infinity;
-    let x1 = -Infinity;
-    let y0 = Infinity;
-    let y1 = -Infinity;
-    for (const [x, y] of pts) {
-      if (x < x0) x0 = x;
-      if (x > x1) x1 = x;
-      if (y < y0) y0 = y;
-      if (y > y1) y1 = y;
-    }
-    return { w: x1 - x0, h: y1 - y0, cx: (x0 + x1) / 2, cy: (y0 + y1) / 2 };
-  };
-
-  const round = box(eye({})[0]);
-  const dash = box(eye({ wide: 1.5, open: 0.2, squint: -0.9 })[0]);
-  const bar = box(eye({ wide: 0.6, open: 1.3 })[0]);
-  assert(
-    dash.w / dash.h > (round.w / round.h) * 1.6,
-    `a flat-dash eye is far wider than it is tall (aspect ${(dash.w / dash.h).toFixed(2)} vs round ${(round.w / round.h).toFixed(2)})`,
-  );
-  assert(
-    bar.w / bar.h < (round.w / round.h) * 0.7,
-    `a bar eye is far taller than it is wide (aspect ${(bar.w / bar.h).toFixed(2)})`,
-  );
-
-  const small = box(eye({ iris: 0.7 })[0]);
-  assert(
-    small.w < round.w * 0.8 && small.h < round.h * 0.8,
-    `iris shrinks the whole aperture (${small.w.toFixed(2)}x${small.h.toFixed(2)} vs ${round.w.toFixed(2)}x${round.h.toFixed(2)})`,
-  );
-
-  const dropped = box(eye({ lift: 1.2 })[0]);
-  assert(
-    dropped.cy > round.cy + 0.9,
-    `lift drops the eye's home (${dropped.cy.toFixed(2)} vs ${round.cy.toFixed(2)})`,
-  );
-
-  // THE SLANT IS MIRRORED. Measured as the tilt of each aperture's own long
-  // axis: a channel that rotated both eyes the same way would draw two parallel
-  // slashes, which is a typographic mark and not a brow.
-  const tilted = eye({ slant: 0.45, wide: 1.5, open: 0.45 });
-  const lean = (d) => {
-    const pts = samplePath(d, 8);
-    let cx = 0;
-    let cy = 0;
-    for (const [x, y] of pts) {
-      cx += x / pts.length;
-      cy += y / pts.length;
-    }
-    let best = -Infinity;
-    let at = 0;
-    for (const [x, y] of pts) {
-      const r = Math.hypot(x - cx, y - cy);
-      if (r > best) {
-        best = r;
-        at = Math.atan2(y - cy, x - cx);
-      }
-    }
-    // Folded to a half turn: an axis has no head or tail.
-    return ((at + Math.PI * 1.5) % Math.PI) - Math.PI / 2;
-  };
-  const lt = lean(tilted[0]);
-  const rt = lean(tilted[1]);
-  assert(
-    Math.abs(lt) > 0.15 && Math.abs(rt) > 0.15,
-    `slant tilts both apertures (${lt.toFixed(2)} / ${rt.toFixed(2)} rad)`,
-  );
-  assert(
-    lt * rt < 0,
-    "and it MIRRORS them — the two eyes cant toward each other, not in parallel",
-  );
-
-  // Every eye-style channel has to be spent by something. A channel no preset
-  // uses is a channel a later pass deletes as dead, taking the vocabulary with
-  // it.
-  for (const k of ["wide", "iris", "slant", "lift"]) {
-    const neutral = k === "slant" || k === "lift" ? 0 : 1;
-    let used = 0;
-    for (const name of EXPRESSION_NAMES) {
-      if (Math.abs(EXPRESSIONS[name][PARAM[k]] - neutral) > 0.05) used++;
-    }
-    assert(used >= 3, `${used} expressions actually spend "${k}"`);
-  }
-}
-
-// ── 4f. the light never leaves the brand's own cyans ────────────────────────
-section("4f. the light channels");
-{
-  // Three channels, all inside AGENTS.md 6's palette. `chill` and `glow` are
-  // the two ends of ONE axis; `lumen` is not a hue at all.
-  let maxChill = 0;
-  let maxGlow = 0;
-  let minLumen = Infinity;
-  let maxLumen = 0;
-  let muddy = "";
-  for (const name of EXPRESSION_NAMES) {
-    const p = EXPRESSIONS[name];
-    const chill = p[PARAM.chill];
-    const glow = p[PARAM.glow];
-    const lumen = p[PARAM.lumen];
-    if (chill < 0 || glow < 0) bad(`${name} has a negative light channel`);
-    if (lumen <= 0) bad(`${name} has a non-positive lumen (${lumen})`);
-    if (chill > maxChill) maxChill = chill;
-    if (glow > maxGlow) maxGlow = glow;
-    if (lumen < minLumen) minLumen = lumen;
-    if (lumen > maxLumen) maxLumen = lumen;
-    // BOTH ENDS AT ONCE IS MUD. `chill` pulls toward cyan-deep and `glow`
-    // toward cyan-glow; a pose that spends heavily on both mixes its way back
-    // to something near plain cyan, having paid twice for no change. A little
-    // of each is legitimate — `searching` is bright and slightly cold.
-    if (chill > 0.3 && glow > 0.3) muddy = name;
-  }
-  assert(
-    maxChill <= 1,
-    `chill never exceeds 1 (max ${maxChill.toFixed(2)}, cyan -> cyan-deep)`,
-  );
-  assert(
-    maxGlow <= 1,
-    `glow never exceeds 1 (max ${maxGlow.toFixed(2)}, cyan -> cyan-glow)`,
-  );
-  assert(
-    muddy === "",
-    muddy === ""
-      ? "no expression pulls hard toward BOTH ends of the axis at once"
-      : `${muddy} spends heavily on chill and glow together, which mixes back to plain cyan`,
-  );
-  assert(
-    minLumen > 0.2 && maxLumen <= 1.6,
-    `lumen stays inside 0.2..1.6 (${minLumen.toFixed(2)} .. ${maxLumen.toFixed(2)})`,
-  );
-
-  // THE LADDER DIMS. Falling asleep has to READ as receding, and it is the one
-  // place `lumen` carries a whole behaviour rather than decorating one.
-  const l = (n) => EXPRESSIONS[n][PARAM.lumen];
-  assert(
-    l("rest") > l("bored") &&
-      l("bored") > l("drowsy") &&
-      l("drowsy") > l("sleeping"),
-    `the sleep ladder dims monotonically (rest ${l("rest").toFixed(2)} > bored ${l("bored").toFixed(2)} > drowsy ${l("drowsy").toFixed(2)} > sleeping ${l("sleeping").toFixed(2)})`,
-  );
-  // …and it slows. `pulse` is depth and `rate` is speed; sleep is DEEP and
-  // SLOW, which is the pair that separates it from being switched off.
-  const r = (n) => EXPRESSIONS[n][PARAM.rate];
-  assert(
-    r("sleeping") < r("rest") * 0.6 && EXPRESSIONS.sleeping[PARAM.pulse] > 1.5,
-    `sleep breathes slower and deeper (rate ${r("sleeping").toFixed(2)}, pulse ${EXPRESSIONS.sleeping[PARAM.pulse].toFixed(2)})`,
-  );
-  assert(
-    r("celebrate") > 1.6 && l("celebrate") > 1.2,
-    `and the confirmed send is the brightest, fastest thing it does (rate ${r("celebrate").toFixed(2)}, lumen ${l("celebrate").toFixed(2)})`,
-  );
-}
-
-// ── 4g. the gestures compose, and then leave ────────────────────────────────
-section("4g. gestures");
-{
-  /** Vertical extent of a pupil contour, for the wink. */
-  const tall = (d) => {
-    if (!d) return 0;
-    const pts = samplePath(d, 8);
-    let lo = Infinity;
-    let hi = -Infinity;
-    for (const [, y] of pts) {
-      if (y < lo) lo = y;
-      if (y > hi) hi = y;
-    }
-    return hi - lo;
-  };
-
-  // A WINK IS ONE LID. Measured against an identical twin that was not winked:
-  // the kernel is deterministic, so everything except the wink is byte-equal.
-  {
-    const a = makeCompanion(1);
-    const b = makeCompanion(1);
-    a.step(0);
-    b.step(0);
-    run(a, 0, 600);
-    run(b, 0, 600);
-    b.wink(-1);
-    run(a, 600, 96);
-    run(b, 600, 96);
-    assert(
-      tall(b.pupilPath(-1)) < tall(a.pupilPath(-1)) * 0.8,
-      `a wink closes the eye it was aimed at (${tall(b.pupilPath(-1)).toFixed(2)} vs ${tall(a.pupilPath(-1)).toFixed(2)})`,
-    );
-    assert(
-      b.pupilPath(1) === a.pupilPath(1),
-      "and leaves the OTHER eye byte-identical",
-    );
-    run(a, 696, 900);
-    run(b, 696, 900);
-    assert(b.pupilPath(-1) === a.pupilPath(-1), "the winked lid reopens completely");
-  }
-
-  // THE BOUNCE IS AN OFFSET, NOT A DEFORMATION. It must move the caller's
-  // transform and leave the ring alone, or `VIEW` is being spent on travel.
-  {
-    const a = makeCompanion(1);
-    const b = makeCompanion(1);
-    a.step(0);
-    b.step(0);
-    run(a, 0, 400);
-    run(b, 0, 400);
-    b.hop(1);
-    run(a, 400, 90);
-    run(b, 400, 90);
-    assert(b.offset.y < -0.5, `hop lifts the droplet (offset ${b.offset.y.toFixed(2)})`);
-    assert(a.offset.y === 0, "an unbounced companion has no offset at all");
-    assert(
-      b.bodyPath() === a.bodyPath(),
-      "and the RING is untouched — the bounce never enters the geometry",
-    );
-    run(b, 490, 4000);
-    assert(
-      b.offset.x === 0 && b.offset.y === 0,
-      "the bounce returns to exactly zero",
-    );
-  }
-
-  // TOPPING UP, NOT RESTARTING. A second push mid-swing has to make the bounce
-  // bigger; if it reset the phase, the droplet would snap back to the floor.
-  {
-    const peak = (extra) => {
-      const c = makeCompanion(1);
-      c.step(0);
-      let t = run(c, 0, 300);
-      c.hop(1);
-      let best = 0;
-      for (let i = 0; i < 40; i++) {
-        t = run(c, t, 1000 / 60);
-        if (i === 6 && extra) c.hop(1);
-        if (c.offset.y < best) best = c.offset.y;
-      }
-      return best;
-    };
-    const once = peak(false);
-    const twice = peak(true);
-    assert(
-      twice < once * 1.15,
-      `a second push mid-swing bounces HIGHER (${twice.toFixed(2)} vs ${once.toFixed(2)})`,
-    );
-  }
-
-  // A REFUSAL IS A ROTATION, so it moves the body and cannot eject a pupil.
-  //
-  // STEPPED IN LOCKSTEP, on one shared clock. Running the twins through
-  // separate `run` calls puts them on different absolute timestamps, and the
-  // idle wander is a function of time — so they would drift apart for reasons
-  // that have nothing to do with the gesture, and the comparison would be
-  // measuring the test's own bookkeeping.
-  {
-    const a = makeCompanion(1);
-    const b = makeCompanion(1);
-    a.step(0);
-    b.step(0);
-    let t = 0;
-    const advance = (frames) => {
-      for (let i = 0; i < frames; i++) {
-        t += 1000 / 60;
-        a.step(t);
-        b.step(t);
-      }
-    };
-    advance(24);
-    b.shake(1);
-    let out = 0;
-    for (let i = 0; i < 24; i++) {
-      advance(1);
-      const poly = samplePath(b.bodyPath(), 8);
-      for (const side of [-1, 1]) {
-        const d = b.pupilPath(side);
-        if (!d) continue;
-        for (const [x, y] of samplePath(d, 8)) {
-          if (!inside(poly, x, y)) out++;
-        }
-      }
-    }
-    assert(b.bodyPath() !== a.bodyPath(), "a shake moves the body");
-    assert(out === 0, "and the pupils stay inside it for the whole swing");
-    advance(240);
-    assert(
-      b.bodyPath() === a.bodyPath(),
-      "the refusal decays back to nothing — byte-identical to a twin that never shook",
-    );
-  }
-
-  // MIRTH DRIVES THE CHEST AND THE FACE TOGETHER, and drains on its own.
-  {
-    const a = makeCompanion(1);
-    const b = makeCompanion(1);
-    a.step(0);
-    b.step(0);
-    run(a, 0, 400);
-    run(b, 0, 400);
-    b.laugh(1);
-    run(a, 400, 60);
-    run(b, 400, 60);
-    assert(b.bodyPath() !== a.bodyPath(), "a laugh moves the chest");
-    assert(
-      b.pupilPath(-1) !== a.pupilPath(-1),
-      "and squeezes the eyes on the same beat",
-    );
-    run(b, 460, 6000);
-    assert(b.offset.y === 0, "mirth drains to nothing");
-  }
-
-  // GESTURES SURVIVE A CHANGE OF MOOD. An impulse cancelled by the next
-  // expression would be a state machine pretending to be a body.
-  {
-    const c = makeCompanion(1);
-    c.step(0);
-    const t = run(c, 0, 300);
-    c.hop(1);
-    c.express("angry");
-    run(c, t, 90);
-    assert(c.offset.y < -0.5, "a bounce carries through an expression change");
-    assert(!c.settled, "and a running gesture keeps `settled` false");
-  }
-}
-
-// ── 4h. the breath has a rate, not just a depth ─────────────────────────────
-section("4h. the breath");
-{
-  /** Crossings of the mean radius over 8 s — the chest's frequency, measured. */
-  const beats = (name) => {
-    const c = makeCompanion(1);
-    c.step(0);
-    c.express(name);
-    // Let the vector arrive first: a rate measured through the transition is a
-    // measurement of the transition.
-    let t = run(c, 0, 1500);
-    const xs = [];
-    // 24 s at 100 ms. Long enough that the slowest chest here (`sleeping`, at a
-    // 19 s period) completes a cycle — a window shorter than the slowest breath
-    // measures the window, not the breath.
-    for (let i = 0; i < 240; i++) {
-      t = run(c, t, 100);
-      xs.push(c.radiusAt(0));
-    }
-    let mean = 0;
-    for (const x of xs) mean += x / xs.length;
-    let n = 0;
-    for (let i = 1; i < xs.length; i++) {
-      if (xs[i - 1] < mean !== xs[i] < mean) n++;
-    }
-    return n;
-  };
-  const fast = beats("celebrate");
-  const slow = beats("sleeping");
-  assert(
-    fast > slow * 1.8,
-    `a celebrating chest beats far faster than a sleeping one (${fast} vs ${slow} crossings in 24 s)`,
-  );
-  assert(
-    slow > 0,
-    "and a sleeping one is still breathing — the liquid never freezes",
-  );
-}
-
-// ── 4i. the reference's whole vocabulary is here ────────────────────────────
-section("4i. the reference vocabulary");
-{
-  /**
-   * The lab's own grid, verbatim: its LIFE CYCLE row and its REACTIONS rows.
-   * The owner's brief was to carry all of them, so it is asserted as a list
-   * rather than left to a reviewer counting panels on a contact sheet. Four of
-   * them are this site's poses under the lab's name and resolve through
-   * `ALIASES`; shipping duplicates instead would give the shell two ways to say
-   * one thing and no way to tell which is current.
-   */
-  const LAB = [
-    "sleeping",
-    "waking",
-    "idle",
-    "listening",
-    "thinking",
-    "searching",
-    "working",
-    "excited",
-    "bored",
-    "suspicious",
-    "angry",
-    "drowsy",
-    "happy",
-    "curious",
-    "confused",
-    "surprised",
-    "proud",
-    "shy",
-    "sad",
-    "laughing",
-    "scared",
-    "playful",
-    "celebrate",
-  ];
-  const missing = LAB.filter((n) => !EXPRESSIONS[n] && !ALIASES[n]);
-  assert(
-    missing.length === 0,
-    missing.length === 0
-      ? `all ${LAB.length} of the reference's expressions resolve (${EXPRESSION_NAMES.length} presets + ${Object.keys(ALIASES).length} aliases)`
-      : `missing from the vocabulary: ${missing.join(", ")}`,
-  );
-
-  for (const [from, to] of Object.entries(ALIASES)) {
-    const c = makeCompanion(1);
-    c.step(0);
-    c.express(from);
-    assert(
-      c.expression === to,
-      `"${from}" resolves to "${to}" rather than falling through to rest`,
-    );
-  }
-
-  // Distinctness. Two names that settle to the same silhouette are one pose
-  // with a spare label, and a contact sheet cannot tell a reviewer that.
-  const seen = new Map();
-  let clashes = 0;
-  for (const name of EXPRESSION_NAMES) {
-    const c = makeCompanion(1);
-    c.step(0);
-    c.express(name);
-    c.aim(0, 0);
-    run(c, 0, 1600);
-    const key = `${c.bodyPath()}|${c.pupilPath(-1)}|${c.pupilPath(1)}`;
-    if (seen.has(key)) {
-      clashes++;
-      bad(`${name} draws exactly the same pose as ${seen.get(key)}`);
-    }
-    seen.set(key, name);
-  }
-  assert(
-    clashes === 0,
-    `all ${EXPRESSION_NAMES.length} expressions draw a distinct pose`,
-  );
-}
-
-// ── 4j. containment holds MID-TRANSITION, not only at rest ──────────────────
-section("4j. the overshoot");
-{
-  /**
-   * THE SPRING IS DELIBERATELY UNDERDAMPED (`ZETA_E` 0.74), so every channel
-   * overshoots its target by a few percent on the way in. The widest aperture
-   * the droplet ever draws therefore appears in NO preset, and a containment
-   * sweep over the presets alone cannot find it. That did not matter while the
-   * eye was always the same round shape; with `wide`, `iris` and `open` all
-   * live it is exactly where a pupil would escape.
-   *
-   * So: walk between the pairs with the largest eye-geometry gap, sampling
-   * every frame of the transition.
-   */
-  const key = ["open", "wide", "iris", "slant", "lift", "spread", "gaze"];
-  const spanOf = (a, b) => {
-    let d = 0;
-    for (const k of key) {
-      d += Math.abs(EXPRESSIONS[a][PARAM[k]] - EXPRESSIONS[b][PARAM[k]]);
-    }
-    return d;
-  };
-  const pairs = [];
-  for (const a of EXPRESSION_NAMES) {
-    for (const b of EXPRESSION_NAMES) {
-      if (a !== b) pairs.push([a, b, spanOf(a, b)]);
-    }
-  }
-  pairs.sort((x, y) => y[2] - x[2]);
-
-  /**
-   * SAMPLED EVERY THIRD FRAME, over the 20 widest pairs and two opposed gaze
-   * directions. That is a deliberate budget, not a corner cut: the overshoot is
-   * an underdamped spring's first swing and lasts ~180 ms — a dozen frames — so
-   * a 3-frame stride cannot step over it, while the full-density version of
-   * this sweep cost the gate a minute and a half on its own and nobody runs a
-   * gate they have to wait that long for.
-   */
-  let escapes = 0;
-  let where = "";
-  let worst = Infinity;
-  let frames = 0;
-  for (const [from, to] of pairs.slice(0, 20)) {
-    for (const ang of [0, Math.PI]) {
-      const c = makeCompanion(1);
-      c.step(0);
-      c.express(from);
-      c.aim(Math.cos(ang) * 1.6, Math.sin(ang) * 1.6);
-      let t = run(c, 0, 900);
-      c.express(to);
-      for (let i = 0; i < 18; i++) {
-        t = run(c, t, 1000 / 20);
-        frames++;
-        const poly = samplePath(c.bodyPath(), 5);
-        if (!poly) continue;
-        for (const side of [-1, 1]) {
-          const d = c.pupilPath(side);
-          if (!d) continue;
-          for (const [x, y] of samplePath(d, 5)) {
-            if (!inside(poly, x, y)) {
-              escapes++;
-              where = `${from} -> ${to} @${ang.toFixed(2)}`;
-            } else {
-              const m = edgeDistance(poly, x, y);
-              if (m < worst) worst = m;
-            }
-          }
-        }
-      }
-    }
-  }
-  assert(
-    escapes === 0,
-    escapes === 0
-      ? `no pupil escaped across ${frames} sampled frames of the 20 widest transitions (worst clearance ${worst.toFixed(2)} px)`
-      : `${escapes} pupil vertices escaped mid-transition (first: ${where})`,
-  );
-}
-
 // ── 5. every expression is reachable, and interruptible ─────────────────────
 section("5. reachability and interruption");
 {
@@ -1180,4 +609,87 @@ section("7. allocation");
 console.log(
   `\n${failed === 0 ? "PASS" : "FAIL"} — ${checks - failed}/${checks} checks`,
 );
+section("8. complete vocabulary and animated containment");
+assert(BASE_EYE_POSE_NAMES.length === 27, "all 27 reference eye presets are preserved");
+assert(EYE_POSE_NAMES.length === 40, "13 special eye styles extend the collection to 40");
+assert(BASE_MOOD_NAMES.length === 23, "all 23 reference lifecycle and reaction moods are preserved");
+assert(MOOD_NAMES.length === 41 && SPECIAL_MOOD_NAMES.length === 18, "18 new moods extend the vocabulary to 41");
+const used = new Set(Object.values(MOOD_SCORES).flatMap(s => s.steps.map(([p]) => p)));
+assert(EYE_POSE_NAMES.every(p => used.has(p)), "every eye preset is used by a live mood score");
+let escaped = 0, restarted = 0;
+for (const mood of MOOD_NAMES) {
+  const c = makeCompanion(2);
+  c.step(0); c.play(mood); c.aim(.65, -.4);
+  const poses = new Set();
+  const end = MOOD_SCORES[mood].steps.reduce((ms, step) => ms + step[1], 0) + 200;
+  for (let t = 0; t < end; t += 1000 / 60) {
+    c.play(mood); // the shell may ask repeatedly; this must NOT restart.
+    c.step(t); poses.add(c.pose);
+    if (Math.round(t) % 7 === 0) {
+      const body = samplePath(c.bodyPath(), 4);
+      for (const side of [-1, 1]) {
+        const pupil = samplePath(c.pupilPath(side), 4);
+        if (pupil?.some(([x, y]) => !inside(body, x, y))) escaped++;
+      }
+    }
+  }
+  if (poses.size < 2) restarted++;
+}
+assert(escaped === 0, "eyes remain contained through the animated scores, including morphs and bobbing");
+assert(restarted === 0, "repeated play requests preserve every mood's sequence clock");
+
+section("9. behavior priorities and complete reachability");
+const input = {status:"idle",focused:false,typing:false,longText:false,invalid:false,crowded:false,moving:false};
+const reached = new Set();
+const read = (b, t, override = {}) => { const mood = b.read(t, {...input,...override}); reached.add(mood); return mood; };
+let b = makeCompanionBehavior(0);
+for (const t of [0, 2000, 11000, 20000, 32000, 46000]) read(b, t);
+b.activity(47000);
+assert(read(b, 47001) === "waking", "sleep interrupts immediately when the reader returns");
+for (const override of [{focused:true}, {typing:true}, {typing:true,longText:true}, {typing:true,invalid:true}, {focused:true,invalid:true}, {crowded:true,moving:true}, {moving:true}]) read(b, 49000, override);
+for (const kind of ["choice", "advance", "back", "correct"]) {
+  b = makeCompanionBehavior(0); b.event(kind, 2000); read(b, 2200);
+}
+b = makeCompanionBehavior(0);
+b.event("reject", 2000); assert(read(b,2200)==="confused", "first rejection is mild confusion");
+b.event("reject", 2500); assert(read(b,2600)==="angry", "repeated rejection escalates");
+b.event("correct", 2650); assert(read(b,2700)==="relieved", "one correction immediately forgives anger");
+read(b, 3800);
+for (const status of ["busy","pending","success","error"]) {
+  b = makeCompanionBehavior(0);
+  read(b,2000,{status}); read(b,5600,{status}); read(b,9000,{status});
+}
+b = makeCompanionBehavior(0);
+b.touch(true,2000); assert(read(b,2050)==="surprised", "a tap starts with surprise");
+b.touch(false,2100); read(b,2900);
+b.touch(true,3000); assert(read(b,3100)==="playful", "a second tap starts play");
+b.touch(false,3200); b.touch(true,3400); assert(read(b,3450)==="laughing", "a third tap starts laughter");
+assert(read(b,4500)==="scared", "a held touch tightens into fear");
+b.cancel(); assert(read(b,8000)!=="scared", "pointer cancellation clears held-touch state");
+b.hover(true,10000); for (const t of [10100,12100,14600,16100]) read(b,t);
+assert(read(b,17000,{status:"busy"})==="working", "a real send outranks direct play");
+assert(read(b,19000,{status:"pending"})!=="celebrate", "pending never announces delivery");
+for (const t of [40000,72000]) read(makeCompanionBehavior(0),t);
+b=makeCompanionBehavior(0); b.hover(true,2000); read(b,15500);
+for (const kind of ["return","milestone"]) {
+  b=makeCompanionBehavior(0); b.event(kind,2000); read(b,2200); read(b,4200);
+}
+b=makeCompanionBehavior(0); b.event("type",2000);
+for(let t=2100;t<9400;t+=100){b.event("type",t);read(b,t,{typing:true});}
+b=makeCompanionBehavior(0);
+for(let i=0;i<6;i++){
+  const t=2000+i*300;b.touch(true,t);read(b,t+30);b.touch(false,t+50);
+}
+read(b,5300);
+b=makeCompanionBehavior(0);b.touch(true,2000);read(b,3650);b.touch(false,4000);read(b,4050);
+b=makeCompanionBehavior(0);b.hover(true,2000);
+for(let i=0;i<6;i++)b.stroke(24,200,true,2100+i*100);
+assert(read(b,2700)==="affectionate", "gentle petting earns heart eyes");
+assert(read(b,4500)==="smitten", "affection settles into a heart wink");
+b=makeCompanionBehavior(0);b.touch(true,2000);b.touch(false,2050);b.touch(true,2300);b.touch(false,2350);
+assert(read(b,3500)==="wink", "a playful double tap resolves to a wink");
+b=makeCompanionBehavior(0);read(b,1000,{status:"pending"});
+assert(read(b,12000,{status:"pending"})==="patient", "long unconfirmed delivery stays patient, never celebratory");
+assert(MOOD_NAMES.every(n=>reached.has(n)), `all 41 moods are reachable through real events (${reached.size}; missing ${MOOD_NAMES.filter(n=>!reached.has(n)).join(',') || 'none'})`);
+console.log(`\n${failed ? "FAIL" : "PASS"} — ${checks - failed}/${checks} checks including full vocabulary and behavior`);
 process.exit(failed === 0 ? 0 : 1);

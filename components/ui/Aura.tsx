@@ -1,6 +1,9 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useReducer, useRef } from "react";
+// Aura sits outside the locale provider; this is only a route-change key,
+// never a link or a locale-aware navigation destination.
+import { usePathname } from "next/navigation";
 import { clamp01, smooth01 } from "@/lib/webgl/phys.mjs";
 import { startAura } from "@/lib/webgl/aura-gl";
 import { detectFieldTier } from "@/lib/webgl/field-tier";
@@ -54,6 +57,22 @@ import { prefersReducedMotion } from "@/lib/animation/reduced-motion";
 export function Aura() {
   const ref = useRef<HTMLDivElement>(null);
   const vapour = useRef<HTMLCanvasElement>(null);
+  const pathname = usePathname();
+  const [epoch, rebuild] = useReducer((n: number) => n + 1, 0);
+
+  // The locale layout persists across navigation. Rebuild GPU resources on
+  // restoration, and honor OS motion changes during an already-open visit.
+  useEffect(() => {
+    const canvas = vapour.current;
+    const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const restart = () => rebuild();
+    canvas?.addEventListener("webglcontextrestored", restart);
+    motion.addEventListener("change", restart);
+    return () => {
+      canvas?.removeEventListener("webglcontextrestored", restart);
+      motion.removeEventListener("change", restart);
+    };
+  }, []);
 
   // ── the vapour ──────────────────────────────────────────────────────────────
   // `data-gl` is set only once a context compiled, linked and produced a
@@ -84,12 +103,15 @@ export function Aura() {
       delete aura.dataset.gl;
       if (w.__aura === handle.stats) delete w.__aura;
     };
-  }, []);
+  }, [epoch]);
 
   // ── the hero gate ───────────────────────────────────────────────────────────
   useEffect(() => {
     const aura = ref.current;
     const hero = document.getElementById("hero");
+    // A client navigation replaces the hero without remounting this layout.
+    // Drop the previous route's override before attaching to the new node.
+    aura?.style.removeProperty("--aura-hero");
     // No hero on this route: the CSS default already leaves the gate open.
     if (!aura || !hero) return;
 
@@ -135,7 +157,7 @@ export function Aura() {
       if (raf) cancelAnimationFrame(raf);
       aura.style.removeProperty("--aura-hero");
     };
-  }, []);
+  }, [pathname]);
 
   return (
     <div className="aura" aria-hidden="true" ref={ref}>

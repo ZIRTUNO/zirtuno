@@ -1,9 +1,4 @@
-import {
-  bricolage,
-  geist,
-  instrument,
-  jetbrains,
-} from "@/lib/typography/fonts";
+import { bricolage, nunito } from "@/lib/typography/fonts";
 import ptMessages from "@/lib/i18n/messages/pt.json";
 
 const copy = ptMessages.notFound;
@@ -15,7 +10,7 @@ export default function RootNotFound() {
   return (
     <html
       lang="pt-BR"
-      className={`${geist.variable} ${bricolage.variable} ${instrument.variable} ${jetbrains.variable}`}
+      className={`${nunito.variable} ${bricolage.variable}`}
     >
       <body>
         <main

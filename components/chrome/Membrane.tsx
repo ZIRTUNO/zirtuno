@@ -25,9 +25,8 @@ import {
  * always rendered as a direct child.
  */
 
-// Room for the deformation to leave the border box: MAX_N (9) + the focus
-// contour's offset + a stroke. The SVG is inset by this on every side.
-const PAD = 18;
+// The SVG uses the host's coordinate system. Its overflow and the holder's
+// 18px clip margin leave room for MAX_N (9), the focus offset, and a stroke.
 const FOCUS_OFFSET = 4.5;
 
 // The commit flood, fired by a press. One envelope: rise, hold, drain.
@@ -80,7 +79,7 @@ export function Membrane({ filled = false }: MembraneProps) {
     const mem = makeMembrane(w, h);
 
     const setBox = () => {
-      svg.setAttribute("viewBox", `${-PAD} ${-PAD} ${w + PAD * 2} ${h + PAD * 2}`);
+      svg.setAttribute("viewBox", `0 0 ${w} ${h}`);
     };
     setBox();
 

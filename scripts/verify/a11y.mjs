@@ -569,23 +569,36 @@ for (const locale of ["pt", "en"]) {
   await page.goto(`${BASE}/${locale}/contact?intent=structure`, {
     waitUntil: "domcontentloaded",
   });
-  await page.waitForSelector("form.contact-form", { timeout: 30000 });
+  await page.waitForSelector(".contact-card", { timeout: 30000 });
 
   const form = await page.evaluate(() => {
-    const el = document.querySelector("form.contact-form");
+    // THE ONE PANEL ON STAGE. The card holds a form per track and hides the
+    // rest with `visibility`, which is what takes them out of the tab order and
+    // out of the accessibility tree — so "the form" here means the one a
+    // visitor can actually reach, and the count below proves the others are
+    // genuinely gone rather than merely moved off screen.
+    const slots = [...document.querySelectorAll(".contact-slot")];
+    const onStage = slots.filter((slot) =>
+      slot.checkVisibility({ visibilityProperty: true }),
+    );
+    const el = onStage[0].querySelector("form.contact-form");
     const controls = [
-      ...el.querySelectorAll(".field input, .field textarea"),
+      ...el.querySelectorAll(".field input, .field textarea, .field select"),
     ];
     const named = controls.filter((control) => {
       const label = el.querySelector(`label[for="${control.id}"]`);
       return !!control.id && !!label && label.textContent.trim().length > 0;
     });
     const submit = el.querySelector('button[type="submit"]');
-    const radios = [...el.querySelectorAll('input[type="radio"][name="intent"]')];
-    const legend = el.querySelector("fieldset.contact-choice > legend");
+    const radios = [
+      ...document.querySelectorAll('.contact-tabbar input[type="radio"]'),
+    ];
+    const legend = document.querySelector("fieldset.contact-tabbar > legend");
     return {
       action: el.getAttribute("action") || "",
       method: (el.getAttribute("method") || "").toLowerCase(),
+      panelsOnStage: onStage.length,
+      panelsTotal: slots.length,
       controls: controls.length,
       named: named.length,
       submitLabel: submit?.textContent?.trim() ?? "",
@@ -600,7 +613,15 @@ for (const locale of ["pt", "en"]) {
   });
 
   check(
-    form.controls === 4 && form.named === 4,
+    form.panelsTotal === 3 && form.panelsOnStage === 1,
+    "exactly one of the card's tracks is exposed at a time",
+    JSON.stringify({
+      total: form.panelsTotal,
+      onStage: form.panelsOnStage,
+    }),
+  );
+  check(
+    form.controls > 0 && form.controls === form.named,
     "every contact control has a real, non-empty label",
     JSON.stringify({ controls: form.controls, named: form.named }),
   );
@@ -620,17 +641,18 @@ for (const locale of ["pt", "en"]) {
     String(form.honeypotTabIndex),
   );
   check(
-    form.radios >= 4 && form.legend.length > 0,
-    "the intent chooser is a labelled group of radios",
+    form.radios >= 3 && form.legend.length > 0,
+    "the track switch is a labelled group of radios",
     JSON.stringify({ radios: form.radios, legend: form.legend }),
   );
   // The handshake, end to end: nine CTAs across the site spend an `?intent=`
   // tag and this is the only place it is ever spent. A tag that arrives and
   // is silently ignored is worse than no tag, because the analytics still
-  // report it as a segmented lead.
+  // report it as a segmented lead. `structure` is a commissioned project, so
+  // the card must open on the track that asks about one.
   check(
-    form.checked === "structure",
-    "an arriving ?intent= tag pre-selects its chip",
+    form.checked === "project",
+    "an arriving ?intent= tag opens its track",
     String(form.checked),
   );
   await ctx.close();

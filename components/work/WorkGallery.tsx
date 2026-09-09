@@ -30,8 +30,8 @@ import { localize, type Project } from "@/lib/sanity/types";
  *
  * Three details are what separate this from a resize:
  *
- *  1. The source card is RE-MEASURED every frame (transform cleared, reflow
- *     forced, rect read, transform restored). The morph therefore tracks a card
+ *  1. The source card is re-measured before each frame's writes. Only its photo
+ *     transforms; the card itself needs no style reset or forced reflow. This tracks a card
  *     that is still moving — mid-hover, mid-scroll-settle, mid-resize — instead
  *     of flying to a rect that was true only on mousedown.
  *  2. The body is laid out ONCE at the panel's final size and then scaled down
@@ -106,15 +106,9 @@ const lerpBox = (a: Box, b: Box, t: number): Box => ({
   h: lerp(a.h, b.h, t),
 });
 
-/** Rect of an element with its own transform momentarily removed. */
+/** The card never transforms; its photo and reveal ancestor own that motion. */
 function restingRect(el: HTMLElement): Box {
-  const { transform, transition } = el.style;
-  el.style.transition = "none";
-  el.style.transform = "none";
-  void el.offsetWidth;
   const r = el.getBoundingClientRect();
-  el.style.transform = transform;
-  el.style.transition = transition;
   return { x: r.x, y: r.y, w: r.width, h: r.height };
 }
 
@@ -148,18 +142,25 @@ function measureLayout(textEl: HTMLElement | null): Layout {
     const padX = Math.round(vw * 0.052);
     const media = Math.min(vw * 0.92 - padX * 2, vh * 0.44);
     const w = media + padX * 2;
-    let h = vh * 0.9;
+    // The close control sits BELOW the panel. Reserve its full hit target and
+    // a bottom gutter before sizing the scrollable copy, including small phones.
+    const maxH = vh - CHIP_INSET - CHIP - 32;
+    let h = Math.min(vh * 0.9, maxH);
     if (textEl) {
       textEl.style.left = `${padX}px`;
       textEl.style.top = `${padX + media + padX}px`;
       textEl.style.width = `${w - padX * 2}px`;
       textEl.style.height = "auto";
-      h = Math.min(vh * 0.92, padX + media + padX + textEl.scrollHeight + padX);
+      h = Math.min(maxH, padX + media + padX + textEl.scrollHeight + padX);
       textEl.style.height = `${h - padX - media - padX - padX}px`;
     }
     return {
       mobile,
-      box: { x: (vw - w) / 2, y: (vh - h) / 2, w, h },
+      box: {
+        x: (vw - w) / 2,
+        y: Math.min((vh - h) / 2, vh - h - CHIP_INSET - CHIP - 16),
+        w, h,
+      },
       padX,
       padTop: padX,
       gap: padX,
@@ -576,7 +577,7 @@ export function WorkGallery({
             onClick={(event) => event.stopPropagation()}
           >
             <div ref={bodyRef} className="zw-body">
-              <div ref={textRef} className="zw-copy">
+              <div ref={textRef} className="zw-copy" data-lenis-prevent>
                 <p className="zw-copy-cats">
                   {active.category.map((c) => t(`categories.${c}`)).join(" · ")}
                 </p>

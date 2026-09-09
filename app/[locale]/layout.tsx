@@ -8,12 +8,7 @@ import {
   getMessages,
 } from "next-intl/server";
 import { routing } from "@/lib/i18n/config";
-import {
-  bricolage,
-  geist,
-  instrument,
-  jetbrains,
-} from "@/lib/typography/fonts";
+import { bricolage, nunito } from "@/lib/typography/fonts";
 import CustomCursor from "@/components/chrome/CustomCursor";
 import LenisProvider from "@/components/motion/LenisProvider";
 import { Aura } from "@/components/ui/Aura";
@@ -121,7 +116,7 @@ export default async function LocaleLayout({
   return (
     <html
       lang={locale === "pt" ? "pt-BR" : "en"}
-      className={`${geist.variable} ${bricolage.variable} ${instrument.variable} ${jetbrains.variable}`}
+      className={`${nunito.variable} ${bricolage.variable}`}
       data-scroll-behavior="smooth"
       suppressHydrationWarning
     >

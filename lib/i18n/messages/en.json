@@ -424,61 +424,139 @@
   },
   "contact": {
     "chapterLabel": "Contact",
-    "prompt": "Shall we structure your digital?",
-    "subPrompt": "Tell us where you are today. We'll send back a first read.",
-    "fields": {
-      "name": "Name",
-      "namePlaceholder": "Your name",
-      "email": "Email",
-      "emailPlaceholder": "you@company.com",
-      "company": "Company (optional)",
-      "companyPlaceholder": "Company name",
-      "message": "Message",
-      "messagePlaceholder": "Where you are today and what you want to achieve.",
-      "websiteTrap": "Leave this field empty"
-    },
-    "submit": "Send message",
-    "sending": "Sending…",
-    "receivedPending": "Request received",
-    "successTitle": "Received.",
-    "successBody": "We'll send back a first read of your structure soon.",
-    "pendingBody": "The provider accepted the request; delivery is being monitored. Your entries were kept, and there is no need to resend.",
-    "errorBody": "We could not confirm delivery. Your entries were kept; please try again in a moment.",
-    "rateLimitBody": "Too many attempts were made in a short time. Your entries were kept; wait a few minutes before trying again.",
-    "validation": {
-      "name": "Tell us what to call you.",
-      "email": "Enter a valid email.",
-      "message": "Tell us a little about what you need."
-    },
-    "errorSummaryTitle": "Fix {count, plural, =1 {1 field} other {# fields}} before sending.",
-    "secondaryLead": "Or reach us directly:",
-    "whatsapp": "WhatsApp",
-    "email": "Email",
-    "instagram": "Instagram",
-    "intentLabel": "Interest",
-    "intents": {
-      "analysis": "Initial analysis",
-      "structure": "Structure the digital",
-      "talk": "Talk to Zirtuno",
-      "careers": "Work with us",
-      "general": "Something else"
-    },
     "metaTitle": "Contact",
-    "metaDescription": "Tell us where your operation stands today. We send back a first reading of your digital structure.",
-    "title": "Have something worth structuring? Let's build it properly.",
-    "lead": "Tell us where you are today. We send back a first reading: what already works, what is scattered, and where to start.",
-    "intentHeading": "What brings you here?",
-    "intentHint": "Pick the closest. It shapes the reading we send back.",
-    "formHeading": "About you",
-    "privacyNote": "By sending, you agree to your details being used to answer this enquiry.",
-    "privacyLink": "Privacy Policy",
-    "channelsHeading": "Or reach us directly",
-    "channelsHint": "Prefer another channel? They all land on the same desk.",
-    "emailLabel": "Email",
+    "metaDescription": "Tell us where your operation stands today. We come back with a first reading of your digital structure.",
+    "title": "Let’s give the next step a shape.",
+    "lead": "A new idea. A scattered operation. A more ambitious next chapter. Tell us where you are; we will find where to begin.",
+    "talkLabel": "Prefer to talk?",
+    "clientsNote": "Software, AI, automation, data, brand and marketing — connected into one structure.",
     "responseLabel": "Response",
     "responseValue": "Within 1 business day",
     "locationLabel": "Based in",
     "locationValue": "Curitiba, Brazil",
+    "channelsHeading": "Or reach us directly",
+    "channelsHint": "Prefer another channel? They all land on the same desk.",
+    "emailLabel": "Email",
+    "tabsLabel": "Type of enquiry",
+    "tracks": {
+      "project": "Projects",
+      "advisory": "Advisory",
+      "other": "Other",
+      "careers": "Careers"
+    },
+    "optional": "(optional)",
+    "selectPlaceholder": "Select…",
+    "fields": {
+      "firstName": "First name",
+      "firstNamePlaceholder": "Ana",
+      "lastName": "Last name",
+      "lastNamePlaceholder": "Ribeiro",
+      "email": "Email",
+      "emailPlaceholder": "ana@company.com",
+      "company": "Company",
+      "companyPlaceholder": "Company name",
+      "message": "Message",
+      "messagePlaceholder": "We are working on…",
+      "websiteTrap": "Leave this field empty"
+    },
+    "messageLabels": {
+      "project": "Project overview",
+      "advisory": "What are you trying to resolve?",
+      "other": "Message",
+      "careers": "Why Zirtuno?"
+    },
+    "messagePlaceholders": {
+      "project": "What exists today, what is scattered, and where you want to get to.",
+      "advisory": "The point where the decision is stuck.",
+      "other": "Tell us what you have in mind.",
+      "careers": "What you do, and what you want to build with us."
+    },
+    "details": {
+      "focus": {
+        "label": "Focus",
+        "options": {
+          "analysis": "A first reading",
+          "structure": "Structure what already exists",
+          "product": "Build a product",
+          "brand": "Brand and digital presence"
+        }
+      },
+      "scale": {
+        "label": "Stage",
+        "options": {
+          "starting": "Starting from zero",
+          "growing": "Growing fast",
+          "operating": "Established operation"
+        }
+      },
+      "budget": {
+        "label": "Expected investment",
+        "options": {
+          "exploring": "Still exploring",
+          "upTo50": "Up to R$ 50k",
+          "upTo150": "R$ 50–150k",
+          "over150": "Above R$ 150k"
+        }
+      },
+      "horizon": {
+        "label": "Timeline",
+        "options": {
+          "now": "Right away",
+          "quarter": "Next three months",
+          "planning": "Still planning"
+        }
+      },
+      "role": {
+        "label": "Your role",
+        "placeholder": "Head of Operations"
+      },
+      "org": {
+        "label": "Organisation type",
+        "options": {
+          "startup": "Startup",
+          "scaleup": "Scale-up",
+          "established": "Established company",
+          "public": "Public or non-profit sector"
+        }
+      },
+      "format": {
+        "label": "Format",
+        "options": {
+          "diagnostic": "One-off diagnostic",
+          "ongoing": "Ongoing advisory",
+          "workshop": "Workshop with the team"
+        }
+      },
+      "link": {
+        "label": "Portfolio or LinkedIn",
+        "placeholder": "https://"
+      }
+    },
+    "submit": "Send",
+    "sending": "Sending…",
+    "receivedPending": "Request received",
+    "privacyNote": "By sending, you agree to your data being used to answer this enquiry.",
+    "privacyLink": "Privacy Policy",
+    "successTitle": "A beginning, made.",
+    "successBody": "Your message arrived. We will come back with a first reading of the next steps.",
+    "successReturn": "Back to the start",
+    "receipt": "Message delivered",
+    "receiptNext": "We will reply to the email you gave us. Until then, your next step already has a starting point.",
+    "pendingBody": "Your request was accepted and delivery is being confirmed. Your message is preserved here. There is no need to resend.",
+    "errorBody": "We could not confirm the send. Your entries were kept; try again in a moment.",
+    "errorBodyLost": "We could not confirm the send. Fill it in again or use one of the direct channels.",
+    "rateLimitBody": "Too many attempts in a short time. Your entries were kept; wait a few minutes before trying again.",
+    "rateLimitBodyLost": "Too many attempts in a short time. Wait a few minutes and send again.",
+    "sendingDetail": "Sending your message. Keep this page open.",
+    "validation": {
+      "firstName": "Tell us what to call you.",
+      "lastName": "Add your last name.",
+      "name": "Tell us what to call you.",
+      "email": "Enter a valid email address.",
+      "message": "Tell us a little about what you need.",
+      "company": "Use up to 160 characters for the company name."
+    },
+    "errorSummaryTitle": "Fix {count, plural, =1 {1 field} other {# fields}} before sending.",
     "nextHeading": "What happens next",
     "nextSteps": [
       {
@@ -496,10 +574,7 @@
         "heading": "Path",
         "body": "You get a cut of what to do first — with or without Zirtuno."
       }
-    ],
-    "successReturn": "Back to the start",
-    "errorBodyLost": "We could not confirm the send. Please fill the form again, or use one of the direct channels.",
-    "rateLimitBodyLost": "Too many attempts in a short time. Wait a few minutes and send again."
+    ]
   },
   "footer": {
     "copyright": "© 2026 Zirtuno. All rights reserved.",

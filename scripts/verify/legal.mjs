@@ -12,8 +12,11 @@
 //
 // WHAT IS NOT       colour, type face and weight. The reference is near-black
 //                   on a white-to-peach wash in a rounded face with a sage
-//                   eyebrow; Zirtuno is paper on ink, Bricolage over Geist,
-//                   cyan accent. Those are identity and are meant to differ.
+//                   eyebrow; Zirtuno is paper on ink, Bricolage over the
+//                   rounded stack, cyan accent. Colour and weight are identity
+//                   and are meant to differ. The FACE no longer does: R8 moved
+//                   the text role onto a rounded stack of its own, so a face
+//                   line that now matches the reference is expected, not drift.
 //                   They are printed as INFO so a change is still visible here.
 //
 // The reference's own numbers are BAKED IN, measured 2026-09-05, so the gate
@@ -145,7 +148,11 @@ const GEOMETRY = (sel) => {
       secs[0].querySelector("p").getBoundingClientRect().top -
         secs[0].querySelector("h2").getBoundingClientRect().bottom,
     ),
-    charsPerLine: Math.round(parseFloat(doc.width) / (parseFloat(body.fontSize) * 0.5)),
+    // 0.432 is the MEASURED average glyph advance of the R8 rounded fallback
+    // (Nunito) at body size; it was 0.5 when the text face was Geist, whose
+    // average was 0.497em. Approximate by nature: on macOS and iOS the stack
+    // resolves to SF Rounded instead, whose average differs slightly.
+    charsPerLine: Math.round(parseFloat(doc.width) / (parseFloat(body.fontSize) * 0.432)),
     // Identity, reported not asserted.
     face: title.fontFamily.split(",")[0].replace(/["']/g, ""),
     weight: title.fontWeight,

@@ -4,7 +4,7 @@ import { Footer } from "@/components/chrome/Footer";
 import { ContactForm } from "@/components/contact/ContactForm";
 import { ContactChannels } from "@/components/contact/ContactChannels";
 import { Companion } from "@/components/contact/Companion";
-import { resolveContactIntent } from "@/lib/forms/contact";
+import { resolveContactIntent, trackForIntent } from "@/lib/forms/contact";
 import { routing } from "@/lib/i18n/config";
 import { ogImage } from "@/lib/seo/og-image";
 import "@/app/contact.css";
@@ -42,6 +42,9 @@ export async function generateMetadata({
 }
 
 type NextStep = { step: string; heading: string; body: string };
+
+/** Owner-published or absent, the same gate `ContactChannels` keeps. */
+const TALK_URL = process.env.NEXT_PUBLIC_WHATSAPP_URL?.trim();
 
 /**
  * S10 · Contato / Contact — the conversion endpoint, and THE destination the
@@ -85,8 +88,8 @@ type NextStep = { step: string; heading: string; body: string };
  * There is no third position on a page this short. So the copy is full
  * strength, `.liquid-glass` carries the signature material on the headline
  * without it, and the page's motion is the one place it belongs on a screen
- * built for DOING rather than reading: the form itself (`FieldLiquid`, the
- * membranes, the chips). Same reasoning `.legal-doc` and `.careers-doc`
+ * built for DOING rather than reading: the form itself (the laminated
+ * controls, the travelling pill, the submit's membrane). Same reasoning `.legal-doc` and `.careers-doc`
  * already apply — the devices that make the homepage feel alive are noise over
  * copy someone came here to act on.
  *
@@ -109,7 +112,21 @@ export default async function ContactPage({
   const query = await searchParams;
   const first = (value: string | string[] | undefined) =>
     Array.isArray(value) ? value[0] : value;
-  const intent = resolveContactIntent(first(query.intent));
+  /**
+   * THE ARRIVING TAB.
+   *
+   * `resolveContactIntent` answers "general" for an absent parameter, which is
+   * the right default for a TAG — an enquiry that named no intent is general.
+   * It is the wrong default for the TAB, because a visitor who typed the URL
+   * or followed the top-bar link would land on "Outro", the one track that
+   * asks nothing about the work. Somebody who explicitly arrives with
+   * `?intent=general` still gets it; an absent parameter opens on the studio's
+   * actual business instead.
+   */
+  const intentParam = first(query.intent);
+  const track = intentParam
+    ? trackForIntent(resolveContactIntent(intentParam))
+    : "project";
   const status = first(query.contact) ?? null;
 
   const t = await getTranslations("contact");
@@ -145,6 +162,29 @@ export default async function ContactPage({
 
             <p className="type-lead-copy contact-lead">{t("lead")}</p>
 
+            {/* THE OTHER DOOR, stated before the form rather than under it.
+                The reference page puts a phone number here for the visitor who
+                would rather speak than type; the studio's equivalent is
+                WhatsApp, and like every channel on this page it renders only
+                when the owner has actually published it. */}
+            {TALK_URL && (
+              <p className="contact-talk">
+                {t("talkLabel")}{" "}
+                <a
+                  href={TALK_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  data-cursor="hover"
+                  data-analytics-event="direct_contact"
+                  data-analytics-placement="contact_talk"
+                >
+                  WhatsApp
+                </a>
+              </p>
+            )}
+
+            <p className="contact-clients">{t("clientsNote")}</p>
+
             {/* The two facts a visitor weighs before spending five minutes
                 writing, stated before the form rather than under it. */}
             <dl className="contact-meta">
@@ -159,7 +199,7 @@ export default async function ContactPage({
 
           {/* THE INSTRUMENT. */}
           <div className="contact-panel">
-            <ContactForm initialIntent={intent} initialStatus={status} />
+            <ContactForm initialTrack={track} initialStatus={status} />
           </div>
         </div>
 

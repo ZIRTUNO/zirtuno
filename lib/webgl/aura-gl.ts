@@ -278,9 +278,11 @@ export function startAura(
   let cur = 0; // the pair holding the CURRENT state
   let bufW = 0;
   let bufH = 0;
-  let field: [number, number] = [1.6, 1];
+  const field: [number, number] = [1.6, 1];
   let pxUv = 1 / 900;
   let share = 1;
+  let sizeDirty = true;
+  let measuredDpr = 0;
 
   const resize = () => {
     const r = canvas.getBoundingClientRect();
@@ -291,6 +293,8 @@ export function startAura(
     // to buy by rendering it small - and a mote is 1.5 CSS px, which is exactly
     // the size that wants the extra samples along its edge.
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    measuredDpr = dpr;
+    sizeDirty = false;
     const nw = Math.max(1, Math.round(cssW * dpr));
     const nh = Math.max(1, Math.round(cssH * dpr));
     if (nw !== bufW || nh !== bufH) {
@@ -302,7 +306,7 @@ export function startAura(
     }
     // The field's y is the viewport HEIGHT, so x carries the aspect and the
     // weather is never stretched by the shape of the window.
-    field = [cssW / cssH, 1];
+    field[0] = cssW / cssH;
     pxUv = 1 / cssH;
     // Constant SPACING, not a constant count: see AURA.REF_PX. The motes are
     // hash-scattered, so drawing a prefix of them is a uniform random subset
@@ -454,12 +458,15 @@ export function startAura(
   // so on the homepage it is simply not there for the first frames, and on
   // every other route it never will be.
   let liquid: HTMLCanvasElement | null = null;
-  let liquidTries = 0;
+  let liquidRetryAt = 0;
   const findLiquid = () => {
     if (liquid && liquid.isConnected) return liquid;
     liquid = null;
-    if (liquidTries > 900) return null; // a route with no liquid stops asking
-    liquidTries++;
+    // The layout survives routes. A capped attempt count permanently lost the
+    // mask when a reader spent time elsewhere before arriving on the homepage.
+    const now = performance.now();
+    if (now < liquidRetryAt) return null;
+    liquidRetryAt = now + 500;
     liquid = document.querySelector<HTMLCanvasElement>(".journey-canvas canvas");
     return liquid;
   };
@@ -559,7 +566,9 @@ export function startAura(
     // it and halves the cost outright.
     if (now < nextDrawAt) return;
     nextDrawAt = now + 1000 / AURA.FPS;
-    resize();
+    // Geometry changes through layout/viewport resize, not atmospheric motion.
+    // Reading it on every draw forced layout after the page's animated writes.
+    if (sizeDirty || measuredDpr !== Math.min(window.devicePixelRatio || 1, 2)) resize();
     advance(now);
     draw();
   };
@@ -577,6 +586,12 @@ export function startAura(
   };
   canvas.addEventListener("webglcontextlost", onLost);
   canvas.addEventListener("webglcontextrestored", onRestored);
+  const ro = new ResizeObserver(() => {
+    sizeDirty = true;
+    // Reduced motion still needs to fit an orientation/viewport change.
+    if (still && !lost) { resize(); draw(); }
+  });
+  ro.observe(canvas);
 
   // ── the cold start ─────────────────────────────────────────────────────────
   resize();
@@ -590,6 +605,7 @@ export function startAura(
   return {
     stop() {
       if (raf) cancelAnimationFrame(raf);
+      ro.disconnect();
       canvas.removeEventListener("webglcontextlost", onLost);
       canvas.removeEventListener("webglcontextrestored", onRestored);
       release();

@@ -424,61 +424,139 @@
   },
   "contact": {
     "chapterLabel": "Contato",
-    "prompt": "Vamos estruturar o seu digital?",
-    "subPrompt": "Conte onde você está hoje. Devolvemos uma primeira leitura.",
-    "fields": {
-      "name": "Nome",
-      "namePlaceholder": "Seu nome",
-      "email": "Email",
-      "emailPlaceholder": "voce@empresa.com",
-      "company": "Empresa (opcional)",
-      "companyPlaceholder": "Nome da empresa",
-      "message": "Mensagem",
-      "messagePlaceholder": "Onde você está hoje e o que quer alcançar.",
-      "websiteTrap": "Deixe este campo vazio"
-    },
-    "submit": "Enviar mensagem",
-    "sending": "Enviando…",
-    "receivedPending": "Solicitação recebida",
-    "successTitle": "Recebido.",
-    "successBody": "Em breve devolvemos uma primeira leitura da sua estrutura.",
-    "pendingBody": "O provedor aceitou a solicitação; a entrega está sendo monitorada. Seus dados foram mantidos e não é necessário reenviar.",
-    "errorBody": "Não foi possível confirmar o envio. Seus dados foram mantidos; tente novamente em instantes.",
-    "rateLimitBody": "Muitas tentativas em pouco tempo. Seus dados foram mantidos; aguarde alguns minutos antes de tentar novamente.",
-    "validation": {
-      "name": "Diga como podemos te chamar.",
-      "email": "Informe um email válido.",
-      "message": "Conte um pouco do que você precisa."
-    },
-    "errorSummaryTitle": "Corrija {count, plural, =1 {1 campo} other {# campos}} antes de enviar.",
-    "secondaryLead": "Ou fale direto:",
-    "whatsapp": "WhatsApp",
-    "email": "Email",
-    "instagram": "Instagram",
-    "intentLabel": "Interesse",
-    "intents": {
-      "analysis": "Análise inicial",
-      "structure": "Estruturar o digital",
-      "talk": "Conversar com a Zirtuno",
-      "careers": "Trabalhe conosco",
-      "general": "Outro assunto"
-    },
     "metaTitle": "Contato",
     "metaDescription": "Conte onde sua operação está hoje. Devolvemos uma primeira leitura da sua estrutura digital.",
-    "title": "Tem algo que vale a pena estruturar? Vamos construir direito.",
-    "lead": "Conte onde você está hoje. Devolvemos uma primeira leitura: o que já funciona, o que está disperso e por onde começar.",
-    "intentHeading": "O que te traz aqui?",
-    "intentHint": "Escolha o mais próximo. Isso orienta a leitura que devolvemos.",
-    "formHeading": "Sobre você",
-    "privacyNote": "Ao enviar, você concorda com o uso dos seus dados para responder a este contato.",
-    "privacyLink": "Política de Privacidade",
-    "channelsHeading": "Ou fale direto",
-    "channelsHint": "Prefere outro canal? Todos chegam na mesma mesa.",
-    "emailLabel": "Email",
+    "title": "Vamos dar forma ao próximo passo.",
+    "lead": "Uma ideia nova. Uma operação dispersa. Um próximo capítulo mais ambicioso. Conte onde você está; encontramos por onde começar.",
+    "talkLabel": "Prefere falar?",
+    "clientsNote": "Software, IA, automação, dados, marca e marketing — conectados em uma estrutura só.",
     "responseLabel": "Resposta",
     "responseValue": "Até 1 dia útil",
     "locationLabel": "Base",
     "locationValue": "Curitiba, Brasil",
+    "channelsHeading": "Ou fale direto",
+    "channelsHint": "Prefere outro canal? Todos chegam na mesma mesa.",
+    "emailLabel": "Email",
+    "tabsLabel": "Tipo de contato",
+    "tracks": {
+      "project": "Projetos",
+      "advisory": "Consultoria",
+      "other": "Outro",
+      "careers": "Carreira"
+    },
+    "optional": "(opcional)",
+    "selectPlaceholder": "Selecione…",
+    "fields": {
+      "firstName": "Nome",
+      "firstNamePlaceholder": "Ana",
+      "lastName": "Sobrenome",
+      "lastNamePlaceholder": "Ribeiro",
+      "email": "Email",
+      "emailPlaceholder": "ana@empresa.com",
+      "company": "Empresa",
+      "companyPlaceholder": "Nome da empresa",
+      "message": "Mensagem",
+      "messagePlaceholder": "Estamos trabalhando em…",
+      "websiteTrap": "Deixe este campo vazio"
+    },
+    "messageLabels": {
+      "project": "Visão geral do projeto",
+      "advisory": "O que você quer resolver?",
+      "other": "Mensagem",
+      "careers": "Por que a Zirtuno?"
+    },
+    "messagePlaceholders": {
+      "project": "O que existe hoje, o que está disperso e onde você quer chegar.",
+      "advisory": "O ponto em que a decisão está travada.",
+      "other": "Conte o que você tem em mente.",
+      "careers": "O que você faz e o que quer construir com a gente."
+    },
+    "details": {
+      "focus": {
+        "label": "Frente",
+        "options": {
+          "analysis": "Uma leitura inicial",
+          "structure": "Estruturar o que já existe",
+          "product": "Construir um produto",
+          "brand": "Marca e presença digital"
+        }
+      },
+      "scale": {
+        "label": "Momento",
+        "options": {
+          "starting": "Começando do zero",
+          "growing": "Crescendo rápido",
+          "operating": "Operação estabelecida"
+        }
+      },
+      "budget": {
+        "label": "Investimento previsto",
+        "options": {
+          "exploring": "Ainda explorando",
+          "upTo50": "Até R$ 50 mil",
+          "upTo150": "R$ 50 a 150 mil",
+          "over150": "Acima de R$ 150 mil"
+        }
+      },
+      "horizon": {
+        "label": "Prazo",
+        "options": {
+          "now": "Para agora",
+          "quarter": "Próximos três meses",
+          "planning": "Ainda planejando"
+        }
+      },
+      "role": {
+        "label": "Seu cargo",
+        "placeholder": "Head de Operações"
+      },
+      "org": {
+        "label": "Tipo de organização",
+        "options": {
+          "startup": "Startup",
+          "scaleup": "Scale-up",
+          "established": "Empresa estabelecida",
+          "public": "Setor público ou terceiro setor"
+        }
+      },
+      "format": {
+        "label": "Formato",
+        "options": {
+          "diagnostic": "Diagnóstico pontual",
+          "ongoing": "Acompanhamento contínuo",
+          "workshop": "Workshop com o time"
+        }
+      },
+      "link": {
+        "label": "Portfólio ou LinkedIn",
+        "placeholder": "https://"
+      }
+    },
+    "submit": "Enviar",
+    "sending": "Enviando…",
+    "receivedPending": "Solicitação recebida",
+    "privacyNote": "Ao enviar, você concorda com o uso dos seus dados para responder a este contato.",
+    "privacyLink": "Política de Privacidade",
+    "successTitle": "Um começo, feito.",
+    "successBody": "Sua mensagem chegou. Vamos responder com uma primeira leitura dos próximos passos.",
+    "successReturn": "Voltar ao início",
+    "receipt": "Mensagem entregue",
+    "receiptNext": "Vamos responder pelo email que você informou. Até lá, seu próximo passo já tem um ponto de partida.",
+    "pendingBody": "Sua solicitação foi aceita e a entrega está sendo confirmada. Seu relato está preservado aqui. Não é necessário reenviar.",
+    "errorBody": "Não foi possível confirmar o envio. Seus dados foram mantidos; tente novamente em instantes.",
+    "errorBodyLost": "Não foi possível confirmar o envio. Preencha novamente ou use um dos canais diretos.",
+    "rateLimitBody": "Muitas tentativas em pouco tempo. Seus dados foram mantidos; aguarde alguns minutos antes de tentar novamente.",
+    "rateLimitBodyLost": "Muitas tentativas em pouco tempo. Aguarde alguns minutos e envie de novo.",
+    "sendingDetail": "Enviando seu relato. Mantenha esta página aberta.",
+    "validation": {
+      "firstName": "Diga como podemos te chamar.",
+      "lastName": "Informe seu sobrenome.",
+      "name": "Diga como podemos te chamar.",
+      "email": "Informe um email válido.",
+      "message": "Conte um pouco do que você precisa.",
+      "company": "Use até 160 caracteres no nome da empresa."
+    },
+    "errorSummaryTitle": "Corrija {count, plural, =1 {1 campo} other {# campos}} antes de enviar.",
     "nextHeading": "O que acontece depois",
     "nextSteps": [
       {
@@ -496,10 +574,7 @@
         "heading": "Caminho",
         "body": "Você recebe um recorte do que fazer primeiro — com ou sem a Zirtuno."
       }
-    ],
-    "successReturn": "Voltar ao início",
-    "errorBodyLost": "Não foi possível confirmar o envio. Preencha novamente ou use um dos canais diretos.",
-    "rateLimitBodyLost": "Muitas tentativas em pouco tempo. Aguarde alguns minutos e envie de novo."
+    ]
   },
   "footer": {
     "copyright": "© 2026 Zirtuno. Todos os direitos reservados.",
