@@ -363,3 +363,5 @@ This repository is public to read, but it is not open source. The brand assets,
 the metaball and signed-distance-field engine, the shaders, and the studio copy
 are not licensed for reuse. Dependencies keep their own licences. See
 [LICENSE](LICENSE) for the full terms.
+
+<!-- Repository maintenance: 2026-09-09 -->
