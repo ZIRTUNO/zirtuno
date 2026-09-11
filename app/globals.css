@@ -287,6 +287,13 @@
   --topbar-bar-h: calc(var(--topbar-chip-h) + var(--topbar-pad-x) * 2);
   --topbar-h: calc(var(--topbar-bar-h) + var(--topbar-gap) * 2);
   --topbar-radius: 0.673vw;
+  /* The bar's curvature IS the site's one radius, and the reference's own
+     `--radius`. Every surface that wants a corner — the studio plates, the
+     work cards, the panel they open into — reads THIS, so the page can never
+     drift into two different roundnesses. The 10px floor is ours: at
+     0.673vw a 1024px laptop would round to 7px, which stops reading as a
+     corner and starts reading as an artefact. */
+  --card-radius: max(10px, var(--topbar-radius));
   /* what the centred bar leaves at each edge — the mobile island anchors off it */
   --topbar-side: calc((100% - var(--topbar-w)) / 2);
   /* A one-off fluid size rather than a `--text-*` tier, and deliberately so:
@@ -2505,6 +2512,12 @@ html:has(.disclose[data-disclose="live"][open]) {
   display: block;
   aspect-ratio: 1 / 1;
   overflow: hidden;
+  /* A FLAT radius, not a proportional one. The panel this card grows into is
+     twice its width, and a `%`/`cqw` corner would swell across the flight —
+     the box would read as inflating rather than travelling. The token is
+     viewport-relative, so the corner is the SAME number at both ends and
+     holds still while everything else moves. */
+  border-radius: var(--card-radius);
   text-decoration: none;
   border: 1px solid var(--color-paper-faint);
   background: var(--color-surface);
@@ -2526,6 +2539,9 @@ html:has(.disclose[data-disclose="live"][open]) {
   position: absolute;
   inset: 0;
   overflow: hidden;
+  /* inherit, not the token again: the frame clips the photo AND the scrim, and
+     a second literal here is a second thing to forget when the card changes */
+  border-radius: inherit;
 }
 /* The scrim belongs to the FRAME, not the photo: during the flight the photo
    shrinks away into the panel's media slot and the scrim must not follow it. */
@@ -2590,6 +2606,9 @@ html:has(.disclose[data-disclose="live"][open]) {
   width: 8.2cqw;
   aspect-ratio: 1 / 1;
   overflow: hidden;
+  /* the reference rounds its `work-card__mark` off the same `--radius`; a hard
+     square chip sitting on a rounded card is the one corner that reads unfinished */
+  border-radius: var(--card-radius);
   background: color-mix(in srgb, var(--color-ink) 55%, transparent);
   box-shadow: inset 0 0 0 1px rgba(242, 240, 235, 0.2);
   backdrop-filter: blur(6px);
@@ -2660,6 +2679,8 @@ html:has(.disclose[data-disclose="live"][open]) {
   left: 0;
   top: 0;
   overflow: hidden;
+  /* the card's corner, unchanged — see `.zw-card` for why it must not scale */
+  border-radius: var(--card-radius);
   opacity: 0;
   background: var(--color-surface);
   box-shadow:
@@ -2682,6 +2703,7 @@ html:has(.disclose[data-disclose="live"][open]) {
 .zw-media {
   position: absolute;
   overflow: hidden;
+  border-radius: var(--card-radius);
   background: var(--color-ink);
   box-shadow: inset 0 0 0 1px var(--color-paper-faint);
   will-change: left, top, width, height;
@@ -2832,6 +2854,7 @@ html:has(.disclose[data-disclose="live"][open]) {
   position: relative;
   aspect-ratio: 16 / 9;
   overflow: hidden;
+  border-radius: var(--card-radius);
   display: grid;
   place-items: center;
   border: 1px solid var(--color-paper-faint);
