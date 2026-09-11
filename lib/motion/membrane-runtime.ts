@@ -61,7 +61,7 @@ export type MembraneHandle<T extends Driven = Driven> = {
    *  handle's own `mem`, so a narrower parameter type is always safe. Declared
    *  as an arrow property it would force every caller to cast. */
   draw(mem: T, tMs: number): void;
-  /** Live rect, refreshed by the scheduler. */
+  /** Live rect, refreshed before the scheduler delivers pointer coordinates. */
   rect: DOMRect | null;
   visible: boolean;
   /** Set once the arrival has been fired, so it happens on entry only. */
@@ -189,19 +189,23 @@ function tick(t: number) {
   lastAuto = t;
 
   // ── read phase: every layout read happens here, before any write ────────
+  // Geometry is used only to localize the hand. Autonomous tides, arrivals,
+  // and the companion's ambient motion use their own cached dimensions, so
+  // measuring every visible surface with no pointer just invalidates layout.
+  const hasHand = pointerSeen && px > -1e4;
   for (const h of handles) {
     if (!h.visible) {
       h.mem.hand(null);
       continue;
     }
-    h.rect = h.el.getBoundingClientRect();
+    if (hasHand) h.rect = h.el.getBoundingClientRect();
   }
 
   // ── write phase ─────────────────────────────────────────────────────────
   let alive = false;
   for (const h of handles) {
     const r = h.rect;
-    if (h.visible && r && pointerSeen && px > -1e4) {
+    if (h.visible && r && hasHand) {
       h.mem.hand(px - r.left, py - r.top, pvx, pvy);
     } else if (!h.visible) {
       h.mem.hand(null);

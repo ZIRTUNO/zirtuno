@@ -5,7 +5,7 @@ import { useEffect, useReducer, useRef } from "react";
 // never a link or a locale-aware navigation destination.
 import { usePathname } from "next/navigation";
 import { clamp01, smooth01 } from "@/lib/webgl/phys.mjs";
-import { startAura } from "@/lib/webgl/aura-gl";
+import { startAura, type AuraHandle } from "@/lib/webgl/aura-gl";
 import { detectFieldTier } from "@/lib/webgl/field-tier";
 import { prefersReducedMotion } from "@/lib/animation/reduced-motion";
 
@@ -57,6 +57,7 @@ import { prefersReducedMotion } from "@/lib/animation/reduced-motion";
 export function Aura() {
   const ref = useRef<HTMLDivElement>(null);
   const vapour = useRef<HTMLCanvasElement>(null);
+  const renderer = useRef<AuraHandle | null>(null);
   const pathname = usePathname();
   const [epoch, rebuild] = useReducer((n: number) => n + 1, 0);
 
@@ -95,11 +96,16 @@ export function Aura() {
       tier === "lite" ? "lite" : "full",
     );
     if (!handle) return;
+    renderer.current = handle;
+    // The CSS gate is already authoritative at first paint and after a route
+    // change. Read it once on setup; its writer below keeps drawing in sync.
+    handle.setVisible(Number(getComputedStyle(aura).getPropertyValue("--aura-hero")) > 0);
     aura.dataset.gl = "1";
     const w = window as unknown as { __aura?: typeof handle.stats };
     w.__aura = handle.stats;
     return () => {
       handle.stop();
+      if (renderer.current === handle) renderer.current = null;
       delete aura.dataset.gl;
       if (w.__aura === handle.stats) delete w.__aura;
     };
@@ -112,6 +118,7 @@ export function Aura() {
     // A client navigation replaces the hero without remounting this layout.
     // Drop the previous route's override before attaching to the new node.
     aura?.style.removeProperty("--aura-hero");
+    renderer.current?.setVisible(!hero);
     // No hero on this route: the CSS default already leaves the gate open.
     if (!aura || !hero) return;
 
@@ -123,6 +130,7 @@ export function Aura() {
       if (q === last) return;
       last = q;
       aura.style.setProperty("--aura-hero", String(q));
+      renderer.current?.setVisible(q > 0);
     };
 
     const tick = () => {

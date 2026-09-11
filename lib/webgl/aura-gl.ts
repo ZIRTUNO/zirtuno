@@ -147,6 +147,8 @@ export type AuraStats = {
 
 export type AuraHandle = {
   stop: () => void;
+  /** Park invisible atmosphere without discarding its particle state. */
+  setVisible: (visible: boolean) => void;
   /** DIAGNOSTIC ONLY — what the probe reads to describe the live field. */
   readonly stats: AuraStats;
 };
@@ -527,6 +529,7 @@ export function startAura(
   let nextDrawAt = 0;
   let raf = 0;
   let lost = false;
+  let visible = true;
 
   // Scroll, in viewport-heights per second, read the way PageStage reads it:
   // from the position, once a frame. Lenis owns smooth scrolling on this site
@@ -560,8 +563,9 @@ export function startAura(
   };
 
   const frame = (now: number) => {
+    raf = 0;
+    if (lost || !visible || document.hidden) return;
     raf = requestAnimationFrame(frame);
-    if (lost) return;
     // Throttle: the field renews over a minute, so 30 fps is imperceptible on
     // it and halves the cost outright.
     if (now < nextDrawAt) return;
@@ -573,10 +577,27 @@ export function startAura(
     draw();
   };
 
+  const sync = () => {
+    if (lost || !visible || document.hidden || still) {
+      cancelAnimationFrame(raf);
+      raf = 0;
+    } else if (!raf) {
+      // Resume from the retained state, without integrating time spent hidden
+      // or turning a route's scroll jump into an atmospheric gust.
+      lastNow = performance.now();
+      lastY = window.scrollY;
+      scroll = 0;
+      acc = 0;
+      nextDrawAt = 0;
+      raf = requestAnimationFrame(frame);
+    }
+  };
+
   const onLost = (e: Event) => {
     // Default would make the context unrestorable.
     e.preventDefault();
     lost = true;
+    sync();
   };
   const onRestored = () => {
     // Nothing to rebuild by hand: the caller remounts the layer, which is
@@ -586,6 +607,7 @@ export function startAura(
   };
   canvas.addEventListener("webglcontextlost", onLost);
   canvas.addEventListener("webglcontextrestored", onRestored);
+  document.addEventListener("visibilitychange", sync);
   const ro = new ResizeObserver(() => {
     sizeDirty = true;
     // Reduced motion still needs to fit an orientation/viewport change.
@@ -600,14 +622,20 @@ export function startAura(
   for (let k = 0; k < AURA.WARMUP; k++) runStep(hS, (k * hS) * AURA.TIME, 0, false);
   draw();
 
-  if (!still) raf = requestAnimationFrame(frame);
+  sync();
 
   return {
+    setVisible(next) {
+      if (visible === next) return;
+      visible = next;
+      sync();
+    },
     stop() {
       if (raf) cancelAnimationFrame(raf);
       ro.disconnect();
       canvas.removeEventListener("webglcontextlost", onLost);
       canvas.removeEventListener("webglcontextrestored", onRestored);
+      document.removeEventListener("visibilitychange", sync);
       release();
       // DELIBERATELY NOT `WEBGL_lose_context().loseContext()`.
       //
