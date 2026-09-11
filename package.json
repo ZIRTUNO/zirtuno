@@ -6,9 +6,15 @@
     "dev": "next dev",
     "prebuild": "node scripts/verify/production-env.mjs --if-production",
     "build": "next build",
+    "prebuild:webpack": "node scripts/verify/production-env.mjs --if-production",
     "build:webpack": "next build --webpack",
     "start": "next start",
     "lint": "eslint",
+    "typecheck": "tsc --noEmit",
+    "audit:repository": "node scripts/probe/repository.mjs",
+    "verify:coda": "node scripts/verify/manifesto-coda.mjs",
+    "verify:runtime": "node scripts/verify/runtime-lifecycle.mjs",
+    "verify:cms": "node scripts/verify/cms-timeout.mjs",
     "cf:build": "opennextjs-cloudflare build",
     "cf:preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
     "cf:deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
@@ -25,6 +31,10 @@
     "aura:look": "node scripts/probe/aura-look.mjs",
     "work": "node scripts/verify/work-gallery.mjs",
     "work:previews": "node scripts/capture/project-previews.mjs",
+    "studio": "node scripts/verify/studio-cards.mjs",
+    "studio:shots": "node scripts/capture/studio-cards.mjs",
+    "studio:avatar": "node scripts/capture/studio-avatar.mjs",
+    "studio:sheet": "node scripts/capture/studio-row.mjs",
     "confluence": "node scripts/verify/confluence.mjs",
     "confluence:sheet": "node scripts/capture/confluence.mjs",
     "rail": "node scripts/verify/rail.mjs",
@@ -60,7 +70,6 @@
     "motion": "^12.42.2",
     "next": "^16.2.10",
     "next-intl": "^4.13.1",
-    "ogl": "^1.0.11",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
     "react-hook-form": "^7.80.0",
@@ -84,7 +93,10 @@
   },
   "overrides": {
     "next": {
-      "postcss": "^8.5.16"
+      "postcss": "^8.5.28"
+    },
+    "miniflare": {
+      "sharp": "^0.35.4"
     }
   }
 }
