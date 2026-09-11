@@ -395,12 +395,12 @@
     "echo": "De duas ideias a um ecossistema.",
     "wordmark": "Zirtuno",
     "closing": "Construímos o que ainda não existe.",
-    "manifesto": [
-      "Movimento sem ruído.",
-      "Forma para o que estava disperso.",
-      "Direção, não apenas execução.",
-      "Discreto. Preciso. Transformador."
-    ],
+    "manifesto": {
+      "latin": "Ignoranti quem portum petat, nullus suus ventus est.",
+      "quote": "Para quem não sabe a que porto se dirige, nenhum vento é favorável.",
+      "attribution": "Sêneca",
+      "source": "Cartas a Lucílio, 71"
+    },
     "convergence": "O que estava disperso começa a fazer parte do mesmo todo."
   },
   "studio": {

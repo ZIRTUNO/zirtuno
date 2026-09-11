@@ -3008,15 +3008,107 @@ html:has(.disclose[data-disclose="live"][open]) {
   color: var(--color-paper-lead);
 }
 .origin-static-mark { width: 12rem; margin-bottom: 2rem; }
-.manifesto { padding-block: 7rem 10rem; }
-.manifesto-stream { display: grid; gap: 1rem; max-width: 55rem; }
-.manifesto-line {
-  font-size: var(--text-display-m);
-  line-height: 1.18;
-  color: var(--color-paper-lead);
+/* ── THE CODA ────────────────────────────────────────────────────────────────
+   Four manifesto lines became one quotation, and the block became a <figure>.
+   `.manifesto-line` KEEPS ITS NAME on purpose: it is a member of the standing-
+   shadow list far above (search `--copy-shadow-standing`), and that list is
+   forty selectors long — renaming the class here would silently drop this copy
+   off the liquid and onto it. The two new siblings are not in that list, so
+   they restate the same shadow themselves.
+
+   The swell that runs through this figure is documented in ManifestoQuote.tsx.
+   Nothing here animates: every rule below is a RESTING state, which is also
+   exactly what a reduced-motion reader and a JS failure both get. */
+/* The measure belongs to the CHILDREN, never to `.manifesto` itself. This
+   block wears `.page-x`, whose padding is the shell gutter and sits INSIDE the
+   box — so a max-width here is a max-width on gutter-plus-text, and the column
+   comes out ~350px narrower than it reads. The old `.manifesto-stream` carried
+   the 55rem for exactly this reason. */
+.manifesto {
+  --coda-measure: 55rem;
+  margin: 0;
+  padding-block: 7rem 10rem;
 }
-.manifesto-line:nth-child(even) { margin-left: 12%; }
-.manifesto-line:last-child { color: var(--color-paper); }
+.manifesto-latin {
+  max-width: var(--coda-measure);
+  font-family: var(--font-mono);
+  font-size: var(--text-mono);
+  line-height: var(--text-mono--line-height);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--color-cyan) 62%, var(--color-paper-mute));
+  text-shadow: var(--copy-shadow-standing);
+  margin-bottom: 1.75rem;
+}
+.manifesto-stream { margin: 0; max-width: var(--coda-measure); }
+.manifesto-line {
+  position: relative;
+  font-size: var(--text-display-m);
+  /* 1.24, not the 1.18 the manifesto ran at. Nothing clips here, so this is
+     not the mask block's descender budget — it is that a sixty-character
+     sentence needs more air between lines than four four-word lines did. */
+  line-height: 1.24;
+  letter-spacing: -0.015em;
+  color: var(--color-paper);
+  text-wrap: balance;
+}
+/* Hanging punctuation. The mark belongs to the paragraph, not to a word, so it
+   is the one fixed point the sea moves against — SplitText rewrites the text
+   nodes and never touches a pseudo-element. */
+.manifesto-line::before {
+  content: "\201C";
+  position: absolute;
+  top: -0.06em;
+  right: 100%;
+  padding-right: 0.12em;
+  color: color-mix(in srgb, var(--color-cyan) 45%, transparent);
+  text-shadow: none;
+}
+.manifesto-rule {
+  display: block;
+  width: 7rem;
+  height: 1px;
+  margin-top: 2.5rem;
+  transform-origin: left center;
+  background: linear-gradient(
+    90deg,
+    var(--color-cyan),
+    color-mix(in srgb, var(--color-cyan) 20%, transparent) 70%,
+    transparent
+  );
+}
+.manifesto-cite {
+  max-width: var(--coda-measure);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.35rem 1rem;
+  margin-top: 1.1rem;
+  font-family: var(--font-mono);
+  font-size: var(--text-mono);
+  line-height: var(--text-mono--line-height);
+  letter-spacing: var(--text-mono--letter-spacing);
+  text-shadow: var(--copy-shadow-standing);
+}
+.manifesto-author { color: var(--color-paper); }
+.manifesto-source { color: var(--color-paper-mute); font-style: italic; }
+
+/* The rule DRAWS ITSELF as the sea calms, so it starts at zero width — but
+   only where something is going to draw it. A reduced-motion reader gets no
+   ScrollTrigger, and therefore must not be handed a hairline stuck at 0. */
+@media (prefers-reduced-motion: no-preference) {
+  .manifesto-rule { transform: scaleX(0); }
+}
+
+/* Hanging the quote mark outside the column is a luxury the page gutter can
+   pay for at width and cannot at phone width, where it would sit under the
+   edge of the screen. Bring it back inline there. */
+@media (max-width: 40rem) {
+  .manifesto-line::before {
+    position: static;
+    padding-right: 0.06em;
+  }
+}
 
 @media (prefers-reduced-motion: no-preference) and (min-height: 600px) {
   .origin-journey[data-origin-live] { height: 700svh; }

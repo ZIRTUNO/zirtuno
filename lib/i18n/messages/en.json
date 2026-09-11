@@ -395,12 +395,12 @@
     "echo": "From two ideas to one ecosystem.",
     "wordmark": "Zirtuno",
     "closing": "We build what doesn't exist yet.",
-    "manifesto": [
-      "Movement without noise.",
-      "Form for what was dispersed.",
-      "Direction, not just execution.",
-      "Discreet. Precise. Transformative."
-    ],
+    "manifesto": {
+      "latin": "Ignoranti quem portum petat, nullus suus ventus est.",
+      "quote": "If one does not know to which port one is sailing, no wind is favourable.",
+      "attribution": "Seneca",
+      "source": "Letters to Lucilius, 71"
+    },
     "convergence": "What was dispersed begins to belong together."
   },
   "studio": {

@@ -1,7 +1,9 @@
 import { useTranslations } from "next-intl";
 import { LogoMark } from "@/components/hero/LogoMark";
+import { ManifestoQuote } from "@/components/chapters/ManifestoQuote";
 
 type Idea = { kicker: string; word: string; gloss: string; line: string };
+type Coda = { latin: string; quote: string; attribution: string; source: string };
 
 /** S7's full reading path is authored HTML. GSAP and the shared liquid stage
  * enhance these five beats; no canvas contains the meaning of the chapter. */
@@ -10,7 +12,7 @@ export function ChapterName() {
   const ideas = t.raw("ideas") as Idea[];
   const tension = t.raw("tension") as string[];
   const pillars = t.raw("pillars") as string[];
-  const manifesto = t.raw("manifesto") as string[];
+  const coda = t.raw("manifesto") as Coda;
   return (
     <section id="name" data-chapter className="relative" aria-labelledby="name-title">
       <header className="origin-open-block page-x">
@@ -64,11 +66,12 @@ export function ChapterName() {
           </div>
         </div>
       </div>
-      <div className="manifesto page-x">
-        <div className="manifesto-stream">
-          {manifesto.map((line) => <p className="manifesto-line font-poetic" key={line}>{line}</p>)}
-        </div>
-      </div>
+      <ManifestoQuote
+        latin={coda.latin}
+        quote={coda.quote}
+        attribution={coda.attribution}
+        source={coda.source}
+      />
     </section>
   );
 }

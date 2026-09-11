@@ -841,9 +841,15 @@ founding notes, and the large purpose statement beside the departing mark.
 Labels, names, glosses and supporting sentences reveal in a measured sequence.
 The text stays stationary inside reversible crops; it never becomes canvas copy.
 
-The original manifesto follows in normal flow. PT/EN remain authored in the
-locale JSON files. Zéfiro and Ventura are two ideas; Social, Health and Finance
-remain three founding pillars, distinct from the seven service capabilities.
+The coda follows in normal flow: Seneca's port, as a `<figure>` — the Latin
+original, the translated quotation, a rule, and the attribution. It replaced the
+four-line manifesto. Its one motion is a swell that damps to flat as the reader
+scrolls through it, driven by the figure's live rect rather than a cached scroll
+offset (`components/chapters/ManifestoQuote.tsx` says why), and it is measured by
+`scripts/verify/manifesto-coda.mjs`. Nothing in the coda fades, and every word is
+legible at every point in the passage. PT/EN remain authored in the locale JSON
+files. Zéfiro and Ventura are two ideas; Social, Health and Finance remain three
+founding pillars, distinct from the seven service capabilities.
 
 **Acceptance:**
 
