@@ -1,15 +1,22 @@
 import { useTranslations } from "next-intl";
 import { Reveal } from "@/components/ui/Reveal";
 import { WetType } from "@/components/ui/WetType";
+import { StudioCards } from "@/components/chapters/StudioCards";
 
 /**
- * S9 · The Studio. Where (Curitiba + coordinates) · Who (anonymous role grid,
- * the chosen default) · Why (sans statement + serif-italic closing clause).
- * No process block — that lives in Método (S6).
+ * S8 · The Studio. Where (Curitiba + coordinates) · Who (the team's shape,
+ * then the three cards that SHOW it) · Why (sans statement + serif-italic
+ * closing clause). No process block — that lives in Método (S6).
+ *
+ * "Who" was an anonymous six-cell role grid until 2026-09-09. It named the
+ * functions and showed none of their output, which asked the reader to take
+ * "Design" and "Engenharia" on faith in the one chapter whose whole job is to
+ * answer who this is. `StudioCards` keeps the claim and makes it visible; the
+ * six role names survive inside the three card subtitles, so nothing that
+ * shipped as copy was dropped, only re-staged.
  */
 export function ChapterStudio() {
   const t = useTranslations("studio");
-  const roles = t.raw("roles") as string[];
 
   return (
     <section
@@ -33,7 +40,7 @@ export function ChapterStudio() {
           </p>
         </Reveal>
 
-        {/* Who — anonymous role grid */}
+        {/* Who — the claim */}
         <Reveal inView delay={0.05}>
           <h2 className="case-label">{t("whoLabel")}</h2>
           <WetType
@@ -42,16 +49,15 @@ export function ChapterStudio() {
           >
             {t("whoLead")}
           </WetType>
-          <ul className="studio-roles mt-[var(--space-group)]">
-            {roles.map((role, i) => (
-              <li key={role} className="studio-role">
-                <span>{String(i + 1).padStart(2, "0")}</span>
-                {role}
-              </li>
-            ))}
-          </ul>
         </Reveal>
       </div>
+
+      {/* Who — the proof. Full shell width: three cards at the reference's
+          415.814/520 need the whole column, not the 1.1fr half the role list
+          used to sit in. */}
+      <Reveal inView delay={0.08} className="mt-[var(--space-block)]">
+        <StudioCards />
+      </Reveal>
 
       {/* Why — closing line */}
       <div className="mt-[var(--space-span)] max-w-3xl">

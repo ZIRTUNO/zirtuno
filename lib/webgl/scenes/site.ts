@@ -595,9 +595,9 @@ export function makeSiteScene(): SceneModule {
       // so the cache key carries it too — an aspect that happens not to move
       // across a resize must not leave the liquid composed for the other one.
       const colWide = stageW >= FIELD_MIN_W ? 1 : 0;
-      // Match .pillar's 60rem CSS column breakpoint, including tall tablets.
-      // Aspect ratio alone can put the form on copy in either layout.
-      const servicesWide = stageW >= 960 ? 1 : 0;
+      // Match .pillar's columns, including short landscape phones. Portrait
+      // tablets retain the stack; landscape has room beside the copy.
+      const servicesWide = stageW >= 960 || (stageW >= 640 && stageH <= 512) ? 1 : 0;
       if (Math.abs(aspect - cachedAspect) > 0.02 || colWide !== cachedWide || servicesWide !== cachedServicesWide) {
         cachedAspect = aspect;
         cachedWide = colWide;
@@ -619,7 +619,10 @@ export function makeSiteScene(): SceneModule {
         // of the right column (f = 0.75) is an offset of 0.25 * aspect.
         svcOx = servicesWide ? 0.25 * aspect : 0;
         svcOy = servicesWide ? 0 : 0.24; // narrow stacks: form above the copy
-        svcScale = servicesWide ? 0.62 : 0.38;
+        // The previous 0.38 drew a ~100px form on a 320px phone. Use most of
+        // the reading band's width, bounded by height on short/large screens.
+        // One scale feeds both the exact SDF and its 48-droplet bridge.
+        svcScale = servicesWide ? 0.62 : Math.min(0.74, stageH * 0.32 / (Math.min(stageW, stageH) * 0.82));
         Tclu = clusterTargets(aspect, sCx);
         Tdis = wideScatter(aspect, sCx, 0.5, 0.85);
         // THE GATHERING's dispersed field is scattered inside the FIELD, not

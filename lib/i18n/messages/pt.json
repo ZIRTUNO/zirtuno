@@ -395,12 +395,12 @@
     "echo": "De duas ideias a um ecossistema.",
     "wordmark": "Zirtuno",
     "closing": "Construímos o que ainda não existe.",
-    "manifesto": [
-      "Movimento sem ruído.",
-      "Forma para o que estava disperso.",
-      "Direção, não apenas execução.",
-      "Discreto. Preciso. Transformador."
-    ],
+    "manifesto": {
+      "latin": "Ignoranti quem portum petat, nullus suus ventus est.",
+      "quote": "Para quem não sabe a que porto se dirige, nenhum vento é favorável.",
+      "attribution": "Sêneca",
+      "source": "Cartas a Lucílio, 71"
+    },
     "convergence": "O que estava disperso começa a fazer parte do mesmo todo."
   },
   "studio": {
@@ -410,14 +410,27 @@
     "coordinates": "25.4284° S · 49.2733° W",
     "whoLabel": "Quem",
     "whoLead": "Um time pequeno e multidisciplinar, organizado por função.",
-    "roles": [
-      "Estratégia",
-      "Design",
-      "Engenharia",
-      "IA & Automação",
-      "Branding",
-      "Conteúdo & Growth"
-    ],
+    "cards": {
+      "brand": {
+        "title": "Marca",
+        "sub": "Branding, conteúdo e growth: uma presença que se reconhece de longe.",
+        "markAlt": "Marca Zirtuno"
+      },
+      "build": {
+        "title": "Web & Software",
+        "sub": "Design e engenharia: sites e sistemas construídos para converter.",
+        "shotJuliana": "Site de Juliana Delmonte, nutricionista comportamental",
+        "shotDiego": "Site de Diego Santos, personal trainer",
+        "shotZirtuno": "Site da Zirtuno, o próprio estúdio",
+        "shotZirtunoWork": "Índice de projetos da Zirtuno",
+        "shotZirtunoCase": "Página de caso da Zirtuno: Juliana Delmonte",
+        "shotZirtunoContact": "Página de contato da Zirtuno"
+      },
+      "intel": {
+        "title": "IA, Automação & Dados",
+        "sub": "Estratégia e automação: agentes e painéis que operam sozinhos."
+      }
+    },
     "whyLabel": "Porquê",
     "closingStatement": "Não somos sobre aparecer.",
     "closingItalic": "Somos sobre ser sentidos, lembrados e conduzidos adiante."
@@ -428,15 +441,12 @@
     "metaDescription": "Conte onde sua operação está hoje. Devolvemos uma primeira leitura da sua estrutura digital.",
     "title": "Vamos dar forma ao próximo passo.",
     "lead": "Uma ideia nova. Uma operação dispersa. Um próximo capítulo mais ambicioso. Conte onde você está; encontramos por onde começar.",
-    "talkLabel": "Prefere falar?",
+    "talkLabel": "Prefere falar diretamente?",
     "clientsNote": "Software, IA, automação, dados, marca e marketing — conectados em uma estrutura só.",
     "responseLabel": "Resposta",
     "responseValue": "Até 1 dia útil",
     "locationLabel": "Base",
     "locationValue": "Curitiba, Brasil",
-    "channelsHeading": "Ou fale direto",
-    "channelsHint": "Prefere outro canal? Todos chegam na mesma mesa.",
-    "emailLabel": "Email",
     "tabsLabel": "Tipo de contato",
     "tracks": {
       "project": "Projetos",
@@ -699,6 +709,14 @@
     "lead": "Somos um time pequeno e multidisciplinar, organizado por função e não por cargo. Se você constrói coisas que precisam se sustentar depois do lançamento, queremos saber que você existe.",
     "functionsHeading": "Como o studio se organiza",
     "functionsBody": "Seis funções, cada uma dona de uma parte real do trabalho. Quase todo mundo aqui é forte em uma e útil em uma segunda. É essa sobreposição que permite a um time pequeno carregar um ecossistema inteiro.",
+    "functions": [
+      "Estratégia",
+      "Design",
+      "Engenharia",
+      "IA & Automação",
+      "Branding",
+      "Conteúdo & Growth"
+    ],
     "traitsHeading": "O que procuramos",
     "traits": [
       {

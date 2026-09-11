@@ -175,7 +175,7 @@ for (const name of ["Pixel 7", "iPad (gen 7)"]) {
   // Real scroll must reach the tide.
   const before = await page.evaluate(DEFORM);
   const scrollBefore = await page.evaluate(() => scrollY);
-  await page.mouse.wheel(0, -180);
+  await page.mouse.wheel(0, 700);
   // A travelling crest can have the same peak at one arbitrary sample. Watch
   // its response across the wheel's settling window and keep the CTA visible.
   const responses = [];
@@ -187,9 +187,11 @@ for (const name of ["Pixel 7", "iPad (gen 7)"]) {
   const scrolled = await page.evaluate(() => scrollY);
   check(
     "scroll stirs the surface",
-    Math.abs(scrolled-scrollBefore)>20 && during > 0 && Math.abs(during - before) > 0.15,
-    `${before} px → ${during} px — scroll is not reaching the membranes`,
-    `${before} px → ${during} px`,
+    // DEFORM is rounded to hundredths: 1.70 - 1.55 must meet the 0.15px
+    // threshold instead of failing as 0.1499999999999999.
+    Math.abs(scrolled-scrollBefore)>20 && during > 0 && Math.round(Math.abs(during-before)*100) >= 15,
+    `${before} px → ${during} px; scroll ${scrollBefore} → ${scrolled}; samples ${responses.join(', ')} — scroll response not established`,
+    `${before} px → ${during} px; scroll ${Math.round(scrolled-scrollBefore)}px`,
   );
 
   // A tap still fires the real strike, and the surface still lets go after.

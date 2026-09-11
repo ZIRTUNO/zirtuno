@@ -1,15 +1,15 @@
 "use client";
 
-import { useEffect, useRef } from "react";
-import { RIBBON_VERT, RIBBON_FRAG } from "@/lib/lab/ribbon-shader";
+import { useEffect, useReducer, useRef } from "react";
+import { RIBBON_VERT, RIBBON_FRAG } from "@/lib/webgl/ribbon-shader";
 import { useReducedMotion } from "@/lib/animation/reduced-motion";
 
 /**
- * LAB — the liquid ribbon renderer.
+ * The homepage's liquid ribbon renderer, also used by the hero lab.
  *
- * Self-contained on purpose: this is a test space, so it owns its own context,
- * its own loop and its own lifecycle rather than borrowing the homepage's
- * conductor. One quad, one fragment shader (lib/lab/ribbon-shader.ts).
+ * The existing hero surface owns its context and visibility lifecycle. One
+ * quad, one fragment shader (lib/webgl/ribbon-shader.ts); the persistent
+ * chapter field takes over below the hero.
  *
  * Reduced motion gets a still first frame — the composition still reads, it
  * just does not move. No WebGL2 gets a pure-CSS cyan horizon so the hero is
@@ -19,6 +19,7 @@ export function HeroRibbon() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const hostRef = useRef<HTMLDivElement>(null);
   const reduced = useReducedMotion();
+  const [epoch, rebuild] = useReducer((n: number) => n + 1, 0);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -34,10 +35,10 @@ export function HeroRibbon() {
       host.dataset.ribbon = "fallback";
       return;
     }
-    host.dataset.ribbon = "live";
-
+    const shaders: WebGLShader[] = [];
     const compile = (type: number, src: string) => {
       const s = gl.createShader(type)!;
+      shaders.push(s);
       gl.shaderSource(s, src);
       gl.compileShader(s);
       if (!gl.getShaderParameter(s, gl.COMPILE_STATUS))
@@ -45,17 +46,23 @@ export function HeroRibbon() {
       return s;
     };
 
-    let program: WebGLProgram;
+    const program = gl.createProgram();
+    if (!program) {
+      host.dataset.ribbon = "fallback";
+      return;
+    }
     try {
-      program = gl.createProgram()!;
       gl.attachShader(program, compile(gl.VERTEX_SHADER, RIBBON_VERT));
       gl.attachShader(program, compile(gl.FRAGMENT_SHADER, RIBBON_FRAG));
       gl.linkProgram(program);
       if (!gl.getProgramParameter(program, gl.LINK_STATUS))
         throw new Error(gl.getProgramInfoLog(program) ?? "link failed");
     } catch {
+      gl.deleteProgram(program);
       host.dataset.ribbon = "fallback";
       return;
+    } finally {
+      for (const shader of shaders) gl.deleteShader(shader);
     }
     gl.useProgram(program);
 
@@ -80,12 +87,14 @@ export function HeroRibbon() {
 
     let width = 0;
     let height = 0;
+    let measuredDpr = 0;
     const resize = () => {
       // The stream is a soft, out-of-focus body of liquid — it has no edges
       // worth resolving, so it does not need device pixels. Rendering at ~0.7
       // CSS px and letting the canvas scale up is invisible here and costs
       // roughly an EIGHTH of the fragments a dpr-2 buffer did.
       const dpr = Math.min(window.devicePixelRatio || 1, 1) * 0.7;
+      measuredDpr = dpr;
       const r = host.getBoundingClientRect();
       const w = Math.max(1, Math.round(r.width * dpr));
       const h = Math.max(1, Math.round(r.height * dpr));
@@ -97,8 +106,6 @@ export function HeroRibbon() {
       gl.viewport(0, 0, w, h);
     };
     resize();
-    const ro = new ResizeObserver(resize);
-    ro.observe(host);
 
     // pointer bias and scroll energy — damped, never per-frame allocated
     let pointerTarget = 0;
@@ -119,8 +126,12 @@ export function HeroRibbon() {
     let running = true;
 
     const draw = (now: number) => {
+      raf = 0;
       if (!running) return;
-      resize();
+      // ResizeObserver owns layout measurements. Only a DPR change needs an
+      // explicit check here; reading the same rect every frame forced layout
+      // behind the hero's animated CSS writes.
+      if (measuredDpr !== Math.min(window.devicePixelRatio || 1, 1) * 0.7) resize();
       const elapsed = (now - start) / 1000;
       // the sheet floods in over the first ~1.6 s, then holds
       const enter = reduced ? 1 : Math.min(1, elapsed / 1.6);
@@ -133,24 +144,33 @@ export function HeroRibbon() {
       gl.uniform1f(uPointer, reduced ? 0 : pointer);
       gl.uniform1f(uEnergy, reduced ? 0 : energy);
       gl.drawArrays(gl.TRIANGLES, 0, 3);
+      if (host.dataset.ribbon !== "live") host.dataset.ribbon = "live";
 
       if (reduced) return; // one settled frame is the whole reduced-motion path
       raf = requestAnimationFrame(draw);
     };
     raf = requestAnimationFrame(draw);
+    const ro = new ResizeObserver(() => {
+      resize();
+      // Resizing clears a canvas. The static path has no next animation frame
+      // to repaint it, so schedule one when its viewport changes.
+      if (reduced && running && !raf) raf = requestAnimationFrame(draw);
+    });
+    ro.observe(host);
 
     // Never burn frames the visitor cannot see. The tab check was here; the
     // SCROLL check was not — so the whole shader kept running at full rate,
     // alongside the page's own liquid canvas, for the entire rest of the
     // journey. That was the stutter.
     let onScreen = true;
-    let tabVisible = true;
+    let tabVisible = !document.hidden;
+    let lost = false;
     const sync = () => {
-      const shouldRun = onScreen && tabVisible;
+      const shouldRun = onScreen && tabVisible && !lost;
       if (shouldRun === running) return;
       running = shouldRun;
       if (running) raf = requestAnimationFrame(draw);
-      else cancelAnimationFrame(raf);
+      else { cancelAnimationFrame(raf); raf = 0; }
     };
 
     const observer = new IntersectionObserver(
@@ -167,6 +187,16 @@ export function HeroRibbon() {
       sync();
     };
     document.addEventListener("visibilitychange", onVisibility);
+    const onLost = (event: Event) => {
+      event.preventDefault();
+      lost = true;
+      host.dataset.ribbon = "fallback";
+      sync();
+    };
+    const onRestored = () => rebuild();
+    canvas.addEventListener("webglcontextlost", onLost);
+    canvas.addEventListener("webglcontextrestored", onRestored);
+    sync();
 
     return () => {
       running = false;
@@ -176,11 +206,13 @@ export function HeroRibbon() {
       window.removeEventListener("pointermove", onPointer);
       window.removeEventListener("scroll", onScroll);
       document.removeEventListener("visibilitychange", onVisibility);
+      canvas.removeEventListener("webglcontextlost", onLost);
+      canvas.removeEventListener("webglcontextrestored", onRestored);
       gl.deleteProgram(program);
       gl.deleteBuffer(buffer);
       gl.deleteVertexArray(vao);
     };
-  }, [reduced]);
+  }, [reduced, epoch]);
 
   return (
     <div className="lab-ribbon" ref={hostRef} aria-hidden="true">

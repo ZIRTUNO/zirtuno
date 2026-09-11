@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { setRequestLocale, getTranslations } from "next-intl/server";
 import { Footer } from "@/components/chrome/Footer";
 import { ContactForm } from "@/components/contact/ContactForm";
-import { ContactChannels } from "@/components/contact/ContactChannels";
 import { Companion } from "@/components/contact/Companion";
 import { resolveContactIntent, trackForIntent } from "@/lib/forms/contact";
 import { routing } from "@/lib/i18n/config";
@@ -43,7 +42,7 @@ export async function generateMetadata({
 
 type NextStep = { step: string; heading: string; body: string };
 
-/** Owner-published or absent, the same gate `ContactChannels` keeps. */
+/** Owner-published or absent — an unset channel is a missing line, never a dead link. */
 const TALK_URL = process.env.NEXT_PUBLIC_WHATSAPP_URL?.trim();
 
 /**
@@ -193,8 +192,6 @@ export default async function ContactPage({
               <dt className="contact-meta-term">{t("locationLabel")}</dt>
               <dd className="contact-meta-value">{t("locationValue")}</dd>
             </dl>
-
-            <ContactChannels />
           </div>
 
           {/* THE INSTRUMENT. */}

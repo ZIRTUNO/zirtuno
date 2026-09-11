@@ -38,6 +38,11 @@ jobs:
       - name: Lint
         run: npx eslint . --max-warnings 0
 
+      - name: Liquid invariants and CMS recovery
+        run: |
+          node scripts/verify/conductor.mjs
+          npm run verify:cms
+
       - name: Build
         # prebuild runs verify/production-env.mjs --if-production, which exits 0
         # unless VERCEL_ENV=production or ZIRTUNO_PRODUCTION_BUILD=true, so no

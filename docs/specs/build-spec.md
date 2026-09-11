@@ -841,9 +841,15 @@ founding notes, and the large purpose statement beside the departing mark.
 Labels, names, glosses and supporting sentences reveal in a measured sequence.
 The text stays stationary inside reversible crops; it never becomes canvas copy.
 
-The original manifesto follows in normal flow. PT/EN remain authored in the
-locale JSON files. Zéfiro and Ventura are two ideas; Social, Health and Finance
-remain three founding pillars, distinct from the seven service capabilities.
+The coda follows in normal flow: Seneca's port, as a `<figure>` — the Latin
+original, the translated quotation, a rule, and the attribution. It replaced the
+four-line manifesto. Its one motion is a swell that damps to flat as the reader
+scrolls through it, driven by the figure's live rect rather than a cached scroll
+offset (`components/chapters/ManifestoQuote.tsx` says why), and it is measured by
+`scripts/verify/manifesto-coda.mjs`. Nothing in the coda fades, and every word is
+legible at every point in the passage. PT/EN remain authored in the locale JSON
+files. Zéfiro and Ventura are two ideas; Social, Health and Finance remain three
+founding pillars, distinct from the seven service capabilities.
 
 **Acceptance:**
 
@@ -864,20 +870,87 @@ remain three founding pillars, distinct from the seven service capabilities.
 Sections:
 
 - Where: Curitiba/location;
-- Who: anonymous role grid by default;
+- Who: the claim (a small multidisciplinary team organised by function),
+  then the three-card row that shows it;
 - Why: closing purpose line;
 - CTA: `cta.talk`.
 
-**Liquid — CURRENT R5-D:** Origin echo satellites persist behind the roles grid,
+**Who — CURRENT (2026-09-09).** The anonymous six-cell role grid is replaced by
+three cards at the full shell width: **Marca**, **Web & Software**,
+**IA, Automação & Dados**. The grid named the functions and showed none of
+their output, which asked the reader to take "Design" and "Engenharia" on faith
+in the one chapter whose job is to answer who this is. Each card now carries
+that function's artefact — a marquee of this brand's own book pages, a stage of
+live client sites and a product surface, a fan of instrument tiles — and the
+six role names survive as prose in the card subtitles. The list itself moved to
+`careers.functions`, the only place that still renders it as a list.
+
+Anatomy is the owner's scale reference (upsunday.co §services): card
+415.814/520, 3-up at `--shell-w`, caption at 75.385% / 10.341% carrying a
+5.374cqw title over a 4.741cqw line. Colour is NOT borrowed: the reference runs
+three pastel grounds and this brand has one hue, so the cards separate by the
+DIRECTION of their light — top edge, behind the frames, under the fan.
+
+**Card 02 — the web stage.** TWELVE surfaces, real and drawn alternating.
+SIX are proof, every one public and checkable by opening its URL: the two live
+client sites the gallery presents, plus four pages of this site — hero, work
+index, a case page, contact. Four pages rather than four crops of one, because
+a hero, an index, a case and a form are four different jobs and the stage
+exists to show a RANGE. All shot flat by `scripts/capture/studio-cards.mjs`,
+because the gallery's square lifestyle renders are illegible at ~190px. SIX are
+interface vignettes drawn in CSS — a product dashboard, a store, a launch page,
+an editorial, a portfolio, a documentation site — carrying no client, logo,
+name or number. Three slots are on stage (left/centre/right) and nine wait off
+it; `is-enter` transitions opacity only, so a frame wrapping from the left slot
+teleports to the right staging point instead of sliding invisibly across.
+
+Proof rule (§7.3 / #9): **award-gallery screenshots are NOT permitted here**,
+and this was re-confirmed against an explicit request for them (2026-09-10).
+On a card headed "sites e sistemas construídos para converter", inside the
+chapter that answers who this studio IS, another studio's work reads as this
+studio's work — and it redistributes their copyrighted design commercially.
+The rule that bans inventing proof equally bans borrowing someone else's. The
+honest way to grow this list is more delivered client work, or more pages of
+this site: one line in `SHOTS` plus one in the shot script.
+
+**Card 03 — the stack fan.** SIX tiles: Figma · Blender · OpenAI ·
+**the companion** · Claude · n8n, at the reference's arc. These are TOOLS —
+never clients, never work — which is the same use the reference makes of the
+Adobe suite on its Motion card. The companion sits one step right of the
+midpoint with the top z-index and the only lit ground, and comes from
+`scripts/capture/studio-avatar.mjs`, which drives the shipped companion kernel
+rather than screenshotting the contact page, so the tile cannot drift from the
+live droplet.
+
+Brand marks keep their OWN colours, unmasked — owner's instruction
+(2026-09-10) and the only paint on this site outside the cyan family. Brand
+tiles therefore take a NEUTRAL near-black ground rather than the card's
+cyan-tinted glass. Provenance, sourcing and the swap procedure:
+`public/brand/stack/README.md`. Marks must be symbols, not logotypes: the fan
+overlaps by about a third and a logotype loses the letters that identify it.
+
+**Liquid — CURRENT R5-D:** Origin echo satellites persist behind the card row,
 settling from afterglow into quiet presence. Copy stays dominant.
 
 **Acceptance:**
 
 - Where/Who/Why are present;
 - no duplicate process block;
-- role grid works without portraits;
+- the card row holds the reference's ratio, stays inside the rail's protected
+  column and causes no horizontal overflow;
+- the two brand marquees carry DISJOINT page sets, each alternating paper and
+  black, so no page can appear twice on the card at once;
+- the web stage holds one centre, one left and one right with three off stage,
+  advances, and carries all three real sites with every drawn surface anonymous;
+- the stack fan carries six named marks, each resolving to a file that exists,
+  each keeping its own brand colour and none masked into a flat fill, and lifts
+  one card forward on hover while the rest step back;
+- both marquee and web stage idle while the card is off screen, and freeze
+  under reduced motion with all three cards still readable;
 - echoes do not reduce contrast or create an unmotivated new form;
 - Talk CTA works.
+
+**Gate:** `scripts/verify/studio-cards.mjs` (`npm run studio`), both locales.
 
 ### 6.9 Chapter 09 — Contact / The Beginning
 

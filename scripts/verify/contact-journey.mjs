@@ -5,6 +5,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import { chromium } from "playwright";
 import { LAUNCH } from "../support/launch.mjs";
+import { contactApiSchema } from "../../lib/forms/contact.ts";
 
 const BASE = process.env.BASE_URL || "http://localhost:3000";
 const OUT = process.env.OUT || "captures/contact-journey";
@@ -251,7 +252,7 @@ try {
     await item.ctx.close();
   }
 
-  /* ── the REAL endpoint, unmocked ─────────────────────────────────────── */
+  /* ── the API's real schema, without a delivery side effect ───────────── */
   // Every check above intercepts `/api/contact`, which means none of them has
   // ever run the request through the actual Zod schema — `page.route` answers
   // before the handler is reached. That gap shipped a live defect once: Zod 4's
@@ -259,14 +260,10 @@ try {
   // two of the eight qualifiers was rejected outright, and the whole suite
   // stayed green because the payload never left the browser.
   //
-  // So one payload goes all the way in. The assertion is narrow on purpose:
-  // NOT `validation`. Local runs have no delivery key and answer
-  // `configuration`; a configured environment answers `delivered`. Either is a
-  // schema that accepted the form. Only `validation` means it did not.
-  const real = await browser.newContext();
-  const probe = await real.request.post(BASE + "/api/contact", {
-    headers: { "Content-Type": "application/json" },
-    data: {
+  // Import the SAME schema used by the route. Posting this valid fixture to
+  // an unmocked server sends real mail as soon as delivery is configured;
+  // regression checks must remain safe on a fully configured preview too.
+  const partial = contactApiSchema.safeParse({
       name: "Schema Probe",
       email: "probe@example.com",
       company: "Local test only",
@@ -274,26 +271,20 @@ try {
       intent: "structure",
       details: { focus: "structure", budget: "upTo150" },
       submissionId: crypto.randomUUID(),
-    },
   });
-  const body = await probe.json();
-  assert.notEqual(body.error, "validation",
-    "the real schema must accept an enquiry that answered SOME qualifiers: " + JSON.stringify(body));
+  assert(partial.success,
+    "the API schema must accept an enquiry that answered SOME qualifiers: " + JSON.stringify(partial.error));
   // And it must still refuse a key that is not on the closed list.
-  const junk = await real.request.post(BASE + "/api/contact", {
-    headers: { "Content-Type": "application/json" },
-    data: {
+  const junk = contactApiSchema.safeParse({
       name: "Schema Probe",
       email: "probe@example.com",
       message: "A local verification that unknown qualifier keys are refused.",
       intent: "general",
       details: { focus: "structure", smuggled: "x" },
       submissionId: crypto.randomUUID(),
-    },
   });
-  assert.equal((await junk.json()).error, "validation", "unknown qualifier keys are refused");
-  await real.close();
-  good("the real endpoint accepts a partial qualifier set and refuses an unknown key");
+  assert.equal(junk.success, false, "unknown qualifier keys are refused");
+  good("the API schema accepts a partial qualifier set and refuses an unknown key without sending mail");
 
   /* ── the server HTML on its own ──────────────────────────────────────── */
   // Three real forms, a switch made of radios and `:has()`, and a native POST

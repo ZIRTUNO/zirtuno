@@ -19,7 +19,7 @@ bodies establish a centre without a disk, orbit, star field or drawn force lines
 | Identity | .56–.76 | The owner-traced SDF resolves; a sparse outer population stays alive | Zirtuno opens outward from its centre; fusion and founding pillars share a quieter baseline |
 | Continuation | .76–1 | The mark moves left on wide stages, erodes, and releases the same bodies toward Studio | A large purpose statement takes the right column; portrait layouts stack it below the liquid |
 
-The manifesto follows in document flow. Origin's presence begins across the
+The coda (Seneca's port) follows in document flow. Origin's presence begins across the
 opening and extends beyond the runway; the conductor blends the surviving
 population into Studio's existing echo. There is no drain-to-black interlude,
 second wordmark engine, sound, or full-page flash.

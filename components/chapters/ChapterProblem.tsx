@@ -59,11 +59,8 @@ export function ChapterProblem() {
               className="symptom"
               style={{ "--shard-x": `${SHARD_X[i % SHARD_X.length]}rem` } as React.CSSProperties}
             >
-              <span className="symptom-num">{String(i + 1).padStart(2, "0")}</span>
-              <div>
-                <p className="symptom-label">{s.label}</p>
-                <p className="symptom-desc">{s.desc}</p>
-              </div>
+              <p className="symptom-label">{s.label}</p>
+              <p className="symptom-desc">{s.desc}</p>
             </Reveal>
           ))}
         </ul>
