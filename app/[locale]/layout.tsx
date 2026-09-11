@@ -8,6 +8,7 @@ import {
   getMessages,
 } from "next-intl/server";
 import { routing } from "@/lib/i18n/config";
+import { clientMessages } from "@/lib/i18n/client-messages";
 import { bricolage, nunito } from "@/lib/typography/fonts";
 import CustomCursor from "@/components/chrome/CustomCursor";
 import LenisProvider from "@/components/motion/LenisProvider";
@@ -139,7 +140,7 @@ export default async function LocaleLayout({
         <Aura />
         <BreathLayer />
         <SiteAnalytics />
-        <NextIntlClientProvider locale={locale} messages={messages}>
+        <NextIntlClientProvider locale={locale} messages={clientMessages(messages)}>
           <a href="#content" className="skip-link">
             {tCommon("skipToContent")}
           </a>
