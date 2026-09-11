@@ -269,3 +269,17 @@ sampled by PageStage, three continuous liquid currents, native disclosures and
 a live phone composition. The active gate is `scripts/verify/ecosystem.mjs`;
 the active capture is `scripts/capture/ecosystem.mjs`. Shared Confluence geometry
 and the Services bridge remain active and are not quarantined.
+
+## 2026-09-10 optimization cleanup
+
+- `public/{file,globe,next,vercel,window}.svg`: unreferenced Create Next App
+  scaffold images; no source, route, CSS, tooling or documentation consumer.
+- `public/work/{diego-santos,juliana-delmonte}.jpg`: byte-identical copies of
+  the `-2026.jpg` images actually referenced by `lib/content/portfolio.ts`.
+- `public/hdri/studio.hdr`: unused, previously ignored lighting reference;
+  the active raw WebGL shaders do not load an HDR environment.
+
+The seven tracked assets remain recoverable in this archive. The previously
+ignored HDR stays a local reference only. Restore a public asset to its original
+path if a future consumer needs it. The production ribbon shader was moved from
+`lib/lab/` to `lib/webgl/` unchanged, because the homepage consumes it.
