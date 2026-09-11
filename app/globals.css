@@ -2074,7 +2074,7 @@ body:has(.liquid-journey) .aura {
 .pillar-stage {
   min-height: clamp(13rem, 32vh, 20rem);
 }
-@media (min-width: 60rem) {
+@media (min-width: 60rem), (min-width: 40rem) and (max-height: 32rem) {
   .pillar {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     align-items: center;
@@ -2090,6 +2090,32 @@ body:has(.liquid-journey) .aura {
   display: flex;
   flex-direction: column;
   gap: clamp(1.5rem, 4vh, 2.75rem);
+}
+/* In a portrait stack, departing copy crosses the fixed liquid band. Give
+   that band back to the morph after the reading stop. The browser scrubs this
+   in both directions; no scroll listener or hidden semantic content is added.
+   Static/no-JS, reduced motion, focused controls and open details stay readable. */
+@supports (animation-timeline: view()) {
+  @media (max-width: 59.999rem) and (prefers-reduced-motion: no-preference) {
+    .liquid-journey[data-liquid="live"] .pillar-copy {
+      animation: pillar-reading-clear 1s linear both;
+      animation-timeline: view(block);
+      animation-range: cover 34% cover 43%;
+    }
+    .liquid-journey[data-liquid="live"] .pillar-copy:focus-within,
+    .liquid-journey[data-liquid="live"] .pillar-copy:has(details[open]) {
+      animation: none;
+    }
+  }
+  @media (min-width: 40rem) and (max-height: 32rem) {
+    .liquid-journey[data-liquid="live"] .pillar-copy {
+      animation: none;
+    }
+  }
+}
+@keyframes pillar-reading-clear {
+  from { opacity: 1; }
+  to { opacity: 0; }
 }
 /* ── THE PIN — the headline does not move when a panel opens ────────────────
    The stage centres its copy column beside the form, and centring plus a
@@ -2282,6 +2308,12 @@ html:has(.disclose[data-disclose="live"][open]) {
   }
   .pillar-stage {
     min-height: clamp(12rem, 30vh, 18rem);
+  }
+}
+@media (min-width: 40rem) and (max-width: 59.999rem) and (max-height: 32rem) {
+  .pillar-stage {
+    order: 0;
+    min-height: 60svh;
   }
 }
 
