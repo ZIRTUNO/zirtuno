@@ -207,8 +207,13 @@ streamed-body size ceilings.
 Production builds run a readiness gate automatically and refuse to ship with
 placeholder contact identity, an unverified delivery path, or an unattested
 rate-limit rule.
-Both build commands run the gate when `ZIRTUNO_PRODUCTION_BUILD=true` or
-`VERCEL_ENV=production`, including the webpack build invoked by OpenNext.
+The gate runs on `npm run build` when `ZIRTUNO_PRODUCTION_BUILD=true` or
+`VERCEL_ENV=production`. It is deliberately NOT wired to `build:webpack`, which
+is the command OpenNext invokes for the Cloudflare Worker: this gate asserts
+LAUNCH readiness — approved legal copy, a verified sender domain, an attested
+rate-limit rule — and the Worker deploys a site that has not launched yet, so
+arming it there stops every deploy by design. Wire it in at launch, together
+with the readiness variables, not before.
 Optional CMS reads have a three-second timeout and no retries, so a stalled
 Sanity request reaches the verified fallback promptly. `npm run verify:cms`
 checks timeout and recovery against a local test server.
