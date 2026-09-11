@@ -15,6 +15,9 @@ const eslintConfig = [
       "node_modules/**",
       "Dead Code/**", // quarantined source is retained for recovery, never active
       ".claude/**", // local agent worktrees and their generated builds
+      ".open-next/**", // generated Cloudflare worker bundle
+      ".wrangler/**", // local Cloudflare runtime state
+      ".melt-sim-cache/**",
       ".next/**",
       ".next-*/**", // NEXT_DIST_DIR verification / lab builds
       "artifacts/**", // visual evidence and recoverable cache backups
