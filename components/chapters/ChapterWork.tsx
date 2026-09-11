@@ -42,9 +42,15 @@ export async function ChapterWork() {
         {t("headline")}
       </WetType>
 
+      {/* `balance` rather than the role's default `pretty`. This lead is one
+          short sentence, and `pretty` only guards against a single-word last
+          line — it happily set "…operação em / um sistema só.", splitting the
+          preposition from its article and leaving a stub under a 76px title.
+          Balance moves the break to the phrase boundary at every width the
+          measure allows. The 37ch measure itself is untouched. */}
       <WetType
         as="p"
-        className="type-lead-copy mt-[var(--type-space-title-lead)]"
+        className="type-lead-copy text-balance mt-[var(--type-space-title-lead)]"
       >
         {t("lead")}
       </WetType>

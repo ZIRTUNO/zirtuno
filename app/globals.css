@@ -2498,13 +2498,16 @@ html:has(.disclose[data-disclose="live"][open]) {
    `cover` crop resolves identically at both ends of the flight and the
    photograph never slides inside its own frame while it travels.
    =========================================================================== */
+/* The list reset preflight already performs (`margin`/`padding`/`list-style`
+   on every element, from `@layer base`) is NOT restated here. Restating it
+   looks free and is not: this block is unlayered, and unlayered CSS outranks
+   `@layer utilities` whatever the specificity — so a `margin: 0` shorthand
+   here silently ate the `mt-[…]` both callers put on the grid, and the strip
+   sat flush under its own lead with no gap at all. */
 .zw-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--grid-gap);
-  margin: 0;
-  padding: 0;
-  list-style: none;
 }
 @media (max-width: 767px) {
   .zw-grid {
