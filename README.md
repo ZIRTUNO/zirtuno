@@ -2,8 +2,8 @@
 
 The website of Zirtuno, a Brazilian digital studio. It is a bilingual
 (PT-BR / EN) marketing site whose central idea is a single continuous liquid:
-one WebGL body that runs from the first pixel of the hero through the footer,
-taking a different form in each chapter, and never restarting.
+an opening liquid ribbon and one persistent chapter field that carries the
+same authored droplets through the argument to the footer.
 
 The liquid is not an ornament. The studio's argument is that brand, software,
 data, and operations are usually built as disconnected pieces, and that they
@@ -54,7 +54,7 @@ from multiple canvases or dividing rules.
 | **II — Argument** | Problem, Ecosystem, Services | Pours, fractures into scattered pieces, gathers capability masses out of depth into three systems, resolves into the mark, then takes the exact form of each service in turn |
 | **III — Practice** | Método, Work | Rehearses the client transformation, then settles into a quiet current behind the case studies |
 | **IV — Soul** | Origin, Studio | Two idea-masses fuse into the exact mark, echo into satellites, and continue behind the studio |
-| **V — Invitation** | Contact, Footer | Every droplet gathers into the mark; submitting exhales; one droplet is released past the footer |
+| **V — Invitation** | Footer, standalone Contact route | The homepage releases its liquid at the footer; contact CTAs route to the three-track form and its companion |
 
 The transitions between these states are handoffs of the same body — `assembly`,
 `pour`, `fracture`, `seek`, `bloom`, `rehearse`, `current`, `fuse`, `gather`,
@@ -67,9 +67,15 @@ Two details carry most of the weight:
   SVG. Drawing a vector there would have contradicted the chapter's claim that
   nothing is placed between the two bodies — they simply stop being separate.
 - **The seven forms.** Each service has an exact silhouette, and the liquid
-  takes it precisely. The droplet count is fixed at 48 so that a morph between
+  takes it precisely. The authored population is fixed at 48 so that a morph between
   any two forms is a pure interpolation of position and radius, with nothing
-  appearing or disappearing mid-transition.
+  appearing or disappearing mid-transition. Additional simulated motes fade
+  out of the field during these exact morphs.
+
+The homepage currently contains eight chapters and its footer. Contact lives
+at `/[locale]/contact`; it is not a ninth homepage section. `HeroRibbon` and
+the atmospheric `Aura` have separate enhancement contexts. The one-canvas
+gate refers to the persistent `.journey-canvas` chapter field.
 
 ---
 
@@ -81,14 +87,14 @@ Two details carry most of the weight:
 | --- | --- |
 | Framework | Next.js 16 (App Router, RSC), React 19, TypeScript, Turbopack |
 | Styling | Tailwind CSS v4 with CSS custom properties as the token source |
-| Graphics | Raw WebGL2 with OGL, custom SDF and metaball shaders |
+| Graphics | Raw WebGL2, custom SDF and metaball shaders |
 | Scroll choreography | GSAP with ScrollTrigger |
 | Micro-interaction | Motion |
 | Scrolling | Lenis |
 | Internationalisation | next-intl |
 | Content | Sanity, with a committed fallback selection |
 | Forms | react-hook-form, Zod, Resend |
-| Hosting and analytics | Vercel, Plausible |
+| Hosting and analytics | Cloudflare Workers via OpenNext, Plausible |
 
 Node 26 is expected; the version is pinned in `.nvmrc`.
 
@@ -176,8 +182,8 @@ by `proxy.ts` at the repository root — Next.js 16 renamed what was previously
 
 ## Content
 
-Case studies come from Sanity. If Sanity is unreachable or unconfigured in
-production, the site fails closed to an honest, empty portfolio; it never
+Case studies come from Sanity when configured and available, with the verified
+projects in `lib/content/portfolio.ts` as the committed fallback. It never
 substitutes prototype or concept work as though it were client work. Local
 concept studies are available only when `PORTFOLIO_DEMO_MODE=true` outside
 production, and are strictly a review convenience.
@@ -201,6 +207,13 @@ streamed-body size ceilings.
 Production builds run a readiness gate automatically and refuse to ship with
 placeholder contact identity, an unverified delivery path, or an unattested
 rate-limit rule.
+Both build commands run the gate when `ZIRTUNO_PRODUCTION_BUILD=true` or
+`VERCEL_ENV=production`, including the webpack build invoked by OpenNext.
+Optional CMS reads have a three-second timeout and no retries, so a stalled
+Sanity request reaches the verified fallback promptly. `npm run verify:cms`
+checks timeout and recovery against a local test server.
+`scripts/verify/contact-journey.mjs` intercepts browser submissions and imports
+the API schema for qualifier checks; it does not send verification emails.
 
 ---
 
@@ -209,14 +222,15 @@ rate-limit rule.
 ```
 app/[locale]/        locale routes, page composition, metadata, sitemap, robots
 components/
-  chapters/          semantic chapter UI and the contact surface
+  chapters/          semantic homepage chapter UI
   chrome/            navigation, CTAs, cursor, footer, brand draw
+  contact/           standalone contact form, companion and optical enhancement
   field/             PageStage conductor shell and FieldStage renderer
   motion/            scroll provider and the route veil
   work/              the case gallery and its Rive experience
   lab/               internal QA renderers
 lib/
-  webgl/             SDFs, symbols, conductor, physics, shaders, tiers, scenes
+  webgl/             SDFs, symbols, conductor, physics, shaders, tiers, scenes, ribbon
   animation/         easings, durations, traces, spine geometry
   i18n/messages/     the only source of shipped copy
   content/           portfolio and socials sources
@@ -271,11 +285,12 @@ npm run dev       # development server
 npm run build     # production build
 npm run start     # serve the production build
 npm run lint      # ESLint
-npx tsc --noEmit  # typecheck
+npm run typecheck # typecheck
 ```
 
-Continuous integration runs the typecheck, ESLint at zero warnings, and a
-production build on every push and pull request to `main`. Lint is a hard gate:
+Continuous integration runs the typecheck, ESLint at zero warnings, conductor
+invariants, CMS timeout recovery, and a production build on every push and
+pull request to `main`. Lint is a hard gate:
 a new warning fails the build.
 
 ### Verification harnesses
@@ -302,6 +317,37 @@ npm run verify:production  # the production readiness gate
 Every gate under `scripts/verify/` can also be run directly with `node`.
 Capture harnesses under `scripts/capture/` produce contact sheets and filmstrips
 for visual review; their output goes to `captures/`, which is not tracked.
+
+`npm run audit:repository` inventories source reachability, tooling consumers,
+dependency imports and public asset sizes. Its candidates require review: lab
+routes and deterministic kernels are active tooling even when they are absent
+from the homepage. Confirmed unused assets are archived under `Dead Code/` per
+`AGENTS.md`; generated build caches belong outside the active source tree.
+The September 2026 local caches are retained in `artifacts/build-cache-archive/`.
+
+TypeScript includes the application source and the current `.next` route types.
+Do not add `.next-*/**` or repository-wide source globs: those pull stale preview
+routes and local agent worktrees into every check. Next may append explicit
+type paths when `NEXT_DIST_DIR` is used; remove those entries after the isolated
+preview is retired. Keep lint exclusions for `.open-next/` and `.wrangler/` so
+deployment output never becomes application source.
+
+`BASE_URL=http://localhost:3000 npm run verify:runtime` checks ribbon context
+recovery, reduced-motion repainting, parking of invisible animation, and
+pointer-only geometry measurement for the shared membrane scheduler.
+`scripts/probe/runtime-cost.mjs` records delivered bytes and layout reads on
+the same production routes for before/after comparisons. Run timing probes
+without other GPU tests or builds competing for resources.
+
+Only client-used translation namespaces cross the locale provider boundary;
+`lib/i18n/client-messages.ts` lists them. Server chapters retain the full
+authored catalogues. Update that list when a Client Component begins reading
+another namespace, and run the PT/EN navigation and contact gates.
+
+The narrow PostCSS and Sharp overrides in `package.json` enforce patched
+transitive versions in Next and Miniflare. Keep `npm audit` and `npm ls` clean
+when updating the lockfile; `npm audit fix --force` can propose downgrading the
+deployment adapter and is not the routine maintenance path.
 
 Three measurement cautions are worth knowing before trusting a result.
 Screenshots carry roughly a **1% churn noise floor**, so a small pixel delta is
