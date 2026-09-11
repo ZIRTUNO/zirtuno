@@ -410,14 +410,27 @@
     "coordinates": "25.4284° S · 49.2733° W",
     "whoLabel": "Who",
     "whoLead": "A small, multidisciplinary team, organized by function.",
-    "roles": [
-      "Strategy",
-      "Design",
-      "Engineering",
-      "AI & Automation",
-      "Branding",
-      "Content & Growth"
-    ],
+    "cards": {
+      "brand": {
+        "title": "Brand",
+        "sub": "Branding, content and growth: a presence you recognise from a distance.",
+        "markAlt": "Zirtuno mark"
+      },
+      "build": {
+        "title": "Web & Software",
+        "sub": "Design and engineering: sites and systems built to convert.",
+        "shotJuliana": "Juliana Delmonte's site, behavioural nutritionist",
+        "shotDiego": "Diego Santos's site, personal trainer",
+        "shotZirtuno": "Zirtuno's own site, the studio itself",
+        "shotZirtunoWork": "Zirtuno's project index",
+        "shotZirtunoCase": "Zirtuno's case page: Juliana Delmonte",
+        "shotZirtunoContact": "Zirtuno's contact page"
+      },
+      "intel": {
+        "title": "AI, Automation & Data",
+        "sub": "Strategy and automation: agents and dashboards that run on their own."
+      }
+    },
     "whyLabel": "Why",
     "closingStatement": "We are not about appearing.",
     "closingItalic": "We are about being felt, remembered, and carried forward."
@@ -699,6 +712,14 @@
     "lead": "We are a small, multidisciplinary team, organised by function rather than by title. If you build things that have to hold up after the launch, we would like to know you exist.",
     "functionsHeading": "How the studio is organised",
     "functionsBody": "Six functions, each owning a real part of the work. Most people here are strong in one and useful in a second. That overlap is what lets a small team carry a whole ecosystem.",
+    "functions": [
+      "Strategy",
+      "Design",
+      "Engineering",
+      "AI & Automation",
+      "Branding",
+      "Content & Growth"
+    ],
     "traitsHeading": "What we look for",
     "traits": [
       {

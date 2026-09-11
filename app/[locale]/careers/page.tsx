@@ -47,9 +47,13 @@ export async function generateMetadata({
  * of it — and the application rides the contact pipeline that already works,
  * tagged `intent=careers` so it can be filtered from commercial enquiries.
  *
- * The six functions come from the `studio` namespace, not a copy of it: the
- * Studio chapter already publishes that list, and two lists that must agree
- * are one list that will eventually disagree.
+ * The six functions used to be read from the `studio` namespace, on the ground
+ * that the Studio chapter already published the list and two lists that must
+ * agree are one list that will eventually disagree. S8 stopped publishing it
+ * as a list on 2026-09-09 — its "Who" is now three cards that SHOW each
+ * function's output, and the names survive there as prose inside the card
+ * subtitles, not as an array. That left `studio.roles` with exactly one
+ * consumer: this page. So the list moved here, where it is rendered.
  */
 export default async function CareersPage({
   params,
@@ -60,8 +64,7 @@ export default async function CareersPage({
   setRequestLocale(locale);
 
   const t = await getTranslations("careers");
-  const tStudio = await getTranslations("studio");
-  const roles = tStudio.raw("roles") as string[];
+  const roles = t.raw("functions") as string[];
   const traits = t.raw("traits") as { heading: string; body: string }[];
 
   return (

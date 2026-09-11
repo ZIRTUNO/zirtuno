@@ -3258,49 +3258,1299 @@ html:has(.disclose[data-disclose="live"][open]) {
 }
 
 /* ===========================================================================
-   The Studio — anonymous role grid (S9)
+   S8 · WHAT THE STUDIO DELIVERS — the three-card row
+
+   Replaces the anonymous role grid. That grid stated the team's shape in six
+   words and showed nothing; these cards make the same claim visible by putting
+   each function's ARTEFACT inside its own card, and carry the six role names
+   forward in the subtitles.
+
+   PROPORTION is the reference's (upsunday.co §services), because the owner set
+   that site as the scale bar and this shell is already its shell: `--shell-w`
+   is 75.24vw exactly as its `--site-w` is, and `--topbar-radius` is its
+   `--radius`. So the card is its 415.814/520, the row is its 3-up at the shell
+   width, and the caption sits at its 75.385% / 10.341% with a 5.374cqw title
+   over a 4.741cqw line. Nothing here is eyeballed.
+
+   COLOUR is not the reference's. It runs three pastel grounds — blue, pink,
+   orange — and this brand has one hue and a standing rule that mood rides
+   FORM, not a warm channel. So the three cards separate by the DIRECTION of
+   their light instead: Marca is lit from the top edge, Web & Software from
+   behind the frames, IA from a pool underneath the fan. Same read, one hue.
+
+   Every card is `container-type: inline-size`, and so is every plate, frame
+   and tile inside it — so `cqw` in a plate means "of this plate" and the whole
+   composition scales as one thing instead of breaking at chosen widths.
    =========================================================================== */
-.studio-roles {
+.studio-cards {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 1px;
-  border: 1px solid var(--color-paper-faint);
-  background: var(--color-paper-faint);
-}
-.studio-role {
-  background: var(--color-ink);
-  min-width: 0;
-  padding: clamp(1.1rem, 4vw, 1.5rem);
-  font-size: var(--text-title);
-  line-height: var(--text-title--line-height);
-  letter-spacing: var(--text-title--letter-spacing);
-  font-weight: 500;
-  color: var(--color-paper);
-}
-.studio-role span {
-  display: block;
-  margin-bottom: 0.4rem;
-  font-family: var(--font-mono);
-  font-size: var(--text-mono-sm);
-  font-variant-numeric: tabular-nums lining-nums;
-  line-height: var(--text-mono-sm--line-height);
-  letter-spacing: var(--tracking-label);
-  color: var(--color-cyan);
-}
-@media (min-width: 420px) {
-  .studio-roles {
-    grid-template-columns: repeat(2, 1fr);
-  }
+  gap: var(--space-group);
 }
 @media (min-width: 768px) {
-  .studio-roles {
+  .studio-cards {
     grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
   }
 }
-/* the role grid is one of only two homepage blocks that reach the page's right
+/* the card row is one of only two homepage blocks that reach the page's right
    edge — it stops short of the chapter rail's protected column */
-#studio .studio-roles {
+#studio .studio-cards {
   margin-right: var(--rail-safe);
+}
+
+.studio-card {
+  position: relative;
+  aspect-ratio: 415.814 / 520;
+  border-radius: var(--card-radius);
+  overflow: hidden;
+  container-type: inline-size;
+  user-select: none;
+  /* a hairline of paper so the plate has an edge against the field behind it */
+  box-shadow: inset 0 0 0 1px rgb(242 240 235 / 0.08);
+}
+.studio-card img {
+  -webkit-user-drag: none;
+  pointer-events: none;
+}
+
+/* ── the caption block — the reference's geometry, this brand's ink ───────── */
+.studio-card__text {
+  position: absolute;
+  top: 75.385%;
+  left: 10.341%;
+  z-index: 4;
+  display: flex;
+  flex-direction: column;
+  gap: 3.807cqw;
+  width: 79.198%;
+}
+.studio-card__title,
+.studio-card__sub {
+  margin: 0;
+  font-family: var(--font-display);
+  line-height: 1.1;
+  text-shadow: 0 1px 2px rgb(0 0 0 / 0.45);
+}
+.studio-card__title {
+  font-size: 5.374cqw;
+  font-weight: 600;
+  letter-spacing: -0.236cqw;
+  color: var(--color-paper);
+}
+.studio-card__sub {
+  font-size: 4.741cqw;
+  font-weight: 400;
+  letter-spacing: -0.164cqw;
+  color: var(--color-paper-mute);
+}
+
+/* ── 01 · Marca — lit from the top edge ──────────────────────────────────── */
+.studio-card--brand {
+  background:
+    radial-gradient(
+      126% 78% at 50% -14%,
+      color-mix(in srgb, var(--color-cyan) 36%, transparent) 0%,
+      transparent 70%
+    ),
+    radial-gradient(
+      112% 46% at 50% 114%,
+      color-mix(in srgb, var(--color-cyan) 22%, transparent) 0%,
+      transparent 72%
+    ),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--color-cyan) 8%, #06090b) 0%,
+      #000000 72%
+    );
+}
+
+.brand-row {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  overflow: hidden;
+}
+.brand-row--top {
+  top: 11.538%;
+  height: 23.326%;
+}
+.brand-row--bottom {
+  top: 38.479%;
+  height: 22.986%;
+}
+.brand-track {
+  display: flex;
+  width: max-content;
+  height: 100%;
+  will-change: transform;
+}
+/* PAUSED until the card is actually on screen. This page already runs a
+   full-viewport WebGL field; two marquees compositing behind a reader who is
+   four chapters away is cost with no viewer. `data-live` is set by an
+   IntersectionObserver on the card.
+
+   `paused` is IN the shorthand, not a declaration of its own on `.brand-track`.
+   The `animation` shorthand resets every longhand it does not name, so a
+   separate `.brand-track { animation-play-state: paused }` above these two
+   rules was silently reset to `running` by them — the pause looked correct in
+   the source and did nothing in the browser. */
+.brand-track--ltr {
+  animation: studio-marquee-l 26s linear infinite paused;
+}
+.brand-track--rtl {
+  animation: studio-marquee-r 23s linear infinite paused;
+}
+.studio-card[data-live="true"] .brand-track {
+  animation-play-state: running;
+}
+/* Each plate carries its own trailing margin rather than the track carrying a
+   gap: with `gap`, the doubled list is 2n items and 2n−1 gaps, so −50% is NOT
+   one period and the loop visibly jumps. Margins make the period exact. */
+@keyframes studio-marquee-l {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+@keyframes studio-marquee-r {
+  from {
+    transform: translateX(-50%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .brand-track {
+    animation: none;
+  }
+}
+
+/* the brand sheets — printed pages of this brand's own book, floating in ink */
+.bplate {
+  position: relative;
+  flex: none;
+  height: 100%;
+  margin-right: 2.6cqw;
+  border-radius: calc(var(--card-radius) * 0.7);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6cqw;
+  container-type: inline-size;
+  background: var(--color-paper);
+  box-shadow: 0 0.7cqw 2cqw rgb(0 0 0 / 0.5);
+}
+.bplate--logo {
+  aspect-ratio: 4 / 3;
+}
+.bplate--type {
+  aspect-ratio: 1 / 1;
+  flex-direction: column;
+  gap: 3cqw;
+}
+.bplate--palette {
+  aspect-ratio: 3 / 2;
+}
+.bplate--voice {
+  aspect-ratio: 4 / 3;
+  padding: 12cqw;
+}
+.bplate--grid {
+  aspect-ratio: 1 / 1;
+}
+.bplate--mark,
+.bplate--wordmark,
+.bplate--icon,
+.bplate--motion,
+.bplate--card,
+.bplate--spec {
+  background: linear-gradient(180deg, #14181a 0%, #000000 100%);
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--color-cyan) 16%, transparent),
+    0 0.7cqw 2cqw rgb(0 0 0 / 0.5);
+}
+.bplate--mark,
+.bplate--icon {
+  aspect-ratio: 1 / 1;
+}
+.bplate--wordmark,
+.bplate--motion,
+.bplate--card {
+  aspect-ratio: 16 / 9;
+}
+.bplate--swatch {
+  aspect-ratio: 3 / 4;
+  flex-direction: column;
+  gap: 5cqw;
+  padding: 10cqw;
+}
+.bplate--spec {
+  aspect-ratio: 4 / 3;
+  padding: 12cqw;
+}
+.bplate--spec .bplate__spec b {
+  background: rgb(242 240 235 / 0.55);
+}
+.bplate--spec .bplate__spec u {
+  background: rgb(242 240 235 / 0.18);
+}
+.bplate--mark .bplate__mark {
+  width: 42cqw;
+}
+.bplate--wordmark .bplate__wordmark {
+  font-size: 12cqw;
+  color: var(--color-paper);
+}
+
+.bplate__mark {
+  display: block;
+  width: 16cqw;
+  aspect-ratio: 2950 / 3200;
+  background: var(--color-cyan);
+  -webkit-mask: url("/brand/zirtuno-logo-mark.svg") center / contain no-repeat;
+  mask: url("/brand/zirtuno-logo-mark.svg") center / contain no-repeat;
+}
+.bplate__wordmark {
+  font-family: var(--font-display);
+  font-size: 17cqw;
+  font-weight: 600;
+  letter-spacing: -0.04em;
+  color: var(--color-ink);
+}
+.bplate__aa {
+  font-family: var(--font-display);
+  font-size: 44cqw;
+  font-weight: 600;
+  line-height: 0.82;
+  letter-spacing: -0.04em;
+  color: var(--color-ink);
+}
+.bplate__meta {
+  font-family: var(--font-mono);
+  font-size: 7cqw;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgb(0 0 0 / 0.42);
+}
+.bplate__chips {
+  display: flex;
+  gap: 5cqw;
+}
+.bplate__chip {
+  display: block;
+  width: 17cqw;
+  aspect-ratio: 1;
+  border-radius: 3cqw;
+}
+.bplate__chip--ink {
+  background: var(--color-ink);
+}
+.bplate__chip--cyan {
+  background: var(--color-cyan);
+}
+.bplate__chip--paper {
+  background: #ffffff;
+  box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.14);
+}
+.bplate__lines {
+  display: flex;
+  flex-direction: column;
+  gap: 6cqw;
+  width: 100%;
+}
+.bplate__lines i {
+  display: block;
+  height: 5cqw;
+  border-radius: 2.5cqw;
+  background: rgb(0 0 0 / 0.16);
+}
+.bplate__lines i:first-child {
+  background: rgb(0 0 0 / 0.42);
+}
+.bplate__grid {
+  display: flex;
+  gap: 4cqw;
+  width: 72%;
+  height: 62%;
+}
+.bplate__grid i {
+  display: block;
+  flex: 1;
+  background: rgb(0 0 0 / 0.1);
+  border-top: 1px solid rgb(0 0 0 / 0.34);
+  border-bottom: 1px solid rgb(0 0 0 / 0.34);
+}
+.bplate__grid i:nth-child(2) {
+  background: color-mix(in srgb, var(--color-cyan) 34%, transparent);
+}
+
+/* a colour page: one field, its value under it */
+.bplate__swatch {
+  display: block;
+  width: 100%;
+  flex: 1;
+  min-height: 0;
+  border-radius: 4cqw;
+  background: linear-gradient(
+    180deg,
+    var(--color-cyan-glow) 0%,
+    var(--color-cyan-deep) 100%
+  );
+}
+
+/* a spec page: label, then value */
+.bplate__spec {
+  display: flex;
+  flex-direction: column;
+  gap: 7cqw;
+  width: 100%;
+}
+.bplate__spec i {
+  display: flex;
+  align-items: center;
+  gap: 5cqw;
+}
+.bplate__spec b {
+  display: block;
+  flex: none;
+  width: 22%;
+  height: 4cqw;
+  border-radius: 2cqw;
+  background: rgb(0 0 0 / 0.42);
+}
+.bplate__spec u {
+  display: block;
+  height: 4cqw;
+  border-radius: 2cqw;
+  background: rgb(0 0 0 / 0.16);
+}
+
+/* the app icon — the inverse of the `mark` page, and never beside it */
+.bplate__icon {
+  display: block;
+  width: 54%;
+  aspect-ratio: 1;
+  border-radius: 22%;
+  background: linear-gradient(
+    180deg,
+    var(--color-cyan-glow) 0%,
+    var(--color-cyan-deep) 100%
+  );
+  -webkit-mask:
+    url("/brand/zirtuno-logo-mark.svg") center / 58% no-repeat exclude,
+    linear-gradient(#000, #000);
+  mask:
+    url("/brand/zirtuno-logo-mark.svg") center / 58% no-repeat exclude,
+    linear-gradient(#000, #000);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+}
+
+/* a motion page: one beat, arriving */
+.bplate__motion {
+  display: flex;
+  align-items: center;
+  gap: 6cqw;
+}
+.bplate__motion i {
+  display: block;
+  border-radius: 50%;
+  background: var(--color-cyan);
+  aspect-ratio: 1;
+}
+.bplate__motion i:nth-child(1) {
+  width: 4cqw;
+  opacity: 0.4;
+}
+.bplate__motion i:nth-child(2) {
+  width: 7cqw;
+  opacity: 0.7;
+}
+.bplate__motion i:nth-child(3) {
+  width: 11cqw;
+}
+
+/* a card page: the rule, then the domain */
+.bplate__card {
+  display: flex;
+  flex-direction: column;
+  gap: 6cqw;
+  width: 62%;
+}
+.bplate__card b {
+  display: block;
+  height: 1px;
+  background: var(--color-cyan);
+}
+.bplate__card u {
+  display: block;
+  width: 72%;
+  height: 4cqw;
+  border-radius: 2cqw;
+  background: rgb(242 240 235 / 0.5);
+}
+/* the mark's badge, pinned over the seam between the two marquees */
+.brand-badge {
+  position: absolute;
+  top: 25.176%;
+  left: 35.814%;
+  z-index: 3;
+  width: 28.248%;
+  height: 22.587%;
+  border-radius: var(--card-radius);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(180deg, #191c1e 0%, #000000 100%);
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--color-cyan) 20%, transparent),
+    inset 0 1cqw 0 rgb(242 240 235 / 0.06),
+    0 1.6cqw 3.4cqw rgb(0 0 0 / 0.6);
+}
+@media (min-width: 769px) {
+  .studio-card--brand .brand-badge {
+    top: 26.88%;
+    left: 37.94%;
+    width: 24%;
+    height: 19.19%;
+  }
+}
+.brand-badge__mark {
+  display: block;
+  width: 46%;
+  aspect-ratio: 2950 / 3200;
+  background: var(--color-cyan);
+  -webkit-mask: url("/brand/zirtuno-logo-mark.svg") center / contain no-repeat;
+  mask: url("/brand/zirtuno-logo-mark.svg") center / contain no-repeat;
+}
+
+/* ── 02 · Web & Software — lit from behind the frames ────────────────────── */
+.studio-card--build {
+  background:
+    radial-gradient(
+      56% 36% at 50% 36.5%,
+      color-mix(in srgb, var(--color-cyan) 26%, transparent) 0%,
+      transparent 74%
+    ),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--color-cyan) 12%, #03080a) 0%,
+      color-mix(in srgb, var(--color-cyan-deep) 20%, #000000) 100%
+    );
+}
+.build-stage {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+.build-shot {
+  position: absolute;
+  top: 36.469%;
+  left: 50%;
+  z-index: 2;
+  margin: 0;
+  width: 62cqw;
+  aspect-ratio: 16 / 9;
+  display: flex;
+  flex-direction: column;
+  border-radius: calc(var(--card-radius) * 0.8);
+  overflow: hidden;
+  container-type: inline-size;
+  background: #04090b;
+  opacity: 0.9;
+  transform: translate(-50%, -50%) scale(0.8);
+  transition:
+    transform 1.5s cubic-bezier(0.3, 1.18, 0.5, 1),
+    opacity 0.9s var(--ease-calm);
+  will-change: transform, opacity;
+  box-shadow:
+    inset 0 0 0 1px rgb(242 240 235 / 0.12),
+    0 2cqw 5cqw rgb(0 0 0 / 0.55);
+}
+.build-shot.is-centre {
+  z-index: 3;
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
+}
+.build-shot.is-right {
+  transform: translate(calc(-50% + 31cqw), -50%) scale(0.8);
+}
+.build-shot.is-left {
+  transform: translate(calc(-50% - 31cqw), -50%) scale(0.8);
+}
+/* Six frames, three slots. A frame that has just left the LEFT slot waits at
+   `is-exit`, and the next advance sends it round to `is-enter` on the right.
+   That jump crosses the whole card, so `is-enter` transitions OPACITY ONLY —
+   without that the frame slides the full width behind the visible three every
+   cycle, invisible but transitioning, six times a minute. */
+.build-shot.is-enter {
+  z-index: 1;
+  opacity: 0;
+  transform: translate(calc(-50% + 72cqw), -50%) scale(0.62);
+  transition: opacity 0.9s var(--ease-calm);
+}
+.build-shot.is-exit {
+  z-index: 1;
+  opacity: 0;
+  transform: translate(calc(-50% - 72cqw), -50%) scale(0.62);
+}
+@media (prefers-reduced-motion: reduce) {
+  .build-shot {
+    transition: none;
+  }
+}
+.build-shot__chrome {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 2cqw;
+  height: 11%;
+  padding-inline: 3cqw;
+  background: #0a1013;
+}
+.build-shot__chrome i {
+  display: block;
+  width: 2.4cqw;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: rgb(242 240 235 / 0.22);
+}
+.build-shot__img {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top center;
+}
+
+/* the three DRAWN surfaces — anonymous by design, never a claimed case study */
+.ui {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  min-width: 0;
+}
+
+/* 01 · the product dashboard */
+.ui--saas {
+  background: linear-gradient(180deg, #101a1f 0%, #060d10 100%);
+}
+.ui__rail {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: 3cqw;
+  width: 17%;
+  padding: 4cqw 3cqw;
+  border-right: 1px solid rgb(242 240 235 / 0.08);
+}
+.ui__rail i {
+  display: block;
+  height: 2.4cqw;
+  border-radius: 1.2cqw;
+  background: rgb(242 240 235 / 0.16);
+}
+.ui__rail i:first-child {
+  background: color-mix(in srgb, var(--color-cyan) 85%, transparent);
+}
+.ui__body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3cqw;
+  padding: 4cqw;
+}
+.ui__bar {
+  display: block;
+  width: 42%;
+  height: 2.8cqw;
+  border-radius: 1.4cqw;
+  background: rgb(242 240 235 / 0.2);
+}
+.ui__chart {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: flex-end;
+  gap: 2cqw;
+}
+.ui__chart i {
+  flex: 1;
+  border-radius: 1cqw 1cqw 0 0;
+  background: linear-gradient(
+    180deg,
+    var(--color-cyan) 0%,
+    color-mix(in srgb, var(--color-cyan) 18%, transparent) 100%
+  );
+}
+.ui__rows {
+  display: flex;
+  flex-direction: column;
+  gap: 1.8cqw;
+}
+.ui__rows i {
+  display: block;
+  height: 1.8cqw;
+  border-radius: 0.9cqw;
+  background: rgb(242 240 235 / 0.12);
+}
+.ui__rows i:nth-child(2) {
+  width: 78%;
+}
+.ui__rows i:nth-child(3) {
+  width: 54%;
+}
+
+/* 02 · the store — the one PAPER surface in the six, so the stage is not a
+   run of dark frames whichever three happen to be on it */
+.ui--shop {
+  flex-direction: column;
+  background: linear-gradient(180deg, #ffffff 0%, #ece9e3 100%);
+}
+.ui__top {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 3.4cqw 4cqw;
+}
+.ui__brand {
+  display: block;
+  width: 13%;
+  height: 2.4cqw;
+  border-radius: 1.2cqw;
+  background: rgb(0 0 0 / 0.68);
+}
+.ui__nav {
+  display: flex;
+  gap: 2.4cqw;
+}
+.ui__nav i {
+  display: block;
+  width: 5cqw;
+  height: 1.8cqw;
+  border-radius: 0.9cqw;
+  background: rgb(0 0 0 / 0.2);
+}
+.ui__split {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  gap: 4cqw;
+  padding: 0 4cqw 4cqw;
+}
+.ui__hero {
+  flex: 1.15;
+  border-radius: 2.4cqw;
+  background:
+    radial-gradient(
+      70% 60% at 50% 42%,
+      color-mix(in srgb, var(--color-cyan) 55%, transparent) 0%,
+      transparent 72%
+    ),
+    linear-gradient(160deg, #10242b 0%, #050e12 100%);
+}
+.ui__detail {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2.2cqw;
+  padding-top: 1cqw;
+}
+.ui__detail i {
+  display: block;
+  border-radius: 1cqw;
+}
+.ui__title {
+  width: 84%;
+  height: 3cqw;
+  background: rgb(0 0 0 / 0.72);
+}
+.ui__price {
+  width: 40%;
+  height: 2.4cqw;
+  background: color-mix(in srgb, var(--color-cyan-deep) 90%, #000000);
+}
+.ui__meta {
+  width: 66%;
+  height: 1.6cqw;
+  background: rgb(0 0 0 / 0.22);
+}
+.ui__buy {
+  display: block;
+  width: 62%;
+  height: 4.4cqw;
+  margin-top: 0.6cqw;
+  border-radius: 2.2cqw;
+  background: #0d1216;
+}
+.ui__thumbs {
+  display: flex;
+  gap: 1.8cqw;
+  margin-top: auto;
+}
+.ui__thumbs i {
+  display: block;
+  width: 7cqw;
+  aspect-ratio: 1;
+  border-radius: 1.4cqw;
+  background: rgb(0 0 0 / 0.12);
+}
+.ui__thumbs i:first-child {
+  background: color-mix(in srgb, var(--color-cyan) 40%, transparent);
+}
+
+/* 03 · the editorial — the second PAPER surface. Twelve frames rotate through
+   three slots, so without two light ones a run of three darks is common. */
+.ui--editorial {
+  flex-direction: column;
+  gap: 3cqw;
+  padding: 4cqw;
+  background: linear-gradient(180deg, #fbfaf7 0%, #e9e6df 100%);
+}
+.ui__masthead {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 2.6cqw;
+  border-bottom: 1px solid rgb(0 0 0 / 0.5);
+}
+.ui--editorial .ui__brand {
+  width: 22%;
+  height: 3cqw;
+  background: rgb(0 0 0 / 0.82);
+}
+.ui--editorial .ui__nav i {
+  background: rgb(0 0 0 / 0.24);
+}
+.ui__lede {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: 1.8cqw;
+}
+.ui__kicker {
+  display: block;
+  width: 14%;
+  height: 1.6cqw;
+  border-radius: 0.8cqw;
+  background: var(--color-cyan-deep);
+}
+.ui__headline {
+  display: block;
+  width: 84%;
+  height: 4cqw;
+  border-radius: 0.6cqw;
+  background: rgb(0 0 0 / 0.78);
+}
+.ui__headline--short {
+  width: 52%;
+}
+.ui__columns {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  gap: 3cqw;
+}
+.ui__col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1.6cqw;
+}
+.ui__col i {
+  display: block;
+  height: 1.4cqw;
+  border-radius: 0.7cqw;
+  background: rgb(0 0 0 / 0.18);
+}
+.ui__col i:last-child {
+  width: 62%;
+}
+.ui__plate {
+  flex: 1.1;
+  border-radius: 1.6cqw;
+  background:
+    radial-gradient(
+      64% 58% at 50% 40%,
+      color-mix(in srgb, var(--color-cyan) 60%, transparent) 0%,
+      transparent 74%
+    ),
+    linear-gradient(160deg, #12262d 0%, #050d11 100%);
+}
+
+/* 04 · the portfolio */
+.ui--portfolio {
+  flex-direction: column;
+  gap: 3cqw;
+  padding: 3.4cqw 4cqw 4cqw;
+  background: linear-gradient(180deg, #0a0f12 0%, #010507 100%);
+}
+.ui--portfolio .ui__brand {
+  background: var(--color-cyan);
+}
+.ui--portfolio .ui__nav i {
+  background: rgb(242 240 235 / 0.24);
+}
+.ui__wordmark {
+  display: block;
+  flex: none;
+  width: 64%;
+  height: 4.4cqw;
+  border-radius: 0.8cqw;
+  background: linear-gradient(
+    90deg,
+    rgb(242 240 235 / 0.9) 0%,
+    rgb(242 240 235 / 0.55) 62%,
+    color-mix(in srgb, var(--color-cyan) 80%, transparent) 100%
+  );
+}
+.ui__grid {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-auto-rows: 1fr;
+  gap: 2.2cqw;
+}
+.ui__grid i {
+  position: relative;
+  display: block;
+  border-radius: 1.4cqw;
+  overflow: hidden;
+  background: rgb(242 240 235 / 0.09);
+}
+.ui__grid i::after {
+  content: "";
+  position: absolute;
+  left: 8%;
+  bottom: 12%;
+  width: 54%;
+  height: 1.4cqw;
+  border-radius: 0.7cqw;
+  background: rgb(242 240 235 / 0.55);
+}
+.ui__grid i:nth-child(2)::after {
+  width: 38%;
+}
+.ui__grid i:nth-child(3)::after {
+  width: 46%;
+}
+.ui__grid i:nth-child(1) {
+  background: linear-gradient(
+    150deg,
+    color-mix(in srgb, var(--color-cyan) 46%, transparent) 0%,
+    rgb(242 240 235 / 0.06) 70%
+  );
+}
+.ui__grid i:nth-child(2) {
+  background: linear-gradient(
+    150deg,
+    rgb(242 240 235 / 0.2) 0%,
+    rgb(242 240 235 / 0.04) 66%
+  );
+}
+.ui__grid i:nth-child(3) {
+  background: linear-gradient(
+    200deg,
+    color-mix(in srgb, var(--color-cyan-deep) 34%, transparent) 0%,
+    rgb(242 240 235 / 0.05) 68%
+  );
+}
+.ui__grid i:nth-child(4) {
+  background: linear-gradient(
+    150deg,
+    rgb(242 240 235 / 0.22) 0%,
+    rgb(242 240 235 / 0.05) 70%
+  );
+}
+
+/* 05 · the documentation site */
+.ui--docs {
+  background: linear-gradient(180deg, #0b1114 0%, #030809 100%);
+}
+.ui__side {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: 2cqw;
+  width: 30%;
+  padding: 4cqw 3cqw;
+  border-right: 1px solid rgb(242 240 235 / 0.09);
+}
+.ui__side i {
+  display: block;
+  height: 1.5cqw;
+  border-radius: 0.75cqw;
+  background: rgb(242 240 235 / 0.14);
+}
+.ui__side i.is-on {
+  background: var(--color-cyan);
+  width: 72%;
+}
+.ui__side-head {
+  height: 2.2cqw !important;
+  width: 58%;
+  background: rgb(242 240 235 / 0.4) !important;
+  margin-bottom: 1cqw;
+}
+.ui__page {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2cqw;
+  padding: 4cqw;
+}
+.ui--docs .ui__title {
+  width: 56%;
+  height: 3cqw;
+  border-radius: 1.5cqw;
+  background: rgb(242 240 235 / 0.72);
+}
+.ui__line {
+  display: block;
+  height: 1.4cqw;
+  border-radius: 0.7cqw;
+  background: rgb(242 240 235 / 0.16);
+}
+.ui__line--short {
+  width: 64%;
+}
+.ui__code {
+  display: flex;
+  flex-direction: column;
+  gap: 1.2cqw;
+  padding: 2.4cqw;
+  border-radius: 1.4cqw;
+  background: #000000;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-cyan) 22%, transparent);
+}
+.ui__code i {
+  display: block;
+  height: 1.2cqw;
+  border-radius: 0.6cqw;
+  background: color-mix(in srgb, var(--color-cyan) 55%, transparent);
+}
+.ui__code i:nth-child(2) {
+  width: 74%;
+  background: rgb(242 240 235 / 0.3);
+}
+.ui__code i:nth-child(3) {
+  width: 46%;
+}
+
+/* 06 · the launch page */
+.ui--landing {
+  position: relative;
+  flex-direction: column;
+  background: linear-gradient(180deg, #050c10 0%, #01070a 100%);
+}
+.ui--landing .ui__brand {
+  background: var(--color-cyan);
+}
+.ui--landing .ui__nav i {
+  background: rgb(242 240 235 / 0.26);
+}
+.ui__stage {
+  position: relative;
+  z-index: 2;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2.4cqw;
+  padding: 0 4cqw 5cqw;
+}
+.ui__eyebrow {
+  display: block;
+  width: 16%;
+  height: 1.6cqw;
+  border-radius: 0.8cqw;
+  background: color-mix(in srgb, var(--color-cyan) 70%, transparent);
+}
+.ui__head {
+  display: block;
+  width: 74%;
+  height: 4.4cqw;
+  border-radius: 2.2cqw;
+  background: rgb(242 240 235 / 0.86);
+}
+.ui__head--short {
+  width: 48%;
+}
+.ui__cta {
+  display: block;
+  width: 30%;
+  height: 4cqw;
+  margin-top: 1.4cqw;
+  border-radius: 2cqw;
+  background: var(--color-cyan);
+}
+.ui__glow {
+  position: absolute;
+  inset: auto 0 -18% 0;
+  z-index: 1;
+  height: 52%;
+  background: radial-gradient(
+    62% 100% at 50% 100%,
+    color-mix(in srgb, var(--color-cyan) 52%, transparent) 0%,
+    transparent 70%
+  );
+}
+
+/* the reference washes its frames into the card on three sides; same job, this
+   card's own ground colour on both ends of each gradient */
+.build-edges {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--color-cyan) 12%, #000000) 0%,
+    transparent 11%,
+    transparent 89%,
+    color-mix(in srgb, var(--color-cyan) 12%, #000000) 100%
+  );
+}
+.build-fade {
+  position: absolute;
+  left: 0;
+  top: 55.673%;
+  z-index: 3;
+  width: 100%;
+  height: 44.327%;
+  pointer-events: none;
+  background: linear-gradient(
+    180deg,
+    transparent 3.3%,
+    color-mix(in srgb, var(--color-cyan-deep) 16%, rgb(0 0 0 / 0.68)) 22%,
+    color-mix(in srgb, var(--color-cyan-deep) 20%, #000000) 76%,
+    color-mix(in srgb, var(--color-cyan-deep) 20%, #000000) 100%
+  );
+}
+
+/* ── 03 · IA, Automação & Dados — lit from a pool under the fan ──────────── */
+.studio-card--intel {
+  background:
+    radial-gradient(
+      94% 56% at 50% 106%,
+      color-mix(in srgb, var(--color-cyan) 40%, transparent) 0%,
+      transparent 68%
+    ),
+    linear-gradient(
+      180deg,
+      #000000 16%,
+      color-mix(in srgb, var(--color-cyan) 8%, #05090b) 100%
+    );
+}
+.fan {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+/* SIX tiles on one arc, growing outward — the reference's detail, which is
+   what makes a fan read as a deck rather than a row.
+
+   The tiles are SMALLER than the five-tile version was, and that is arithmetic
+   rather than taste. Six centres spread across the card leave about 0.17 of it
+   between neighbours; for a mark to clear the card in front of it, the tile has
+   to be under about 0.76 of that gap. Sized any bigger — the 28cqw the fan
+   carried for one pass — Figma lost half of itself off the card's left edge and
+   the rest lost a third each to the neighbour in front.
+
+   The TILE carries position and rotation only, and paints nothing. The FACE
+   inside it carries the ground, the rim and the hover travel. That split is
+   what lets one hover rule lift all six: a translate on the face runs along
+   the tile's own rotated axis, so each card pulls forward out of the fan at
+   its own angle — six rules restating six translates would be needed to do it
+   on the tile itself, and they would all have to agree. It also means the tile
+   can stay `overflow: visible` while the face still clips its mark to a
+   rounded corner, so the lift is not sheared off at the tile's edge. */
+.ftile {
+  position: absolute;
+  aspect-ratio: 1;
+}
+.ftile--a {
+  z-index: 1;
+  top: 46%;
+  left: 8%;
+  width: 23cqw;
+  transform: translate(-50%, -50%) rotate(-21deg);
+}
+.ftile--b {
+  z-index: 2;
+  top: 40.5%;
+  left: 24.8%;
+  width: 22cqw;
+  transform: translate(-50%, -50%) rotate(-13deg);
+}
+.ftile--c {
+  z-index: 3;
+  top: 37.5%;
+  left: 41.6%;
+  width: 21cqw;
+  transform: translate(-50%, -50%) rotate(-5deg);
+}
+.ftile--d {
+  z-index: 6;
+  top: 36.469%;
+  left: 58.4%;
+  width: 24cqw;
+  transform: translate(-50%, -50%) rotate(3deg);
+}
+.ftile--e {
+  z-index: 3;
+  top: 40.5%;
+  left: 75.2%;
+  width: 21cqw;
+  transform: translate(-50%, -50%) rotate(13deg);
+}
+.ftile--f {
+  z-index: 2;
+  top: 46%;
+  left: 92%;
+  width: 22cqw;
+  transform: translate(-50%, -50%) rotate(21deg);
+}
+
+.ftile__face {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: calc(var(--card-radius) * 0.85);
+  overflow: hidden;
+  container-type: inline-size;
+  transition:
+    transform var(--dur-medium) var(--ease-arrive),
+    box-shadow var(--dur-medium) var(--ease-calm),
+    opacity var(--dur-short) var(--ease-calm),
+    background var(--dur-medium) var(--ease-calm);
+}
+
+/* A brand tile's ground is NEUTRAL near-black, not the cyan-tinted glass the
+   rest of this card is built from. Five brand palettes — Figma's five on their
+   own — need something quiet to sit on, and a cyan ground under an orange mark
+   fights it. Leaving exactly one cyan ground in the fan, the companion's, is
+   also what makes him the tile the eye finds first. */
+.ftile--brand .ftile__face {
+  background: linear-gradient(180deg, #161c20 0%, #04090b 100%);
+  box-shadow:
+    inset 0 0 0 1px rgb(242 240 235 / 0.12),
+    inset 0 1cqw 0 rgb(242 240 235 / 0.06),
+    0 1.6cqw 3.2cqw rgb(0 0 0 / 0.55);
+}
+.ftile--self .ftile__face {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-cyan) 30%, #0b1c24) 0%,
+    #03131a 100%
+  );
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--color-cyan) 40%, transparent),
+    inset 0 1cqw 0 rgb(242 240 235 / 0.08),
+    0 1.6cqw 4cqw rgb(0 0 0 / 0.6),
+    0 0 6cqw color-mix(in srgb, var(--color-cyan) 26%, transparent);
+}
+
+/* THEIR colours, unaltered — owner's call, and the only paint on this site
+   outside the cyan family. A `background-image` and not a `mask`, because a
+   mask can carry a shape but not a palette, and the palette is the point: a
+   recoloured trademark is less recognisable, which defeats the fan.
+
+   `--logo-shift` moves a mark toward the side of its tile that is NOT covered
+   by the card in front of it. A fanned deck overlaps, and a mark centred in
+   its own tile is centred half behind its neighbour — fine for an abstract
+   glyph, fatal for a logo, where the missing half is the half you recognise.
+   Zero on the companion, whom nothing covers. */
+.ftile__logo {
+  display: block;
+  width: 52%;
+  aspect-ratio: 1;
+  transform: translateX(var(--logo-shift, 0%));
+  background: var(--stack-mark) center / contain no-repeat;
+}
+.ftile--a .ftile__logo {
+  --logo-shift: -5%;
+}
+.ftile--b .ftile__logo {
+  --logo-shift: -4%;
+}
+.ftile--c .ftile__logo {
+  --logo-shift: -4%;
+}
+.ftile--e .ftile__logo {
+  --logo-shift: 4%;
+}
+.ftile--f .ftile__logo {
+  --logo-shift: 5%;
+}
+/* the droplet is a thin cyan contour, not a solid mark — it needs the room */
+.ftile--self .ftile__logo {
+  width: 66%;
+}
+
+/* THE HOVER — one rule for six tiles. The card is pulled forward out of the
+   fan along its own axis and lit; the five it was overlapping step back just
+   far enough to say which one is being read. */
+@media (hover: hover) and (pointer: fine) {
+  .fan:hover .ftile__face {
+    opacity: 0.66;
+  }
+  .ftile:hover {
+    z-index: 7;
+  }
+  .ftile:hover .ftile__face {
+    opacity: 1;
+    transform: translateY(-9%) scale(1.1);
+  }
+  .ftile--brand:hover .ftile__face {
+    background: linear-gradient(180deg, #232b30 0%, #080f13 100%);
+    box-shadow:
+      inset 0 0 0 1px rgb(242 240 235 / 0.24),
+      inset 0 1cqw 0 rgb(242 240 235 / 0.1),
+      0 3cqw 5cqw rgb(0 0 0 / 0.6);
+  }
+  .ftile--self:hover .ftile__face {
+    background: linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--color-cyan) 42%, #0c1e26) 0%,
+      #04161d 100%
+    );
+    box-shadow:
+      inset 0 0 0 1px color-mix(in srgb, var(--color-cyan) 60%, transparent),
+      inset 0 1cqw 0 rgb(242 240 235 / 0.14),
+      0 3cqw 5cqw rgb(0 0 0 / 0.6),
+      0 0 8cqw color-mix(in srgb, var(--color-cyan) 38%, transparent);
+  }
+}
+/* Touch has no hover: without this the first tap paints the hover state and
+   leaves it stuck there, which reads as a selected tile that cannot be
+   deselected. The reference does the same on its own fan. */
+@media (hover: none) {
+  .ftile {
+    pointer-events: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ftile__face {
+    transition: none;
+  }
 }
 
 /* ===========================================================================
