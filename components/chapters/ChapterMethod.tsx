@@ -15,7 +15,7 @@ type Phase = { name: string; desc: string };
  * (Evolution). One phase owns the viewport at a time; a vertical thread
  * beside the copy fills with progress (--method-flow, written by the shell).
  * The `.method-journey` div is the scene's measurement anchor. Copy is
- * server-rendered (RSC); static tiers collapse to the plain numbered list.
+ * server-rendered (RSC); static tiers collapse to the plain stacked list.
  */
 export function ChapterMethod() {
   const t = useTranslations("method");
@@ -56,11 +56,8 @@ export function ChapterMethod() {
 
       <div className="method-journey">
         <ol className="method-runway page-x">
-          {phases.map((p, i) => (
+          {phases.map((p) => (
             <Reveal inView as="li" key={p.name} className="method-phase">
-              <span className="method-num">
-                {String(i + 1).padStart(2, "0")} / {String(phases.length).padStart(2, "0")}
-              </span>
               <h3 className="method-name type-feature-title">{p.name}</h3>
               <p className="method-desc">{p.desc}</p>
             </Reveal>

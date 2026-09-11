@@ -1727,7 +1727,6 @@ body:has(.liquid-journey) .aura {
     .pillar-caps,
     .method-name,
     .method-desc,
-    .method-num,
     .origin-open,
     .origin-coda,
     .origin-closing,
@@ -1990,14 +1989,11 @@ body:has(.liquid-journey) .aura {
 /* R6 — each symptom is a STATEMENT, not a list row.
    Every shard already owns 13–18vh of scroll (one notch of the fracture), so
    it was being given the space of a moment and the typography of a bullet.
-   The label now carries display weight and the description sits under it at
-   full reading strength; the numeral becomes structure rather than a caption. */
+   The label carries display weight and the description sits under it at full
+   reading strength; the hairline above it is all the structure it needs — the
+   count was reading as a caption on a statement, so it is gone. */
 .symptom {
   position: relative;
-  display: grid;
-  grid-template-columns: 3.5rem 1fr;
-  gap: 0 1.6rem;
-  align-items: start;
   max-width: 34rem;
   padding: 1.75rem 0 0;
   margin-bottom: 13vh;
@@ -2021,16 +2017,6 @@ body:has(.liquid-journey) .aura {
     margin-left: var(--shard-x, 0);
     margin-bottom: 18vh;
   }
-}
-.symptom-num {
-  font-family: var(--font-mono);
-  font-size: var(--text-mono);
-  font-variant-numeric: tabular-nums lining-nums;
-  /* optically seated against the display cap-height beside it, not the old
-     title baseline — `align-items: start` made this the honest way to do it */
-  line-height: 1.9;
-  letter-spacing: var(--text-mono--letter-spacing);
-  color: var(--color-cyan);
 }
 .symptom-label {
   font-family: var(--font-grotesk);
@@ -2305,7 +2291,7 @@ html:has(.disclose[data-disclose="live"][open]) {
    five ~viewport copy blocks, one phase dominant at a time. The old drawn
    connector survives as a vertical THREAD beside the copy, filling with
    --method-flow (0→1, written by the shell). Static tiers collapse the
-   runway to the plain numbered list.
+   runway to the plain stacked list.
    =========================================================================== */
 .method-runway {
   position: relative;
@@ -2362,16 +2348,7 @@ html:has(.disclose[data-disclose="live"][open]) {
     );
   }
 }
-.method-num {
-  font-family: var(--font-mono);
-  font-size: var(--text-mono);
-  font-variant-numeric: tabular-nums lining-nums;
-  line-height: var(--text-mono--line-height);
-  letter-spacing: var(--text-mono--letter-spacing);
-  color: var(--color-cyan);
-}
 .method-name {
-  margin-top: 0.5rem;
   color: var(--color-paper);
 }
 /* R6: each phase owns 74vh and carries exactly one supporting line. A single
@@ -2385,7 +2362,7 @@ html:has(.disclose[data-disclose="live"][open]) {
   color: var(--color-paper-lead);
   text-wrap: pretty;
 }
-/* static path: the runway collapses to the clean numbered list (the
+/* static path: the runway collapses to the clean stacked list (the
    data-liquid flag lives on the page-wide PageStage wrapper since R5) */
 .liquid-journey[data-liquid="static"] .method-phase {
   min-height: 0;
